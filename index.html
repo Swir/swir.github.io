@@ -151,6 +151,7 @@
             width: 90%;
             max-width: 1200px;
             margin: auto;
+            position: relative;
         }
 
         /* Hero Sekcja */
@@ -160,16 +161,20 @@
             align-items: center;
             justify-content: center;
             text-align: center;
+            position: relative;
+            z-index: 1;
         }
 
         .hero h1 {
             font-size: 3em;
             margin-bottom: 20px;
+            animation: glow 2s infinite alternate;
         }
 
         .hero p {
             font-size: 1.2em;
             margin-bottom: 30px;
+            animation: glow 3s infinite alternate;
         }
 
         .btn {
@@ -180,6 +185,8 @@
             text-decoration: none;
             border-radius: 25px;
             transition: background 0.3s ease, transform 0.3s ease;
+            box-shadow: 0 0 20px var(--primary-color);
+            animation: pulse 2s infinite;
         }
 
         .btn:hover {
@@ -218,12 +225,14 @@
             font-size: 2.5em;
             color: var(--primary-color);
             transition: color 0.3s;
+            animation: glow 4s infinite alternate;
         }
 
         .project-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 20px;
+            position: relative;
         }
 
         .project-card {
@@ -234,6 +243,7 @@
             transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s, background 0.3s;
             position: relative;
             overflow: hidden;
+            cursor: pointer;
         }
 
         .project-card::before {
@@ -261,6 +271,7 @@
 
         .project-card h3 {
             margin-bottom: 10px;
+            animation: glow 2.5s infinite alternate;
         }
 
         .repo-description {
@@ -305,6 +316,7 @@
             font-size: 2.5em;
             color: var(--primary-color);
             transition: color 0.3s;
+            animation: glow 5s infinite alternate;
         }
 
         .contact form {
@@ -341,6 +353,8 @@
             border-radius: 25px;
             cursor: pointer;
             transition: background 0.3s ease, transform 0.3s ease;
+            box-shadow: 0 0 20px var(--primary-color);
+            animation: pulse 2s infinite;
         }
 
         .contact button:hover {
@@ -372,6 +386,7 @@
             text-align: center;
             padding: 20px 0;
             transition: color 0.3s;
+            animation: glow 6s infinite alternate;
         }
 
         /* Responsywność */
@@ -490,6 +505,16 @@
                 transform: rotate(360deg);
             }
         }
+
+        /* Animacja pulsującego nagłówka */
+        @keyframes glow {
+            from {
+                text-shadow: 0 0 10px var(--primary-color);
+            }
+            to {
+                text-shadow: 0 0 20px var(--hover-color), 0 0 30px var(--hover-color), 0 0 40px var(--hover-color);
+            }
+        }
     </style>
 </head>
 <body class="theme-green"> <!-- Domyślny motyw zielony -->
@@ -546,8 +571,8 @@
                 <button type="submit" class="btn">Wyślij</button>
             </form>
             <div class="social-links">
-                <a href="https://github.com/swir" target="_blank"><i class="fab fa-github"></i></a>
-                <a href="https://linkedin.com/in/swir" target="_blank"><i class="fab fa-linkedin"></i></a>
+                <a href="https://github.com/swir" target="_blank" aria-label="GitHub"><i class="fab fa-github"></i></a>
+                <a href="https://linkedin.com/in/swir" target="_blank" aria-label="LinkedIn"><i class="fab fa-linkedin"></i></a>
                 <!-- Dodaj więcej linków społecznościowych według potrzeb -->
             </div>
         </div>
@@ -685,112 +710,112 @@
             const per_page = 100;
             let hasMore = true;
 
-            while (hasMore) {
-                const response = await fetch(`https://api.github.com/users/${username}/repos?per_page=${per_page}&page=${page}`);
-                if (!response.ok) {
-                    console.error('Błąd podczas pobierania repozytoriów:', response.statusText);
-                    break;
+            try {
+                while (hasMore) {
+                    const response = await fetch(`https://api.github.com/users/${username}/repos?per_page=${per_page}&page=${page}`);
+                    if (!response.ok) {
+                        throw new Error(`Błąd podczas pobierania repozytoriów: ${response.status} ${response.statusText}`);
+                    }
+                    const data = await response.json();
+
+                    if (data.length > 0) {
+                        repos = repos.concat(data);
+                        page++;
+                    } else {
+                        hasMore = false;
+                    }
                 }
-                const data = await response.json();
 
-                if (data.length > 0) {
-                    repos = repos.concat(data);
-                    page++;
-                } else {
-                    hasMore = false;
+                // Filtracja repozytoriów - wykluczenie forków
+                repos = repos.filter(repo => !repo.fork);
+
+                // Sortowanie repozytoriów według daty ostatniej aktualizacji
+                repos.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+
+                // Sprawdzenie, czy są jakieś repozytoria do wyświetlenia
+                if (repos.length === 0) {
+                    const noRepoMsg = document.createElement('p');
+                    noRepoMsg.textContent = 'Nie znaleziono żadnych repozytoriów.';
+                    noRepoMsg.style.color = 'var(--primary-color)';
+                    repoList.appendChild(noRepoMsg);
+                    return;
                 }
-            }
 
-            // Filtracja repozytoriów - wykluczenie forków
-            repos = repos.filter(repo => !repo.fork);
+                // Tworzenie kart dla każdego repozytorium
+                repos.forEach(repo => {
+                    const repoCard = document.createElement('div');
+                    repoCard.classList.add('project-card');
 
-            // Sortowanie repozytoriów według daty ostatniej aktualizacji
-            repos.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+                    const repoName = document.createElement('h3');
+                    repoName.textContent = repo.name;
 
-            // Sprawdzenie, czy są jakieś repozytoria do wyświetlenia
-            if (repos.length === 0) {
-                const noRepoMsg = document.createElement('p');
-                noRepoMsg.textContent = 'Nie znaleziono żadnych repozytoriów.';
-                noRepoMsg.style.color = 'var(--primary-color)';
-                repoList.appendChild(noRepoMsg);
-                return;
-            }
+                    const repoDesc = document.createElement('p');
+                    repoDesc.classList.add('repo-description');
 
-            // Tworzenie kart dla każdego repozytorium
-            repos.forEach(repo => {
-                const repoCard = document.createElement('div');
-                repoCard.classList.add('project-card');
+                    const description = repo.description ? repo.description.trim() : 'Brak opisu.';
+                    const shortDesc = description.length > 100 ? description.substring(0, 100) + '...' : description;
+                    const moreText = description.length > 100 ? description.substring(100) : '';
 
-                const repoName = document.createElement('h3');
-                repoName.textContent = repo.name;
+                    repoDesc.innerHTML = `
+                        ${shortDesc}
+                        ${moreText ? `<span class="more-text">${moreText}</span>` : ''}
+                    `;
 
-                const repoDesc = document.createElement('p');
-                repoDesc.classList.add('repo-description');
+                    const repoLanguage = document.createElement('p');
+                    repoLanguage.textContent = `🛠️ Język: ${repo.language || 'N/A'}`;
+                    repoLanguage.style.color = 'var(--primary-color)';
+                    repoLanguage.style.marginBottom = '10px';
 
-                const description = repo.description ? repo.description.trim() : 'Brak opisu.';
-                const shortDesc = description.length > 100 ? description.substring(0, 100) + '...' : description;
-                const moreText = description.length > 100 ? description.substring(100) : '';
+                    const repoStars = document.createElement('p');
+                    repoStars.textContent = `⭐ ${repo.stargazers_count}`;
+                    repoStars.style.color = 'var(--primary-color)';
+                    repoStars.style.marginBottom = '10px';
 
-                repoDesc.innerHTML = `
-                    ${shortDesc}
-                    ${moreText ? `<span class="more-text">${moreText}</span>` : ''}
-                `;
-
-                const repoLanguage = document.createElement('p');
-                repoLanguage.textContent = `🛠️ Język: ${repo.language || 'N/A'}`;
-                repoLanguage.style.color = 'var(--primary-color)';
-                repoLanguage.style.marginBottom = '10px';
-
-                const repoStars = document.createElement('p');
-                repoStars.textContent = `⭐ ${repo.stargazers_count}`;
-                repoStars.style.color = 'var(--primary-color)';
-                repoStars.style.marginBottom = '10px';
-
-                const repoLink = document.createElement('a');
-                repoLink.href = repo.html_url;
-                repoLink.target = '_blank';
-                repoLink.textContent = 'Zobacz na GitHubie';
-                repoLink.style.display = 'block';
-                repoLink.style.marginBottom = '10px';
-                repoLink.style.color = 'var(--primary-color)';
-                repoLink.style.transition = 'color 0.3s ease';
-                repoLink.addEventListener('mouseover', () => {
-                    repoLink.style.color = 'var(--hover-color)';
-                });
-                repoLink.addEventListener('mouseout', () => {
+                    const repoLink = document.createElement('a');
+                    repoLink.href = repo.html_url;
+                    repoLink.target = '_blank';
+                    repoLink.textContent = 'Zobacz na GitHubie';
+                    repoLink.style.display = 'block';
+                    repoLink.style.marginBottom = '10px';
                     repoLink.style.color = 'var(--primary-color)';
+                    repoLink.style.transition = 'color 0.3s ease';
+                    repoLink.addEventListener('mouseover', () => {
+                        repoLink.style.color = 'var(--hover-color)';
+                    });
+                    repoLink.addEventListener('mouseout', () => {
+                        repoLink.style.color = 'var(--primary-color)';
+                    });
+
+                    const readMoreBtn = document.createElement('button');
+                    readMoreBtn.classList.add('read-more-btn');
+                    readMoreBtn.textContent = moreText ? 'Czytaj więcej' : '';
+                    readMoreBtn.style.display = moreText ? 'inline-block' : 'none';
+
+                    repoCard.appendChild(repoName);
+                    repoCard.appendChild(repoDesc);
+                    repoCard.appendChild(repoLanguage);
+                    repoCard.appendChild(repoStars);
+                    repoCard.appendChild(repoLink);
+                    if (moreText) {
+                        repoCard.appendChild(readMoreBtn);
+                    }
+
+                    repoList.appendChild(repoCard);
                 });
 
-                const readMoreBtn = document.createElement('button');
-                readMoreBtn.classList.add('read-more-btn');
-                readMoreBtn.textContent = moreText ? 'Czytaj więcej' : '';
-                readMoreBtn.style.display = moreText ? 'inline-block' : 'none';
+                // Dodanie funkcji do obsługi "Czytaj więcej"
+                const readMoreButtons = document.querySelectorAll('.read-more-btn');
 
-                repoCard.appendChild(repoName);
-                repoCard.appendChild(repoDesc);
-                repoCard.appendChild(repoLanguage);
-                repoCard.appendChild(repoStars);
-                repoCard.appendChild(repoLink);
-                if (moreText) {
-                    repoCard.appendChild(readMoreBtn);
-                }
-
-                repoList.appendChild(repoCard);
-            });
-
-            // Dodanie funkcji do obsługi "Czytaj więcej"
-            const readMoreButtons = document.querySelectorAll('.read-more-btn');
-
-            readMoreButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    const projectCard = button.closest('.project-card');
-                    projectCard.classList.toggle('active');
-                    button.textContent = projectCard.classList.contains('active') ? 'Czytaj mniej' : 'Czytaj więcej';
+                readMoreButtons.forEach(button => {
+                    button.addEventListener('click', () => {
+                        const projectCard = button.closest('.project-card');
+                        projectCard.classList.toggle('active');
+                        button.textContent = projectCard.classList.contains('active') ? 'Czytaj mniej' : 'Czytaj więcej';
+                    });
                 });
-            });
-        }
+            }
 
-        fetchRepos();
-    </script>
+            fetchRepos();
+        </script>
 </body>
 </html>
