@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Świr - Portfolio</title>
+    <!-- Normalize CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <style>
+        /* Podstawowe ustawienia */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            line-height: 1.6;
+            color: #00FF00; /* Zielony kolor tekstu */
+            background-color: #000; /* Czarny tło */
+            overflow-x: hidden;
+        }
+
+        /* Tło Matrix - Animacja */
+        #matrix {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: #000;
+        }
+
+        /* Nawigacja */
+        .navbar {
+            background: rgba(0, 0, 0, 0.8);
+            color: #00FF00;
+            padding: 15px 0;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .navbar .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 90%;
+            max-width: 1200px;
+            margin: auto;
+        }
+
+        .logo {
+            font-size: 1.5em;
+            text-decoration: none;
+            color: #00FF00;
+        }
+
+        .nav-links {
+            list-style: none;
+            display: flex;
+        }
+
+        .nav-links li {
+            margin-left: 20px;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #00FF00;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: #00FF7F;
+        }
+
+        /* Sekcje */
+        section {
+            padding: 100px 0;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: auto;
+        }
+
+        /* Hero Sekcja */
+        .hero {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 3em;
+            margin-bottom: 20px;
+        }
+
+        .hero p {
+            font-size: 1.2em;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 25px;
+            background: #00FF7F;
+            color: #000;
+            text-decoration: none;
+            border-radius: 25px;
+            transition: background 0.3s ease;
+        }
+
+        .btn:hover {
+            background: #32CD32;
+        }
+
+        /* Projekty */
+        .projects h2 {
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 2.5em;
+            color: #00FF00;
+        }
+
+        .project-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .project-card {
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #00FF00;
+            border-radius: 10px;
+            padding: 20px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .project-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px #00FF00;
+        }
+
+        .project-card h3 {
+            margin-bottom: 10px;
+        }
+
+        .project-card p {
+            margin-bottom: 15px;
+        }
+
+        .project-card a {
+            color: #00FF7F;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .project-card a:hover {
+            color: #32CD32;
+        }
+
+        /* Kontakt */
+        .contact h2 {
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 2.5em;
+            color: #00FF00;
+        }
+
+        .contact form {
+            max-width: 600px;
+            margin: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .contact input, 
+        .contact textarea {
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid #00FF00;
+            border-radius: 5px;
+            background: rgba(0, 0, 0, 0.5);
+            color: #00FF00;
+            font-size: 1em;
+        }
+
+        .contact button {
+            align-self: center;
+            padding: 10px 30px;
+            background: #00FF7F;
+            color: #000;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .contact button:hover {
+            background: #32CD32;
+        }
+
+        .social-links {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .social-links a {
+            color: #00FF00;
+            margin: 0 10px;
+            font-size: 1.5em;
+            transition: color 0.3s ease;
+        }
+
+        .social-links a:hover {
+            color: #00FF7F;
+        }
+
+        /* Stopka */
+        footer {
+            background: rgba(0, 0, 0, 0.8);
+            color: #00FF00;
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        /* Responsywność */
+        @media (max-width: 768px) {
+            .nav-links {
+                flex-direction: column;
+                position: absolute;
+                top: 60px;
+                right: 0;
+                background: rgba(0, 0, 0, 0.9);
+                width: 100%;
+                display: none;
+            }
+
+            .nav-links.active {
+                display: flex;
+            }
+
+            .nav-links li {
+                margin: 15px 0;
+                text-align: center;
+            }
+
+            .hamburger {
+                display: flex;
+                flex-direction: column;
+                cursor: pointer;
+            }
+
+            .hamburger div {
+                width: 25px;
+                height: 3px;
+                background: #00FF00;
+                margin: 4px 0;
+                transition: all 0.3s ease;
+            }
+
+            .hamburger.toggle div:nth-child(1) {
+                transform: rotate(-45deg) translate(-5px, 6px);
+            }
+
+            .hamburger.toggle div:nth-child(2) {
+                opacity: 0;
+            }
+
+            .hamburger.toggle div:nth-child(3) {
+                transform: rotate(45deg) translate(-5px, -6px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Tło Matrix -->
+    <canvas id="matrix"></canvas>
+
+    <!-- Nawigacja -->
+    <nav class="navbar">
+        <div class="container">
+            <a href="#" class="logo">Świr</a>
+            <ul class="nav-links">
+                <li><a href="#home">Strona Główna</a></li>
+                <li><a href="#projects">Projekty</a></li>
+                <li><a href="#contact">Kontakt</a></li>
+            </ul>
+            <div class="hamburger">
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Sekcja Główna -->
+    <section id="home" class="hero">
+        <h1>Witaj na mojej stronie!</h1>
+        <p>Jestem Świr – pasjonat technologii i kreatywnych rozwiązań.</p>
+        <a href="#projects" class="btn">Zobacz moje projekty</a>
+    </section>
+
+    <!-- Projekty -->
+    <section id="projects" class="projects">
+        <div class="container">
+            <h2>Moje Projekty</h2>
+            <div class="project-grid" id="repo-list">
+                <!-- Repozytoria GitHub zostaną tutaj załadowane dynamicznie -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Kontakt -->
+    <section id="contact" class="contact">
+        <div class="container">
+            <h2>Kontakt</h2>
+            <form action="https://formspree.io/f/your-form-id" method="POST">
+                <input type="text" name="name" placeholder="Twoje Imię" required>
+                <input type="email" name="_replyto" placeholder="Twój Email" required>
+                <textarea name="message" rows="5" placeholder="Twoja Wiadomość" required></textarea>
+                <button type="submit" class="btn">Wyślij</button>
+            </form>
+            <div class="social-links">
+                <a href="https://github.com/swir" target="_blank"><i class="fab fa-github"></i></a>
+                <a href="https://linkedin.com/in/swir" target="_blank"><i class="fab fa-linkedin"></i></a>
+                <!-- Dodaj więcej linków społecznościowych według potrzeb -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Stopka -->
+    <footer>
+        <p>&copy; 2025 Świr. Wszelkie prawa zastrzeżone.</p>
+    </footer>
+
+    <!-- Skrypty JS -->
+    <script>
+        // Hamburger Menu Toggle
+        const hamburger = document.querySelector('.hamburger');
+        const navLinks = document.querySelector('.nav-links');
+
+        hamburger.addEventListener('click', () => {
+            navLinks.classList.toggle('active');
+            hamburger.classList.toggle('toggle');
+        });
+
+        // Animacja Matrix
+        const canvas = document.getElementById('matrix');
+        const ctx = canvas.getContext('2d');
+
+        // Ustawienia canvas
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // Znaki Matrix
+        const chars = 'アァカサタナハマヤャラガザダバパイィキシチニヒミリギジヂビピウゥクスツヌフムユュルグズヅブプエェケセテネヘメレゲゼデベペオォコソトノホモヨョロゴゾドボポヴン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        const fontSize = 16;
+        const columns = Math.floor(canvas.width / fontSize);
+        const drops = [];
+
+        // Inicjalizacja kropel
+        for(let x = 0; x < columns; x++) {
+            drops[x] = 1;
+        }
+
+        // Rysowanie
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#00FF00';
+            ctx.font = fontSize + 'px monospace';
+
+            for(let i = 0; i < drops.length; i++) {
+                const text = chars.charAt(Math.floor(Math.random() * chars.length));
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+                if(drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+
+                drops[i]++;
+            }
+        }
+
+        setInterval(drawMatrix, 33);
+
+        // Responsywność
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            // Re-inicjalizacja kropel
+            for(let x = 0; x < columns; x++) {
+                drops[x] = 1;
+            }
+        });
+
+        // Pobieranie i wyświetlanie repozytoriów GitHub
+        const repoList = document.getElementById('repo-list');
+
+        async function fetchRepos() {
+            const username = 'swir'; // Zmień na swój login GitHub
+            let repos = [];
+            let page = 1;
+            const per_page = 100;
+            let hasMore = true;
+
+            while (hasMore) {
+                const response = await fetch(`https://api.github.com/users/${username}/repos?per_page=${per_page}&page=${page}`);
+                if (!response.ok) {
+                    console.error('Błąd podczas pobierania repozytoriów:', response.statusText);
+                    break;
+                }
+                const data = await response.json();
+
+                if (data.length > 0) {
+                    repos = repos.concat(data);
+                    page++;
+                } else {
+                    hasMore = false;
+                }
+            }
+
+            // Filtracja repozytoriów - wykluczenie forków
+            repos = repos.filter(repo => !repo.fork);
+
+            // Sortowanie repozytoriów według daty ostatniej aktualizacji
+            repos.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+
+            // Sprawdzenie, czy są jakieś repozytoria do wyświetlenia
+            if (repos.length === 0) {
+                const noRepoMsg = document.createElement('p');
+                noRepoMsg.textContent = 'Nie znaleziono żadnych repozytoriów.';
+                noRepoMsg.style.color = '#00FF00';
+                repoList.appendChild(noRepoMsg);
+                return;
+            }
+
+            // Tworzenie kart dla każdego repozytorium
+            repos.forEach(repo => {
+                const repoCard = document.createElement('div');
+                repoCard.classList.add('project-card');
+
+                const repoName = document.createElement('h3');
+                repoName.textContent = repo.name;
+
+                const repoDesc = document.createElement('p');
+                repoDesc.textContent = repo.description || 'Brak opisu.';
+
+                const repoLink = document.createElement('a');
+                repoLink.href = repo.html_url;
+                repoLink.target = '_blank';
+                repoLink.textContent = 'Zobacz na GitHubie';
+
+                repoCard.appendChild(repoName);
+                repoCard.appendChild(repoDesc);
+                repoCard.appendChild(repoLink);
+
+                repoList.appendChild(repoCard);
+            });
+        }
+
+        fetchRepos();
+    </script>
+</body>
+</html>
