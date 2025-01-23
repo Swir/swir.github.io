@@ -10,6 +10,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <!-- AOS Library CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css" rel="stylesheet">
     <style>
         /* Definicja CSS Variables dla motywów */
         :root {
@@ -59,6 +61,11 @@
             background-color: var(--bg-color);
             overflow-x: hidden;
             transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* Efekt Glow dla Tekstów */
+        h1, h2, h3, p, a {
+            text-shadow: 0 0 10px var(--primary-color), 0 0 20px var(--primary-color), 0 0 30px var(--primary-color);
         }
 
         /* Tło Matrix - Animacja */
@@ -124,6 +131,24 @@
         section {
             padding: 100px 0;
             min-height: 100vh;
+            position: relative;
+            z-index: 1;
+        }
+
+        #matrix {
+            z-index: -1;
+        }
+
+        .projects::before,
+        .contact::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: -1;
         }
 
         .container {
@@ -185,7 +210,12 @@
         .theme-switcher i {
             color: var(--primary-color);
             font-size: 1.5em;
-            transition: color 0.3s;
+            transition: color 0.3s, text-shadow 0.3s;
+        }
+
+        /* Efekt Glow dla Przyciski Przełącznika Motywu */
+        .theme-switcher i {
+            text-shadow: 0 0 10px var(--primary-color), 0 0 20px var(--primary-color), 0 0 30px var(--primary-color);
         }
 
         /* Projekty */
@@ -208,30 +238,74 @@
             border: 1px solid var(--border-color);
             border-radius: 10px;
             padding: 20px;
-            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s;
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s, background 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .project-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .project-card:hover::before {
+            opacity: 1;
         }
 
         .project-card:hover {
-            transform: scale(1.05);
+            transform: translateY(-10px);
             box-shadow: 0 0 20px var(--shadow-color);
+            border-color: var(--hover-color);
+            background: rgba(0, 0, 0, 0.85);
         }
 
         .project-card h3 {
             margin-bottom: 10px;
         }
 
-        .project-card p {
-            margin-bottom: 15px;
+        .repo-description {
+            position: relative;
+            overflow: hidden;
+            max-height: 60px; /* Początkowa wysokość */
+            transition: max-height 0.3s ease;
         }
 
-        .project-card a {
+        .repo-description .more-text {
+            display: none;
+        }
+
+        .project-card.active .repo-description {
+            max-height: 500px; /* Maksymalna wysokość po rozwinięciu */
+        }
+
+        .project-card.active .repo-description .more-text {
+            display: inline;
+        }
+
+        .read-more-btn {
+            background: none;
+            border: none;
             color: var(--hover-color);
-            text-decoration: none;
-            font-weight: bold;
+            cursor: pointer;
+            padding: 0;
+            font-size: 1em;
+            margin-top: 10px;
+            transition: color 0.3s ease;
         }
 
-        .project-card a:hover {
+        .read-more-btn:hover {
             color: var(--primary-color);
+        }
+
+        .project-card.active .read-more-btn {
+            /* Styl dla przycisku po rozwinięciu */
         }
 
         /* Kontakt */
@@ -292,10 +366,11 @@
             color: var(--primary-color);
             margin: 0 10px;
             font-size: 1.5em;
-            transition: color 0.3s ease;
+            transition: transform 0.3s, color 0.3s;
         }
 
         .social-links a:hover {
+            transform: scale(1.2);
             color: var(--hover-color);
         }
 
@@ -384,14 +459,14 @@
     </div>
 
     <!-- Sekcja Główna -->
-    <section id="home" class="hero">
+    <section id="home" class="hero" data-aos="fade-up">
         <h1>Witaj na mojej stronie!</h1>
         <p>Jestem Świr – pasjonat technologii i kreatywnych rozwiązań.</p>
         <a href="#projects" class="btn">Zobacz moje projekty</a>
     </section>
 
     <!-- Projekty -->
-    <section id="projects" class="projects">
+    <section id="projects" class="projects" data-aos="fade-up">
         <div class="container">
             <h2>Moje Projekty</h2>
             <div class="project-grid" id="repo-list">
@@ -401,7 +476,7 @@
     </section>
 
     <!-- Kontakt -->
-    <section id="contact" class="contact">
+    <section id="contact" class="contact" data-aos="fade-up">
         <div class="container">
             <h2>Kontakt</h2>
             <form action="https://formspree.io/f/xdkaozrb" method="POST">
@@ -424,6 +499,14 @@
     </footer>
 
     <!-- Skrypty JS -->
+    <!-- AOS Library JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
+    <script>
+        AOS.init({
+            duration: 1000,
+            once: true,
+        });
+    </script>
     <script>
         // Hamburger Menu Toggle
         const hamburger = document.querySelector('.hamburger');
@@ -566,18 +649,45 @@
                 repoName.textContent = repo.name;
 
                 const repoDesc = document.createElement('p');
-                repoDesc.textContent = repo.description || 'Brak opisu.';
+                repoDesc.classList.add('repo-description');
+
+                const description = repo.description || 'Brak opisu.';
+                const shortDesc = description.length > 100 ? description.substring(0, 100) + '...' : description;
+                const moreText = description.length > 100 ? description.substring(100) : '';
+
+                repoDesc.innerHTML = `
+                    ${shortDesc}
+                    ${moreText ? `<span class="more-text">${moreText}</span>` : ''}
+                `;
 
                 const repoLink = document.createElement('a');
                 repoLink.href = repo.html_url;
                 repoLink.target = '_blank';
                 repoLink.textContent = 'Zobacz na GitHubie';
 
+                const readMoreBtn = document.createElement('button');
+                readMoreBtn.classList.add('read-more-btn');
+                readMoreBtn.textContent = moreText ? 'Czytaj więcej' : '';
+
                 repoCard.appendChild(repoName);
                 repoCard.appendChild(repoDesc);
                 repoCard.appendChild(repoLink);
+                if (moreText) {
+                    repoCard.appendChild(readMoreBtn);
+                }
 
                 repoList.appendChild(repoCard);
+            });
+
+            // Dodanie funkcji do obsługi "Czytaj więcej"
+            const readMoreButtons = document.querySelectorAll('.read-more-btn');
+
+            readMoreButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const projectCard = button.closest('.project-card');
+                    projectCard.classList.toggle('active');
+                    button.textContent = projectCard.classList.contains('active') ? 'Czytaj mniej' : 'Czytaj więcej';
+                });
             });
         }
 
