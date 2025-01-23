@@ -98,7 +98,6 @@
             width: 90%;
             max-width: 1200px;
             margin: auto;
-            position: relative;
         }
 
         .logo {
@@ -122,26 +121,10 @@
             color: var(--primary-color);
             font-weight: 500;
             transition: color 0.3s ease;
-            position: relative;
         }
 
-        .nav-links a::after {
-            content: '';
-            position: absolute;
-            width: 0%;
-            height: 2px;
-            display: block;
-            margin-top: 5px;
-            right: 0;
-            background: var(--hover-color);
-            transition: width 0.3s ease;
-            -webkit-transition: width 0.3s ease;
-        }
-
-        .nav-links a:hover::after {
-            width: 100%;
-            left: 0;
-            background: var(--hover-color);
+        .nav-links a:hover {
+            color: var(--hover-color);
         }
 
         /* Sekcje */
@@ -150,6 +133,10 @@
             min-height: 100vh;
             position: relative;
             z-index: 1;
+        }
+
+        #matrix {
+            z-index: -1;
         }
 
         .projects::before,
@@ -168,7 +155,6 @@
             width: 90%;
             max-width: 1200px;
             margin: auto;
-            position: relative;
         }
 
         /* Hero Sekcja */
@@ -178,20 +164,16 @@
             align-items: center;
             justify-content: center;
             text-align: center;
-            position: relative;
-            z-index: 1;
         }
 
         .hero h1 {
             font-size: 3em;
             margin-bottom: 20px;
-            animation: neonGlow 2s infinite alternate;
         }
 
         .hero p {
             font-size: 1.2em;
             margin-bottom: 30px;
-            animation: neonGlow 3s infinite alternate;
         }
 
         .btn {
@@ -201,31 +183,11 @@
             color: #000;
             text-decoration: none;
             border-radius: 25px;
-            transition: background 0.3s ease, transform 0.3s ease;
-            position: relative;
-            z-index: 1;
-        }
-
-        .btn::before {
-            content: '';
-            position: absolute;
-            top: -5px;
-            left: -5px;
-            right: -5px;
-            bottom: -5px;
-            background: linear-gradient(45deg, var(--primary-color), var(--hover-color));
-            border-radius: 30px;
-            z-index: -1;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .btn:hover::before {
-            opacity: 1;
+            transition: background 0.3s ease;
         }
 
         .btn:hover {
-            transform: scale(1.05);
+            background: var(--btn-hover-bg);
         }
 
         /* Przełącznik motywu */
@@ -249,6 +211,10 @@
             color: var(--primary-color);
             font-size: 1.5em;
             transition: color 0.3s, text-shadow 0.3s;
+        }
+
+        /* Efekt Glow dla Przyciski Przełącznika Motywu */
+        .theme-switcher i {
             text-shadow: 0 0 10px var(--primary-color), 0 0 20px var(--primary-color), 0 0 30px var(--primary-color);
         }
 
@@ -259,27 +225,12 @@
             font-size: 2.5em;
             color: var(--primary-color);
             transition: color 0.3s;
-            animation: neonGlow 2.5s infinite alternate;
         }
 
         .project-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 20px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .project-grid::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 70%);
-            animation: rotateBackground 20s linear infinite;
-            z-index: -1;
         }
 
         .project-card {
@@ -290,9 +241,6 @@
             transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s, background 0.3s;
             position: relative;
             overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
         }
 
         .project-card::before {
@@ -305,7 +253,6 @@
             background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
             opacity: 0;
             transition: opacity 0.3s ease;
-            z-index: -1;
         }
 
         .project-card:hover::before {
@@ -321,8 +268,6 @@
 
         .project-card h3 {
             margin-bottom: 10px;
-            font-size: 1.5em;
-            animation: neonGlow 2s infinite alternate;
         }
 
         .repo-description {
@@ -330,8 +275,6 @@
             overflow: hidden;
             max-height: 60px; /* Początkowa wysokość */
             transition: max-height 0.3s ease;
-            margin-bottom: 10px;
-            flex-grow: 1;
         }
 
         .repo-description .more-text {
@@ -355,7 +298,6 @@
             font-size: 1em;
             margin-top: 10px;
             transition: color 0.3s ease, transform 0.3s ease;
-            align-self: flex-start;
         }
 
         .read-more-btn:hover {
@@ -370,7 +312,6 @@
             font-size: 2.5em;
             color: var(--primary-color);
             transition: color 0.3s;
-            animation: neonGlow 2.5s infinite alternate;
         }
 
         .contact form {
@@ -378,8 +319,6 @@
             margin: auto;
             display: flex;
             flex-direction: column;
-            position: relative;
-            z-index: 1;
         }
 
         .contact input, 
@@ -392,12 +331,6 @@
             color: var(--primary-color);
             font-size: 1em;
             transition: border-color 0.3s, background 0.3s, color 0.3s;
-        }
-
-        .contact input::placeholder, 
-        .contact textarea::placeholder {
-            color: var(--primary-color);
-            opacity: 0.7;
         }
 
         .contact input:focus, 
@@ -414,38 +347,16 @@
             border: none;
             border-radius: 25px;
             cursor: pointer;
-            transition: background 0.3s ease, transform 0.3s ease;
-            position: relative;
-            z-index: 1;
-        }
-
-        .contact button::before {
-            content: '';
-            position: absolute;
-            top: -5px;
-            left: -5px;
-            right: -5px;
-            bottom: -5px;
-            background: linear-gradient(45deg, var(--primary-color), var(--hover-color));
-            border-radius: 30px;
-            z-index: -1;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .contact button:hover::before {
-            opacity: 1;
+            transition: background 0.3s ease;
         }
 
         .contact button:hover {
-            transform: scale(1.05);
+            background: var(--btn-hover-bg);
         }
 
         .social-links {
             text-align: center;
             margin-top: 30px;
-            position: relative;
-            z-index: 1;
         }
 
         .social-links a {
@@ -453,25 +364,6 @@
             margin: 0 10px;
             font-size: 1.5em;
             transition: transform 0.3s, color 0.3s;
-            position: relative;
-        }
-
-        .social-links a::after {
-            content: '';
-            position: absolute;
-            width: 0%;
-            height: 2px;
-            display: block;
-            margin-top: 5px;
-            right: 0;
-            background: var(--hover-color);
-            transition: width 0.3s ease;
-        }
-
-        .social-links a:hover::after {
-            width: 100%;
-            left: 0;
-            background: var(--hover-color);
         }
 
         .social-links a:hover {
@@ -486,26 +378,6 @@
             text-align: center;
             padding: 20px 0;
             transition: color 0.3s;
-            animation: neonGlow 2s infinite alternate;
-        }
-
-        /* Animacje */
-        @keyframes neonGlow {
-            from {
-                text-shadow: 0 0 5px var(--primary-color), 0 0 10px var(--primary-color);
-            }
-            to {
-                text-shadow: 0 0 20px var(--hover-color), 0 0 30px var(--hover-color);
-            }
-        }
-
-        @keyframes rotateBackground {
-            from {
-                transform: rotate(0deg);
-            }
-            to {
-                transform: rotate(360deg);
-            }
         }
 
         /* Responsywność */
@@ -554,58 +426,6 @@
             .hamburger.toggle div:nth-child(3) {
                 transform: rotate(45deg) translate(-5px, -6px);
             }
-        }
-
-        @media (max-width: 600px) {
-            .project-card {
-                padding: 15px;
-            }
-
-            .project-card h3 {
-                font-size: 1.2em;
-            }
-
-            .project-card p {
-                font-size: 0.9em;
-            }
-
-            .btn {
-                padding: 8px 20px;
-            }
-
-            .theme-switcher {
-                bottom: 15px;
-                right: 15px;
-            }
-        }
-
-        /* Smooth Scrolling */
-        html {
-            scroll-behavior: smooth;
-        }
-
-        /* Dodatkowe Efekty Sci-Fi */
-        /* Pulsujący efekt na przyciskach */
-        .btn, .contact button {
-            box-shadow: 0 0 20px var(--primary-color);
-            animation: pulseButton 2s infinite alternate;
-        }
-
-        @keyframes pulseButton {
-            0% {
-                box-shadow: 0 0 20px var(--primary-color);
-            }
-            50% {
-                box-shadow: 0 0 40px var(--hover-color);
-            }
-            100% {
-                box-shadow: 0 0 20px var(--primary-color);
-            }
-        }
-
-        /* Animacja pulsującego nagłówka */
-        h2, h3 {
-            animation: neonGlow 2.5s infinite alternate;
         }
     </style>
 </head>
@@ -663,8 +483,8 @@
                 <button type="submit" class="btn">Wyślij</button>
             </form>
             <div class="social-links">
-                <a href="https://github.com/swir" target="_blank" rel="noopener noreferrer"><i class="fab fa-github"></i></a>
-                <a href="https://linkedin.com/in/swir" target="_blank" rel="noopener noreferrer"><i class="fab fa-linkedin"></i></a>
+                <a href="https://github.com/swir" target="_blank"><i class="fab fa-github"></i></a>
+                <a href="https://linkedin.com/in/swir" target="_blank"><i class="fab fa-linkedin"></i></a>
                 <!-- Dodaj więcej linków społecznościowych według potrzeb -->
             </div>
         </div>
@@ -709,7 +529,6 @@
                 body.classList.add('theme-green');
                 localStorage.setItem('theme', 'theme-green');
             }
-            updateMatrixColor();
         }
 
         // Dodanie nasłuchiwacza na przycisk przełącznika
@@ -724,7 +543,6 @@
             } else {
                 body.classList.add('theme-green'); // Domyślny motyw zielony
             }
-            updateMatrixColor();
         });
 
         // Animacja Matrix
@@ -747,7 +565,7 @@
             }
         }
 
-        let columns = Math.floor(window.innerWidth / fontSize);
+        let columns = Math.floor(window.innerWidth / 16);
         const fontSize = 16;
         let drops = [];
 
@@ -783,14 +601,6 @@
         // Responsywność
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
-
-        // Funkcja do aktualizacji koloru Matrixa po zmianie motywu
-        function updateMatrixColor() {
-            // Nie jest konieczne dodatkowe działanie, ponieważ drawMatrix pobiera aktualny kolor
-            // Możemy jednak wyczyścić canvas, aby natychmiast zobaczyć zmianę
-            ctx.fillStyle = 'rgba(0, 0, 0, 1)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-        }
 
         // Pobieranie i wyświetlanie repozytoriów GitHub
         const repoList = document.getElementById('repo-list');
@@ -844,7 +654,7 @@
                 const repoDesc = document.createElement('p');
                 repoDesc.classList.add('repo-description');
 
-                const description = repo.description ? repo.description.trim() : 'Brak opisu.';
+                const description = repo.description || 'Brak opisu.';
                 const shortDesc = description.length > 100 ? description.substring(0, 100) + '...' : description;
                 const moreText = description.length > 100 ? description.substring(100) : '';
 
@@ -866,23 +676,11 @@
                 const repoLink = document.createElement('a');
                 repoLink.href = repo.html_url;
                 repoLink.target = '_blank';
-                repoLink.rel = 'noopener noreferrer';
                 repoLink.textContent = 'Zobacz na GitHubie';
-                repoLink.style.display = 'block';
-                repoLink.style.marginBottom = '10px';
-                repoLink.style.color = 'var(--primary-color)';
-                repoLink.style.transition = 'color 0.3s ease';
-                repoLink.addEventListener('mouseover', () => {
-                    repoLink.style.color = 'var(--hover-color)';
-                });
-                repoLink.addEventListener('mouseout', () => {
-                    repoLink.style.color = 'var(--primary-color)';
-                });
 
                 const readMoreBtn = document.createElement('button');
                 readMoreBtn.classList.add('read-more-btn');
                 readMoreBtn.textContent = moreText ? 'Czytaj więcej' : '';
-                readMoreBtn.style.display = moreText ? 'inline-block' : 'none';
 
                 repoCard.appendChild(repoName);
                 repoCard.appendChild(repoDesc);
