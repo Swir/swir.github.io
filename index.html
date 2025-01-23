@@ -609,7 +609,6 @@
             </form>
             <div class="social-links">
                 <a href="https://github.com/Swir" target="_blank" rel="noopener noreferrer"><i class="fab fa-github"></i></a>
-                <a href="https://linkedin.com/in/YOUR_LINKEDIN_PROFILE" target="_blank" rel="noopener noreferrer"><i class="fab fa-linkedin"></i></a>
                 <!-- Dodaj więcej linków społecznościowych według potrzeb -->
             </div>
         </div>
@@ -696,18 +695,14 @@
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
 
-        // Funkcja do aktualizacji koloru Matrixa po zmianie motywu (nie jest potrzebna, ponieważ nie ma przełącznika)
-        // function updateMatrixColor() {
-        //     // Resetowanie canvasu, aby natychmiast zobaczyć zmianę koloru
-        //     ctx.fillStyle = 'rgba(0, 0, 0, 1)';
-        //     ctx.fillRect(0, 0, canvas.width, canvas.height);
-        // }
-
         // Pobieranie i wyświetlanie repozytoriów GitHub
         const repoList = document.getElementById('repo-list');
 
         async function fetchRepos() {
             const username = 'Swir'; // Twój login GitHub
+            // Opcjonalnie: Dodaj token jeśli przekraczasz limit rate limit
+            // const token = 'YOUR_PERSONAL_ACCESS_TOKEN'; // Zmień na swój token
+
             let repos = [];
             let page = 1;
             const per_page = 100;
@@ -715,7 +710,11 @@
 
             try {
                 while (hasMore) {
-                    const response = await fetch(`https://api.github.com/users/${username}/repos?per_page=${per_page}&page=${page}`);
+                    const response = await fetch(`https://api.github.com/users/${username}/repos?per_page=${per_page}&page=${page}`/*, {
+                        headers: {
+                            'Authorization': `token ${token}`
+                        }
+                    }*/);
                     if (!response.ok) {
                         throw new Error(`Błąd podczas pobierania repozytoriów: ${response.status} ${response.statusText}`);
                     }
@@ -755,7 +754,13 @@
                     const repoDesc = document.createElement('p');
                     repoDesc.classList.add('repo-description');
 
-                    const description = repo.description ? repo.description.trim() : 'Brak opisu.';
+                    // Dodanie logów do konsoli dla diagnozy
+                    console.log(`Repozytorium: ${repo.name}`);
+                    console.log(`Opis przed trim: "${repo.description}"`);
+                    
+                    const description = (repo.description && repo.description.trim().length > 0) ? repo.description.trim() : 'Brak opisu.';
+                    console.log(`Opis po trim: "${description}"`);
+
                     const shortDesc = description.length > 100 ? description.substring(0, 100) + '...' : description;
                     const moreText = description.length > 100 ? description.substring(100) : '';
 
