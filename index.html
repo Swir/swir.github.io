@@ -11,6 +11,40 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
     <style>
+        /* Definicja CSS Variables dla motywów */
+        :root {
+            --primary-color: #00BFFF; /* Niebieski */
+            --hover-color: #1E90FF;
+            --bg-color: #000;
+            --text-color: #00BFFF;
+            --btn-bg: #1E90FF;
+            --btn-hover-bg: #00BFFF;
+            --border-color: #00BFFF;
+            --shadow-color: #00BFFF;
+        }
+
+        /* Motyw Zielony */
+        .theme-green {
+            --primary-color: #00FF00;
+            --hover-color: #32CD32;
+            --text-color: #00FF00;
+            --btn-bg: #32CD32;
+            --btn-hover-bg: #00FF00;
+            --border-color: #00FF00;
+            --shadow-color: #00FF00;
+        }
+
+        /* Motyw Niebieski */
+        .theme-blue {
+            --primary-color: #00BFFF;
+            --hover-color: #1E90FF;
+            --text-color: #00BFFF;
+            --btn-bg: #1E90FF;
+            --btn-hover-bg: #00BFFF;
+            --border-color: #00BFFF;
+            --shadow-color: #00BFFF;
+        }
+
         /* Podstawowe ustawienia */
         * {
             box-sizing: border-box;
@@ -21,12 +55,13 @@
         body {
             font-family: 'Roboto', sans-serif;
             line-height: 1.6;
-            color: #00BFFF; /* Niebieski kolor tekstu */
-            background-color: #000; /* Czarny tło */
+            color: var(--text-color);
+            background-color: var(--bg-color);
             overflow-x: hidden;
+            transition: background-color 0.3s, color 0.3s;
         }
 
-        /* Tło Blue Matrix - Animacja */
+        /* Tło Matrix - Animacja */
         #matrix {
             position: fixed;
             top: 0;
@@ -34,18 +69,19 @@
             width: 100%;
             height: 100%;
             z-index: -1;
-            background: #000;
+            background: var(--bg-color);
         }
 
         /* Nawigacja */
         .navbar {
             background: rgba(0, 0, 0, 0.8);
-            color: #00BFFF;
+            color: var(--primary-color);
             padding: 15px 0;
             position: fixed;
             width: 100%;
             top: 0;
             z-index: 1000;
+            transition: background 0.3s, color 0.3s;
         }
 
         .navbar .container {
@@ -60,7 +96,8 @@
         .logo {
             font-size: 1.5em;
             text-decoration: none;
-            color: #00BFFF;
+            color: var(--primary-color);
+            transition: color 0.3s;
         }
 
         .nav-links {
@@ -74,13 +111,13 @@
 
         .nav-links a {
             text-decoration: none;
-            color: #00BFFF;
+            color: var(--primary-color);
             font-weight: 500;
             transition: color 0.3s ease;
         }
 
         .nav-links a:hover {
-            color: #1E90FF;
+            color: var(--hover-color);
         }
 
         /* Sekcje */
@@ -117,7 +154,7 @@
         .btn {
             display: inline-block;
             padding: 10px 25px;
-            background: #1E90FF;
+            background: var(--btn-bg);
             color: #000;
             text-decoration: none;
             border-radius: 25px;
@@ -125,7 +162,30 @@
         }
 
         .btn:hover {
-            background: #00BFFF;
+            background: var(--btn-hover-bg);
+        }
+
+        /* Przełącznik motywu */
+        .theme-switcher {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 1001;
+            transition: background 0.3s;
+        }
+
+        .theme-switcher:hover {
+            background: rgba(0, 0, 0, 0.9);
+        }
+
+        .theme-switcher i {
+            color: var(--primary-color);
+            font-size: 1.5em;
+            transition: color 0.3s;
         }
 
         /* Projekty */
@@ -133,7 +193,8 @@
             text-align: center;
             margin-bottom: 40px;
             font-size: 2.5em;
-            color: #00BFFF;
+            color: var(--primary-color);
+            transition: color 0.3s;
         }
 
         .project-grid {
@@ -144,15 +205,15 @@
 
         .project-card {
             background: rgba(0, 0, 0, 0.8);
-            border: 1px solid #00BFFF;
+            border: 1px solid var(--border-color);
             border-radius: 10px;
             padding: 20px;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s;
         }
 
         .project-card:hover {
             transform: scale(1.05);
-            box-shadow: 0 0 20px #00BFFF;
+            box-shadow: 0 0 20px var(--shadow-color);
         }
 
         .project-card h3 {
@@ -164,13 +225,13 @@
         }
 
         .project-card a {
-            color: #1E90FF;
+            color: var(--hover-color);
             text-decoration: none;
             font-weight: bold;
         }
 
         .project-card a:hover {
-            color: #00BFFF;
+            color: var(--primary-color);
         }
 
         /* Kontakt */
@@ -178,7 +239,8 @@
             text-align: center;
             margin-bottom: 40px;
             font-size: 2.5em;
-            color: #00BFFF;
+            color: var(--primary-color);
+            transition: color 0.3s;
         }
 
         .contact form {
@@ -192,17 +254,24 @@
         .contact textarea {
             padding: 15px;
             margin-bottom: 20px;
-            border: 1px solid #00BFFF;
+            border: 1px solid var(--primary-color);
             border-radius: 5px;
             background: rgba(0, 0, 0, 0.5);
-            color: #00BFFF;
+            color: var(--primary-color);
             font-size: 1em;
+            transition: border-color 0.3s, background 0.3s, color 0.3s;
+        }
+
+        .contact input:focus, 
+        .contact textarea:focus {
+            border-color: var(--hover-color);
+            background: rgba(0, 0, 0, 0.7);
         }
 
         .contact button {
             align-self: center;
             padding: 10px 30px;
-            background: #1E90FF;
+            background: var(--btn-bg);
             color: #000;
             border: none;
             border-radius: 25px;
@@ -211,7 +280,7 @@
         }
 
         .contact button:hover {
-            background: #00BFFF;
+            background: var(--btn-hover-bg);
         }
 
         .social-links {
@@ -220,22 +289,23 @@
         }
 
         .social-links a {
-            color: #00BFFF;
+            color: var(--primary-color);
             margin: 0 10px;
             font-size: 1.5em;
             transition: color 0.3s ease;
         }
 
         .social-links a:hover {
-            color: #1E90FF;
+            color: var(--hover-color);
         }
 
         /* Stopka */
         footer {
             background: rgba(0, 0, 0, 0.8);
-            color: #00BFFF;
+            color: var(--primary-color);
             text-align: center;
             padding: 20px 0;
+            transition: color 0.3s;
         }
 
         /* Responsywność */
@@ -268,7 +338,7 @@
             .hamburger div {
                 width: 25px;
                 height: 3px;
-                background: #00BFFF;
+                background: var(--primary-color);
                 margin: 4px 0;
                 transition: all 0.3s ease;
             }
@@ -287,8 +357,8 @@
         }
     </style>
 </head>
-<body>
-    <!-- Tło Blue Matrix -->
+<body class="theme-green"> <!-- Domyślny motyw zielony -->
+    <!-- Tło Matrix -->
     <canvas id="matrix"></canvas>
 
     <!-- Nawigacja -->
@@ -307,6 +377,11 @@
             </div>
         </div>
     </nav>
+
+    <!-- Przełącznik Motywu -->
+    <div class="theme-switcher" id="theme-switcher" title="Zmień motyw">
+        <i class="fas fa-adjust"></i>
+    </div>
 
     <!-- Sekcja Główna -->
     <section id="home" class="hero">
@@ -359,7 +434,38 @@
             hamburger.classList.toggle('toggle');
         });
 
-        // Animacja Blue Matrix
+        // Przełącznik Motywu
+        const themeSwitcher = document.getElementById('theme-switcher');
+        const body = document.body;
+
+        // Funkcja do przełączania motywów
+        function toggleTheme() {
+            if (body.classList.contains('theme-green')) {
+                body.classList.remove('theme-green');
+                body.classList.add('theme-blue');
+                localStorage.setItem('theme', 'theme-blue');
+            } else {
+                body.classList.remove('theme-blue');
+                body.classList.add('theme-green');
+                localStorage.setItem('theme', 'theme-green');
+            }
+        }
+
+        // Dodanie nasłuchiwacza na przycisk przełącznika
+        themeSwitcher.addEventListener('click', toggleTheme);
+
+        // Sprawdzenie preferencji użytkownika przy załadowaniu strony
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                body.classList.remove('theme-green', 'theme-blue');
+                body.classList.add(savedTheme);
+            } else {
+                body.classList.add('theme-green'); // Domyślny motyw zielony
+            }
+        });
+
+        // Animacja Matrix
         const canvas = document.getElementById('matrix');
         const ctx = canvas.getContext('2d');
 
@@ -370,19 +476,19 @@
         // Znaki Matrix
         const chars = 'アァカサタナハマヤャラガザダバパイィキシチニヒミリギジヂビピウゥクスツヌフムユュルグズヅブプエェケセテネヘメレゲゼデベペオォコソトノホモヨョロゴゾドボポヴン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
         const fontSize = 16;
-        const columns = Math.floor(canvas.width / fontSize);
-        const drops = [];
+        let columns = Math.floor(canvas.width / fontSize);
+        let drops = [];
 
         // Inicjalizacja kropel
         for(let x = 0; x < columns; x++) {
             drops[x] = 1;
         }
 
-        // Rysowanie
+        // Funkcja rysująca Matrixa
         function drawMatrix() {
             ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = '#00BFFF'; // Niebieski kolor znaków
+            ctx.fillStyle = 'var(--text-color)'; // Użycie zmiennej CSS
             ctx.font = fontSize + 'px monospace';
 
             for(let i = 0; i < drops.length; i++) {
@@ -403,7 +509,8 @@
         window.addEventListener('resize', () => {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
-            // Re-inicjalizacja kropel
+            columns = Math.floor(canvas.width / fontSize);
+            drops = [];
             for(let x = 0; x < columns; x++) {
                 drops[x] = 1;
             }
@@ -445,7 +552,7 @@
             if (repos.length === 0) {
                 const noRepoMsg = document.createElement('p');
                 noRepoMsg.textContent = 'Nie znaleziono żadnych repozytoriów.';
-                noRepoMsg.style.color = '#00BFFF';
+                noRepoMsg.style.color = 'var(--primary-color)';
                 repoList.appendChild(noRepoMsg);
                 return;
             }
