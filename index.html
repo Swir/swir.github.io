@@ -260,7 +260,7 @@
         }
 
         .project-card:hover {
-            transform: translateY(-10px);
+            transform: translateY(-10px) rotateY(5deg);
             box-shadow: 0 0 20px var(--shadow-color);
             border-color: var(--hover-color);
             background: rgba(0, 0, 0, 0.85);
@@ -297,15 +297,12 @@
             padding: 0;
             font-size: 1em;
             margin-top: 10px;
-            transition: color 0.3s ease;
+            transition: color 0.3s ease, transform 0.3s ease;
         }
 
         .read-more-btn:hover {
             color: var(--primary-color);
-        }
-
-        .project-card.active .read-more-btn {
-            /* Styl dla przycisku po rozwinięciu */
+            transform: scale(1.1);
         }
 
         /* Kontakt */
@@ -552,14 +549,24 @@
         const canvas = document.getElementById('matrix');
         const ctx = canvas.getContext('2d');
 
-        // Ustawienia canvas
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+        // Funkcja do pobierania wartości zmiennych CSS
+        function getCSSVariable(variable) {
+            return getComputedStyle(document.documentElement).getPropertyValue(variable).trim();
+        }
 
-        // Znaki Matrix
-        const chars = 'アァカサタナハマヤャラガザダバパイィキシチニヒミリギジヂビピウゥクスツヌフムユュルグズヅブプエェケセテネヘメレゲゼデベペオォコソトノホモヨョロゴゾドボポヴン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        // Ustawienia canvas
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            columns = Math.floor(canvas.width / fontSize);
+            drops = [];
+            for(let x = 0; x < columns; x++) {
+                drops[x] = 1;
+            }
+        }
+
+        let columns = Math.floor(window.innerWidth / 16);
         const fontSize = 16;
-        let columns = Math.floor(canvas.width / fontSize);
         let drops = [];
 
         // Inicjalizacja kropel
@@ -571,7 +578,8 @@
         function drawMatrix() {
             ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = 'var(--text-color)'; // Użycie zmiennej CSS
+            const textColor = getCSSVariable('--text-color');
+            ctx.fillStyle = textColor;
             ctx.font = fontSize + 'px monospace';
 
             for(let i = 0; i < drops.length; i++) {
@@ -586,18 +594,13 @@
             }
         }
 
+        const chars = 'アァカサタナハマヤャラガザダバパイィキシチニヒミリギジヂビピウゥクスツヌフムユュルグズヅブプエェケセテネヘメレゲゼデベペオォコソトノホモヨョロゴゾドボポヴン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
         setInterval(drawMatrix, 33);
 
         // Responsywność
-        window.addEventListener('resize', () => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            columns = Math.floor(canvas.width / fontSize);
-            drops = [];
-            for(let x = 0; x < columns; x++) {
-                drops[x] = 1;
-            }
-        });
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
 
         // Pobieranie i wyświetlanie repozytoriów GitHub
         const repoList = document.getElementById('repo-list');
@@ -660,6 +663,16 @@
                     ${moreText ? `<span class="more-text">${moreText}</span>` : ''}
                 `;
 
+                const repoLanguage = document.createElement('p');
+                repoLanguage.textContent = `🛠️ Język: ${repo.language || 'N/A'}`;
+                repoLanguage.style.color = 'var(--primary-color)';
+                repoLanguage.style.marginBottom = '10px';
+
+                const repoStars = document.createElement('p');
+                repoStars.textContent = `⭐ ${repo.stargazers_count}`;
+                repoStars.style.color = 'var(--primary-color)';
+                repoStars.style.marginBottom = '10px';
+
                 const repoLink = document.createElement('a');
                 repoLink.href = repo.html_url;
                 repoLink.target = '_blank';
@@ -671,6 +684,8 @@
 
                 repoCard.appendChild(repoName);
                 repoCard.appendChild(repoDesc);
+                repoCard.appendChild(repoLanguage);
+                repoCard.appendChild(repoStars);
                 repoCard.appendChild(repoLink);
                 if (moreText) {
                     repoCard.appendChild(readMoreBtn);
