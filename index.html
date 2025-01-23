@@ -211,10 +211,6 @@
             color: var(--primary-color);
             font-size: 1.5em;
             transition: color 0.3s, text-shadow 0.3s;
-        }
-
-        /* Efekt Glow dla Przyciski Przełącznika Motywu */
-        .theme-switcher i {
             text-shadow: 0 0 10px var(--primary-color), 0 0 20px var(--primary-color), 0 0 30px var(--primary-color);
         }
 
@@ -380,6 +376,44 @@
             transition: color 0.3s;
         }
 
+        /* Sekcja O Mnie */
+        .about h2 {
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 2.5em;
+            color: var(--primary-color);
+            transition: color 0.3s;
+        }
+
+        .about-content {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .about-photo {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            object-fit: cover;
+            box-shadow: 0 0 15px var(--primary-color);
+            transition: box-shadow 0.3s ease;
+        }
+
+        .about-photo:hover {
+            box-shadow: 0 0 25px var(--hover-color);
+        }
+
+        .about p {
+            max-width: 600px;
+            font-size: 1.1em;
+            line-height: 1.8;
+            color: var(--text-color);
+        }
+
         /* Responsywność */
         @media (max-width: 768px) {
             .nav-links {
@@ -427,6 +461,34 @@
                 transform: rotate(45deg) translate(-5px, -6px);
             }
         }
+
+        @media (max-width: 600px) {
+            .project-card {
+                padding: 15px;
+            }
+
+            .project-card h3 {
+                font-size: 1.2em;
+            }
+
+            .project-card p {
+                font-size: 0.9em;
+            }
+
+            .btn {
+                padding: 8px 20px;
+            }
+
+            .theme-switcher {
+                bottom: 15px;
+                right: 15px;
+            }
+        }
+
+        /* Smooth Scrolling */
+        html {
+            scroll-behavior: smooth;
+        }
     </style>
 </head>
 <body class="theme-green"> <!-- Domyślny motyw zielony -->
@@ -439,6 +501,7 @@
             <a href="#" class="logo">Świr</a>
             <ul class="nav-links">
                 <li><a href="#home">Strona Główna</a></li>
+                <li><a href="#about">O Mnie</a></li>
                 <li><a href="#projects">Projekty</a></li>
                 <li><a href="#contact">Kontakt</a></li>
             </ul>
@@ -460,6 +523,19 @@
         <h1>Witaj na mojej stronie!</h1>
         <p>Jestem Świr – pasjonat technologii i kreatywnych rozwiązań.</p>
         <a href="#projects" class="btn">Zobacz moje projekty</a>
+    </section>
+
+    <!-- Sekcja O Mnie -->
+    <section id="about" class="about" data-aos="fade-up">
+        <div class="container">
+            <h2>O Mnie</h2>
+            <div class="about-content">
+                <img src="URL_DO_TWOJEGO_ZDJĘCIA" alt="Moje Zdjęcie" class="about-photo" loading="lazy">
+                <p>
+                    Cześć! Jestem Świr – pasjonat technologii, programista i miłośnik rozwiązań Sci-Fi. Specjalizuję się w tworzeniu innowacyjnych aplikacji webowych oraz eksploracji nowych technologii. W wolnym czasie lubię czytać książki science fiction, grać w gry komputerowe i eksperymentować z nowymi projektami.
+                </p>
+            </div>
+        </div>
     </section>
 
     <!-- Projekty -->
@@ -529,6 +605,7 @@
                 body.classList.add('theme-green');
                 localStorage.setItem('theme', 'theme-green');
             }
+            updateMatrixColor();
         }
 
         // Dodanie nasłuchiwacza na przycisk przełącznika
@@ -543,6 +620,7 @@
             } else {
                 body.classList.add('theme-green'); // Domyślny motyw zielony
             }
+            updateMatrixColor();
         });
 
         // Animacja Matrix
@@ -595,12 +673,20 @@
         }
 
         const chars = 'アァカサタナハマヤャラガザダバパイィキシチニヒミリギジヂビピウゥクスツヌフムユュルグズヅブプエェケセテネヘメレゲゼデベペオォコソトノホモヨョロゴゾドボポヴン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-
+        
         setInterval(drawMatrix, 33);
 
         // Responsywność
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
+
+        // Funkcja do aktualizacji koloru Matrixa po zmianie motywu
+        function updateMatrixColor() {
+            // Nie jest konieczne dodatkowe działanie, ponieważ drawMatrix pobiera aktualny kolor
+            // Możemy jednak wyczyścić canvas, aby natychmiast zobaczyć zmianę
+            ctx.fillStyle = 'rgba(0, 0, 0, 1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
 
         // Pobieranie i wyświetlanie repozytoriów GitHub
         const repoList = document.getElementById('repo-list');
