@@ -13,33 +13,11 @@
     <!-- AOS Library CSS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css" rel="stylesheet">
     <style>
-        /* Definicja CSS Variables dla motywów */
+        /* Definicja CSS Variables dla niebieskiego motywu */
         :root {
             --primary-color: #00BFFF; /* Niebieski */
             --hover-color: #1E90FF;
             --bg-color: #000;
-            --text-color: #00BFFF;
-            --btn-bg: #1E90FF;
-            --btn-hover-bg: #00BFFF;
-            --border-color: #00BFFF;
-            --shadow-color: #00BFFF;
-        }
-
-        /* Motyw Zielony */
-        .theme-green {
-            --primary-color: #00FF00;
-            --hover-color: #32CD32;
-            --text-color: #00FF00;
-            --btn-bg: #32CD32;
-            --btn-hover-bg: #00FF00;
-            --border-color: #00FF00;
-            --shadow-color: #00FF00;
-        }
-
-        /* Motyw Niebieski */
-        .theme-blue {
-            --primary-color: #00BFFF;
-            --hover-color: #1E90FF;
             --text-color: #00BFFF;
             --btn-bg: #1E90FF;
             --btn-hover-bg: #00BFFF;
@@ -226,30 +204,6 @@
 
         .btn:hover {
             transform: scale(1.05);
-        }
-
-        /* Przełącznik motywu */
-        .theme-switcher {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 10px;
-            border-radius: 50%;
-            cursor: pointer;
-            z-index: 1001;
-            transition: background 0.3s;
-        }
-
-        .theme-switcher:hover {
-            background: rgba(0, 0, 0, 0.9);
-        }
-
-        .theme-switcher i {
-            color: var(--primary-color);
-            font-size: 1.5em;
-            transition: color 0.3s, text-shadow 0.3s;
-            text-shadow: 0 0 10px var(--primary-color), 0 0 20px var(--primary-color), 0 0 30px var(--primary-color);
         }
 
         /* Projekty */
@@ -572,11 +526,6 @@
             .btn {
                 padding: 8px 20px;
             }
-
-            .theme-switcher {
-                bottom: 15px;
-                right: 15px;
-            }
         }
 
         /* Smooth Scrolling */
@@ -609,7 +558,8 @@
         }
     </style>
 </head>
-<body class="theme-green"> <!-- Domyślny motyw zielony -->
+<body> <!-- Usunięto klasę 'theme-green' -->
+
     <!-- Tło Matrix -->
     <canvas id="matrix"></canvas>
 
@@ -629,11 +579,6 @@
             </div>
         </div>
     </nav>
-
-    <!-- Przełącznik Motywu -->
-    <div class="theme-switcher" id="theme-switcher" title="Zmień motyw">
-        <i class="fas fa-adjust"></i>
-    </div>
 
     <!-- Sekcja Główna -->
     <section id="home" class="hero" data-aos="fade-up">
@@ -694,39 +639,6 @@
             hamburger.classList.toggle('toggle');
         });
 
-        // Przełącznik Motywu
-        const themeSwitcher = document.getElementById('theme-switcher');
-        const body = document.body;
-
-        // Funkcja do przełączania motywów
-        function toggleTheme() {
-            if (body.classList.contains('theme-green')) {
-                body.classList.remove('theme-green');
-                body.classList.add('theme-blue');
-                localStorage.setItem('theme', 'theme-blue');
-            } else {
-                body.classList.remove('theme-blue');
-                body.classList.add('theme-green');
-                localStorage.setItem('theme', 'theme-green');
-            }
-            updateMatrixColor();
-        }
-
-        // Dodanie nasłuchiwacza na przycisk przełącznika
-        themeSwitcher.addEventListener('click', toggleTheme);
-
-        // Sprawdzenie preferencji użytkownika przy załadowaniu strony
-        window.addEventListener('DOMContentLoaded', () => {
-            const savedTheme = localStorage.getItem('theme');
-            if (savedTheme) {
-                body.classList.remove('theme-green', 'theme-blue');
-                body.classList.add(savedTheme);
-            } else {
-                body.classList.add('theme-green'); // Domyślny motyw zielony
-            }
-            updateMatrixColor();
-        });
-
         // Animacja Matrix
         const canvas = document.getElementById('matrix');
         const ctx = canvas.getContext('2d');
@@ -784,12 +696,12 @@
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
 
-        // Funkcja do aktualizacji koloru Matrixa po zmianie motywu
-        function updateMatrixColor() {
-            // Resetowanie canvasu, aby natychmiast zobaczyć zmianę koloru
-            ctx.fillStyle = 'rgba(0, 0, 0, 1)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-        }
+        // Funkcja do aktualizacji koloru Matrixa po zmianie motywu (nie jest potrzebna, ponieważ nie ma przełącznika)
+        // function updateMatrixColor() {
+        //     // Resetowanie canvasu, aby natychmiast zobaczyć zmianę koloru
+        //     ctx.fillStyle = 'rgba(0, 0, 0, 1)';
+        //     ctx.fillRect(0, 0, canvas.width, canvas.height);
+        // }
 
         // Pobieranie i wyświetlanie repozytoriów GitHub
         const repoList = document.getElementById('repo-list');
