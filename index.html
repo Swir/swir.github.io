@@ -21,12 +21,12 @@
         body {
             font-family: 'Roboto', sans-serif;
             line-height: 1.6;
-            color: #00FF00; /* Zielony kolor tekstu */
+            color: #00BFFF; /* Niebieski kolor tekstu */
             background-color: #000; /* Czarny tło */
             overflow-x: hidden;
         }
 
-        /* Tło Matrix - Animacja */
+        /* Tło Blue Matrix - Animacja */
         #matrix {
             position: fixed;
             top: 0;
@@ -40,7 +40,7 @@
         /* Nawigacja */
         .navbar {
             background: rgba(0, 0, 0, 0.8);
-            color: #00FF00;
+            color: #00BFFF;
             padding: 15px 0;
             position: fixed;
             width: 100%;
@@ -60,7 +60,7 @@
         .logo {
             font-size: 1.5em;
             text-decoration: none;
-            color: #00FF00;
+            color: #00BFFF;
         }
 
         .nav-links {
@@ -74,13 +74,13 @@
 
         .nav-links a {
             text-decoration: none;
-            color: #00FF00;
+            color: #00BFFF;
             font-weight: 500;
             transition: color 0.3s ease;
         }
 
         .nav-links a:hover {
-            color: #00FF7F;
+            color: #1E90FF;
         }
 
         /* Sekcje */
@@ -117,7 +117,7 @@
         .btn {
             display: inline-block;
             padding: 10px 25px;
-            background: #00FF7F;
+            background: #1E90FF;
             color: #000;
             text-decoration: none;
             border-radius: 25px;
@@ -125,7 +125,7 @@
         }
 
         .btn:hover {
-            background: #32CD32;
+            background: #00BFFF;
         }
 
         /* Projekty */
@@ -133,7 +133,7 @@
             text-align: center;
             margin-bottom: 40px;
             font-size: 2.5em;
-            color: #00FF00;
+            color: #00BFFF;
         }
 
         .project-grid {
@@ -144,7 +144,7 @@
 
         .project-card {
             background: rgba(0, 0, 0, 0.8);
-            border: 1px solid #00FF00;
+            border: 1px solid #00BFFF;
             border-radius: 10px;
             padding: 20px;
             transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -152,7 +152,7 @@
 
         .project-card:hover {
             transform: scale(1.05);
-            box-shadow: 0 0 20px #00FF00;
+            box-shadow: 0 0 20px #00BFFF;
         }
 
         .project-card h3 {
@@ -164,13 +164,13 @@
         }
 
         .project-card a {
-            color: #00FF7F;
+            color: #1E90FF;
             text-decoration: none;
             font-weight: bold;
         }
 
         .project-card a:hover {
-            color: #32CD32;
+            color: #00BFFF;
         }
 
         /* Kontakt */
@@ -178,7 +178,7 @@
             text-align: center;
             margin-bottom: 40px;
             font-size: 2.5em;
-            color: #00FF00;
+            color: #00BFFF;
         }
 
         .contact form {
@@ -192,17 +192,17 @@
         .contact textarea {
             padding: 15px;
             margin-bottom: 20px;
-            border: 1px solid #00FF00;
+            border: 1px solid #00BFFF;
             border-radius: 5px;
             background: rgba(0, 0, 0, 0.5);
-            color: #00FF00;
+            color: #00BFFF;
             font-size: 1em;
         }
 
         .contact button {
             align-self: center;
             padding: 10px 30px;
-            background: #00FF7F;
+            background: #1E90FF;
             color: #000;
             border: none;
             border-radius: 25px;
@@ -211,7 +211,7 @@
         }
 
         .contact button:hover {
-            background: #32CD32;
+            background: #00BFFF;
         }
 
         .social-links {
@@ -220,20 +220,20 @@
         }
 
         .social-links a {
-            color: #00FF00;
+            color: #00BFFF;
             margin: 0 10px;
             font-size: 1.5em;
             transition: color 0.3s ease;
         }
 
         .social-links a:hover {
-            color: #00FF7F;
+            color: #1E90FF;
         }
 
         /* Stopka */
         footer {
             background: rgba(0, 0, 0, 0.8);
-            color: #00FF00;
+            color: #00BFFF;
             text-align: center;
             padding: 20px 0;
         }
@@ -268,7 +268,7 @@
             .hamburger div {
                 width: 25px;
                 height: 3px;
-                background: #00FF00;
+                background: #00BFFF;
                 margin: 4px 0;
                 transition: all 0.3s ease;
             }
@@ -288,7 +288,7 @@
     </style>
 </head>
 <body>
-    <!-- Tło Matrix -->
+    <!-- Tło Blue Matrix -->
     <canvas id="matrix"></canvas>
 
     <!-- Nawigacja -->
@@ -329,7 +329,7 @@
     <section id="contact" class="contact">
         <div class="container">
             <h2>Kontakt</h2>
-            <form action="https://formspree.io/f/your-form-id" method="POST">
+            <form action="https://formspree.io/f/xdkaozrb" method="POST">
                 <input type="text" name="name" placeholder="Twoje Imię" required>
                 <input type="email" name="_replyto" placeholder="Twój Email" required>
                 <textarea name="message" rows="5" placeholder="Twoja Wiadomość" required></textarea>
@@ -359,7 +359,7 @@
             hamburger.classList.toggle('toggle');
         });
 
-        // Animacja Matrix
+        // Animacja Blue Matrix
         const canvas = document.getElementById('matrix');
         const ctx = canvas.getContext('2d');
 
@@ -382,7 +382,7 @@
         function drawMatrix() {
             ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = '#00FF00';
+            ctx.fillStyle = '#00BFFF'; // Niebieski kolor znaków
             ctx.font = fontSize + 'px monospace';
 
             for(let i = 0; i < drops.length; i++) {
@@ -445,7 +445,7 @@
             if (repos.length === 0) {
                 const noRepoMsg = document.createElement('p');
                 noRepoMsg.textContent = 'Nie znaleziono żadnych repozytoriów.';
-                noRepoMsg.style.color = '#00FF00';
+                noRepoMsg.style.color = '#00BFFF';
                 repoList.appendChild(noRepoMsg);
                 return;
             }
