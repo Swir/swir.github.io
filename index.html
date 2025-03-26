@@ -3,594 +3,272 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Swir GitHub - Classic Macintosh</title>
+    <title>Swir GitHub - Windows 3.11 Dark</title>
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* --- Zmienne CSS --- */
         :root {
-            /* Ściśle czarno-biała paleta Classic Macintosh */
-            --mac-white: #FFFFFF;
-            --mac-black: #000000;
-            --mac-bg: #FFFFFF;
-            --mac-text: #000000;
-            --mac-highlight-bg: #000000;
-            --mac-highlight-text: #FFFFFF;
-            --mac-shadow: rgba(0, 0, 0, 0.5);
-            
-            /* Pixelizacja */
-            --mac-pixel-size: 1px;
-            
-            /* Rozmiary */
-            --menu-height: 20px;
-            --title-bar-height: 19px;
-            --window-border-width: 1px;
-            --scrollbar-width: 16px;
+            /* Paleta Windows 3.11 w wersji ciemnej */
+            --win-bg: #000000;
+            --win-dark-gray: #222222;
+            --win-gray: #444444;
+            --win-light-gray: #666666;
+            --win-blue: #000080;
+            --win-dark-blue: #000050;
+            --win-text: #cccccc;
+            --win-title-text: #ffffff;
+            --win-highlight: #0000ff;
+            --win-border-shadow: #111111;
+            --win-border-light: #777777;
+            --win-inactive: #444444;
+            --win-inactive-text: #888888;
+            --win-button: #444444;
+            --win-button-text: #cccccc;
+            --win-button-shadow: #111111;
+            --win-button-highlight: #777777;
+            --win-light-bg: #bbbbbb;
+            --win-light-window: #dddddd;
+            --win-light-text: #000000;
+            --win-desktop: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAEklEQVQImWNgYGD4z0AswK4SAFXuAf8EPy+xAAAAAElFTkSuQmCC');
         }
         
         /* --- Reset i podstawowe style --- */
-        *, *::before, *::after {
+        * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            -webkit-font-smoothing: none;
-            font-smooth: never;
-        }
-        
-        @font-face {
-            font-family: 'Chicago';
-            src: url('https://cdn.jsdelivr.net/gh/codepo8/chicanery/fonts/ChicagoFLF.ttf') format('truetype');
-            font-display: swap;
-            font-weight: normal;
-            font-style: normal;
-        }
-        
-        @font-face {
-            font-family: 'Monaco';
-            src: url('https://www.cdnfonts.com/download/monaco.woff') format('woff');
-            font-display: swap;
-            font-weight: normal;
-            font-style: normal;
+            font-family: 'MS Sans Serif', 'Segoe UI', Tahoma, sans-serif;
         }
         
         html, body {
-            background-color: var(--mac-bg);
-            color: var(--mac-text);
-            font-family: 'Chicago', monospace;
+            background-color: var(--win-bg);
+            background-image: var(--win-desktop);
+            color: var(--win-text);
             font-size: 12px;
             line-height: 1.4;
             overflow-x: hidden;
             height: 100%;
             margin: 0;
             padding: 0;
-            position: relative;
-            image-rendering: pixelated;
         }
         
         body {
-            padding: 0;
+            padding: 20px;
             min-height: 100vh;
-            display: flex;
-            flex-direction: column;
+            transition: background-color 0.3s;
         }
 
-        /* --- Utilites --- */
-        .pixel-perfect {
-            image-rendering: pixelated;
-        }
-        
-        /* ---------- Menu Bar ---------- */
-        .mac-menu-bar {
-            background-color: var(--mac-white);
-            border-bottom: 1px solid var(--mac-black);
-            display: flex;
-            align-items: center;
-            height: var(--menu-height);
-            padding: 0;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            z-index: 9999;
-            image-rendering: pixelated;
-        }
-        
-        .mac-menu-logo {
-            width: 16px;
-            height: 16px;
-            margin-left: 5px;
-            margin-right: 5px;
-            image-rendering: pixelated;
-        }
-        
-        .mac-apple-logo {
-            width: 100%;
-            height: 100%;
-            background-color: var(--mac-black);
-            mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 170 170"><path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.2-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.71 3.35-4.92.21-9.82-1.96-14.7-6.5-3.18-2.82-7.15-7.64-11.9-14.47-5.11-7.31-9.28-15.76-12.51-25.43-3.44-10.44-5.16-20.55-5.16-30.32 0-11.24 2.43-20.87 7.28-28.88 3.79-6.45 8.81-11.54 15.06-15.29 6.25-3.74 13.02-5.67 20.32-5.78 4.02 0 9.28 1.26 15.84 3.70 6.54 2.46 10.75 3.72 12.62 3.72 1.37 0 6.02-1.47 13.93-4.39 7.47-2.7 13.8-3.83 19.02-3.39 14.05 1.14 24.61 6.7 31.67 16.76-12.57 7.56-18.77 18.19-18.6 31.68.16 10.63 3.97 19.46 11.42 26.46 3.38 3.23 7.17 5.72 11.38 7.5-1.82 5.31-4.7 11.74-7.4 17.54zM110.93 4.43c0 8.33-3.05 16.11-9.11 23.31-7.31 8.61-16.16 13.59-25.57 12.8-.12-1.01-.19-2.07-.19-3.15 0-7.98 3.48-16.52 9.65-23.19 3.07-3.39 6.98-6.21 11.72-8.46 4.73-2.21 9.21-3.43 13.46-3.65.12 1.01.19 2.03.19 3.05z"/></svg>');
-            mask-repeat: no-repeat;
-            mask-position: center;
-            mask-size: 80%;
-            -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 170 170"><path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.2-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.71 3.35-4.92.21-9.82-1.96-14.7-6.5-3.18-2.82-7.15-7.64-11.9-14.47-5.11-7.31-9.28-15.76-12.51-25.43-3.44-10.44-5.16-20.55-5.16-30.32 0-11.24 2.43-20.87 7.28-28.88 3.79-6.45 8.81-11.54 15.06-15.29 6.25-3.74 13.02-5.67 20.32-5.78 4.02 0 9.28 1.26 15.84 3.70 6.54 2.46 10.75 3.72 12.62 3.72 1.37 0 6.02-1.47 13.93-4.39 7.47-2.7 13.8-3.83 19.02-3.39 14.05 1.14 24.61 6.7 31.67 16.76-12.57 7.56-18.77 18.19-18.6 31.68.16 10.63 3.97 19.46 11.42 26.46 3.38 3.23 7.17 5.72 11.38 7.5-1.82 5.31-4.7 11.74-7.4 17.54zM110.93 4.43c0 8.33-3.05 16.11-9.11 23.31-7.31 8.61-16.16 13.59-25.57 12.8-.12-1.01-.19-2.07-.19-3.15 0-7.98 3.48-16.52 9.65-23.19 3.07-3.39 6.98-6.21 11.72-8.46 4.73-2.21 9.21-3.43 13.46-3.65.12 1.01.19 2.03.19 3.05z"/></svg>');
-            -webkit-mask-repeat: no-repeat;
-            -webkit-mask-position: center;
-            -webkit-mask-size: 80%;
-        }
-        
-        .mac-menu-items {
-            display: flex;
-            height: 100%;
-        }
-        
-        .mac-menu-item {
+        /* --- Styl Windows 3.11 --- */
+        .win-window {
+            border: 2px solid var(--win-gray);
+            background-color: var(--win-dark-gray);
+            box-shadow: inset 1px 1px 0 var(--win-border-light), 
+                        inset -1px -1px 0 var(--win-border-shadow),
+                        3px 3px 5px rgba(0, 0, 0, 0.5);
+            margin-bottom: 20px;
             position: relative;
-            padding: 0 10px;
-            font-family: 'Chicago', monospace;
-            font-size: 11px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            height: 100%;
-            color: var(--mac-black);
-            user-select: none;
+            transition: all 0.2s;
         }
         
-        .mac-menu-item:hover,
-        .mac-menu-item.active {
-            background-color: var(--mac-highlight-bg);
-            color: var(--mac-highlight-text);
-        }
-        
-        .mac-submenu {
-            position: absolute;
-            display: none;
-            top: var(--menu-height);
-            left: 0;
-            background-color: var(--mac-white);
-            border: 1px solid var(--mac-black);
-            border-top: none;
-            box-shadow: 2px 2px 0 var(--mac-black);
-            min-width: 150px;
-            z-index: 10000;
-        }
-        
-        .mac-menu-item:hover .mac-submenu,
-        .mac-menu-item.active .mac-submenu {
-            display: block;
-            animation: menuFadeIn 0.1s ease-out;
-        }
-        
-        @keyframes menuFadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        
-        .mac-submenu-item {
-            padding: 3px 10px;
-            font-family: 'Chicago', monospace;
-            font-size: 11px;
-            cursor: pointer;
-            white-space: nowrap;
-            color: var(--mac-black);
-            user-select: none;
-        }
-        
-        .mac-submenu-item:hover,
-        .mac-submenu-item.active {
-            background-color: var(--mac-highlight-bg);
-            color: var(--mac-highlight-text);
-        }
-        
-        .mac-submenu-item.disabled {
-            color: #888;
-            cursor: default;
-        }
-        
-        .mac-submenu-item.disabled:hover {
-            background-color: transparent;
-            color: #888;
-        }
-        
-        .mac-submenu-item.has-shortcut {
+        .win-title-bar {
+            background-color: var(--win-blue);
+            color: var(--win-title-text);
+            padding: 2px 4px;
+            font-weight: bold;
             display: flex;
             justify-content: space-between;
-        }
-        
-        .mac-shortcut {
-            margin-left: 20px;
-            color: #666;
-        }
-        
-        .mac-submenu-item:hover .mac-shortcut {
-            color: var(--mac-highlight-text);
-        }
-        
-        .mac-separator {
-            height: 1px;
-            background-color: var(--mac-black);
-            margin: 2px 5px;
-        }
-
-        /* ---------- Desktop Area ---------- */
-        .mac-desktop {
-            background-color: var(--mac-white);
-            background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAEklEQVQImWNgYGD4z4AEGBgYAEYSA/l78ZW5AAAAAElFTkSuQmCC');
-            background-repeat: repeat;
-            background-size: 2px 2px;
-            flex: 1;
-            margin-top: var(--menu-height);
-            padding: 20px;
-            position: relative;
-        }
-
-        /* ---------- Window Style ---------- */
-        .mac-window {
-            background-color: var(--mac-white);
-            border: var(--window-border-width) solid var(--mac-black);
-            box-shadow: 2px 2px 0 var(--mac-black);
-            position: relative;
-            margin: 0 auto;
-            max-width: 800px;
-            max-height: calc(100vh - 60px);
-            overflow: hidden;
-            transition: all 0.2s ease-out;
-        }
-        
-        .mac-window.active {
-            z-index: 100;
-        }
-        
-        .mac-window.dragging {
-            opacity: 0.8;
-            box-shadow: 4px 4px 0 var(--mac-shadow);
-        }
-        
-        .mac-title-bar {
-            background-color: var(--mac-white);
-            border-bottom: 1px solid var(--mac-black);
-            height: var(--title-bar-height);
-            position: relative;
-            display: flex;
             align-items: center;
+            margin: 2px;
             cursor: move;
-            padding: 0 5px;
-            background-image: linear-gradient(to right, var(--mac-black) 50%, transparent 50%);
-            background-size: 4px 1px;
-            background-repeat: repeat-x;
-            background-position: 0 9px; /* Center the line vertically */
             user-select: none;
         }
         
-        .mac-title {
-            width: 100%;
-            text-align: center;
-            font-family: 'Chicago', monospace;
-            font-size: 11px;
-            position: absolute;
-            left: 0;
-            pointer-events: none;
-            color: var(--mac-black);
+        .win-title {
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 14px;
         }
         
-        .mac-close-box {
-            width: 11px;
-            height: 11px;
-            border: 1px solid var(--mac-black);
-            margin-right: 5px;
-            cursor: pointer;
-            position: relative;
-            z-index: 1;
-            background-color: var(--mac-white);
-            transition: background-color 0.1s;
-        }
-        
-        .mac-close-box:hover {
-            background-color: #ddd;
-        }
-        
-        .mac-close-box:active {
-            background-color: #bbb;
-        }
-        
-        .mac-close-box::after {
-            content: '';
-            position: absolute;
-            top: 4px;
-            left: 1px;
-            width: 7px;
-            height: 1px;
-            background-color: var(--mac-black);
-        }
-        
-        .mac-zoom-box {
-            width: 11px;
-            height: 11px;
-            border: 1px solid var(--mac-black);
-            cursor: pointer;
-            position: relative;
-            z-index: 1;
-            background-color: var(--mac-white);
-            transition: background-color 0.1s;
-        }
-        
-        .mac-zoom-box:hover {
-            background-color: #ddd;
-        }
-        
-        .mac-zoom-box:active {
-            background-color: #bbb;
-        }
-        
-        .mac-zoom-box::after {
-            content: '';
-            position: absolute;
-            top: 1px;
-            left: 1px;
-            width: 7px;
-            height: 7px;
-            border: 1px solid var(--mac-black);
-        }
-        
-        .mac-window-body {
-            background-color: var(--mac-white);
-            padding: 0;
-            overflow: hidden;
-            height: calc(100% - var(--title-bar-height));
-            max-height: calc(100vh - var(--menu-height) - var(--title-bar-height) - 40px);
-            position: relative;
-        }
-        
-        /* ---------- Content Area ---------- */
-        .mac-content {
-            padding: 5px;
-            overflow: auto;
-            height: 100%;
-            width: calc(100% - var(--scrollbar-width));
-            color: var(--mac-black);
-            scrollbar-width: none; /* Firefox */
-            -ms-overflow-style: none; /* IE and Edge */
-        }
-        
-        .mac-content::-webkit-scrollbar {
-            display: none; /* Chrome, Safari and Opera */
-        }
-        
-        /* ---------- Icons Grid ---------- */
-        .mac-icon-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
-            gap: 20px;
-            padding: 15px;
-        }
-        
-        .mac-icon {
+        .win-buttons {
             display: flex;
-            flex-direction: column;
-            align-items: center;
-            cursor: pointer;
-            padding: 3px;
-            transition: transform 0.05s ease-out;
         }
         
-        .mac-icon:active {
-            transform: scale(0.97);
-        }
-        
-        .mac-icon.selected {
-            background-color: var(--mac-highlight-bg);
-        }
-        
-        .mac-icon.selected .mac-icon-label {
-            color: var(--mac-highlight-text);
-        }
-        
-        .mac-icon-box {
-            width: 32px;
-            height: 32px;
-            margin-bottom: 5px;
-            position: relative;
-        }
-        
-        .mac-icon-graphic {
-            width: 100%;
-            height: 100%;
-            background-repeat: no-repeat;
-            background-position: center;
-            background-size: contain;
-        }
-        
-        .mac-icon-label {
-            text-align: center;
-            max-width: 70px;
-            font-size: 9px;
-            word-wrap: break-word;
-            color: var(--mac-black);
-        }
-
-        /* ---------- Toolbar ---------- */
-        .mac-toolbar {
-            background-color: var(--mac-white);
-            border-bottom: 1px solid var(--mac-black);
-            padding: 3px;
+        .win-button {
+            width: 16px;
+            height: 16px;
+            border: 1px solid var(--win-gray);
+            background-color: var(--win-button);
+            color: var(--win-button-text);
+            margin-left: 2px;
             display: flex;
             align-items: center;
-        }
-        
-        .mac-button {
-            border: 1px solid var(--mac-black);
-            background-color: var(--mac-white);
-            margin-right: 3px;
-            padding: 1px 5px;
-            cursor: pointer;
-            font-family: 'Chicago', monospace;
+            justify-content: center;
             font-size: 9px;
-            min-width: 50px;
-            text-align: center;
-            color: var(--mac-black);
-            user-select: none;
-            transition: all 0.05s ease-out;
+            box-shadow: inset 1px 1px 0 var(--win-button-highlight), 
+                        inset -1px -1px 0 var(--win-button-shadow);
+            cursor: pointer;
+            transition: all 0.1s;
         }
         
-        .mac-button:hover {
-            background-color: #f0f0f0;
-        }
-        
-        .mac-button:active {
-            background-color: var(--mac-black);
-            color: var(--mac-white);
+        .win-button:active {
+            box-shadow: inset -1px -1px 0 var(--win-button-highlight), 
+                        inset 1px 1px 0 var(--win-button-shadow);
             transform: translateY(1px);
         }
         
-        .mac-search {
-            border: 1px solid var(--mac-black);
-            padding: 1px 3px;
-            margin-left: auto;
-            width: 150px;
-            font-size: 9px;
-            font-family: 'Monaco', monospace;
-            color: var(--mac-black);
-            background-color: var(--mac-white);
+        .win-content {
+            padding: 8px;
+            margin: 2px;
+            background-color: var(--win-dark-gray);
+            overflow: auto;
+            max-height: calc(100vh - 150px);
         }
         
-        .mac-search:focus {
-            outline: none;
-            box-shadow: 0 0 0 1px var(--mac-black);
+        .win-status-bar {
+            border-top: 1px solid var(--win-gray);
+            padding: 4px 8px;
+            font-size: 11px;
+            color: var(--win-inactive-text);
+            display: flex;
+            justify-content: space-between;
+            margin: 2px;
         }
         
-        .mac-search::placeholder {
-            color: #888;
-        }
-
-        /* ---------- Custom Scrollbar ---------- */
-        .mac-scrollbar {
-            width: var(--scrollbar-width);
-            height: 100%;
-            position: absolute;
-            right: 0;
-            top: 0;
-            border-left: 1px solid var(--mac-black);
-            background-color: var(--mac-white);
+        /* --- Menu w stylu Windows 3.11 --- */
+        .win-menu-bar {
+            background-color: var(--win-gray);
+            padding: 2px 0;
+            margin: 0 2px;
+            display: flex;
         }
         
-        .mac-scrollbar-thumb {
-            width: 14px;
-            height: 40px;
-            background-color: var(--mac-white);
-            border: 1px solid var(--mac-black);
-            position: absolute;
-            top: 20px;
-            left: 0;
+        .win-menu-item {
+            padding: 1px 10px;
+            margin-right: 2px;
+            color: var(--win-text);
             cursor: pointer;
-            transition: background-color 0.1s;
-        }
-        
-        .mac-scrollbar-thumb:hover {
-            background-color: #ddd;
-        }
-        
-        .mac-scrollbar-thumb:active {
-            background-color: #bbb;
-        }
-        
-        .mac-scrollbar-thumb::before {
-            content: '';
-            position: absolute;
-            top: 15px;
-            left: 3px;
-            width: 6px;
-            height: 1px;
-            background-color: var(--mac-black);
-            box-shadow: 0 3px 0 var(--mac-black), 0 6px 0 var(--mac-black);
-        }
-        
-        .mac-scrollbar-buttons {
-            width: 14px;
-            height: 28px;
-            position: absolute;
-            bottom: 0;
-            left: 0;
-        }
-        
-        .mac-scrollbar-button {
-            width: 14px;
-            height: 14px;
-            border: 1px solid var(--mac-black);
             position: relative;
+        }
+        
+        .win-menu-item:hover {
+            background-color: var(--win-blue);
+            color: var(--win-title-text);
+        }
+        
+        .win-submenu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background-color: var(--win-gray);
+            border: 2px solid var(--win-light-gray);
+            box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.5);
+            z-index: 100;
+            min-width: 150px;
+        }
+        
+        .win-menu-item:hover .win-submenu {
+            display: block;
+        }
+        
+        .win-submenu-item {
+            padding: 4px 10px;
+            color: var(--win-text);
             cursor: pointer;
-            background-color: var(--mac-white);
-            transition: background-color 0.1s;
+            white-space: nowrap;
         }
         
-        .mac-scrollbar-button:hover {
-            background-color: #ddd;
+        .win-submenu-item:hover {
+            background-color: var(--win-blue);
+            color: var(--win-title-text);
         }
         
-        .mac-scrollbar-button:active {
-            background-color: #bbb;
+        .win-separator {
+            height: 1px;
+            background-color: var(--win-light-gray);
+            margin: 4px 0;
         }
         
-        .mac-scrollbar-button:first-child {
-            margin-bottom: -1px;
+        /* --- Siatka ikon/repozytoriów --- */
+        .win-repo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 16px;
+            margin-top: 8px;
         }
         
-        .mac-scrollbar-up::after {
-            content: '';
-            position: absolute;
-            top: 5px;
-            left: 3px;
-            width: 0;
-            height: 0;
-            border-left: 3px solid transparent;
-            border-right: 3px solid transparent;
-            border-bottom: 3px solid var(--mac-black);
+        .win-repo-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            padding: 8px;
+            border: 1px dotted transparent;
+            transition: all 0.2s;
         }
         
-        .mac-scrollbar-down::after {
-            content: '';
-            position: absolute;
-            top: 5px;
-            left: 3px;
-            width: 0;
-            height: 0;
-            border-left: 3px solid transparent;
-            border-right: 3px solid transparent;
-            border-top: 3px solid var(--mac-black);
+        .win-repo-item:hover {
+            border-color: var(--win-highlight);
+            background-color: var(--win-dark-blue);
         }
-
-        /* ---------- Modal Styles ---------- */
-        .mac-modal {
+        
+        .win-repo-item:focus {
+            outline: none;
+            border-color: var(--win-highlight);
+            background-color: var(--win-dark-blue);
+        }
+        
+        .win-repo-icon {
+            width: 32px;
+            height: 32px;
+            background-color: var(--win-button);
+            border: 1px solid var(--win-button-shadow);
+            box-shadow: inset 1px 1px 0 var(--win-button-highlight), 
+                        inset -1px -1px 0 var(--win-button-shadow);
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--win-button-text);
+        }
+        
+        .win-repo-name {
+            text-align: center;
+            word-break: break-word;
+            max-width: 100%;
+            font-size: 11px;
+            color: var(--win-text);
+        }
+        
+        /* --- Modal okno szczegółów repozytorium --- */
+        .win-modal {
             position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            z-index: 10001;
-            display: none;
             width: 90%;
-            max-width: 400px;
-            animation: windowOpen 0.2s ease-out;
+            max-width: 500px;
+            z-index: 1000;
+            display: none;
+            animation: windowOpen 0.3s;
         }
         
         @keyframes windowOpen {
-            from { 
-                transform: translate(-50%, -50%) scale(0.9);
-                opacity: 0; 
-            }
-            to { 
-                transform: translate(-50%, -50%) scale(1);
-                opacity: 1; 
-            }
+            from { transform: translate(-50%, -55%) scale(0.95); opacity: 0.7; }
+            to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
         }
         
-        .mac-overlay {
+        .win-modal-background {
             position: fixed;
             top: 0;
             left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(255, 255, 255, 0.5);
-            z-index: 10000;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 999;
             display: none;
-            animation: fadeIn 0.2s ease-out;
+            animation: fadeIn 0.3s;
         }
         
         @keyframes fadeIn {
@@ -598,1353 +276,792 @@
             to { opacity: 1; }
         }
         
-        /* ---------- Detail View ---------- */
-        .mac-detail-window {
-            max-width: 400px;
-        }
-        
-        .mac-detail-content {
+        .win-repo-details {
             padding: 10px;
-            color: var(--mac-black);
         }
         
-        .mac-detail-header {
-            font-family: 'Chicago', monospace;
-            font-size: 12px;
+        .win-repo-details-row {
+            display: flex;
             margin-bottom: 8px;
-            border-bottom: 1px solid var(--mac-black);
-            padding-bottom: 3px;
-            color: var(--mac-black);
+            border-bottom: 1px solid var(--win-gray);
+            padding-bottom: 8px;
         }
         
-        .mac-detail-row {
-            display: flex;
-            margin-bottom: 6px;
-            font-size: 9px;
-        }
-        
-        .mac-detail-label {
-            width: 100px;
+        .win-repo-details-label {
+            width: 120px;
             font-weight: bold;
-            color: var(--mac-black);
+            color: var(--win-inactive-text);
         }
         
-        .mac-detail-value {
+        .win-repo-details-value {
             flex: 1;
-            color: var(--mac-black);
-            font-family: 'Monaco', monospace;
         }
         
-        .mac-detail-description {
-            margin: 8px 0;
-            padding: 3px;
-            border: 1px solid var(--mac-black);
-            background-color: var(--mac-white);
-            font-size: 9px;
-            color: var(--mac-black);
-            font-family: 'Monaco', monospace;
-            max-height: 120px;
-            overflow-y: auto;
+        .win-repo-description {
+            margin-bottom: 12px;
+            padding: 8px;
+            background-color: var(--win-gray);
+            border: 1px solid var(--win-border-shadow);
+            box-shadow: inset 1px 1px 0 var(--win-border-shadow);
         }
         
-        .mac-button-row {
+        .win-button-row {
             display: flex;
             justify-content: flex-end;
-            margin-top: 10px;
-        }
-
-        /* ---------- Context Menu ---------- */
-        .mac-context-menu {
-            position: absolute;
-            background-color: var(--mac-white);
-            border: 1px solid var(--mac-black);
-            box-shadow: 2px 2px 0 var(--mac-black);
-            z-index: 10002;
-            display: none;
-            animation: menuFadeIn 0.1s ease-out;
+            gap: 8px;
+            margin-top: 16px;
         }
         
-        .mac-context-item {
-            padding: 3px 10px;
-            font-family: 'Chicago', monospace;
-            font-size: 11px;
+        .win-action-button {
+            padding: 4px 12px;
+            background-color: var(--win-button);
+            color: var(--win-button-text);
+            border: 2px solid var(--win-gray);
+            box-shadow: inset 1px 1px 0 var(--win-button-highlight), 
+                        inset -1px -1px 0 var(--win-button-shadow);
             cursor: pointer;
-            white-space: nowrap;
-            color: var(--mac-black);
-            user-select: none;
-        }
-        
-        .mac-context-item:hover {
-            background-color: var(--mac-highlight-bg);
-            color: var(--mac-highlight-text);
-        }
-        
-        .mac-context-item.disabled {
-            color: #888;
-            cursor: default;
-        }
-        
-        .mac-context-item.disabled:hover {
-            background-color: transparent;
-            color: #888;
-        }
-
-        /* ---------- Dialog Boxes ---------- */
-        .mac-dialog {
-            width: 300px;
-            position: fixed;
-            top: 40%;
-            left: 50%;
-            transform: translateX(-50%);
-            border: 1px solid var(--mac-black);
-            background-color: var(--mac-white);
-            box-shadow: 2px 2px 0 var(--mac-black);
-            z-index: 10002;
-            display: none;
-            animation: dialogBounce 0.3s ease-out;
-        }
-        
-        @keyframes dialogBounce {
-            0% { 
-                transform: translateX(-50%) scale(0.8);
-                opacity: 0;
-            }
-            70% { 
-                transform: translateX(-50%) scale(1.05);
-                opacity: 1;
-            }
-            100% { 
-                transform: translateX(-50%) scale(1);
-                opacity: 1;
-            }
-        }
-        
-        .mac-dialog-content {
-            padding: 15px;
-            display: flex;
-            align-items: center;
-        }
-        
-        .mac-dialog-icon {
-            width: 32px;
-            height: 32px;
-            margin-right: 10px;
-            background-color: var(--mac-black);
-            mask-repeat: no-repeat;
-            mask-position: center;
-            mask-size: contain;
-            -webkit-mask-repeat: no-repeat;
-            -webkit-mask-position: center;
-            -webkit-mask-size: contain;
-        }
-        
-        .mac-dialog-message {
-            flex: 1;
-            font-size: 11px;
-            color: var(--mac-black);
-            font-family: 'Chicago', monospace;
-        }
-        
-        .mac-dialog-buttons {
-            display: flex;
-            justify-content: flex-end;
-            padding: 0 15px 15px;
-        }
-        
-        .mac-dialog-button {
-            min-width: 60px;
-            height: 20px;
-            border: 1px solid var(--mac-black);
-            border-radius: 10px;
-            background-color: var(--mac-white);
-            margin-left: 5px;
-            cursor: pointer;
+            min-width: 80px;
             text-align: center;
-            font-family: 'Chicago', monospace;
-            font-size: 11px;
-            padding: 1px 10px;
-            color: var(--mac-black);
-            transition: all 0.05s ease-out;
+            text-decoration: none;
+            transition: all 0.1s;
         }
         
-        .mac-dialog-button:hover {
-            background-color: #f0f0f0;
-        }
-        
-        .mac-dialog-button:active {
-            background-color: #ddd;
+        .win-action-button:active {
+            box-shadow: inset -1px -1px 0 var(--win-button-highlight), 
+                        inset 1px 1px 0 var(--win-button-shadow);
             transform: translateY(1px);
         }
         
-        .mac-dialog-button.default {
-            border: 2px solid var(--mac-black);
+        /* --- Łądowanie --- */
+        .win-loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 200px;
+        }
+        
+        .win-loading-text {
+            margin-bottom: 16px;
             font-weight: bold;
         }
-
-        /* ---------- Startup Screen ---------- */
-        .mac-startup {
+        
+        .win-loading-animation {
+            width: 120px;
+            height: 20px;
+            background-color: var(--win-gray);
+            border: 1px solid var(--win-border-shadow);
+            padding: 2px;
+            position: relative;
+            box-shadow: inset 1px 1px 0 var(--win-border-shadow);
+        }
+        
+        .win-loading-bar {
+            height: 100%;
+            background-color: var(--win-blue);
+            width: 20%;
+            animation: win-loading 2s infinite;
+        }
+        
+        @keyframes win-loading {
+            0% { width: 0; }
+            25% { width: 40%; }
+            50% { width: 70%; }
+            75% { width: 90%; }
+            100% { width: 100%; }
+        }
+        
+        /* --- Stare ikony Windows --- */
+        @font-face {
+            font-family: 'Webdings';
+            src: url('https://cdn.jsdelivr.net/npm/webdings-font@1.0.0/webdings.woff') format('woff');
+        }
+        
+        .webdings {
+            font-family: 'Webdings', sans-serif;
+        }
+        
+        /* --- Startup screen --- */
+        .win-startup {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: var(--mac-white);
+            background-color: var(--win-dark-blue);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            z-index: 20000;
-            transition: opacity 0.5s;
+            z-index: 2000;
+            transition: opacity 0.5s, visibility 0.5s;
         }
         
-        .mac-startup.hidden {
+        .win-startup.hidden {
             opacity: 0;
-            pointer-events: none;
+            visibility: hidden;
         }
         
-        .mac-happy-mac {
-            width: 64px;
-            height: 64px;
-            margin-bottom: 20px;
-            background-color: var(--mac-black);
-            mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><path d="M5,5h54v42c0,5-7,12-12,12H17c-5,0-12-7-12-12V5z M10,10v32c0,2.8,4.2,7,7,7h30c2.8,0,7-4.2,7-7V10H10z M18,38v4h28v-4H18z M18,32h4v-4h4v-4h-4v4h-4V32z M38,32h4v-4h4v-4h-4v4h-4V32z"/></svg>');
-            mask-repeat: no-repeat;
-            mask-position: center;
-            mask-size: contain;
-            -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><path d="M5,5h54v42c0,5-7,12-12,12H17c-5,0-12-7-12-12V5z M10,10v32c0,2.8,4.2,7,7,7h30c2.8,0,7-4.2,7-7V10H10z M18,38v4h28v-4H18z M18,32h4v-4h4v-4h-4v4h-4V32z M38,32h4v-4h4v-4h-4v4h-4V32z"/></svg>');
-            -webkit-mask-repeat: no-repeat;
-            -webkit-mask-position: center;
-            -webkit-mask-size: contain;
-        }
-        
-        .mac-startup-text {
-            font-family: 'Chicago', monospace;
-            text-align: center;
-            font-size: 12px;
-            color: var(--mac-black);
-            margin-top: 10px;
-        }
-        
-        .mac-startup-progress {
-            width: 200px;
-            height: 10px;
-            border: 1px solid var(--mac-black);
-            margin-top: 20px;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .mac-progress-bar {
-            position: absolute;
-            top: 0;
-            left: 0;
-            height: 100%;
-            width: 0%;
-            background-color: var(--mac-black);
-            transition: width 2s ease-in-out;
-        }
-
-        /* ---------- Loading Indicator ---------- */
-        .mac-loading {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 30px;
-        }
-        
-        .mac-loading-text {
-            font-family: 'Chicago', monospace;
-            margin-bottom: 10px;
-            font-size: 11px;
-            color: var(--mac-black);
-        }
-        
-        .mac-watch {
-            width: 24px;
-            height: 24px;
-            background-color: var(--mac-black);
-            mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12,0C5.4,0,0,5.4,0,12s5.4,12,12,12s12-5.4,12-12S18.6,0,12,0z M12,22c-5.5,0-10-4.5-10-10S6.5,2,12,2s10,4.5,10,10S17.5,22,12,22z M12.5,12V6h-1v7l4.3,2.5l0.5-0.9L12.5,12z"/></svg>');
-            mask-repeat: no-repeat;
-            mask-position: center;
-            animation: pulse 1s infinite alternate;
-            -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12,0C5.4,0,0,5.4,0,12s5.4,12,12,12s12-5.4,12-12S18.6,0,12,0z M12,22c-5.5,0-10-4.5-10-10S6.5,2,12,2s10,4.5,10,10S17.5,22,12,22z M12.5,12V6h-1v7l4.3,2.5l0.5-0.9L12.5,12z"/></svg>');
-            -webkit-mask-repeat: no-repeat;
-            -webkit-mask-position: center;
-        }
-        
-        @keyframes pulse {
-            from { opacity: 0.5; }
-            to { opacity: 1; }
-        }
-
-        /* ---------- List View ---------- */
-        .mac-list-view {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 9px;
-        }
-        
-        .mac-list-view th {
-            text-align: left;
-            padding: 2px 5px;
-            border-bottom: 1px solid var(--mac-black);
+        .win-logo {
+            font-size: 72px;
+            color: white;
             font-weight: bold;
-            color: var(--mac-black);
-            font-family: 'Chicago', monospace;
-            position: sticky;
-            top: 0;
-            background-color: var(--mac-white);
-            z-index: 1;
-            user-select: none;
+            margin-bottom: 20px;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
         }
         
-        .mac-list-view td {
-            padding: 2px 5px;
-            border-bottom: 1px solid #ddd;
-            color: var(--mac-black);
-            font-family: 'Monaco', monospace;
+        .win-startup-loading {
+            width: 300px;
+            height: 20px;
+            background-color: var(--win-gray);
+            border: 1px solid var(--win-border-light);
+            padding: 2px;
+            position: relative;
         }
         
-        .mac-list-view tr {
-            cursor: pointer;
-            transition: background-color 0.1s;
+        .win-startup-bar {
+            height: 100%;
+            background-color: var(--win-blue);
+            width: 0%;
+            animation: win-startup-loading 3s forwards;
         }
         
-        .mac-list-view tr:hover:not(.selected) {
-            background-color: #f5f5f5;
+        @keyframes win-startup-loading {
+            0% { width: 0; }
+            70% { width: 70%; }
+            100% { width: 100%; }
         }
         
-        .mac-list-view tr.selected {
-            background-color: var(--mac-highlight-bg);
-            color: var(--mac-highlight-text);
+        .win-startup-text {
+            margin-top: 20px;
+            color: white;
+            font-size: 14px;
         }
         
-        .mac-list-view tr.selected td {
-            color: var(--mac-highlight-text);
+        /* --- Error Window --- */
+        .win-error {
+            border: 2px solid var(--win-gray);
+            background-color: var(--win-dark-gray);
+            box-shadow: inset 1px 1px 0 var(--win-border-light), 
+                        inset -1px -1px 0 var(--win-border-shadow);
+            max-width: 400px;
+            margin: 100px auto;
+            animation: errorBounce 0.5s;
         }
         
-        /* ---------- Alert & Note Icons ---------- */
-        .mac-alert-icon {
-            mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M16,2C8.3,2,2,8.3,2,16s6.3,14,14,14s14-6.3,14-14S23.7,2,16,2z M16,28C9.4,28,4,22.6,4,16S9.4,4,16,4s12,5.4,12,12S22.6,28,16,28z M14,8h4v12h-4V8z M14,22h4v4h-4V22z"/></svg>');
-            -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M16,2C8.3,2,2,8.3,2,16s6.3,14,14,14s14-6.3,14-14S23.7,2,16,2z M16,28C9.4,28,4,22.6,4,16S9.4,4,16,4s12,5.4,12,12S22.6,28,16,28z M14,8h4v12h-4V8z M14,22h4v4h-4V22z"/></svg>');
+        @keyframes errorBounce {
+            0% { transform: scale(0.5); }
+            70% { transform: scale(1.05); }
+            100% { transform: scale(1); }
         }
         
-        .mac-note-icon {
-            mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M16,2C8.3,2,2,8.3,2,16s6.3,14,14,14s14-6.3,14-14S23.7,2,16,2z M16,28C9.4,28,4,22.6,4,16S9.4,4,16,4s12,5.4,12,12S22.6,28,16,28z M15,8h2v12h-2V8z M15,22h2v2h-2V22z"/></svg>');
-            -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M16,2C8.3,2,2,8.3,2,16s6.3,14,14,14s14-6.3,14-14S23.7,2,16,2z M16,28C9.4,28,4,22.6,4,16S9.4,4,16,4s12,5.4,12,12S22.6,28,16,28z M15,8h2v12h-2V8z M15,22h2v2h-2V22z"/></svg>');
+        .win-error-title {
+            background-color: #aa0000;
+            color: white;
+            padding: 2px 4px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 2px;
         }
         
-        .mac-help-icon {
-            mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M16,2C8.3,2,2,8.3,2,16s6.3,14,14,14s14-6.3,14-14S23.7,2,16,2z M16,28C9.4,28,4,22.6,4,16S9.4,4,16,4s12,5.4,12,12S22.6,28,16,28z M16,6c-3.9,0-7,3.1-7,7h2c0-2.8,2.2-5,5-5s5,2.2,5,5c0,1.3-0.5,2.5-1.4,3.4c-1,1-1.9,1.2-2.6,1.6c-1.2,0.7-2,1.9-2,3.3V22h2c0-0.9,0.4-1.3,1.2-1.7c0.4-0.2,0.9-0.4,1.4-0.7c0.9-0.5,1.9-1.1,2.6-1.8c1.2-1.2,1.8-2.9,1.8-4.6C22,9.1,19.3,6,16,6z M15,24h2v2h-2V24z"/></svg>');
-            -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M16,2C8.3,2,2,8.3,2,16s6.3,14,14,14s14-6.3,14-14S23.7,2,16,2z M16,28C9.4,28,4,22.6,4,16S9.4,4,16,4s12,5.4,12,12S22.6,28,16,28z M16,6c-3.9,0-7,3.1-7,7h2c0-2.8,2.2-5,5-5s5,2.2,5,5c0,1.3-0.5,2.5-1.4,3.4c-1,1-1.9,1.2-2.6,1.6c-1.2,0.7-2,1.9-2,3.3V22h2c0-0.9,0.4-1.3,1.2-1.7c0.4-0.2,0.9-0.4,1.4-0.7c0.9-0.5,1.9-1.1,2.6-1.8c1.2-1.2,1.8-2.9,1.8-4.6C22,9.1,19.3,6,16,6z M15,24h2v2h-2V24z"/></svg>');
+        .win-error-content {
+            padding: 16px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
         }
         
-        /* ---------- Disk & File Icons ---------- */
-        .mac-disk-icon {
-            mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M4,4v24h24V4H4z M24,8h-5V6h5V8z M16,22c-2.2,0-4-1.8-4-4s1.8-4,4-4s4,1.8,4,4S18.2,22,16,22z M8,8V6h5v2H8z"/></svg>');
-            -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M4,4v24h24V4H4z M24,8h-5V6h5V8z M16,22c-2.2,0-4-1.8-4-4s1.8-4,4-4s4,1.8,4,4S18.2,22,16,22z M8,8V6h5v2H8z"/></svg>');
+        .win-error-icon {
+            font-size: 32px;
+            color: #aa0000;
         }
         
-        .mac-folder-icon {
-            mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M2,6v20h28V10H16L12,6H2z"/></svg>');
-            -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M2,6v20h28V10H16L12,6H2z"/></svg>');
+        .win-error-message {
+            flex: 1;
         }
         
-        .mac-file-icon {
-            mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M6,2v28h20V10L18,2H6z M18,6l4,4h-4V6z"/></svg>');
-            -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M6,2v28h20V10L18,2H6z M18,6l4,4h-4V6z"/></svg>');
-        }
-        
-        /* ---------- Tooltip ---------- */
-        .mac-tooltip {
-            position: absolute;
-            background-color: var(--mac-white);
-            border: 1px solid var(--mac-black);
-            padding: 2px 5px;
-            font-family: 'Chicago', monospace;
-            font-size: 9px;
-            z-index: 10003;
-            pointer-events: none;
-            white-space: nowrap;
-            display: none;
-            color: var(--mac-black);
+        .win-error-buttons {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+            margin-bottom: 10px;
         }
 
-        /* ---------- Responsive Styles ---------- */
+        /* --- Toolbar --- */
+        .win-toolbar {
+            display: flex;
+            background-color: var(--win-gray);
+            padding: 4px;
+            margin: 2px;
+            gap: 8px;
+            align-items: center;
+        }
+        
+        .win-toolbar-button {
+            background-color: var(--win-button);
+            border: 2px solid var(--win-gray);
+            box-shadow: inset 1px 1px 0 var(--win-button-highlight), 
+                        inset -1px -1px 0 var(--win-button-shadow);
+            color: var(--win-text);
+            padding: 2px 6px;
+            font-size: 11px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.1s;
+        }
+        
+        .win-toolbar-button:active {
+            box-shadow: inset -1px -1px 0 var(--win-button-highlight), 
+                        inset 1px 1px 0 var(--win-button-shadow);
+            transform: translateY(1px);
+        }
+        
+        .win-toolbar-separator {
+            width: 1px;
+            height: 20px;
+            background-color: var(--win-light-gray);
+            margin: 0 4px;
+        }
+        
+        .win-toolbar-search {
+            background-color: black;
+            border: 2px solid var(--win-gray);
+            box-shadow: inset 1px 1px 0 var(--win-border-shadow), 
+                        inset -1px -1px 0 var(--win-button-highlight);
+            color: var(--win-text);
+            padding: 2px 6px;
+            font-size: 11px;
+            flex-grow: 1;
+            max-width: 200px;
+        }
+        
+        .win-toolbar-search:focus {
+            outline: none;
+            border-color: var(--win-blue);
+        }
+        
+        /* --- Minimized Window --- */
+        .win-minimized {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            background-color: var(--win-gray);
+            border: 2px solid var(--win-light-gray);
+            padding: 4px 10px;
+            cursor: pointer;
+            display: none;
+            z-index: 900;
+            box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* --- Context Menu --- */
+        .win-context-menu {
+            position: absolute;
+            background-color: var(--win-gray);
+            border: 2px solid var(--win-light-gray);
+            box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            display: none;
+        }
+        
+        .win-context-item {
+            padding: 4px 10px;
+            color: var(--win-text);
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        
+        .win-context-item:hover {
+            background-color: var(--win-blue);
+            color: var(--win-title-text);
+        }
+        
+        /* --- Light Mode --- */
+        body.light-mode {
+            background-color: var(--win-light-bg);
+        }
+        
+        body.light-mode .win-window {
+            border-color: #888888;
+            background-color: var(--win-light-window);
+        }
+        
+        body.light-mode .win-content {
+            background-color: var(--win-light-window);
+            color: var(--win-light-text);
+        }
+        
+        body.light-mode .win-title-bar {
+            background-color: #000080;
+        }
+        
+        body.light-mode .win-repo-name {
+            color: var(--win-light-text);
+        }
+        
+        body.light-mode .win-status-bar {
+            color: var(--win-light-text);
+        }
+        
+        body.light-mode .win-menu-bar {
+            background-color: var(--win-light-window);
+        }
+        
+        body.light-mode .win-menu-item {
+            color: var(--win-light-text);
+        }
+        
+        body.light-mode .win-submenu {
+            background-color: var(--win-light-window);
+            border-color: #888888;
+        }
+        
+        body.light-mode .win-submenu-item {
+            color: var(--win-light-text);
+        }
+        
+        body.light-mode .win-repo-description {
+            background-color: #dddddd;
+            color: var(--win-light-text);
+        }
+        
+        /* --- About Dialog --- */
+        .win-about {
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .win-about-logo {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .win-about-version {
+            font-size: 12px;
+            color: var(--win-inactive-text);
+            margin-bottom: 20px;
+        }
+        
+        /* --- Responsywność --- */
         @media (max-width: 768px) {
-            .mac-icon-grid {
-                grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
-                gap: 15px;
+            .win-repo-grid {
+                grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
             }
             
-            .mac-search {
-                width: 120px;
+            .win-modal {
+                width: 95%;
             }
             
-            .mac-window {
-                max-width: 100%;
-                max-height: calc(100vh - 50px);
-                width: calc(100% - 20px);
+            .win-logo {
+                font-size: 48px;
             }
         }
 
         @media (max-width: 480px) {
-            .mac-icon-grid {
-                grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
-                gap: 10px;
+            .win-repo-grid {
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
             }
             
-            .mac-toolbar {
+            .win-toolbar {
                 flex-wrap: wrap;
             }
             
-            .mac-search {
+            .win-toolbar-search {
+                max-width: 100%;
                 width: 100%;
-                margin-top: 3px;
-                order: 10;
-            }
-            
-            .mac-submenu {
-                left: -50px;
-            }
-            
-            .mac-detail-row {
-                flex-direction: column;
-            }
-            
-            .mac-detail-label {
-                width: 100%;
-                margin-bottom: 2px;
+                order: -1;
+                margin-bottom: 4px;
             }
         }
 
-        /* Mobile support */
-        @media (hover: none) {
-            .mac-menu-item:hover .mac-submenu {
-                display: none;
-            }
-            
-            .mac-menu-item.active .mac-submenu {
-                display: block;
-            }
-            
-            .mac-button:active {
-                background-color: var(--mac-black);
-                color: var(--mac-white);
-            }
-            
-            .mac-dialog-button:active {
-                background-color: #ddd;
-            }
-        }
-        
-        /* Print styles */
-        @media print {
-            .mac-menu-bar, .mac-toolbar, .mac-scrollbar, .mac-button-row {
-                display: none !important;
-            }
-            
-            .mac-desktop {
-                margin-top: 0;
-                padding: 0;
-                background: none;
-            }
-            
-            .mac-window {
-                box-shadow: none;
-                border: none;
-            }
-            
-            .mac-title-bar {
-                display: none;
-            }
-            
-            .mac-window-body {
-                height: auto;
-                max-height: none;
-            }
-            
-            .mac-content {
-                width: 100%;
-                padding: 0;
-                overflow: visible;
-            }
-        }
-
-        /* High-contrast mode */
-        @media (prefers-contrast: more) {
-            :root {
-                --mac-white: #FFFFFF;
-                --mac-black: #000000;
-                --mac-bg: #FFFFFF;
-                --mac-text: #000000;
-                --mac-highlight-bg: #000000;
-                --mac-highlight-text: #FFFFFF;
-            }
-            
-            .mac-submenu-item.disabled {
-                color: #555;
-            }
-            
-            .mac-shortcut {
-                color: #444;
-            }
+        /* --- System dźwięku --- */
+        .win-audio {
+            display: none;
         }
     </style>
 </head>
 <body>
-    <!-- Menu Bar -->
-    <div class="mac-menu-bar">
-        <div class="mac-menu-logo">
-            <div class="mac-apple-logo"></div>
+    <!-- Dźwięki -->
+    <audio id="win-startup-sound" class="win-audio">
+        <source src="https://archive.org/download/WindowsStartupSounds/Windows%203.1.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="win-error-sound" class="win-audio">
+        <source src="https://archive.org/download/WindowsXpSoundEffects/Windows%20XP%20Error.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="win-click-sound" class="win-audio">
+        <source src="https://archive.org/download/WindowsXpSoundEffects/Windows%20XP%20Navigation%20Start.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- Ekran startowy Windows -->
+    <div class="win-startup">
+        <div class="win-logo">Windows 3.11</div>
+        <div class="win-startup-loading">
+            <div class="win-startup-bar"></div>
         </div>
-        <div class="mac-menu-items">
-            <div class="mac-menu-item" data-menu="file">
+        <div class="win-startup-text">Starting Program Manager...</div>
+    </div>
+
+    <!-- Główne okno aplikacji -->
+    <div class="win-window" id="main-window">
+        <div class="win-title-bar" id="main-window-title">
+            <div class="win-title">Program Manager - Swir GitHub</div>
+            <div class="win-buttons">
+                <div class="win-button" id="minimize-button" title="Minimize">_</div>
+                <div class="win-button" id="maximize-button" title="Maximize">□</div>
+                <div class="win-button" id="close-button" title="Close">×</div>
+            </div>
+        </div>
+        
+        <div class="win-menu-bar">
+            <div class="win-menu-item">
                 File
-                <div class="mac-submenu">
-                    <div class="mac-submenu-item has-shortcut" id="new-window">
-                        New Window
-                        <span class="mac-shortcut">⌘N</span>
-                    </div>
-                    <div class="mac-separator"></div>
-                    <div class="mac-submenu-item has-shortcut" id="close-window">
-                        Close
-                        <span class="mac-shortcut">⌘W</span>
-                    </div>
-                    <div class="mac-separator"></div>
-                    <div class="mac-submenu-item has-shortcut" id="refresh-button">
-                        Refresh
-                        <span class="mac-shortcut">⌘R</span>
-                    </div>
-                    <div class="mac-separator"></div>
-                    <div class="mac-submenu-item has-shortcut" id="quit-button">
-                        Quit
-                        <span class="mac-shortcut">⌘Q</span>
-                    </div>
+                <div class="win-submenu">
+                    <div class="win-submenu-item" id="refresh-button">Refresh Repositories</div>
+                    <div class="win-separator"></div>
+                    <div class="win-submenu-item" id="exit-button">Exit</div>
                 </div>
             </div>
-            <div class="mac-menu-item" data-menu="edit">
-                Edit
-                <div class="mac-submenu">
-                    <div class="mac-submenu-item disabled">Cut</div>
-                    <div class="mac-submenu-item has-shortcut" id="copy-url">
-                        Copy URL
-                        <span class="mac-shortcut">⌘C</span>
-                    </div>
-                    <div class="mac-submenu-item disabled">Paste</div>
-                    <div class="mac-separator"></div>
-                    <div class="mac-submenu-item has-shortcut" id="find-repo">
-                        Find...
-                        <span class="mac-shortcut">⌘F</span>
-                    </div>
-                    <div class="mac-separator"></div>
-                    <div class="mac-submenu-item disabled">Select All</div>
-                </div>
-            </div>
-            <div class="mac-menu-item" data-menu="view">
+            <div class="win-menu-item">
                 View
-                <div class="mac-submenu">
-                    <div class="mac-submenu-item" id="view-icon">by Icon</div>
-                    <div class="mac-submenu-item" id="view-list">by List</div>
-                    <div class="mac-separator"></div>
-                    <div class="mac-submenu-item" id="sort-name">Sort by Name</div>
-                    <div class="mac-submenu-item" id="sort-date">Sort by Date</div>
-                    <div class="mac-submenu-item" id="sort-stars">Sort by Stars</div>
+                <div class="win-submenu">
+                    <div class="win-submenu-item" id="view-large">Large Icons</div>
+                    <div class="win-submenu-item" id="view-small">Small Icons</div>
+                    <div class="win-separator"></div>
+                    <div class="win-submenu-item" id="toggle-theme">Toggle Light/Dark</div>
                 </div>
             </div>
-            <div class="mac-menu-item" data-menu="special">
-                Special
-                <div class="mac-submenu">
-                    <div class="mac-submenu-item" id="about-button">About GitHub Browser</div>
-                    <div class="mac-separator"></div>
-                    <div class="mac-submenu-item" id="keyboard-shortcuts">Keyboard Shortcuts</div>
-                    <div class="mac-separator"></div>
-                    <div class="mac-submenu-item" id="toggle-sound">Toggle Sound Effects</div>
+            <div class="win-menu-item">
+                Sort
+                <div class="win-submenu">
+                    <div class="win-submenu-item" id="sort-name">By Name</div>
+                    <div class="win-submenu-item" id="sort-updated">By Last Updated</div>
+                    <div class="win-submenu-item" id="sort-stars">By Stars</div>
+                    <div class="win-submenu-item" id="sort-size">By Size</div>
+                </div>
+            </div>
+            <div class="win-menu-item">
+                Help
+                <div class="win-submenu">
+                    <div class="win-submenu-item" id="keyboard-shortcuts">Keyboard Shortcuts</div>
+                    <div class="win-submenu-item" id="about-button">About</div>
                 </div>
             </div>
         </div>
+        
+        <div class="win-toolbar">
+            <input type="text" class="win-toolbar-search" id="repo-search" placeholder="Search repositories...">
+            <div class="win-toolbar-separator"></div>
+            <div class="win-toolbar-button" id="refresh-repos">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </div>
+            <div class="win-toolbar-button" id="sort-repos">
+                <i class="fas fa-sort"></i> Sort
+            </div>
+            <div class="win-toolbar-button" id="view-toggle">
+                <i class="fas fa-th-large"></i> View
+            </div>
+            <div class="win-toolbar-separator"></div>
+            <div class="win-toolbar-button" id="theme-toggle">
+                <i class="fas fa-adjust"></i> Theme
+            </div>
+        </div>
+        
+        <div class="win-content">
+            <div id="repos-container">
+                <!-- Tutaj będą wczytywane repozytoria -->
+                <div class="win-loading">
+                    <div class="win-loading-text">Loading repositories...</div>
+                    <div class="win-loading-animation">
+                        <div class="win-loading-bar"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="win-status-bar">
+            <div>0 object(s)</div>
+            <div id="memory-display">1.44MB free</div>
+        </div>
     </div>
-
-    <!-- Desktop Area -->
-    <div class="mac-desktop">
-        <!-- Main Window -->
-        <div class="mac-window" id="main-window">
-            <div class="mac-title-bar" id="main-title-bar">
-                <div class="mac-close-box" id="window-close" title="Close Window"></div>
-                <div class="mac-zoom-box" id="window-zoom" title="Zoom Window"></div>
-                <div class="mac-title">GitHub Browser</div>
+    
+    <!-- Zminimalizowane okno -->
+    <div class="win-minimized" id="minimized-window">
+        Program Manager
+    </div>
+    
+    <!-- Modal okno ze szczegółami repozytorium -->
+    <div class="win-modal" id="repo-details-modal">
+        <div class="win-window">
+            <div class="win-title-bar" id="repo-modal-title">
+                <div class="win-title" id="modal-repo-name">Repository Properties</div>
+                <div class="win-buttons">
+                    <div class="win-button" onclick="closeRepoModal()">×</div>
+                </div>
             </div>
             
-            <div class="mac-window-body">
-                <div class="mac-toolbar">
-                    <div class="mac-button" id="refresh-repos" title="Refresh Repository List">Refresh</div>
-                    <div class="mac-button" id="view-toggle" title="Toggle View Mode">View</div>
-                    <div class="mac-button" id="sort-button" title="Sort Repositories">Sort</div>
-                    <input type="text" class="mac-search" id="repo-search" placeholder="Find..." title="Search Repositories">
-                </div>
-                
-                <div class="mac-content" id="repos-container">
-                    <!-- Loading Indicator -->
-                    <div class="mac-loading">
-                        <div class="mac-loading-text">Loading Repositories...</div>
-                        <div class="mac-watch"></div>
-                    </div>
-                </div>
-                
-                <!-- Classic Mac Scrollbar -->
-                <div class="mac-scrollbar">
-                    <div class="mac-scrollbar-thumb"></div>
-                    <div class="mac-scrollbar-buttons">
-                        <div class="mac-scrollbar-button mac-scrollbar-up"></div>
-                        <div class="mac-scrollbar-button mac-scrollbar-down"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Repository Detail Modal -->
-    <div class="mac-modal" id="repo-detail-modal">
-        <div class="mac-window mac-detail-window">
-            <div class="mac-title-bar" id="detail-title-bar">
-                <div class="mac-close-box" onclick="closeModal('repo-detail-modal')"></div>
-                <div class="mac-title" id="repo-detail-title">Repository Info</div>
+            <div class="win-content win-repo-details" id="repo-details-content">
+                <!-- Tu zostanie wstawiona zawartość modalu -->
             </div>
             
-            <div class="mac-window-body">
-                <div class="mac-detail-content" id="repo-detail-content">
-                    <!-- Content will be filled dynamically -->
-                </div>
+            <div class="win-status-bar">
+                <div>GitHub Repository</div>
             </div>
         </div>
     </div>
-
-    <!-- About Modal -->
-    <div class="mac-modal" id="about-modal">
-        <div class="mac-window">
-            <div class="mac-title-bar">
-                <div class="mac-close-box" onclick="closeModal('about-modal')"></div>
-                <div class="mac-title">About GitHub Browser</div>
+    
+    <!-- Modal z informacjami o aplikacji -->
+    <div class="win-modal" id="about-modal">
+        <div class="win-window">
+            <div class="win-title-bar">
+                <div class="win-title">About GitHub Viewer</div>
+                <div class="win-buttons">
+                    <div class="win-button" id="close-about">×</div>
+                </div>
             </div>
             
-            <div class="mac-window-body">
-                <div class="mac-content" style="text-align: center; padding: 20px;">
-                    <div class="mac-happy-mac" style="margin: 0 auto 20px;"></div>
-                    <div style="font-family: 'Chicago', monospace; font-size: 14px; margin-bottom: 5px; color: var(--mac-black);">
-                        GitHub Browser
-                    </div>
-                    <div style="font-size: 9px; margin-bottom: 15px; color: var(--mac-black);">
-                        Version 1.0
-                    </div>
-                    <p style="margin-bottom: 10px; font-size: 9px; color: var(--mac-black);">
-                        A classic Macintosh style interface for browsing GitHub repositories.
-                    </p>
-                    <p style="font-size: 9px; color: var(--mac-black);">© 2025 Swir</p>
-                    <div class="mac-button" id="visit-github" style="margin-top: 15px; display: inline-block;">Visit GitHub</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Keyboard Shortcuts Modal -->
-    <div class="mac-modal" id="shortcuts-modal">
-        <div class="mac-window">
-            <div class="mac-title-bar">
-                <div class="mac-close-box" onclick="closeModal('shortcuts-modal')"></div>
-                <div class="mac-title">Keyboard Shortcuts</div>
+            <div class="win-content win-about">
+                <div class="win-about-logo">Windows 3.11 GitHub Viewer</div>
+                <div class="win-about-version">Version 1.1</div>
+                <p>A nostalgic Windows 3.11 style interface for browsing GitHub repositories.</p>
+                <p>© 2025 Swir</p>
             </div>
             
-            <div class="mac-window-body">
-                <div class="mac-content">
-                    <div class="mac-detail-row">
-                        <div class="mac-detail-label">⌘N</div>
-                        <div class="mac-detail-value">New Window</div>
-                    </div>
-                    <div class="mac-detail-row">
-                        <div class="mac-detail-label">⌘W</div>
-                        <div class="mac-detail-value">Close Window</div>
-                    </div>
-                    <div class="mac-detail-row">
-                        <div class="mac-detail-label">⌘R</div>
-                        <div class="mac-detail-value">Refresh Repositories</div>
-                    </div>
-                    <div class="mac-detail-row">
-                        <div class="mac-detail-label">⌘F</div>
-                        <div class="mac-detail-value">Find Repositories</div>
-                    </div>
-                    <div class="mac-detail-row">
-                        <div class="mac-detail-label">⌘Q</div>
-                        <div class="mac-detail-value">Quit Application</div>
-                    </div>
-                    <div class="mac-detail-row">
-                        <div class="mac-detail-label">↑↓←→</div>
-                        <div class="mac-detail-value">Navigate Repositories</div>
-                    </div>
-                    <div class="mac-detail-row">
-                        <div class="mac-detail-label">Return</div>
-                        <div class="mac-detail-value">Open Selected Repository</div>
-                    </div>
-                    <div class="mac-detail-row">
-                        <div class="mac-detail-label">Esc</div>
-                        <div class="mac-detail-value">Close Dialog</div>
-                    </div>
-                    <div class="mac-detail-row">
-                        <div class="mac-detail-label">Space</div>
-                        <div class="mac-detail-value">Quick Look Repository</div>
-                    </div>
-                </div>
+            <div class="win-status-bar">
+                <div>GitHub Viewer</div>
             </div>
         </div>
     </div>
-
-    <!-- Context Menu -->
-    <div class="mac-context-menu" id="repo-context-menu">
-        <div class="mac-context-item" id="context-open">Open</div>
-        <div class="mac-context-item" id="context-view-github">View on GitHub</div>
-        <div class="mac-separator"></div>
-        <div class="mac-context-item" id="context-copy-url">Copy URL</div>
-        <div class="mac-separator"></div>
-        <div class="mac-context-item" id="context-quick-look">Quick Look</div>
-    </div>
-
-    <!-- Modal Overlay -->
-    <div class="mac-overlay" id="modal-overlay"></div>
-
-    <!-- Alert Dialog -->
-    <div class="mac-dialog" id="alert-dialog" style="display: none;">
-        <div class="mac-dialog-content">
-            <div class="mac-dialog-icon mac-alert-icon"></div>
-            <div class="mac-dialog-message" id="alert-message"></div>
-        </div>
-        <div class="mac-dialog-buttons">
-            <button class="mac-dialog-button default" id="alert-ok">OK</button>
-        </div>
-    </div>
-
-    <!-- Confirm Dialog -->
-    <div class="mac-dialog" id="confirm-dialog" style="display: none;">
-        <div class="mac-dialog-content">
-            <div class="mac-dialog-icon mac-note-icon"></div>
-            <div class="mac-dialog-message" id="confirm-message"></div>
-        </div>
-        <div class="mac-dialog-buttons">
-            <button class="mac-dialog-button" id="confirm-cancel">Cancel</button>
-            <button class="mac-dialog-button default" id="confirm-ok">OK</button>
-        </div>
-    </div>
-
-    <!-- Tooltip Element -->
-    <div class="mac-tooltip" id="mac-tooltip"></div>
-
-    <!-- Quick Look Modal -->
-    <div class="mac-modal" id="quick-look-modal">
-        <div class="mac-window">
-            <div class="mac-title-bar">
-                <div class="mac-close-box" onclick="closeModal('quick-look-modal')"></div>
-                <div class="mac-title" id="quick-look-title">Quick Look</div>
+    
+    <!-- Modal z skrótami klawiszowymi -->
+    <div class="win-modal" id="shortcuts-modal">
+        <div class="win-window">
+            <div class="win-title-bar">
+                <div class="win-title">Keyboard Shortcuts</div>
+                <div class="win-buttons">
+                    <div class="win-button" id="close-shortcuts">×</div>
+                </div>
             </div>
             
-            <div class="mac-window-body">
-                <div class="mac-content" id="quick-look-content" style="padding: 10px;">
-                    <!-- Content will be filled dynamically -->
+            <div class="win-content">
+                <div class="win-repo-details">
+                    <div class="win-repo-details-row">
+                        <div class="win-repo-details-label">Refresh (F5)</div>
+                        <div class="win-repo-details-value">Reload repositories</div>
+                    </div>
+                    <div class="win-repo-details-row">
+                        <div class="win-repo-details-label">Search (Ctrl+F)</div>
+                        <div class="win-repo-details-value">Focus search box</div>
+                    </div>
+                    <div class="win-repo-details-row">
+                        <div class="win-repo-details-label">Escape (Esc)</div>
+                        <div class="win-repo-details-value">Close dialogs</div>
+                    </div>
+                    <div class="win-repo-details-row">
+                        <div class="win-repo-details-label">Arrow keys</div>
+                        <div class="win-repo-details-value">Navigate repositories</div>
+                    </div>
+                    <div class="win-repo-details-row">
+                        <div class="win-repo-details-label">Enter</div>
+                        <div class="win-repo-details-value">Open selected repository</div>
+                    </div>
+                    <div class="win-repo-details-row">
+                        <div class="win-repo-details-label">T (Theme)</div>
+                        <div class="win-repo-details-value">Toggle light/dark mode</div>
+                    </div>
                 </div>
+            </div>
+            
+            <div class="win-status-bar">
+                <div>Keyboard Shortcuts</div>
             </div>
         </div>
     </div>
-
-    <!-- Startup Screen -->
-    <div class="mac-startup" id="startup-screen">
-        <div class="mac-happy-mac"></div>
-        <div class="mac-startup-text">Welcome to Macintosh</div>
-        <div class="mac-startup-progress">
-            <div class="mac-progress-bar" id="startup-progress-bar"></div>
-        </div>
-        <div class="mac-startup-text" style="font-size: 9px; margin-top: 5px;">
-            Starting GitHub Browser...
-        </div>
+    
+    <!-- Menu kontekstowe -->
+    <div class="win-context-menu" id="repo-context-menu">
+        <div class="win-context-item" id="context-open">Open</div>
+        <div class="win-context-item" id="context-view-github">View on GitHub</div>
+        <div class="win-separator"></div>
+        <div class="win-context-item" id="context-copy-url">Copy URL</div>
     </div>
-
-    <!-- Audio Elements -->
-    <audio id="sound-startup" preload="none">
-        <source src="https://archive.org/download/MacSounds/Mac%20Startup.mp3" type="audio/mpeg">
-    </audio>
-    <audio id="sound-error" preload="none">
-        <source src="https://archive.org/download/MacSounds/Sosumi.mp3" type="audio/mpeg">
-    </audio>
-    <audio id="sound-click" preload="none">
-        <source src="https://archive.org/download/MacSounds/Mac%20Click.mp3" type="audio/mpeg">
-    </audio>
-    <audio id="sound-alert" preload="none">
-        <source src="https://archive.org/download/MacSounds/Mac%20Alert.mp3" type="audio/mpeg">
-    </audio>
+    
+    <div class="win-modal-background" id="modal-background"></div>
 
     <script>
-        // Global Variables
+        // Zmienne globalne
         let allRepos = [];
         let selectedRepo = null;
         let currentSort = 'updated';
-        let currentView = 'icon';
         let isDragging = false;
         let dragOffsetX = 0;
         let dragOffsetY = 0;
+        let currentView = 'large';
+        let isMinimized = false;
         let selectedRepoIndex = -1;
-        let soundEnabled = true;
-        let tooltipTimer = null;
-        let lastApiCall = 0;
-        const apiRateLimit = 1000; // min time between API calls in ms
-
-        // Repository Icon Mapping
-        const repoIcons = {
-            default: 'M16,2L2,14l2,16h28l2-16L16,2z M28,26H10.5L9,18h22L28,26z', // Document icon
-            JavaScript: 'M9,2v28h20V10L21,2H9z M24,19v8c0,3-2,3-4,2v-2c1,0,2,0,2-1v-7H9v13h14V19H24z M23,10h-4V6l4,4z M11,19h3v8h-2v-6h-1V19z M16,19h2c2,0,4,0,4,3c0,3-2,3-4,3h-2V19z M18,23h-1v-2h1c1,0,2,0,2,1C20,23,19,23,18,23z', // JS icon
-            HTML: 'M9,2v28h20V10L21,2H9z M23,10h-4V6l4,4z M14,21l-2,1l2,1v2l-4-2v-2l4-2V21z M16,16h4v1h-4V16z M20,24h-4v-1h4V24z M24,21l-2,1l2,1v2l-4-2v-2l4-2V21z', // HTML icon
-            CSS: 'M9,2v28h20V10L21,2H9z M23,10h-4V6l4,4z M21,24H18l-1,4h-2l4-16h1l4,16h-2L21,24z M20,22l-1-6l-1,6H20z', // CSS icon
-            Python: 'M16,2C9,2,9,6,9,6v4h8v2H6C6,12,2,12,2,19s4,7,4,7h3v-4c0,0,0-4,7-4s7,4,7,4v7c0,0,0,4-7,4s-7-4-7-4v-3H2c0,0-4,0-4-7s4-7,4-7h4V6c0,0,0-4,7-4s7,4,7,4v4h-4V6C16,6,16,2,16,2z M13,8c-1,0-2-1-2-2s1-2,2-2s2,1,2,2S14,8,13,8z M23,26c1,0,2,1,2,2s-1,2-2,2s-2-1-2-2S22,26,23,26z', // Python icon
-            Java: 'M12,2v8c-3,0-6,3-6,6v6c0,3,3,6,6,6h8c3,0,6-3,6-6v-6h-8V8c0-3,3-6,6-6H12z M22,14h2v2h-2V14z M18,8h2v4h-2V8z', // Java icon
-            Ruby: 'M16,2C6,2,6,12,6,12v4c0,0,0,4,4,4h12c4,0,4-4,4-4v-4C26,12,26,2,16,2z M16,6c6,0,6,6,6,6v4H10v-4C10,12,10,6,16,6z M14,13c-1,0-2-1-2-2s1-2,2-2s2,1,2,2S15,13,14,13z M18,13c-1,0-2-1-2-2s1-2,2-2s2,1,2,2S19,13,18,13z', // Ruby icon
-            PHP: 'M8,12v8h16v-8H8z M12,14h2c1,0,2,0,2,1l-2,3h2l2-3c0-1-1-2-2-2h-4V14z M20,14h2v1h-2v2h2v1h-4v-4H20z M6,16h2v2H6V16z M24,16h2v2h-2V16z M4,18h2v2H4V18z M26,18h2v2h-2V18z M6,20h18v2H6V20z', // PHP icon
-            TypeScript: 'M9,2v28h20V10L21,2H9z M23,10h-4V6l4,4z M24,26h-2v-8h-6v8h-2v-10h10V26z M14,20v2h-2v-2H9v-2h3v-2h-3v-2h5v6H14z', // TS icon
-            C: 'M16,2C8.3,2,2,8.3,2,16s6.3,14,14,14s14-6.3,14-14S23.7,2,16,2z M16,24c-4.4,0-8-3.6-8-8s3.6-8,8-8s8,3.6,8,8S20.4,24,16,24z M20,14h-3v-3h-2v3h-3v2h3v3h2v-3h3V14z', // C icon
-            'C++': 'M27,11l-6-6c-0.4-0.4-1-0.6-1.6-0.6H7C5.9,4.4,5,5.3,5,6.4v19.2c0,1.1,0.9,2,2,2h18c1.1,0,2-0.9,2-2V12.6C27,12,27,11.4,27,11z M20,8c0,0,2,0,2,2h-6V6C16,6,20,6,20,8z M16,16v-2h2v2H16z M12,16v-2h2v2H12z M20,20v2h-2v-2H20z M24,16v-2h2v2H24z M20,16v-2h2v2H20z M12,20v2h-2v-2H12z M8,16v-2h2v2H8z', // C++ icon
-            'C#': 'M25.4,8.5l-8-4.5c-0.4-0.2-0.9-0.2-1.3,0C15.4,4.3,8.9,7.9,8.5,8.1c-0.4,0.2-0.7,0.6-0.7,1.1v13.5c0,0.5,0.3,0.9,0.7,1.1c0.4,0.2,6.9,3.8,7.5,4.2c0.4,0.2,0.9,0.2,1.3,0l8-4.5c0.4-0.2,0.7-0.6,0.7-1.1V9.6C26,9.1,25.7,8.7,25.4,8.5z M16.5,23.3c-2.2,0-4-1.8-4-4s1.8-4,4-4s4,1.8,4,4S18.7,23.3,16.5,23.3z M24,15h-2v-2h-2v2h-2v2h2v2h2v-2h2V15z', // C# icon
-            Go: 'M11.5,20.1c-0.5,0-0.9-0.4-0.9-0.9c0-0.5,0.4-0.9,0.9-0.9c0.5,0,0.9,0.4,0.9,0.9C12.4,19.7,12,20.1,11.5,20.1z M20.4,20.1c-0.5,0-0.9-0.4-0.9-0.9c0-0.5,0.4-0.9,0.9-0.9c0.5,0,0.9,0.4,0.9,0.9C21.3,19.7,20.9,20.1,20.4,20.1z M8,15.5v1.7c0,0.5,0.5,1,1,1h14c0.5,0,1-0.5,1-1v-10c0-0.5-0.5-1-1-1H9c-0.5,0-1,0.5-1,1V15.5z M26,22c0,0.5-0.5,1-1,1H7c-0.5,0-1-0.5-1-1v-1h20V22z M11,10.8c1.1,0,1.9,1.1,1.9,2.4c0,1.3-0.8,2.4-1.9,2.4c-1.1,0-1.9-1.1-1.9-2.4C9.1,11.8,10,10.8,11,10.8z M21,10.8c1.1,0,1.9,1.1,1.9,2.4c0,1.3-0.8,2.4-1.9,2.4c-1.1,0-1.9-1.1-1.9-2.4C19.1,11.8,19.9,10.8,21,10.8z', // Go icon
-            Rust: 'M16,2C8.3,2,2,8.3,2,16s6.3,14,14,14s14-6.3,14-14S23.7,2,16,2z M16,25.6c-5.3,0-9.6-4.3-9.6-9.6c0-5.3,4.3-9.6,9.6-9.6c5.3,0,9.6,4.3,9.6,9.6C25.6,21.3,21.3,25.6,16,25.6z M18,16c0,1.1-0.9,2-2,2s-2-0.9-2-2s0.9-2,2-2S18,14.9,18,16z M12,13c0-0.6,0.4-1,1-1s1,0.4,1,1s-0.4,1-1,1S12,13.6,12,13z M18,13c0-0.6,0.4-1,1-1s1,0.4,1,1s-0.4,1-1,1S18,13.6,18,13z'
-        };
-
-        // Initialize App
+        
+        // Inicjalizacja
         document.addEventListener('DOMContentLoaded', () => {
-            // Start progress bar animation
-            const progressBar = document.getElementById('startup-progress-bar');
-            progressBar.style.width = '100%';
-            
-            // Play startup sound
-            if (soundEnabled) {
-                try {
-                    const startupSound = document.getElementById('sound-startup');
-                    startupSound.volume = 0.3;
-                    startupSound.play().catch(e => console.log('Audio play failed:', e));
-                } catch (e) {
-                    console.log('Audio error:', e);
-                }
+            // Dźwięk startowy
+            try {
+                document.getElementById('win-startup-sound').play().catch(() => {
+                    console.log('Autoplay prevented by browser');
+                });
+            } catch (e) {
+                console.log('Audio not supported');
             }
             
-            // Hide startup screen after delay
+            // Zamknięcie ekranu startowego po załadowaniu
             setTimeout(() => {
-                document.getElementById('startup-screen').classList.add('hidden');
-                // Load repositories
+                document.querySelector('.win-startup').classList.add('hidden');
+                
+                // Wczytaj repozytoria
                 fetchRepositories();
-            }, 2500);
-
-            // Initialize event listeners
-            initializeWindowControls();
-            initializeMenuItems();
-            initializeToolbar();
+                
+                // Inicjalizacja pamięci
+                updateMemoryDisplay();
+            }, 3000);
+            
+            // Event listenery dla przycisków okna
+            initializeWindowButtons();
+            
+            // Event listenery dla menu i toolbara
+            initializeMenuAndToolbar();
+            
+            // Event listenery dla przeciągania okien
             initializeDragAndDrop();
+            
+            // Event listenery dla skrótów klawiszowych
             initializeKeyboardShortcuts();
-            initializeScrollbar();
-            initializeMobileMenu();
-            initializeTooltips();
-            initializeVisitGitHub();
-
-            // Modal overlay closes modals
-            document.getElementById('modal-overlay').addEventListener('click', closeAllModals);
+            
+            // Tło modalu zamyka modalne okna
+            document.getElementById('modal-background').addEventListener('click', closeAllModals);
         });
-
-        // Initialize Visit GitHub button
-        function initializeVisitGitHub() {
-            document.getElementById('visit-github').addEventListener('click', () => {
-                window.open('https://github.com/Swir', '_blank');
-            });
-        }
-
-        // Initialize Tooltips
-        function initializeTooltips() {
-            const tooltip = document.getElementById('mac-tooltip');
+        
+        // Inicjalizacja przycisków okna
+        function initializeWindowButtons() {
+            // Główne okno
+            document.getElementById('minimize-button').addEventListener('click', minimizeWindow);
+            document.getElementById('maximize-button').addEventListener('click', maximizeWindow);
+            document.getElementById('close-button').addEventListener('click', closeWindow);
             
-            // Add tooltips to all elements with title attribute
-            document.querySelectorAll('[title]').forEach(el => {
-                el.addEventListener('mouseenter', (e) => {
-                    clearTimeout(tooltipTimer);
-                    const title = e.target.getAttribute('title');
-                    if (!title) return;
-                    
-                    e.target.setAttribute('data-original-title', title);
-                    e.target.removeAttribute('title');
-                    
-                    tooltip.textContent = title;
-                    tooltip.style.display = 'block';
-                    
-                    const rect = e.target.getBoundingClientRect();
-                    tooltip.style.left = (rect.left + rect.width / 2 - tooltip.offsetWidth / 2) + 'px';
-                    tooltip.style.top = (rect.bottom + 5) + 'px';
-                    
-                    // Ensure tooltip is within viewport
-                    const tooltipRect = tooltip.getBoundingClientRect();
-                    if (tooltipRect.left < 5) {
-                        tooltip.style.left = '5px';
-                    } else if (tooltipRect.right > window.innerWidth - 5) {
-                        tooltip.style.left = (window.innerWidth - tooltipRect.width - 5) + 'px';
-                    }
-                });
-                
-                el.addEventListener('mouseleave', (e) => {
-                    const originalTitle = e.target.getAttribute('data-original-title');
-                    if (originalTitle) {
-                        e.target.setAttribute('title', originalTitle);
-                        e.target.removeAttribute('data-original-title');
-                    }
-                    
-                    tooltipTimer = setTimeout(() => {
-                        tooltip.style.display = 'none';
-                    }, 100);
-                });
+            // Zminimalizowane okno
+            document.getElementById('minimized-window').addEventListener('click', restoreWindow);
+            
+            // Zamknięcie okien modalnych
+            document.getElementById('close-about').addEventListener('click', () => {
+                document.getElementById('about-modal').style.display = 'none';
+                document.getElementById('modal-background').style.display = 'none';
             });
             
-            // Hide tooltip when mouse moves out
-            tooltip.addEventListener('mouseenter', () => {
-                clearTimeout(tooltipTimer);
-            });
-            
-            tooltip.addEventListener('mouseleave', () => {
-                tooltipTimer = setTimeout(() => {
-                    tooltip.style.display = 'none';
-                }, 100);
-            });
-        }
-
-        // Initialize Mobile Menu Support
-        function initializeMobileMenu() {
-            if (window.matchMedia('(hover: none)').matches) {
-                document.querySelectorAll('.mac-menu-item').forEach(item => {
-                    item.addEventListener('click', function(e) {
-                        // Don't toggle if clicking a submenu item
-                        if (e.target.classList.contains('mac-submenu-item')) {
-                            return;
-                        }
-                        
-                        // Clear active class from all menu items
-                        document.querySelectorAll('.mac-menu-item').forEach(el => {
-                            if (el !== this) el.classList.remove('active');
-                        });
-                        
-                        // Toggle active class on clicked item
-                        this.classList.toggle('active');
-                        
-                        // Prevent event bubbling
-                        e.stopPropagation();
-                    });
-                });
-                
-                // Close menu when clicking elsewhere
-                document.addEventListener('click', function(e) {
-                    if (!e.target.closest('.mac-menu-item')) {
-                        document.querySelectorAll('.mac-menu-item').forEach(el => {
-                            el.classList.remove('active');
-                        });
-                    }
-                });
-            }
-            
-            // Handle touch events for context menu
-            document.addEventListener('touchstart', (e) => {
-                // Clear any existing long press timer
-                if (window.longPressTimer) {
-                    clearTimeout(window.longPressTimer);
-                }
-                
-                // Set a timer for long press
-                window.longPressTimer = setTimeout(() => {
-                    // Check if touch is on a repo item
-                    const repoItem = findRepoItemFromEvent(e);
-                    if (repoItem) {
-                        e.preventDefault();
-                        
-                        // Select the repository
-                        if (currentView === 'icon') {
-                            selectRepoItem(repoItem);
-                        } else {
-                            selectListItem(repoItem);
-                        }
-                        
-                        // Show context menu
-                        const contextMenu = document.getElementById('repo-context-menu');
-                        contextMenu.style.display = 'block';
-                        contextMenu.style.left = e.touches[0].pageX + 'px';
-                        contextMenu.style.top = e.touches[0].pageY + 'px';
-                        
-                        // Ensure context menu is within viewport
-                        const menuRect = contextMenu.getBoundingClientRect();
-                        if (menuRect.right > window.innerWidth) {
-                            contextMenu.style.left = (window.innerWidth - menuRect.width - 5) + 'px';
-                        }
-                        if (menuRect.bottom > window.innerHeight) {
-                            contextMenu.style.top = (e.touches[0].pageY - menuRect.height) + 'px';
-                        }
-                    }
-                }, 500); // 500ms for long press
-            });
-            
-            document.addEventListener('touchend', () => {
-                if (window.longPressTimer) {
-                    clearTimeout(window.longPressTimer);
-                }
-            });
-            
-            document.addEventListener('touchmove', () => {
-                if (window.longPressTimer) {
-                    clearTimeout(window.longPressTimer);
-                }
+            document.getElementById('close-shortcuts').addEventListener('click', () => {
+                document.getElementById('shortcuts-modal').style.display = 'none';
+                document.getElementById('modal-background').style.display = 'none';
             });
         }
         
-        // Find repository item from touch event
-        function findRepoItemFromEvent(e) {
-            const touch = e.touches[0];
-            const element = document.elementFromPoint(touch.clientX, touch.clientY);
+        // Inicjalizacja menu i toolbara
+        function initializeMenuAndToolbar() {
+            // Menu File
+            document.getElementById('refresh-button').addEventListener('click', fetchRepositories);
+            document.getElementById('exit-button').addEventListener('click', closeWindow);
             
-            if (currentView === 'icon') {
-                return element.closest('.mac-icon');
-            } else {
-                return element.closest('.mac-list-view tr');
-            }
-        }
-
-        // Initialize Window Controls
-        function initializeWindowControls() {
-            document.getElementById('window-close').addEventListener('click', confirmQuit);
-            document.getElementById('window-zoom').addEventListener('click', toggleWindowSize);
+            // Menu View
+            document.getElementById('view-large').addEventListener('click', () => setViewMode('large'));
+            document.getElementById('view-small').addEventListener('click', () => setViewMode('small'));
+            document.getElementById('toggle-theme').addEventListener('click', toggleTheme);
             
-            // Alert dialog
-            document.getElementById('alert-ok').addEventListener('click', () => {
-                closeDialog('alert-dialog');
-                playSound('click');
-            });
-
-            // Confirm dialog
-            document.getElementById('confirm-cancel').addEventListener('click', () => {
-                closeDialog('confirm-dialog');
-                playSound('click');
-            });
-
-            document.getElementById('confirm-ok').addEventListener('click', () => {
-                closeDialog('confirm-dialog');
-                playSound('click');
-                quitApplication();
-            });
-        }
-
-        // Initialize Menu Items
-        function initializeMenuItems() {
-            // File menu
-            document.getElementById('new-window').addEventListener('click', () => {
-                playSound('click');
-                window.open(window.location.href, '_blank');
-            });
+            // Menu Sort
+            document.getElementById('sort-name').addEventListener('click', () => sortRepositories('name'));
+            document.getElementById('sort-updated').addEventListener('click', () => sortRepositories('updated'));
+            document.getElementById('sort-stars').addEventListener('click', () => sortRepositories('stars'));
+            document.getElementById('sort-size').addEventListener('click', () => sortRepositories('size'));
             
-            document.getElementById('close-window').addEventListener('click', () => {
-                playSound('click');
-                confirmQuit();
-            });
+            // Menu Help
+            document.getElementById('about-button').addEventListener('click', showAboutModal);
+            document.getElementById('keyboard-shortcuts').addEventListener('click', showShortcutsModal);
             
-            document.getElementById('refresh-button').addEventListener('click', () => {
-                playSound('click');
-                fetchRepositories();
-            });
-            
-            document.getElementById('quit-button').addEventListener('click', () => {
-                playSound('click');
-                confirmQuit();
-            });
-
-            // Edit menu
-            document.getElementById('copy-url').addEventListener('click', () => {
-                if (selectedRepo) {
-                    playSound('click');
-                    navigator.clipboard.writeText(selectedRepo.html_url).then(() => {
-                        showAlert('URL copied to clipboard');
-                    }).catch(err => {
-                        console.error('Could not copy text: ', err);
-                    });
-                }
-            });
-            
-            document.getElementById('find-repo').addEventListener('click', () => {
-                playSound('click');
-                document.getElementById('repo-search').focus();
-            });
-
-            // View menu
-            document.getElementById('view-icon').addEventListener('click', () => {
-                playSound('click');
-                setViewMode('icon');
-            });
-            
-            document.getElementById('view-list').addEventListener('click', () => {
-                playSound('click');
-                setViewMode('list');
-            });
-            
-            document.getElementById('sort-name').addEventListener('click', () => {
-                playSound('click');
-                sortRepositories('name');
-            });
-            
-            document.getElementById('sort-date').addEventListener('click', () => {
-                playSound('click');
-                sortRepositories('updated');
-            });
-            
-            document.getElementById('sort-stars').addEventListener('click', () => {
-                playSound('click');
-                sortRepositories('stars');
-            });
-
-            // Special menu
-            document.getElementById('about-button').addEventListener('click', () => {
-                playSound('click');
-                showModal('about-modal');
-            });
-            
-            document.getElementById('keyboard-shortcuts').addEventListener('click', () => {
-                playSound('click');
-                showModal('shortcuts-modal');
-            });
-            
-            document.getElementById('toggle-sound').addEventListener('click', () => {
-                soundEnabled = !soundEnabled;
-                playSound('click');
-                showAlert(soundEnabled ? 'Sound effects enabled' : 'Sound effects disabled');
-            });
-
-            // Context menu
-            document.getElementById('context-open').addEventListener('click', () => {
-                if (selectedRepo) {
-                    playSound('click');
-                    showRepoDetails(selectedRepo);
-                }
-            });
-
-            document.getElementById('context-view-github').addEventListener('click', () => {
-                if (selectedRepo) {
-                    playSound('click');
-                    window.open(selectedRepo.html_url, '_blank');
-                }
-            });
-
-            document.getElementById('context-copy-url').addEventListener('click', () => {
-                if (selectedRepo) {
-                    playSound('click');
-                    navigator.clipboard.writeText(selectedRepo.html_url).then(() => {
-                        showAlert('URL copied to clipboard');
-                    }).catch(err => {
-                        console.error('Could not copy text: ', err);
-                    });
-                }
-            });
-            
-            document.getElementById('context-quick-look').addEventListener('click', () => {
-                if (selectedRepo) {
-                    playSound('click');
-                    showQuickLook(selectedRepo);
-                }
-            });
-        }
-
-        // Show Quick Look
-        function showQuickLook(repo) {
-            const modal = document.getElementById('quick-look-modal');
-            const title = document.getElementById('quick-look-title');
-            const content = document.getElementById('quick-look-content');
-            
-            title.textContent = repo.name;
-            
-            // Show loading indicator
-            content.innerHTML = `
-                <div class="mac-loading">
-                    <div class="mac-loading-text">Loading repository details...</div>
-                    <div class="mac-watch"></div>
-                </div>
-            `;
-            
-            // Show modal immediately
-            showModal('quick-look-modal');
-            
-            // Fetch repository details
-            fetch(repo.url)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`GitHub API error: ${response.status}`);
-                    }
-                    return response.json();
-                })
-                .then(repoDetails => {
-                    // Fetch repository languages
-                    return fetch(repo.languages_url)
-                        .then(response => {
-                            if (!response.ok) {
-                                throw new Error(`GitHub API error: ${response.status}`);
-                            }
-                            return response.json();
-                        })
-                        .then(languages => {
-                            // Fetch recent commits
-                            return fetch(`${repo.commits_url.replace('{/sha}', '')}?per_page=5`)
-                                .then(response => {
-                                    if (!response.ok) {
-                                        throw new Error(`GitHub API error: ${response.status}`);
-                                    }
-                                    return response.json();
-                                })
-                                .then(commits => {
-                                    return { repoDetails, languages, commits };
-                                });
-                        });
-                })
-                .then(data => {
-                    // Format languages
-                    const totalBytes = Object.values(data.languages).reduce((a, b) => a + b, 0);
-                    const languageList = Object.entries(data.languages)
-                        .sort((a, b) => b[1] - a[1])
-                        .map(([lang, bytes]) => `${lang}: ${Math.round(bytes / totalBytes * 100)}%`)
-                        .join(', ');
-                    
-                    // Format commits
-                    const commitList = data.commits.map(commit => {
-                        const date = new Date(commit.commit.author.date).toLocaleDateString();
-                        const message = commit.commit.message.split('\n')[0]; // Get first line
-                        return `<div class="mac-detail-row" style="margin-bottom: 5px; padding-bottom: 5px; border-bottom: 1px solid #eee;">
-                            <div style="margin-bottom: 2px;"><strong>${message.substring(0, 50)}${message.length > 50 ? '...' : ''}</strong></div>
-                            <div style="font-size: 8px; color: #666;">by ${commit.commit.author.name} on ${date}</div>
-                        </div>`;
-                    }).join('');
-                    
-                    // Render content
-                    content.innerHTML = `
-                        <div style="display: flex; margin-bottom: 10px;">
-                            <div style="width: 32px; height: 32px; margin-right: 10px;">
-                                <svg viewBox="0 0 32 32" width="32" height="32">
-                                    <path d="${repoIcons[repo.language] || repoIcons.default}" fill="black"/>
-                                </svg>
-                            </div>
-                            <div>
-                                <div style="font-family: 'Chicago', monospace; font-size: 14px; margin-bottom: 2px;">${repo.name}</div>
-                                <div style="font-size: 9px; color: #666;">
-                                    ${repo.stargazers_count} ★ &nbsp; ${repo.forks_count} ⑂ &nbsp; Updated: ${new Date(repo.updated_at).toLocaleDateString()}
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="mac-detail-description" style="max-height: 60px; margin-bottom: 15px;">
-                            ${repo.description || "No description available."}
-                        </div>
-                        
-                        <div style="margin-bottom: 15px;">
-                            <div style="font-family: 'Chicago', monospace; font-size: 11px; margin-bottom: 5px; border-bottom: 1px solid #000;">Languages</div>
-                            <div style="font-size: 9px; font-family: 'Monaco', monospace;">
-                                ${languageList || "No language information available."}
-                            </div>
-                        </div>
-                        
-                        <div>
-                            <div style="font-family: 'Chicago', monospace; font-size: 11px; margin-bottom: 5px; border-bottom: 1px solid #000;">Recent Commits</div>
-                            <div style="font-size: 9px; font-family: 'Monaco', monospace; max-height: 100px; overflow-y: auto;">
-                                ${commitList || "No recent commits available."}
-                            </div>
-                        </div>
-                        
-                        <div class="mac-button-row">
-                            <div class="mac-button" onclick="window.open('${repo.html_url}', '_blank')">Open in GitHub</div>
-                        </div>
-                    `;
-                })
-                .catch(error => {
-                    console.error('Error fetching repository details:', error);
-                    playSound('error');
-                    content.innerHTML = `
-                        <div style="text-align: center; padding: 20px;">
-                            <div class="mac-dialog-icon mac-alert-icon" style="margin: 0 auto 10px;"></div>
-                            <div style="font-family: 'Chicago', monospace; margin-bottom: 10px; color: var(--mac-black);">
-                                Sorry, a problem occurred.
-                            </div>
-                            <div style="font-size: 9px; color: var(--mac-black);">
-                                ${error.message}
-                            </div>
-                        </div>
-                    `;
-                });
-        }
-
-        // Initialize Toolbar
-        function initializeToolbar() {
-            document.getElementById('refresh-repos').addEventListener('click', () => {
-                playSound('click');
-                fetchRepositories();
-            });
-            
-            document.getElementById('view-toggle').addEventListener('click', () => {
-                playSound('click');
-                toggleViewMode();
-            });
-            
+            // Toolbar
             document.getElementById('repo-search').addEventListener('input', filterRepositories);
-            document.getElementById('repo-search').addEventListener('focus', () => {
-                document.getElementById('repo-search').select();
-            });
+            document.getElementById('refresh-repos').addEventListener('click', fetchRepositories);
+            document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+            document.getElementById('view-toggle').addEventListener('click', cycleViewMode);
             
-            document.getElementById('sort-button').addEventListener('click', (e) => {
-                playSound('click');
-                
+            document.getElementById('sort-repos').addEventListener('click', (e) => {
                 const menu = document.createElement('div');
-                menu.className = 'mac-context-menu';
+                menu.className = 'win-context-menu';
                 menu.style.display = 'block';
-                menu.style.left = e.target.offsetLeft + 'px';
-                menu.style.top = (e.target.offsetTop + e.target.offsetHeight) + 'px';
+                menu.style.left = e.pageX + 'px';
+                menu.style.top = e.pageY + 'px';
                 
                 menu.innerHTML = `
-                    <div class="mac-context-item" id="sort-menu-name">by Name</div>
-                    <div class="mac-context-item" id="sort-menu-date">by Date</div>
-                    <div class="mac-context-item" id="sort-menu-stars">by Stars</div>
+                    <div class="win-context-item" id="sort-context-name">By Name</div>
+                    <div class="win-context-item" id="sort-context-updated">By Last Updated</div>
+                    <div class="win-context-item" id="sort-context-stars">By Stars</div>
+                    <div class="win-context-item" id="sort-context-size">By Size</div>
                 `;
                 
                 document.body.appendChild(menu);
                 
-                menu.querySelectorAll('.mac-context-item').forEach(item => {
+                menu.querySelectorAll('.win-context-item').forEach(item => {
                     item.addEventListener('click', () => {
-                        playSound('click');
-                        const sortType = item.id.replace('sort-menu-', '');
-                        if (sortType === 'name') sortRepositories('name');
-                        else if (sortType === 'date') sortRepositories('updated');
-                        else if (sortType === 'stars') sortRepositories('stars');
+                        const sortType = item.id.replace('sort-context-', '');
+                        sortRepositories(sortType);
                         document.body.removeChild(menu);
                     });
                 });
                 
-                document.addEventListener('click', function hideMenu(event) {
-                    if (!menu.contains(event.target) && event.target !== e.target) {
-                        if (document.body.contains(menu)) {
-                            document.body.removeChild(menu);
-                        }
-                        document.removeEventListener('click', hideMenu);
+                document.addEventListener('click', function hideMenu() {
+                    if (document.body.contains(menu)) {
+                        document.body.removeChild(menu);
                     }
+                    document.removeEventListener('click', hideMenu);
                 });
             });
+            
+            // Menu kontekstowe dla repozytoriów
+            document.getElementById('context-open').addEventListener('click', () => {
+                if (selectedRepo) {
+                    showRepoDetails(selectedRepo);
+                }
+            });
+            
+            document.getElementById('context-view-github').addEventListener('click', () => {
+                if (selectedRepo) {
+                    window.open(selectedRepo.html_url, '_blank');
+                }
+            });
+            
+            document.getElementById('context-copy-url').addEventListener('click', () => {
+                if (selectedRepo) {
+                    navigator.clipboard.writeText(selectedRepo.html_url).then(() => {
+                        showTemporaryMessage('URL copied to clipboard');
+                    }).catch(err => {
+                        console.error('Could not copy text: ', err);
+                    });
+                }
+            });
         }
-
-        // Initialize Drag and Drop
+        
+        // Inicjalizacja przeciągania okien
         function initializeDragAndDrop() {
-            const mainTitleBar = document.getElementById('main-title-bar');
+            const mainTitleBar = document.getElementById('main-window-title');
             const mainWindow = document.getElementById('main-window');
             
             mainTitleBar.addEventListener('mousedown', (e) => {
-                if (e.target.classList.contains('mac-close-box') || 
-                    e.target.classList.contains('mac-zoom-box')) return;
+                if (e.target.classList.contains('win-button')) return;
                 
                 isDragging = true;
-                mainWindow.classList.add('dragging');
                 const rect = mainWindow.getBoundingClientRect();
                 dragOffsetX = e.clientX - rect.left;
                 dragOffsetY = e.clientY - rect.top;
+                
+                mainWindow.style.opacity = '0.8';
             });
             
             document.addEventListener('mousemove', (e) => {
@@ -1958,358 +1075,240 @@
             document.addEventListener('mouseup', () => {
                 if (isDragging) {
                     isDragging = false;
-                    mainWindow.classList.remove('dragging');
+                    mainWindow.style.opacity = '1';
                 }
             });
             
-            // Detail window dragging
-            const detailTitleBar = document.getElementById('detail-title-bar');
-            const detailWindow = document.querySelector('#repo-detail-modal .mac-window');
+            // Również dla okna modalnego
+            const modalTitleBar = document.getElementById('repo-modal-title');
+            const modalWindow = document.getElementById('repo-details-modal').querySelector('.win-window');
             
-            detailTitleBar.addEventListener('mousedown', (e) => {
-                if (e.target.classList.contains('mac-close-box') || 
-                    e.target.classList.contains('mac-zoom-box')) return;
+            modalTitleBar.addEventListener('mousedown', (e) => {
+                if (e.target.classList.contains('win-button')) return;
                 
                 isDragging = true;
-                detailWindow.classList.add('dragging');
-                const rect = detailWindow.getBoundingClientRect();
+                const rect = modalWindow.getBoundingClientRect();
                 dragOffsetX = e.clientX - rect.left;
                 dragOffsetY = e.clientY - rect.top;
+                
+                modalWindow.style.opacity = '0.8';
             });
         }
-
-        // Initialize Keyboard Shortcuts
+        
+        // Inicjalizacja skrótów klawiszowych
         function initializeKeyboardShortcuts() {
             document.addEventListener('keydown', (e) => {
-                // Command+N - New Window
-                if (e.key === 'n' && (e.metaKey || e.ctrlKey)) {
+                // F5 - odświeżenie
+                if (e.key === 'F5') {
                     e.preventDefault();
-                    playSound('click');
-                    window.open(window.location.href, '_blank');
-                }
-                
-                // Command+W - Close Window
-                if (e.key === 'w' && (e.metaKey || e.ctrlKey)) {
-                    e.preventDefault();
-                    playSound('click');
-                    confirmQuit();
-                }
-                
-                // Command+R - Refresh
-                if (e.key === 'r' && (e.metaKey || e.ctrlKey)) {
-                    e.preventDefault();
-                    playSound('click');
                     fetchRepositories();
                 }
                 
-                // Command+F - Focus on search
-                if (e.key === 'f' && (e.metaKey || e.ctrlKey)) {
+                // Ctrl+F - fokus na wyszukiwaniu
+                if (e.key === 'f' && e.ctrlKey) {
                     e.preventDefault();
-                    playSound('click');
                     document.getElementById('repo-search').focus();
                 }
                 
-                // Command+Q - Quit
-                if (e.key === 'q' && (e.metaKey || e.ctrlKey)) {
-                    e.preventDefault();
-                    playSound('click');
-                    confirmQuit();
-                }
-                
-                // Esc - Close modals
+                // Esc - zamknięcie modali
                 if (e.key === 'Escape') {
-                    const modalOpen = 
-                        document.getElementById('repo-detail-modal').style.display === 'block' ||
-                        document.getElementById('about-modal').style.display === 'block' ||
-                        document.getElementById('shortcuts-modal').style.display === 'block' ||
-                        document.getElementById('quick-look-modal').style.display === 'block' ||
-                        document.getElementById('alert-dialog').style.display === 'block' ||
-                        document.getElementById('confirm-dialog').style.display === 'block';
-                    
-                    if (modalOpen) {
-                        playSound('click');
-                        closeAllModals();
-                    }
+                    closeAllModals();
                 }
                 
-                // Arrow keys for navigation
+                // T - przełączenie motywu
+                if (e.key === 't' || e.key === 'T') {
+                    toggleTheme();
+                }
+                
+                // Strzałki do nawigacji po repozytoriach
                 if (e.key.startsWith('Arrow')) {
-                    if (currentView === 'icon') {
-                        navigateIconGrid(e.key);
-                    } else {
-                        navigateListView(e.key);
+                    const grid = document.querySelector('.win-repo-grid');
+                    if (!grid) return;
+                    
+                    const items = Array.from(grid.querySelectorAll('.win-repo-item'));
+                    if (items.length === 0) return;
+                    
+                    // Jeśli nic nie jest zaznaczone, zaznacz pierwszy element
+                    if (selectedRepoIndex === -1) {
+                        selectedRepoIndex = 0;
+                        highlightRepoItem(items[selectedRepoIndex]);
+                        return;
+                    }
+                    
+                    let newIndex = selectedRepoIndex;
+                    const columns = Math.floor(grid.clientWidth / items[0].clientWidth);
+                    
+                    if (e.key === 'ArrowRight') {
+                        newIndex = Math.min(items.length - 1, selectedRepoIndex + 1);
+                    } else if (e.key === 'ArrowLeft') {
+                        newIndex = Math.max(0, selectedRepoIndex - 1);
+                    } else if (e.key === 'ArrowDown') {
+                        newIndex = Math.min(items.length - 1, selectedRepoIndex + columns);
+                    } else if (e.key === 'ArrowUp') {
+                        newIndex = Math.max(0, selectedRepoIndex - columns);
+                    }
+                    
+                    if (newIndex !== selectedRepoIndex) {
+                        selectedRepoIndex = newIndex;
+                        highlightRepoItem(items[selectedRepoIndex]);
                     }
                 }
                 
-                // Space - Quick Look
-                if (e.key === ' ' && selectedRepo) {
-                    e.preventDefault();
-                    playSound('click');
-                    showQuickLook(selectedRepo);
-                }
-                
-                // Enter - Open selected repository
-                if (e.key === 'Enter' && selectedRepo) {
-                    playSound('click');
-                    showRepoDetails(selectedRepo);
-                }
-                
-                // Command+C - Copy URL
-                if (e.key === 'c' && (e.metaKey || e.ctrlKey) && selectedRepo) {
-                    e.preventDefault();
-                    playSound('click');
-                    navigator.clipboard.writeText(selectedRepo.html_url).then(() => {
-                        showAlert('URL copied to clipboard');
-                    }).catch(err => {
-                        console.error('Could not copy text: ', err);
-                    });
-                }
-            });
-        }
-        
-        // Navigate Icon Grid
-        function navigateIconGrid(key) {
-            const itemsContainer = document.querySelector('.mac-icon-grid');
-            if (!itemsContainer) return;
-            
-            const items = Array.from(itemsContainer.querySelectorAll('.mac-icon'));
-            if (items.length === 0) return;
-            
-            // If nothing is selected, select the first item
-            if (selectedRepoIndex === -1) {
-                selectedRepoIndex = 0;
-                selectRepoItem(items[selectedRepoIndex]);
-                return;
-            }
-            
-            let newIndex = selectedRepoIndex;
-            const columns = Math.max(1, Math.floor(itemsContainer.clientWidth / 80)); // Approximate column count
-            
-            if (key === 'ArrowRight') {
-                newIndex = Math.min(items.length - 1, selectedRepoIndex + 1);
-            } else if (key === 'ArrowLeft') {
-                newIndex = Math.max(0, selectedRepoIndex - 1);
-            } else if (key === 'ArrowDown') {
-                newIndex = Math.min(items.length - 1, selectedRepoIndex + columns);
-            } else if (key === 'ArrowUp') {
-                newIndex = Math.max(0, selectedRepoIndex - columns);
-            }
-            
-            if (newIndex !== selectedRepoIndex) {
-                playSound('click');
-                selectedRepoIndex = newIndex;
-                selectRepoItem(items[selectedRepoIndex]);
-            }
-        }
-        
-        // Navigate List View
-        function navigateListView(key) {
-            const listView = document.querySelector('.mac-list-view');
-            if (!listView) return;
-            
-            const rows = Array.from(listView.querySelectorAll('tr')).slice(1); // Skip header
-            if (rows.length === 0) return;
-            
-            // If nothing is selected, select the first item
-            if (selectedRepoIndex === -1) {
-                selectedRepoIndex = 0;
-                selectListItem(rows[selectedRepoIndex]);
-                return;
-            }
-            
-            let newIndex = selectedRepoIndex;
-            
-            if (key === 'ArrowDown') {
-                newIndex = Math.min(rows.length - 1, selectedRepoIndex + 1);
-            } else if (key === 'ArrowUp') {
-                newIndex = Math.max(0, selectedRepoIndex - 1);
-            }
-            
-            if (newIndex !== selectedRepoIndex) {
-                playSound('click');
-                selectedRepoIndex = newIndex;
-                selectListItem(rows[selectedRepoIndex]);
-            }
-        }
-
-        // Initialize Scrollbar
-        function initializeScrollbar() {
-            const scrollbarThumb = document.querySelector('.mac-scrollbar-thumb');
-            const scrollbarUp = document.querySelector('.mac-scrollbar-up');
-            const scrollbarDown = document.querySelector('.mac-scrollbar-down');
-            const content = document.getElementById('repos-container');
-            
-            if (!scrollbarThumb || !scrollbarUp || !scrollbarDown || !content) return;
-            
-            scrollbarThumb.addEventListener('mousedown', (e) => {
-                e.preventDefault();
-                const startY = e.clientY;
-                const startTop = parseInt(getComputedStyle(scrollbarThumb).top || '0');
-                const scrollbarHeight = scrollbarThumb.parentElement.clientHeight - 28; // minus buttons height
-                
-                function onMouseMove(e) {
-                    let newTop = startTop + (e.clientY - startY);
-                    newTop = Math.max(0, Math.min(scrollbarHeight - scrollbarThumb.clientHeight, newTop));
-                    scrollbarThumb.style.top = newTop + 'px';
+                // Enter - otwórz zaznaczone repozytorium
+                if (e.key === 'Enter') {
+                    const grid = document.querySelector('.win-repo-grid');
+                    if (!grid) return;
                     
-                    // Calculate scroll position
-                    const scrollRatio = newTop / (scrollbarHeight - scrollbarThumb.clientHeight);
-                    const scrollMax = content.scrollHeight - content.clientHeight;
-                    content.scrollTop = scrollRatio * scrollMax;
-                }
-                
-                function onMouseUp() {
-                    document.removeEventListener('mousemove', onMouseMove);
-                    document.removeEventListener('mouseup', onMouseUp);
-                }
-                
-                document.addEventListener('mousemove', onMouseMove);
-                document.addEventListener('mouseup', onMouseUp);
-            });
-            
-            scrollbarUp.addEventListener('click', () => {
-                playSound('click');
-                content.scrollTop -= 30;
-                updateScrollbarThumb();
-            });
-            
-            scrollbarDown.addEventListener('click', () => {
-                playSound('click');
-                content.scrollTop += 30;
-                updateScrollbarThumb();
-            });
-            
-            // Mousewheel scrolling
-            content.addEventListener('wheel', (e) => {
-                content.scrollTop += e.deltaY;
-                updateScrollbarThumb();
-                
-                // Prevent page scroll when at top or bottom
-                if ((content.scrollTop === 0 && e.deltaY < 0) || 
-                    (content.scrollTop + content.clientHeight >= content.scrollHeight && e.deltaY > 0)) {
-                    e.preventDefault();
+                    const items = Array.from(grid.querySelectorAll('.win-repo-item'));
+                    if (items.length === 0 || selectedRepoIndex === -1) return;
+                    
+                    items[selectedRepoIndex].click();
                 }
             });
-            
-            content.addEventListener('scroll', updateScrollbarThumb);
-            
-            // Update on window resize
-            window.addEventListener('resize', updateScrollbarThumb);
-            
-            // Initial update
-            setTimeout(updateScrollbarThumb, 500);
         }
-
-        // Update Scrollbar Thumb position
-        function updateScrollbarThumb() {
-            const scrollbarThumb = document.querySelector('.mac-scrollbar-thumb');
-            const content = document.getElementById('repos-container');
-            
-            if (!scrollbarThumb || !content) return;
-            
-            const scrollbarHeight = scrollbarThumb.parentElement.clientHeight - 28; // minus buttons height
-            
-            if (content.scrollHeight <= content.clientHeight) {
-                scrollbarThumb.style.display = 'none';
-                return;
-            }
-            
-            scrollbarThumb.style.display = 'block';
-            
-            // Calculate thumb size and position
-            const thumbSizeRatio = content.clientHeight / content.scrollHeight;
-            const thumbSize = Math.max(30, scrollbarHeight * thumbSizeRatio);
-            const scrollRatio = content.scrollTop / (content.scrollHeight - content.clientHeight);
-            const thumbPosition = scrollRatio * (scrollbarHeight - thumbSize);
-            
-            scrollbarThumb.style.height = thumbSize + 'px';
-            scrollbarThumb.style.top = thumbPosition + 'px';
-        }
-
-        // Select Repository Item (Icon View)
-        function selectRepoItem(item) {
-            document.querySelectorAll('.mac-icon').forEach(el => {
-                el.classList.remove('selected');
+        
+        // Podświetl element repozytorium
+        function highlightRepoItem(item) {
+            document.querySelectorAll('.win-repo-item').forEach(el => {
+                el.style.borderColor = 'transparent';
+                el.style.backgroundColor = '';
             });
             
-            item.classList.add('selected');
+            item.style.borderColor = 'var(--win-highlight)';
+            item.style.backgroundColor = 'var(--win-dark-blue)';
             item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             
-            // Find the corresponding repository
-            const repoName = item.querySelector('.mac-icon-label').textContent;
+            // Znajdź odpowiednie repozytorium
+            const repoName = item.querySelector('.win-repo-name').textContent;
             selectedRepo = allRepos.find(repo => repo.name === repoName);
         }
-
-        // Select List Item (List View)
-        function selectListItem(row) {
-            document.querySelectorAll('.mac-list-view tr').forEach(el => {
-                el.classList.remove('selected');
-            });
-            
-            row.classList.add('selected');
-            row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            
-            // Find the corresponding repository
-            const repoName = row.cells[0].textContent;
-            selectedRepo = allRepos.find(repo => repo.name === repoName);
+        
+        // Minimalizacja okna
+        function minimizeWindow() {
+            playSound('click');
+            document.getElementById('main-window').style.display = 'none';
+            document.getElementById('minimized-window').style.display = 'block';
+            isMinimized = true;
         }
-
-        // Toggle Window Size
-        function toggleWindowSize() {
+        
+        // Maksymalizacja okna
+        function maximizeWindow() {
+            playSound('click');
             const mainWindow = document.getElementById('main-window');
             
-            playSound('click');
-            
             if (mainWindow.style.position === 'fixed') {
-                // Restore original position and size
+                // Przywróć normalny rozmiar
                 mainWindow.style.position = 'relative';
                 mainWindow.style.top = '';
                 mainWindow.style.left = '';
                 mainWindow.style.width = '';
                 mainWindow.style.height = '';
-                mainWindow.style.maxWidth = '800px';
-                mainWindow.style.margin = '0 auto';
             } else {
-                // Maximize window
+                // Maksymalizuj
                 mainWindow.style.position = 'fixed';
-                mainWindow.style.top = '20px'; // Below menu bar
+                mainWindow.style.top = '0';
                 mainWindow.style.left = '0';
                 mainWindow.style.width = '100%';
-                mainWindow.style.height = 'calc(100vh - 20px)';
-                mainWindow.style.maxWidth = 'none';
+                mainWindow.style.height = '100%';
                 mainWindow.style.margin = '0';
             }
-            
-            // Update scrollbar after resize
-            setTimeout(updateScrollbarThumb, 100);
         }
-
-        // Toggle View Mode
-        function toggleViewMode() {
-            currentView = currentView === 'icon' ? 'list' : 'icon';
-            setViewMode(currentView);
+        
+        // Zamknięcie okna
+        function closeWindow() {
+            playSound('click');
+            if (confirm('Are you sure you want to exit?')) {
+                window.close();
+                // Jako alternatywa, jeśli window.close() nie zadziała
+                document.body.innerHTML = `
+                    <div class="win-startup" style="opacity: 1; visibility: visible;">
+                        <div class="win-logo">Windows 3.11</div>
+                        <div class="win-startup-text">It is now safe to turn off your computer.</div>
+                    </div>
+                `;
+            }
         }
-
-        // Set View Mode
+        
+        // Przywrócenie okna
+        function restoreWindow() {
+            playSound('click');
+            document.getElementById('main-window').style.display = 'block';
+            document.getElementById('minimized-window').style.display = 'none';
+            isMinimized = false;
+        }
+        
+        // Przełączanie motywu
+        function toggleTheme() {
+            playSound('click');
+            document.body.classList.toggle('light-mode');
+        }
+        
+        // Pokaż okno About
+        function showAboutModal() {
+            playSound('click');
+            document.getElementById('about-modal').style.display = 'block';
+            document.getElementById('modal-background').style.display = 'block';
+        }
+        
+        // Pokaż okno skrótów klawiszowych
+        function showShortcutsModal() {
+            playSound('click');
+            document.getElementById('shortcuts-modal').style.display = 'block';
+            document.getElementById('modal-background').style.display = 'block';
+        }
+        
+        // Zamknij wszystkie modalne okna
+        function closeAllModals() {
+            document.getElementById('repo-details-modal').style.display = 'none';
+            document.getElementById('about-modal').style.display = 'none';
+            document.getElementById('shortcuts-modal').style.display = 'none';
+            document.getElementById('modal-background').style.display = 'none';
+            document.querySelectorAll('.win-context-menu').forEach(menu => {
+                if (document.body.contains(menu)) {
+                    document.body.removeChild(menu);
+                }
+            });
+        }
+        
+        // Ustawienie trybu widoku ikon
         function setViewMode(mode) {
+            playSound('click');
             currentView = mode;
-            // Update view toggle button text
-            document.getElementById('view-toggle').textContent = mode === 'icon' ? 'List View' : 'Icon View';
-            renderRepositories(allRepos);
             
-            // Update scrollbar after view change
-            setTimeout(updateScrollbarThumb, 100);
+            const grid = document.querySelector('.win-repo-grid');
+            if (!grid) return;
+            
+            if (mode === 'small') {
+                grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(120px, 1fr))';
+                grid.querySelectorAll('.win-repo-icon').forEach(icon => {
+                    icon.style.width = '24px';
+                    icon.style.height = '24px';
+                    icon.style.fontSize = '12px';
+                });
+            } else {
+                grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(180px, 1fr))';
+                grid.querySelectorAll('.win-repo-icon').forEach(icon => {
+                    icon.style.width = '32px';
+                    icon.style.height = '32px';
+                    icon.style.fontSize = '16px';
+                });
+            }
         }
-
-        // Sort Repositories
+        
+        // Cykliczne przełączanie trybu widoku
+        function cycleViewMode() {
+            playSound('click');
+            if (currentView === 'large') {
+                setViewMode('small');
+            } else {
+                setViewMode('large');
+            }
+        }
+        
+        // Sortowanie repozytoriów
         function sortRepositories(sortType) {
+            playSound('click');
             currentSort = sortType;
-            
-            // Update sort button text
-            document.getElementById('sort-button').textContent = 
-                sortType === 'name' ? 'Sort: Name' : 
-                sortType === 'updated' ? 'Sort: Date' : 
-                'Sort: Stars';
             
             allRepos.sort((a, b) => {
                 switch (sortType) {
@@ -2319,18 +1318,17 @@
                         return new Date(b.updated_at) - new Date(a.updated_at);
                     case 'stars':
                         return b.stargazers_count - a.stargazers_count;
+                    case 'size':
+                        return b.size - a.size;
                     default:
                         return 0;
                 }
             });
             
             renderRepositories(allRepos);
-            
-            // Update scrollbar after sorting
-            setTimeout(updateScrollbarThumb, 100);
         }
-
-        // Filter Repositories
+        
+        // Filtrowanie repozytoriów
         function filterRepositories() {
             const searchTerm = document.getElementById('repo-search').value.toLowerCase();
             
@@ -2346,267 +1344,131 @@
             );
             
             renderRepositories(filteredRepos);
-            
-            // Update scrollbar after filtering
-            setTimeout(updateScrollbarThumb, 100);
         }
-
-        // Fetch Repositories
+        
+        // Aktualizacja wyświetlania pamięci
+        function updateMemoryDisplay() {
+            const memoryDisplay = document.getElementById('memory-display');
+            const memory = Math.floor(Math.random() * 10) + 1;
+            memoryDisplay.textContent = `${memory}.${Math.floor(Math.random() * 100)}MB free`;
+        }
+        
+        // Odtwarzanie dźwięków
+        function playSound(type) {
+            try {
+                switch (type) {
+                    case 'startup':
+                        document.getElementById('win-startup-sound').play().catch(() => {});
+                        break;
+                    case 'error':
+                        document.getElementById('win-error-sound').play().catch(() => {});
+                        break;
+                    case 'click':
+                        document.getElementById('win-click-sound').currentTime = 0;
+                        document.getElementById('win-click-sound').play().catch(() => {});
+                        break;
+                }
+            } catch (e) {
+                console.log('Audio not supported');
+            }
+        }
+        
+        // Pokazywanie tymczasowego komunikatu
+        function showTemporaryMessage(message) {
+            const messageElement = document.createElement('div');
+            messageElement.style.position = 'fixed';
+            messageElement.style.bottom = '20px';
+            messageElement.style.left = '50%';
+            messageElement.style.transform = 'translateX(-50%)';
+            messageElement.style.backgroundColor = 'var(--win-blue)';
+            messageElement.style.color = 'white';
+            messageElement.style.padding = '8px 16px';
+            messageElement.style.borderRadius = '4px';
+            messageElement.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.3)';
+            messageElement.style.zIndex = '2000';
+            messageElement.textContent = message;
+            
+            document.body.appendChild(messageElement);
+            
+            setTimeout(() => {
+                document.body.removeChild(messageElement);
+            }, 2000);
+        }
+        
+        // Pobieranie listy repozytoriów
         async function fetchRepositories() {
             const username = 'Swir';
             const reposContainer = document.getElementById('repos-container');
             
-            // Show loading indicator
+            // Zmień zawartość kontenera na ekran ładowania
             reposContainer.innerHTML = `
-                <div class="mac-loading">
-                    <div class="mac-loading-text">Loading Repositories...</div>
-                    <div class="mac-watch"></div>
+                <div class="win-loading">
+                    <div class="win-loading-text">Loading repositories...</div>
+                    <div class="win-loading-animation">
+                        <div class="win-loading-bar"></div>
+                    </div>
                 </div>
             `;
-            
-            // Check API rate limit
-            const now = Date.now();
-            if (now - lastApiCall < apiRateLimit) {
-                await new Promise(resolve => setTimeout(resolve, apiRateLimit - (now - lastApiCall)));
-            }
-            
-            lastApiCall = Date.now();
             
             try {
                 const response = await fetch(`https://api.github.com/users/${username}/repos?per_page=100`);
                 
                 if (!response.ok) {
-                    throw new Error(`GitHub API error: ${response.status}`);
+                    throw new Error(`GitHub API responded with status: ${response.status}`);
                 }
                 
                 allRepos = await response.json();
                 
-                // Sort repositories
+                // Sortowanie repozytoriów
                 sortRepositories(currentSort);
                 
-                // Update scrollbar
-                setTimeout(updateScrollbarThumb, 100);
+                // Aktualizuj licznik repozytoriów
+                document.querySelector('.win-status-bar div:first-child').textContent = `${allRepos.length} object(s)`;
+                
+                // Aktualizuj wyświetlanie pamięci
+                updateMemoryDisplay();
                 
             } catch (error) {
                 console.error('Error fetching repositories:', error);
                 playSound('error');
-                showAlert(`Error: ${error.message}`);
-                reposContainer.innerHTML = `
-                    <div style="text-align: center; padding: 40px;">
-                        <div class="mac-dialog-icon mac-alert-icon" style="margin: 0 auto 10px;"></div>
-                        <div style="font-family: 'Chicago', monospace; margin-bottom: 10px; color: var(--mac-black);">
-                            Sorry, a problem occurred.
-                        </div>
-                        <div style="font-size: 9px; color: var(--mac-black);">
-                            ${error.message}
-                        </div>
-                        <div class="mac-button" style="margin-top: 15px; display: inline-block;" onclick="fetchRepositories()">Try Again</div>
-                    </div>
-                `;
+                showErrorWindow("Connection Error", error.message);
             }
         }
-
-        // Render Repositories
+        
+        // Renderowanie repozytoriów
         function renderRepositories(repos) {
             const reposContainer = document.getElementById('repos-container');
-            selectedRepoIndex = -1; // Reset selection
             
-            if (repos.length === 0) {
-                reposContainer.innerHTML = `
-                    <div style="text-align: center; padding: 40px;">
-                        <div style="font-family: 'Chicago', monospace; margin-bottom: 10px; color: var(--mac-black);">
-                            No repositories found.
-                        </div>
-                        <div style="font-size: 9px; color: var(--mac-black);">
-                            Try a different search term or fetch the repository list again.
-                        </div>
-                        <div class="mac-button" style="margin-top: 15px; display: inline-block;" onclick="fetchRepositories()">Refresh</div>
-                    </div>
-                `;
-                return;
-            }
+            // Aktualizuj licznik repozytoriów
+            document.querySelector('.win-status-bar div:first-child').textContent = `${repos.length} object(s)`;
             
-            if (currentView === 'icon') {
-                renderIconView(repos, reposContainer);
-            } else {
-                renderListView(repos, reposContainer);
-            }
+            // Utwórz siatkę repozytoriów
+            const repoGrid = document.createElement('div');
+            repoGrid.className = 'win-repo-grid';
             
-            // Update scrollbar after rendering
-            setTimeout(updateScrollbarThumb, 100);
-        }
-        
-        // Render Icon View
-        function renderIconView(repos, container) {
-            const iconGrid = document.createElement('div');
-            iconGrid.className = 'mac-icon-grid';
-            
+            // Dodaj każde repozytorium jako ikonę
             repos.forEach((repo, index) => {
-                const icon = document.createElement('div');
-                icon.className = 'mac-icon';
-                if (selectedRepo && selectedRepo.id === repo.id) {
-                    icon.classList.add('selected');
-                    selectedRepoIndex = index;
-                }
+                const repoItem = document.createElement('div');
+                repoItem.className = 'win-repo-item';
+                repoItem.tabIndex = 0; // Dla nawigacji klawiaturą
                 
-                // Choose appropriate icon path based on language
-                let iconPath = repoIcons.default;
-                if (repo.language && repoIcons[repo.language]) {
-                    iconPath = repoIcons[repo.language];
-                }
-                
-                icon.innerHTML = `
-                    <div class="mac-icon-box">
-                        <svg viewBox="0 0 32 32" width="32" height="32">
-                            <path d="${iconPath}" fill="black"/>
-                        </svg>
-                    </div>
-                    <div class="mac-icon-label">${repo.name}</div>
-                `;
-                
-                icon.addEventListener('click', (e) => {
-                    selectedRepo = repo;
-                    selectedRepoIndex = index;
-                    document.querySelectorAll('.mac-icon').forEach(el => {
-                        el.classList.remove('selected');
-                    });
-                    icon.classList.add('selected');
-                    
-                    // Double click
-                    if (e.detail === 2) {
-                        playSound('click');
-                        showRepoDetails(repo);
-                    }
-                });
-                
-                icon.addEventListener('contextmenu', (e) => {
-                    e.preventDefault();
-                    playSound('click');
-                    selectedRepo = repo;
-                    selectedRepoIndex = index;
-                    
-                    document.querySelectorAll('.mac-icon').forEach(el => {
-                        el.classList.remove('selected');
-                    });
-                    icon.classList.add('selected');
-                    
-                    const contextMenu = document.getElementById('repo-context-menu');
-                    contextMenu.style.display = 'block';
-                    contextMenu.style.left = e.pageX + 'px';
-                    contextMenu.style.top = e.pageY + 'px';
-                    
-                    // Ensure context menu is within viewport
-                    const menuRect = contextMenu.getBoundingClientRect();
-                    if (menuRect.right > window.innerWidth) {
-                        contextMenu.style.left = (window.innerWidth - menuRect.width - 5) + 'px';
-                    }
-                    if (menuRect.bottom > window.innerHeight) {
-                        contextMenu.style.top = (e.pageY - menuRect.height) + 'px';
-                    }
-                    
-                    document.addEventListener('click', function hideMenu() {
-                        contextMenu.style.display = 'none';
-                        document.removeEventListener('click', hideMenu);
-                    });
-                });
-                
-                iconGrid.appendChild(icon);
-            });
-            
-            container.innerHTML = '';
-            container.appendChild(iconGrid);
-        }
-        
-        // Render List View
-        function renderListView(repos, container) {
-            const table = document.createElement('table');
-            table.className = 'mac-list-view';
-            
-            // Header row
-            const header = document.createElement('tr');
-            header.innerHTML = `
-                <th>Name</th>
-                <th>Language</th>
-                <th style="text-align: right">Stars</th>
-                <th style="text-align: right">Updated</th>
-            `;
-            
-            // Add sort indicators
-            header.querySelectorAll('th').forEach((th, index) => {
-                const sortType = index === 0 ? 'name' : index === 1 ? '' : index === 2 ? 'stars' : 'updated';
-                if (sortType && sortType === currentSort) {
-                    th.innerHTML += ' ▼';
-                }
-                
-                if (sortType) {
-                    th.style.cursor = 'pointer';
-                    th.addEventListener('click', () => {
-                        playSound('click');
-                        sortRepositories(sortType);
-                    });
-                }
-            });
-            
-            table.appendChild(header);
-            
-            // Data rows
-            repos.forEach((repo, index) => {
-                const row = document.createElement('tr');
-                if (selectedRepo && selectedRepo.id === repo.id) {
-                    row.classList.add('selected');
-                    selectedRepoIndex = index;
-                }
-                
-                const updatedDate = new Date(repo.updated_at).toLocaleDateString();
-                
-                row.innerHTML = `
-                    <td>${repo.name}</td>
-                    <td>${repo.language || '-'}</td>
-                    <td style="text-align: right">${repo.stargazers_count}</td>
-                    <td style="text-align: right">${updatedDate}</td>
-                `;
-                
-                row.addEventListener('click', () => {
-                    selectedRepo = repo;
-                    selectedRepoIndex = index;
-                    
-                    document.querySelectorAll('.mac-list-view tr').forEach(el => {
-                        el.classList.remove('selected');
-                    });
-                    
-                    row.classList.add('selected');
-                });
-                
-                row.addEventListener('dblclick', () => {
+                repoItem.addEventListener('click', () => {
                     playSound('click');
                     showRepoDetails(repo);
+                    selectedRepoIndex = index;
+                    highlightRepoItem(repoItem);
                 });
                 
-                row.addEventListener('contextmenu', (e) => {
+                repoItem.addEventListener('contextmenu', (e) => {
                     e.preventDefault();
-                    playSound('click');
                     selectedRepo = repo;
                     selectedRepoIndex = index;
-                    
-                    document.querySelectorAll('.mac-list-view tr').forEach(el => {
-                        el.classList.remove('selected');
-                    });
-                    
-                    row.classList.add('selected');
+                    highlightRepoItem(repoItem);
                     
                     const contextMenu = document.getElementById('repo-context-menu');
                     contextMenu.style.display = 'block';
                     contextMenu.style.left = e.pageX + 'px';
                     contextMenu.style.top = e.pageY + 'px';
-                    
-                    // Ensure context menu is within viewport
-                    const menuRect = contextMenu.getBoundingClientRect();
-                    if (menuRect.right > window.innerWidth) {
-                        contextMenu.style.left = (window.innerWidth - menuRect.width - 5) + 'px';
-                    }
-                    if (menuRect.bottom > window.innerHeight) {
-                        contextMenu.style.top = (e.pageY - menuRect.height) + 'px';
-                    }
                     
                     document.addEventListener('click', function hideMenu() {
                         contextMenu.style.display = 'none';
@@ -2614,159 +1476,132 @@
                     });
                 });
                 
-                table.appendChild(row);
+                // Utwórz odpowiednią ikonę dla języka
+                let iconClass = 'fas fa-file-code';
+                if (repo.language) {
+                    if (repo.language === 'JavaScript') iconClass = 'fab fa-js-square';
+                    else if (repo.language === 'HTML') iconClass = 'fab fa-html5';
+                    else if (repo.language === 'CSS') iconClass = 'fab fa-css3-alt';
+                    else if (repo.language === 'Python') iconClass = 'fab fa-python';
+                    else if (repo.language === 'Java') iconClass = 'fab fa-java';
+                    else if (repo.language === 'PHP') iconClass = 'fab fa-php';
+                    else if (repo.language === 'Ruby') iconClass = 'fas fa-gem';
+                    else if (repo.language === 'C#') iconClass = 'fab fa-microsoft';
+                    else if (repo.language === 'TypeScript') iconClass = 'fab fa-js-square';
+                }
+                
+                repoItem.innerHTML = `
+                    <div class="win-repo-icon">
+                        <i class="${iconClass}"></i>
+                    </div>
+                    <div class="win-repo-name">${repo.name}</div>
+                `;
+                
+                repoGrid.appendChild(repoItem);
             });
             
-            container.innerHTML = '';
-            container.appendChild(table);
+            reposContainer.innerHTML = '';
+            reposContainer.appendChild(repoGrid);
+            
+            // Zastosuj bieżący tryb widoku
+            setViewMode(currentView);
         }
-
-        // Show Repository Details
+        
+        // Wyświetla szczegóły repozytorium w oknie modalnym
         function showRepoDetails(repo) {
-            const modal = document.getElementById('repo-detail-modal');
-            const title = document.getElementById('repo-detail-title');
-            const content = document.getElementById('repo-detail-content');
+            const modal = document.getElementById('repo-details-modal');
+            const modalBg = document.getElementById('modal-background');
+            const content = document.getElementById('repo-details-content');
+            const modalTitle = document.getElementById('modal-repo-name');
             
-            title.textContent = repo.name;
+            // Ustaw tytuł
+            modalTitle.textContent = repo.name;
             
+            // Formatuj datę
             const createdDate = new Date(repo.created_at).toLocaleDateString();
             const updatedDate = new Date(repo.updated_at).toLocaleDateString();
             
+            // Przygotuj zawartość
             content.innerHTML = `
-                <div class="mac-detail-header">${repo.name}</div>
-                
-                <div class="mac-detail-description">
+                <div class="win-repo-description">
                     ${repo.description || "No description available."}
                 </div>
                 
-                <div class="mac-detail-row">
-                    <div class="mac-detail-label">Created:</div>
-                    <div class="mac-detail-value">${createdDate}</div>
+                <div class="win-repo-details-row">
+                    <div class="win-repo-details-label">Created:</div>
+                    <div class="win-repo-details-value">${createdDate}</div>
                 </div>
                 
-                <div class="mac-detail-row">
-                    <div class="mac-detail-label">Updated:</div>
-                    <div class="mac-detail-value">${updatedDate}</div>
+                <div class="win-repo-details-row">
+                    <div class="win-repo-details-label">Last Updated:</div>
+                    <div class="win-repo-details-value">${updatedDate}</div>
                 </div>
                 
-                <div class="mac-detail-row">
-                    <div class="mac-detail-label">Language:</div>
-                    <div class="mac-detail-value">${repo.language || "Not specified"}</div>
+                <div class="win-repo-details-row">
+                    <div class="win-repo-details-label">Language:</div>
+                    <div class="win-repo-details-value">${repo.language || "Not specified"}</div>
                 </div>
                 
-                <div class="mac-detail-row">
-                    <div class="mac-detail-label">Stars:</div>
-                    <div class="mac-detail-value">${repo.stargazers_count}</div>
+                <div class="win-repo-details-row">
+                    <div class="win-repo-details-label">Stars:</div>
+                    <div class="win-repo-details-value">${repo.stargazers_count}</div>
                 </div>
                 
-                <div class="mac-detail-row">
-                    <div class="mac-detail-label">Forks:</div>
-                    <div class="mac-detail-value">${repo.forks_count}</div>
+                <div class="win-repo-details-row">
+                    <div class="win-repo-details-label">Forks:</div>
+                    <div class="win-repo-details-value">${repo.forks_count}</div>
                 </div>
                 
-                <div class="mac-detail-row">
-                    <div class="mac-detail-label">Size:</div>
-                    <div class="mac-detail-value">${repo.size} KB</div>
+                <div class="win-repo-details-row">
+                    <div class="win-repo-details-label">Watchers:</div>
+                    <div class="win-repo-details-value">${repo.watchers_count}</div>
                 </div>
                 
-                <div class="mac-button-row">
-                    <div class="mac-button" onclick="closeModal('repo-detail-modal')">Close</div>
-                    <div class="mac-button" onclick="window.open('${repo.html_url}', '_blank')">Open</div>
+                <div class="win-repo-details-row">
+                    <div class="win-repo-details-label">Size:</div>
+                    <div class="win-repo-details-value">${repo.size} KB</div>
+                </div>
+                
+                <div class="win-button-row">
+                    <a href="${repo.html_url}" target="_blank" class="win-action-button">Open in GitHub</a>
+                    <button class="win-action-button" onclick="closeRepoModal()">Close</button>
                 </div>
             `;
             
-            showModal('repo-detail-modal');
+            // Pokaż modal
+            modal.style.display = 'block';
+            modalBg.style.display = 'block';
         }
-
-        // Show Modal
-        function showModal(modalId) {
+        
+        // Zamyka modal
+        function closeRepoModal() {
             playSound('click');
-            document.getElementById(modalId).style.display = 'block';
-            document.getElementById('modal-overlay').style.display = 'block';
+            document.getElementById('repo-details-modal').style.display = 'none';
+            document.getElementById('modal-background').style.display = 'none';
         }
-
-        // Close Modal
-        function closeModal(modalId) {
-            playSound('click');
-            document.getElementById(modalId).style.display = 'none';
-            document.getElementById('modal-overlay').style.display = 'none';
-        }
-
-        // Close Dialog
-        function closeDialog(dialogId) {
-            document.getElementById(dialogId).style.display = 'none';
-            document.getElementById('modal-overlay').style.display = 'none';
-        }
-
-        // Close All Modals
-        function closeAllModals() {
-            document.getElementById('repo-detail-modal').style.display = 'none';
-            document.getElementById('about-modal').style.display = 'none';
-            document.getElementById('shortcuts-modal').style.display = 'none';
-            document.getElementById('quick-look-modal').style.display = 'none';
-            document.getElementById('alert-dialog').style.display = 'none';
-            document.getElementById('confirm-dialog').style.display = 'none';
-            document.getElementById('repo-context-menu').style.display = 'none';
-            document.getElementById('modal-overlay').style.display = 'none';
-        }
-
-        // Show Alert
-        function showAlert(message) {
-            playSound('alert');
-            document.getElementById('alert-message').textContent = message;
-            document.getElementById('alert-dialog').style.display = 'block';
-            document.getElementById('modal-overlay').style.display = 'block';
-        }
-
-        // Confirm Quit
-        function confirmQuit() {
-            playSound('alert');
-            document.getElementById('confirm-message').textContent = 'Are you sure you want to quit?';
-            document.getElementById('confirm-dialog').style.display = 'block';
-            document.getElementById('modal-overlay').style.display = 'block';
-        }
-
-        // Quit Application
-        function quitApplication() {
-            window.close();
-            // Fallback if window.close doesn't work
-            document.body.innerHTML = `
-                <div class="mac-startup">
-                    <div class="mac-happy-mac"></div>
-                    <div class="mac-startup-text">It is now safe to turn off your Macintosh.</div>
+        
+        // Pokaż okno błędu
+        function showErrorWindow(title, message) {
+            playSound('error');
+            const reposContainer = document.getElementById('repos-container');
+            
+            reposContainer.innerHTML = `
+                <div class="win-error">
+                    <div class="win-error-title">
+                        <div>${title}</div>
+                        <div class="win-buttons">
+                            <div class="win-button" onclick="location.reload()">×</div>
+                        </div>
+                    </div>
+                    <div class="win-error-content">
+                        <div class="win-error-icon">×</div>
+                        <div class="win-error-message">${message}</div>
+                    </div>
+                    <div class="win-error-buttons">
+                        <button class="win-action-button" onclick="location.reload()">Retry</button>
+                    </div>
                 </div>
             `;
-        }
-
-        // Play Sound
-        function playSound(type) {
-            if (!soundEnabled) return;
-            
-            try {
-                let sound;
-                switch (type) {
-                    case 'click':
-                        sound = document.getElementById('sound-click');
-                        sound.volume = 0.2;
-                        break;
-                    case 'alert':
-                        sound = document.getElementById('sound-alert');
-                        sound.volume = 0.3;
-                        break;
-                    case 'error':
-                        sound = document.getElementById('sound-error');
-                        sound.volume = 0.3;
-                        break;
-                    default:
-                        return;
-                }
-                
-                // Reset and play sound
-                sound.currentTime = 0;
-                sound.play().catch(e => console.log('Audio play failed:', e));
-            } catch (e) {
-                console.log('Audio error:', e);
-            }
         }
     </script>
 </body>
