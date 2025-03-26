@@ -39,7 +39,6 @@
             height: 100%;
             margin: 0;
             padding: 0;
-            cursor: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAMCAQAAAD1lzQWAAAAAmJLR0QA/4ePzL8AAAAJcEhZcwAACxMAAAsTAQCanBgAAAAHdElNRQfeBRoTKgkaXgLYAAAAMklEQVQI12NgQAX/0cF/BkYGJgZGBoYJDAyM/zEBTBKbOCOcB5iBLokQZ4YLMMA1MQAA8J4F+fNJqRMAAAAASUVORK5CYII='), default;
         }
         
         body {
@@ -75,9 +74,15 @@
         .mac-apple-logo {
             width: 100%;
             height: 100%;
-            background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAwAAAAMCAQAAAD8fJRsAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAAAmJLR0QA/4ePzL8AAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAHdElNRQfeCxIQDzbpOfF0AAAAUElEQVQY083NsRGAIBBE0Q+GBhaIBdgKxdiN3VhAYGYw6BVs77gQnGDWZF7yg+VVA0qSUsvS2e2Z6YY7lduWF5sYjMT5ZzITx/npz/ZKH3wAPE0YjbCU9iQAAAAASUVORK5CYII=');
-            background-repeat: no-repeat;
-            background-position: center;
+            background-color: var(--mac-black);
+            mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 170 170"><path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.2-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.71 3.35-4.92.21-9.82-1.96-14.7-6.5-3.18-2.82-7.15-7.64-11.9-14.47-5.11-7.31-9.28-15.76-12.51-25.43-3.44-10.44-5.16-20.55-5.16-30.32 0-11.24 2.43-20.87 7.28-28.88 3.79-6.45 8.81-11.54 15.06-15.29 6.25-3.74 13.02-5.67 20.32-5.78 4.02 0 9.28 1.26 15.84 3.70 6.54 2.46 10.75 3.72 12.62 3.72 1.37 0 6.02-1.47 13.93-4.39 7.47-2.7 13.8-3.83 19.02-3.39 14.05 1.14 24.61 6.7 31.67 16.76-12.57 7.56-18.77 18.19-18.6 31.68.16 10.63 3.97 19.46 11.42 26.46 3.38 3.23 7.17 5.72 11.38 7.5-1.82 5.31-4.7 11.74-7.4 17.54zM110.93 4.43c0 8.33-3.05 16.11-9.11 23.31-7.31 8.61-16.16 13.59-25.57 12.8-.12-1.01-.19-2.07-.19-3.15 0-7.98 3.48-16.52 9.65-23.19 3.07-3.39 6.98-6.21 11.72-8.46 4.73-2.21 9.21-3.43 13.46-3.65.12 1.01.19 2.03.19 3.05z"/></svg>');
+            mask-repeat: no-repeat;
+            mask-position: center;
+            mask-size: 80%;
+            -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 170 170"><path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.2-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.71 3.35-4.92.21-9.82-1.96-14.7-6.5-3.18-2.82-7.15-7.64-11.9-14.47-5.11-7.31-9.28-15.76-12.51-25.43-3.44-10.44-5.16-20.55-5.16-30.32 0-11.24 2.43-20.87 7.28-28.88 3.79-6.45 8.81-11.54 15.06-15.29 6.25-3.74 13.02-5.67 20.32-5.78 4.02 0 9.28 1.26 15.84 3.70 6.54 2.46 10.75 3.72 12.62 3.72 1.37 0 6.02-1.47 13.93-4.39 7.47-2.7 13.8-3.83 19.02-3.39 14.05 1.14 24.61 6.7 31.67 16.76-12.57 7.56-18.77 18.19-18.6 31.68.16 10.63 3.97 19.46 11.42 26.46 3.38 3.23 7.17 5.72 11.38 7.5-1.82 5.31-4.7 11.74-7.4 17.54zM110.93 4.43c0 8.33-3.05 16.11-9.11 23.31-7.31 8.61-16.16 13.59-25.57 12.8-.12-1.01-.19-2.07-.19-3.15 0-7.98 3.48-16.52 9.65-23.19 3.07-3.39 6.98-6.21 11.72-8.46 4.73-2.21 9.21-3.43 13.46-3.65.12 1.01.19 2.03.19 3.05z"/></svg>');
+            -webkit-mask-repeat: no-repeat;
+            -webkit-mask-position: center;
+            -webkit-mask-size: 80%;
         }
         
         .mac-menu-items {
@@ -140,7 +145,6 @@
         /* --- Desktop Area --- */
         .mac-desktop {
             background-color: var(--mac-white);
-            background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAEklEQVQImWNgYGD4z0AswK4SAFXuAf8EPy+xAAAAAElFTkSuQmCC');
             flex: 1;
             margin-top: 20px;
             padding: 20px;
@@ -169,8 +173,10 @@
             align-items: center;
             cursor: move;
             padding: 0 5px;
-            background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAABCAYAAAD0In+KAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH3gsSEBUFM5Cu7wAAABNJREFUCNdjYGBgYGhoaGD4//8/AN//A/WxCCUNAAAAAElFTkSuQmCC');
-            background-repeat: repeat;
+            background-image: linear-gradient(to right, var(--mac-black) 50%, transparent 50%);
+            background-size: 4px 1px;
+            background-repeat: repeat-x;
+            background-position: 0 9px; /* Center the line vertically */
         }
         
         .mac-title {
@@ -227,15 +233,18 @@
         .mac-window-body {
             background-color: var(--mac-white);
             padding: 0;
-            overflow-y: auto;
+            overflow: hidden; /* Changed from auto to hidden to handle scrollbar separately */
             height: calc(100% - 19px);
             max-height: calc(100vh - 80px);
+            position: relative; /* Added for scrollbar positioning */
         }
         
         /* --- Content Area --- */
         .mac-content {
             padding: 5px;
             overflow: auto;
+            height: 100%;
+            width: calc(100% - 16px); /* Make room for scrollbar */
         }
         
         /* --- Icons Grid --- */
@@ -505,6 +514,7 @@
             background-color: var(--mac-white);
             box-shadow: 2px 2px 0 var(--mac-black);
             z-index: 10002;
+            display: none;
         }
         
         .mac-dialog-content {
@@ -517,10 +527,13 @@
             width: 32px;
             height: 32px;
             margin-right: 10px;
-            background-repeat: no-repeat;
-            background-position: center;
-            background-size: contain;
-            image-rendering: pixelated;
+            background-color: var(--mac-black);
+            mask-repeat: no-repeat;
+            mask-position: center;
+            mask-size: contain;
+            -webkit-mask-repeat: no-repeat;
+            -webkit-mask-position: center;
+            -webkit-mask-size: contain;
         }
         
         .mac-dialog-message {
@@ -577,11 +590,15 @@
             width: 64px;
             height: 64px;
             margin-bottom: 20px;
-            background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAACXBIWXMAAAsTAAALEwEAmpwYAAAF0WlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4gPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iQWRvYmUgWE1QIENvcmUgNS42LWMxNDUgNzkuMTYzNDk5LCAyMDE4LzA4LzEzLTE2OjQwOjIyICAgICAgICAiPiA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPiA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtbG5zOmRjPSJodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyIgeG1sbnM6cGhvdG9zaG9wPSJodHRwOi8vbnMuYWRvYmUuY29tL3Bob3Rvc2hvcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RFdnQ9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZUV2ZW50IyIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ0MgMjAxOSAoTWFjaW50b3NoKSIgeG1wOkNyZWF0ZURhdGU9IjIwMTktMDMtMTNUMTk6NDY6MDUrMDE6MDAiIHhtcDpNb2RpZnlEYXRlPSIyMDE5LTAzLTEzVDE5OjQ5OjA4KzAxOjAwIiB4bXA6TWV0YWRhdGFEYXRlPSIyMDE5LTAzLTEzVDE5OjQ5OjA4KzAxOjAwIiBkYzpmb3JtYXQ9ImltYWdlL3BuZyIgcGhvdG9zaG9wOkNvbG9yTW9kZT0iMyIgcGhvdG9zaG9wOklDQ1Byb2ZpbGU9InNSR0IgSUVDNjE5NjYtMi4xIiB4bXBNTTpJbnN0YW5jZUlEPSJ4bXAuaWlkOjdkYjk5YTI0LWI1YjktNGRjYS1hNzY1LTc1MjNjZTJmZTRhMSIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDo3ZGI5OWEyNC1iNWI5LTRkY2EtYTc2NS03NTIzY2UyZmU0YTEiIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDo3ZGI5OWEyNC1iNWI5LTRkY2EtYTc2NS03NTIzY2UyZmU0YTEiPiA8eG1wTU06SGlzdG9yeT4gPHJkZjpTZXE+IDxyZGY6bGkgc3RFdnQ6YWN0aW9uPSJjcmVhdGVkIiBzdEV2dDppbnN0YW5jZUlEPSJ4bXAuaWlkOjdkYjk5YTI0LWI1YjktNGRjYS1hNzY1LTc1MjNjZTJmZTRhMSIgc3RFdnQ6d2hlbj0iMjAxOS0wMy0xM1QxOTo0NjowNSswMTowMCIgc3RFdnQ6c29mdHdhcmVBZ2VudD0iQWRvYmUgUGhvdG9zaG9wIENDIDIwMTkgKE1hY2ludG9zaCkiLz4gPC9yZGY6U2VxPiA8L3htcE1NOkhpc3Rvcnk+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+KrL+xAAAA1JJREFUeJztml9IU1Ecxz+/rUGaWGYWaw9BUhpEEQUV5IP6qA/2siKHlRQERZH0SkVBRUQPRU8RRGFQVEST0F6SCiLSkqCHopBoQU9hg/VHM91u93d78G4zZ27udm+X9flCufecc8/5/c73/M65v3O8oijyL8P3twP4N5AA+LeRAJAA8G8jASAB4N9GAkDMrOI4jhHYCHR7PJ6wU45SbQr+qg3HcVqB7ZZmj2a4Gg1gBOzuABJxTOQOIAHg70YCQALAv40EgASAfxsJAP82EgASAP5tJAD+MgDkMxrY5nGcTwRgGmAK8EZ/RkY+CTDV53QGnDLEAUxEgdCnAP7D+xF4Fw3pZfUOAk4PGw3YnQTsAJJpQqMVIqkTMQCPkBkA+ryjAeTShhoCgCN0aSiAOABp8xCoBUwmmS0JnzgCDjHKJLtK7kgXAHkMFkIFM4nZgFMGk2wVOGJ7TcwAzOIVOGN7PeIA7OIYzQKkihGH82EKeTQjJYCtAGQO7p0RDagw+b1Z5JiQ1pBZE8rEfWCrR+p2X46tgAOGMwV0ATitf2ciqfMaOB8zNGJaClv6/dF+30EvvdkG8WuO43QnjrYMYKPHccQNYCZ7ATNnAZMAp+YwxxCQSTRo4uf9LSAZ1hgkKUwCXAGCYl1ZUr9VKApKHEfRniEPUFRVxasNFSgqihhQvaKgRnXiU7VhVBVQFbGqhlFTUeOzq6rqKaqKklBAhaJKXlGRc6bkFZCoaV1FRY36LaqKksxXnTAXTcQ9c+JljoqiR4Ojn3jfNR0YBQIVtHNXoRpWZQ5NJ6KzL8yPvqxGNFl9HEMc0d8Cs+SjZP3G3/jdSMdpnKcoHXpZpEPrrPiQi3CmbZyO9pJoO3Vl7WXjsrKpd5eFy5yXA3AxPOauC0m0lk2k44vS8SSy9JVjsB3MNK6ZNYHTWf8n2DnnD+ZmLkFnbTbKt1A5xwYcLlKK4yUjPVc8PB9OzOUNVUYJ0JDHPLXNwwwwzD1EIQHfLPcCyW4jZVZTIPGm6VKiAOZg0cPLH9Z/zHITCJymdcqJAJgNwJ0U9hqRcHgxlDtB6Eq8fvGEuxFj/Lp2kJdHGu8B7yGnfwWS/xX+LwB8A/t3mX35T8XfAAAAAElFTkSuQmCC');
-            background-repeat: no-repeat;
-            background-position: center;
-            background-size: contain;
-            image-rendering: pixelated;
+            background-color: var(--mac-black);
+            mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><path d="M5,5h54v42c0,5-7,12-12,12H17c-5,0-12-7-12-12V5z M10,10v32c0,2.8,4.2,7,7,7h30c2.8,0,7-4.2,7-7V10H10z M18,38v4h28v-4H18z M18,32h4v-4h4v-4h-4v4h-4V32z M38,32h4v-4h4v-4h-4v4h-4V32z"/></svg>');
+            mask-repeat: no-repeat;
+            mask-position: center;
+            mask-size: contain;
+            -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><path d="M5,5h54v42c0,5-7,12-12,12H17c-5,0-12-7-12-12V5z M10,10v32c0,2.8,4.2,7,7,7h30c2.8,0,7-4.2,7-7V10H10z M18,38v4h28v-4H18z M18,32h4v-4h4v-4h-4v4h-4V32z M38,32h4v-4h4v-4h-4v4h-4V32z"/></svg>');
+            -webkit-mask-repeat: no-repeat;
+            -webkit-mask-position: center;
+            -webkit-mask-size: contain;
         }
         
         .mac-startup-text {
@@ -608,11 +625,14 @@
         .mac-watch {
             width: 24px;
             height: 24px;
-            background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAACXBIWXMAAAsTAAALEwEAmpwYAAABCElEQVR4nO2UQU7DMBBF30+ULgtdIlZwAo7CEbpvk0UXoRKJE8ARuEG4QY/ADdjSRZGQKLFnGilBIhQFN4QFI1mWRqPxf3u+Pf4LoLUeAE/AG9B0SIC31rjxNoDWegDMAJVHnAMp4D3PXwEDTM+LzgEXIRlwD1TAHDhVoAU/5cR5m9hnxTkp+A/3Ii6AU2JVgBV8WuJHCn7HpMTnFLM/FLXgT/RW8JRe9h+grvPeRfuqd7j+JoIGc9TfZNdYNTgDroGizP0cuLQgd8Ac5E02dbEvga9S8BFIgSFwVSLwpGcRtI9PcgCMPOJ7C7APFPzZ0kXBPuC7lJdAfypAUttv4j+Aj32iB46S13XsAAAAAElFTkSuQmCC');
-            background-repeat: no-repeat;
-            background-position: center;
+            background-color: var(--mac-black);
+            mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12,0C5.4,0,0,5.4,0,12s5.4,12,12,12s12-5.4,12-12S18.6,0,12,0z M12,22c-5.5,0-10-4.5-10-10S6.5,2,12,2s10,4.5,10,10S17.5,22,12,22z M12.5,12V6h-1v7l4.3,2.5l0.5-0.9L12.5,12z"/></svg>');
+            mask-repeat: no-repeat;
+            mask-position: center;
             animation: pulse 1s infinite alternate;
-            image-rendering: pixelated;
+            -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12,0C5.4,0,0,5.4,0,12s5.4,12,12,12s12-5.4,12-12S18.6,0,12,0z M12,22c-5.5,0-10-4.5-10-10S6.5,2,12,2s10,4.5,10,10S17.5,22,12,22z M12.5,12V6h-1v7l4.3,2.5l0.5-0.9L12.5,12z"/></svg>');
+            -webkit-mask-repeat: no-repeat;
+            -webkit-mask-position: center;
         }
         
         @keyframes pulse {
@@ -642,6 +662,17 @@
         .mac-list-view tr.selected {
             background-color: var(--mac-black);
             color: var(--mac-white);
+        }
+        
+        /* --- Alert & Note Icons --- */
+        .mac-alert-icon {
+            mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M16,2C8.3,2,2,8.3,2,16s6.3,14,14,14s14-6.3,14-14S23.7,2,16,2z M16,28C9.4,28,4,22.6,4,16S9.4,4,16,4s12,5.4,12,12S22.6,28,16,28z M14,8h4v12h-4V8z M14,22h4v4h-4V22z"/></svg>');
+            -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M16,2C8.3,2,2,8.3,2,16s6.3,14,14,14s14-6.3,14-14S23.7,2,16,2z M16,28C9.4,28,4,22.6,4,16S9.4,4,16,4s12,5.4,12,12S22.6,28,16,28z M14,8h4v12h-4V8z M14,22h4v4h-4V22z"/></svg>');
+        }
+        
+        .mac-note-icon {
+            mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M16,2C8.3,2,2,8.3,2,16s6.3,14,14,14s14-6.3,14-14S23.7,2,16,2z M16,28C9.4,28,4,22.6,4,16S9.4,4,16,4s12,5.4,12,12S22.6,28,16,28z M15,8h2v12h-2V8z M15,22h2v2h-2V22z"/></svg>');
+            -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M16,2C8.3,2,2,8.3,2,16s6.3,14,14,14s14-6.3,14-14S23.7,2,16,2z M16,28C9.4,28,4,22.6,4,16S9.4,4,16,4s12,5.4,12,12S22.6,28,16,28z M15,8h2v12h-2V8z M15,22h2v2h-2V22z"/></svg>');
         }
 
         /* --- Responsive Styles --- */
@@ -856,7 +887,7 @@
     <!-- Alert Dialog -->
     <div class="mac-dialog" id="alert-dialog" style="display: none;">
         <div class="mac-dialog-content">
-            <div class="mac-dialog-icon" style="background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAsTAAALEwEAmpwYAAAAb0lEQVR4nO3WQQqAIBCF4V/pKLbqJl7VTWqRm6AgaOoMhPODBwMuyMfAiIjIkxGYgMJ3ZcCZ9WP9of4LbAmbf/W0Ow+/BO5aYNfiK9C1gP0dAmgPYPvfAqiARLDtMxANkEzugQZoRvfAJiIiH1tA8BT7M1eOvAAAAABJRU5ErkJggg==');"></div>
+            <div class="mac-dialog-icon mac-alert-icon"></div>
             <div class="mac-dialog-message" id="alert-message"></div>
         </div>
         <div class="mac-dialog-buttons">
@@ -867,7 +898,7 @@
     <!-- Confirm Dialog -->
     <div class="mac-dialog" id="confirm-dialog" style="display: none;">
         <div class="mac-dialog-content">
-            <div class="mac-dialog-icon" style="background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAsTAAALEwEAmpwYAAAAmElEQVR4nO2WQQ6AIAwER+Ml+v8n+RT1RyYmJi1CLbRcnORucLtbQIQQQghRBdAAHcD2MvW5htkKWJIGV59rmK2Ahb6yL/BQJwcC9hKQHEBOPaSAi4Z1aQFIFbBnCkhW/48CUEvBcP+RKgFLC+jHAaMJyXfJBRwxC4hZwB6zgOcXMP0imr6Mph/E0y/j04u/g9FXEELI57kAsusQG0EMmqIAAAAASUVORK5CYII=');"></div>
+            <div class="mac-dialog-icon mac-note-icon"></div>
             <div class="mac-dialog-message" id="confirm-message"></div>
         </div>
         <div class="mac-dialog-buttons">
@@ -895,14 +926,14 @@
 
         // Repository Icon Mapping
         const repoIcons = {
-            default: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAsTAAALEwEAmpwYAAAA00lEQVR4nO2WQQ6DMAwExyA9kcf0/3+gR9ITRbKUqqEhTuKWA3OSJRRnvY5NCCGEEP+CpAXYSMrvQlIhaZGUn+z1tpckF2ut3WfL3uD+FvDekmYAE0n3CfaS8u0t5XAU2ntP0kDSdkLx2DuShjYTPX2s4GtLylFxBKXpZ56rUrzkAkqcbmEUL7kAmuI1CYniBcCieE0ConiNgChek4jneM2Lxw1jnK6E3DA+iBvGDeMTwYbxlcQN4/NJbhjZoWVHtx3ed8H4LjrfhUcIIQTwBhm4HgNYn16dAAAAAElFTkSuQmCC',
-            JavaScript: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAsTAAALEwEAmpwYAAAApklEQVR4nO2WSwrDMAxErxfepfcf9ypdBWxQgjGeUX602JAXgT+jZyEhpSRJkiSnAbSzjstz9u8OXbQDY7j83lDnCpA/mQqFpRqVClMLgN1SL4XcKwJTAPwmvbDJ2AJgOzxKxiYDC4DdsArlhSk0LBDHdRq5M6OXuMUC3QM9Uii3/z0C1gdo7Qpa/4HWC9H6JWx9FS2+jBZXkq1r2WKj+vRmliRJf+UBKHw7X7Ri7YkAAAAASUVORK5CYII=',
-            HTML: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAsTAAALEwEAmpwYAAAAsUlEQVR4nO2WQQrDIBBFX6HQk+QEOXAPULrpqlfoFbrtqifIUbLPQREUGR0mGkJ/4IMwKvieTAbFGGOMMTeAB7ACwYrRXwGvA/cWYLKyKPpnjTmrjhN9mj3QpIYTJXH2wHuPOJF6+/EO+KsTqbdvNeDUiQ7lF+IDdPZZmXgHnL9YpB7oYT2+K/FWzT1g/R9ofRAtPorWj6LlYdTiOGtxIX/5Sr66mRhjzKN5AJWIGi2E5c8qAAAAAElFTkSuQmCC',
-            CSS: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAsTAAALEwEAmpwYAAAArklEQVR4nO2WQQrDIBBFnxQKXbSTBHIRPYC79KK9Qm/gKr1Ij+AJsndSBEVGx4mGkA/8IGYU/E9mBsUYY4wxN4AXsAHBitlbAa8D9xZgsrIo+meNpaqOE32aPdCkhhMlcfbA+4g4kXrH8QH4qxOpdx41kOpEp/IL8QE6+6xMfADO3yxSD/SwHt+VeKvmHrD+D7Q+iBYfRevH0fIwanGctbiQv3wlX91MjDHm0bwB62ka7dXyoGcAAAAASUVORK5CYII=',
-            Python: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAsTAAALEwEAmpwYAAAA8ElEQVR4nO2VQQ6CMBBFP8T1iI/E+5/Bo7hyIakhNoUO7UxRE/6kC0Ln95c2HeDxeDzaAi9gA4Iloy/hy4J7C9BbWAR91GguquNEH30P1KnhQkk8euBzhjgRjmnaFf7qRDjmqQGnTlQov2C+AxfWOeKmXwNWd8CsEzUqL5hb4Cz63pEtwxPwqgTYgXsRHsC9CC/gHoQl8P8JesE9CPt3YASeRK44qYb/DfAmXKtQlKAX3IJw7U+wBlsQbiUoStCCcCtBUYIWhFsJihLUItwJSiXYKtxGqEbYcBuhaLjHYztWDXfY7iDUDPd4PJ7OfAGEmDBgZXzg3wAAAABJRU5ErkJggg==',
-            Java: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAsTAAALEwEAmpwYAAABjklEQVR4nO2WTU7DMBCFP4rYIVYsEVIrOAEcARbddVFuUG7ADVhyAzgCHKCwRYgVYgkSP/MkVpWqxI5jN1GUSU0UxR6/92XGKZTK01ABjzF9mXnJ6xwqiVONfE1aJsLrGngBWqCLJOoO+IjpN0NMIb8F/JT8b5sI913h7wBVQm5Cf42XUAn3t5H5OTABzpzeAhNlaIMXjPwR3/IHdAGGgbme0XVAm0GQYqXfAzuOPo8k+gNwCFzKeKk1N4Gmx7KXYs+4uY38FpgCLbCvdWdAJ+MDFboEVv59Z/4MWFeEj7TuF3CoP5eRBMkKKAMvmXnJ6xVwBqxlgFpiKJUYauQztEVUvzjsgjffzKXdqwuXYnMAjlV5DZgBz1rXVcLzVR20Gk5UHFX2f7O4AY4igVrJb+yM2wJwAXzqq1i1c1UTTY9hKu08C7iYsedq9FEAcROw1OXb6OLmA3AMfOsEz4bGjQW41n75NoTmQwEMZfk2huZDAQxl+TYyv4qpv+NGc84fZfnKXrJQKf35/gCdCi9hzqUYygAAAABJRU5ErkJggg==',
-            Ruby: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAsTAAALEwEAmpwYAAAA2ElEQVR4nO2VQQ6CMBREn8bbuJMb8f6H4ShujOtqDK0mpaUzLaLGl3RByvx/tFMQy7KsVnkgAguQDFn/ZuAZsW8GBhMWiX1uNFdFuZPEP50BdTQ4MhL3GeCbGjkhfO6e9qFWToRwf5mgKCdqKC+En4AnxzkxjLgAP9QJQh4Fh3AH3IGjA92BC1DWnoAHbsgdGMGjcgdS4FG5y7M/hUflDswNOHJeROz/ht6Kj8GRA+9NcKTA+xIcIfC+BUcGvK/BkQDve3ClwFMIrhB4SsEtyzLLD8tWHPCn+Uu9AAAAAElFTkSuQmCC',
-            PHP: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAsTAAALEwEAmpwYAAAA5UlEQVR4nO2VwQrCMBBEXwX/w09S/P+v8JN68CKiIU1md7OpFw/OodB2+mbTbEopFUqlD8AVeADPBnngfJlWXIBdi3lBNnNeWOb7mhMLi4HdCLqcKXjvRKvhvRJZ8N6ITHgvRGZ4a2IK+GdiBJFsD7HUjwF/A45LNDC/E6ZEJrw1EUR+DFsiA94KEURh1BORIZY6rw1/rGm/JHC28SJfgE+RKfAnYhb4IzEb/JuYFb4QV+DWYrg2Y3dPIhu8ipgFXk3MAq8m0uErEenwVUSaeal/yKbNPLQSVvODiXRZ5jdZ5lJKrfQCHmsLiouE4CoAAAAASUVORK5CYII='
+            default: 'M16,2L2,14l2,16h28l2-16L16,2z M28,26H10.5L9,18h22L28,26z', // Document icon
+            JavaScript: 'M9,2v28h20V10L21,2H9z M24,19v8c0,3-2,3-4,2v-2c1,0,2,0,2-1v-7H9v13h14V19H24z M23,10h-4V6l4,4z M11,19h3v8h-2v-6h-1V19z M16,19h2c2,0,4,0,4,3c0,3-2,3-4,3h-2V19z M18,23h-1v-2h1c1,0,2,0,2,1C20,23,19,23,18,23z', // JS icon
+            HTML: 'M9,2v28h20V10L21,2H9z M23,10h-4V6l4,4z M14,21l-2,1l2,1v2l-4-2v-2l4-2V21z M16,16h4v1h-4V16z M20,24h-4v-1h4V24z M24,21l-2,1l2,1v2l-4-2v-2l4-2V21z', // HTML icon
+            CSS: 'M9,2v28h20V10L21,2H9z M23,10h-4V6l4,4z M21,24H18l-1,4h-2l4-16h1l4,16h-2L21,24z M20,22l-1-6l-1,6H20z', // CSS icon
+            Python: 'M16,2C9,2,9,6,9,6v4h8v2H6C6,12,2,12,2,19s4,7,4,7h3v-4c0,0,0-4,7-4s7,4,7,4v7c0,0,0,4-7,4s-7-4-7-4v-3H2c0,0-4,0-4-7s4-7,4-7h4V6c0,0,0-4,7-4s7,4,7,4v4h-4V6C16,6,16,2,16,2z M13,8c-1,0-2-1-2-2s1-2,2-2s2,1,2,2S14,8,13,8z M23,26c1,0,2,1,2,2s-1,2-2,2s-2-1-2-2S22,26,23,26z', // Python icon
+            Java: 'M12,2v8c-3,0-6,3-6,6v6c0,3,3,6,6,6h8c3,0,6-3,6-6v-6h-8V8c0-3,3-6,6-6H12z M22,14h2v2h-2V14z M18,8h2v4h-2V8z', // Java icon
+            Ruby: 'M16,2C6,2,6,12,6,12v4c0,0,0,4,4,4h12c4,0,4-4,4-4v-4C26,12,26,2,16,2z M16,6c6,0,6,6,6,6v4H10v-4C10,12,10,6,16,6z M14,13c-1,0-2-1-2-2s1-2,2-2s2,1,2,2S15,13,14,13z M18,13c-1,0-2-1-2-2s1-2,2-2s2,1,2,2S19,13,18,13z', // Ruby icon
+            PHP: 'M8,12v8h16v-8H8z M12,14h2c1,0,2,0,2,1l-2,3h2l2-3c0-1-1-2-2-2h-4V14z M20,14h2v1h-2v2h2v1h-4v-4H20z M6,16h2v2H6V16z M24,16h2v2h-2V16z M4,18h2v2H4V18z M26,18h2v2h-2V18z M6,20h18v2H6V20z' // PHP icon
         };
 
         // Initialize App
@@ -1203,7 +1234,7 @@
             scrollbarThumb.addEventListener('mousedown', (e) => {
                 e.preventDefault();
                 const startY = e.clientY;
-                const startTop = parseInt(getComputedStyle(scrollbarThumb).top);
+                const startTop = parseInt(getComputedStyle(scrollbarThumb).top || '0');
                 const scrollbarHeight = scrollbarThumb.parentElement.clientHeight - 28; // minus buttons height
                 
                 function onMouseMove(e) {
@@ -1240,6 +1271,9 @@
             
             // Update on window resize
             window.addEventListener('resize', updateScrollbarThumb);
+            
+            // Initial update
+            setTimeout(updateScrollbarThumb, 500);
         }
 
         // Update Scrollbar Thumb position
@@ -1415,7 +1449,7 @@
                 showAlert(`Error: ${error.message}`);
                 reposContainer.innerHTML = `
                     <div style="text-align: center; padding: 40px;">
-                        <div style="font-size: 32px; margin-bottom: 10px;">⚠️</div>
+                        <div class="mac-dialog-icon mac-alert-icon" style="margin: 0 auto 10px;"></div>
                         <div style="font-family: 'Chicago', monospace; margin-bottom: 10px;">
                             Sorry, a problem occurred.
                         </div>
@@ -1443,15 +1477,17 @@
                         selectedRepoIndex = index;
                     }
                     
-                    // Choose appropriate icon based on language
-                    let iconUrl = repoIcons.default;
+                    // Choose appropriate icon path based on language
+                    let iconPath = repoIcons.default;
                     if (repo.language && repoIcons[repo.language]) {
-                        iconUrl = repoIcons[repo.language];
+                        iconPath = repoIcons[repo.language];
                     }
                     
                     icon.innerHTML = `
                         <div class="mac-icon-box">
-                            <div class="mac-icon-graphic" style="background-image: url('${iconUrl}')"></div>
+                            <svg viewBox="0 0 32 32" width="32" height="32">
+                                <path d="${iconPath}" fill="black"/>
+                            </svg>
                         </div>
                         <div class="mac-icon-label">${repo.name}</div>
                     `;
@@ -1549,9 +1585,7 @@
                         selectedRepoIndex = index;
                         
                         document.querySelectorAll('.mac-list-view tr').forEach(el => {
-                            if (el !== header) {
-                                el.classList.remove('selected');
-                            }
+                            el.classList.remove('selected');
                         });
                         
                         row.classList.add('selected');
@@ -1573,6 +1607,9 @@
                 reposContainer.innerHTML = '';
                 reposContainer.appendChild(table);
             }
+            
+            // Update scrollbar after rendering
+            setTimeout(updateScrollbarThumb, 100);
         }
 
         // Show Repository Details
@@ -1680,3 +1717,6 @@
                 </div>
             `;
         }
+    </script>
+</body>
+</html>
