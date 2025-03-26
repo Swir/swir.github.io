@@ -3,34 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Swir GitHub - Windows 3.11 Dark</title>
+    <title>Swir GitHub - Commodore 64</title>
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- C64 Font -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/webfont/1.6.28/webfontloader.js">
     <style>
         /* --- Zmienne CSS --- */
         :root {
-            /* Paleta Windows 3.11 w wersji ciemnej */
-            --win-bg: #000000;
-            --win-dark-gray: #222222;
-            --win-gray: #444444;
-            --win-light-gray: #666666;
-            --win-blue: #000080;
-            --win-dark-blue: #000050;
-            --win-text: #cccccc;
-            --win-title-text: #ffffff;
-            --win-highlight: #0000ff;
-            --win-border-shadow: #111111;
-            --win-border-light: #777777;
-            --win-inactive: #444444;
-            --win-inactive-text: #888888;
-            --win-button: #444444;
-            --win-button-text: #cccccc;
-            --win-button-shadow: #111111;
-            --win-button-highlight: #777777;
-            --win-light-bg: #bbbbbb;
-            --win-light-window: #dddddd;
-            --win-light-text: #000000;
-            --win-desktop: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAEklEQVQImWNgYGD4z0AswK4SAFXuAf8EPy+xAAAAAElFTkSuQmCC');
+            /* Paleta kolorów Commodore 64 */
+            --c64-bg: #0000AA;
+            --c64-text: #AAFFFF;
+            --c64-highlight: #FFFFFF;
+            --c64-border: #AAFFFF;
+            --c64-secondary: #AAAAFF;
+            --c64-dark: #000088;
+            --c64-accent1: #FFFF55; /* Yellow */
+            --c64-accent2: #FF0000; /* Red */
+            --c64-button: #AAFFFF;
+            --c64-button-text: #0000AA;
+            --c64-selected: #FFFFFF;
         }
         
         /* --- Reset i podstawowe style --- */
@@ -38,211 +30,207 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'MS Sans Serif', 'Segoe UI', Tahoma, sans-serif;
+            font-family: 'C64', monospace;
+            font-weight: normal;
+            text-transform: uppercase;
+        }
+        
+        @font-face {
+            font-family: 'C64';
+            src: url('https://cdn.jsdelivr.net/gh/nicolasduerl/C64-font/build/web/c64.woff2') format('woff2');
         }
         
         html, body {
-            background-color: var(--win-bg);
-            background-image: var(--win-desktop);
-            color: var(--win-text);
-            font-size: 12px;
+            background-color: var(--c64-bg);
+            color: var(--c64-text);
+            font-size: 16px;
             line-height: 1.4;
             overflow-x: hidden;
             height: 100%;
             margin: 0;
             padding: 0;
+            letter-spacing: 1px;
         }
         
         body {
             padding: 20px;
             min-height: 100vh;
             transition: background-color 0.3s;
+            image-rendering: pixelated;
         }
 
-        /* --- Styl Windows 3.11 --- */
-        .win-window {
-            border: 2px solid var(--win-gray);
-            background-color: var(--win-dark-gray);
-            box-shadow: inset 1px 1px 0 var(--win-border-light), 
-                        inset -1px -1px 0 var(--win-border-shadow),
-                        3px 3px 5px rgba(0, 0, 0, 0.5);
+        /* --- Styl Commodore 64 --- */
+        .c64-window {
+            border: 4px solid var(--c64-border);
+            background-color: var(--c64-bg);
             margin-bottom: 20px;
             position: relative;
             transition: all 0.2s;
         }
         
-        .win-title-bar {
-            background-color: var(--win-blue);
-            color: var(--win-title-text);
-            padding: 2px 4px;
+        .c64-title-bar {
+            background-color: var(--c64-text);
+            color: var(--c64-bg);
+            padding: 4px 8px;
             font-weight: bold;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin: 2px;
             cursor: move;
             user-select: none;
         }
         
-        .win-title {
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            font-size: 14px;
+        .c64-title {
+            letter-spacing: 2px;
+            font-size: 18px;
         }
         
-        .win-buttons {
+        .c64-buttons {
             display: flex;
         }
         
-        .win-button {
-            width: 16px;
-            height: 16px;
-            border: 1px solid var(--win-gray);
-            background-color: var(--win-button);
-            color: var(--win-button-text);
-            margin-left: 2px;
+        .c64-button {
+            width: 24px;
+            height: 24px;
+            border: 2px solid var(--c64-border);
+            background-color: var(--c64-button);
+            color: var(--c64-button-text);
+            margin-left: 6px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 9px;
-            box-shadow: inset 1px 1px 0 var(--win-button-highlight), 
-                        inset -1px -1px 0 var(--win-button-shadow);
+            font-size: 14px;
             cursor: pointer;
             transition: all 0.1s;
         }
         
-        .win-button:active {
-            box-shadow: inset -1px -1px 0 var(--win-button-highlight), 
-                        inset 1px 1px 0 var(--win-button-shadow);
+        .c64-button:active {
+            background-color: var(--c64-secondary);
             transform: translateY(1px);
         }
         
-        .win-content {
-            padding: 8px;
-            margin: 2px;
-            background-color: var(--win-dark-gray);
+        .c64-content {
+            padding: 12px;
+            background-color: var(--c64-bg);
             overflow: auto;
             max-height: calc(100vh - 150px);
+            border-top: 4px solid var(--c64-border);
         }
         
-        .win-status-bar {
-            border-top: 1px solid var(--win-gray);
-            padding: 4px 8px;
-            font-size: 11px;
-            color: var(--win-inactive-text);
+        .c64-status-bar {
+            border-top: 4px solid var(--c64-border);
+            padding: 8px;
+            font-size: 14px;
+            color: var(--c64-text);
             display: flex;
             justify-content: space-between;
-            margin: 2px;
         }
         
-        /* --- Menu w stylu Windows 3.11 --- */
-        .win-menu-bar {
-            background-color: var(--win-gray);
-            padding: 2px 0;
-            margin: 0 2px;
+        /* --- Menu w stylu Commodore 64 --- */
+        .c64-menu-bar {
+            background-color: var(--c64-text);
+            color: var(--c64-bg);
+            padding: 4px 0;
             display: flex;
         }
         
-        .win-menu-item {
-            padding: 1px 10px;
-            margin-right: 2px;
-            color: var(--win-text);
+        .c64-menu-item {
+            padding: 2px 12px;
+            margin-right: 4px;
+            color: var(--c64-bg);
             cursor: pointer;
             position: relative;
         }
         
-        .win-menu-item:hover {
-            background-color: var(--win-blue);
-            color: var(--win-title-text);
+        .c64-menu-item:hover {
+            background-color: var(--c64-accent1);
+            color: var(--c64-bg);
         }
         
-        .win-submenu {
+        .c64-submenu {
             display: none;
             position: absolute;
             top: 100%;
             left: 0;
-            background-color: var(--win-gray);
-            border: 2px solid var(--win-light-gray);
-            box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.5);
+            background-color: var(--c64-text);
+            border: 4px solid var(--c64-border);
             z-index: 100;
-            min-width: 150px;
+            min-width: 180px;
         }
         
-        .win-menu-item:hover .win-submenu {
+        .c64-menu-item:hover .c64-submenu {
             display: block;
         }
         
-        .win-submenu-item {
-            padding: 4px 10px;
-            color: var(--win-text);
+        .c64-submenu-item {
+            padding: 6px 12px;
+            color: var(--c64-bg);
             cursor: pointer;
             white-space: nowrap;
         }
         
-        .win-submenu-item:hover {
-            background-color: var(--win-blue);
-            color: var(--win-title-text);
+        .c64-submenu-item:hover {
+            background-color: var(--c64-accent1);
+            color: var(--c64-bg);
         }
         
-        .win-separator {
-            height: 1px;
-            background-color: var(--win-light-gray);
+        .c64-separator {
+            height: 4px;
+            background-color: var(--c64-border);
             margin: 4px 0;
         }
         
         /* --- Siatka ikon/repozytoriów --- */
-        .win-repo-grid {
+        .c64-repo-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
             gap: 16px;
-            margin-top: 8px;
+            margin-top: 12px;
         }
         
-        .win-repo-item {
+        .c64-repo-item {
             display: flex;
             flex-direction: column;
             align-items: center;
             cursor: pointer;
             padding: 8px;
-            border: 1px dotted transparent;
+            border: 2px solid transparent;
             transition: all 0.2s;
         }
         
-        .win-repo-item:hover {
-            border-color: var(--win-highlight);
-            background-color: var(--win-dark-blue);
+        .c64-repo-item:hover {
+            border-color: var(--c64-accent1);
+            background-color: var(--c64-dark);
         }
         
-        .win-repo-item:focus {
+        .c64-repo-item:focus {
             outline: none;
-            border-color: var(--win-highlight);
-            background-color: var(--win-dark-blue);
+            border-color: var(--c64-accent1);
+            background-color: var(--c64-dark);
         }
         
-        .win-repo-icon {
-            width: 32px;
-            height: 32px;
-            background-color: var(--win-button);
-            border: 1px solid var(--win-button-shadow);
-            box-shadow: inset 1px 1px 0 var(--win-button-highlight), 
-                        inset -1px -1px 0 var(--win-button-shadow);
-            margin-bottom: 4px;
+        .c64-repo-icon {
+            width: 40px;
+            height: 40px;
+            background-color: var(--c64-text);
+            border: 2px solid var(--c64-border);
+            margin-bottom: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: var(--win-button-text);
+            color: var(--c64-bg);
         }
         
-        .win-repo-name {
+        .c64-repo-name {
             text-align: center;
             word-break: break-word;
             max-width: 100%;
-            font-size: 11px;
-            color: var(--win-text);
+            font-size: 14px;
+            color: var(--c64-text);
         }
         
         /* --- Modal okno szczegółów repozytorium --- */
-        .win-modal {
+        .c64-modal {
             position: fixed;
             top: 50%;
             left: 50%;
@@ -259,13 +247,13 @@
             to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
         }
         
-        .win-modal-background {
+        .c64-modal-background {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
+            background-color: rgba(0, 0, 50, 0.7);
             z-index: 999;
             display: none;
             animation: fadeIn 0.3s;
@@ -276,64 +264,61 @@
             to { opacity: 1; }
         }
         
-        .win-repo-details {
+        .c64-repo-details {
             padding: 10px;
         }
         
-        .win-repo-details-row {
+        .c64-repo-details-row {
             display: flex;
             margin-bottom: 8px;
-            border-bottom: 1px solid var(--win-gray);
+            border-bottom: 2px solid var(--c64-border);
             padding-bottom: 8px;
         }
         
-        .win-repo-details-label {
+        .c64-repo-details-label {
             width: 120px;
             font-weight: bold;
-            color: var(--win-inactive-text);
+            color: var(--c64-accent1);
         }
         
-        .win-repo-details-value {
+        .c64-repo-details-value {
             flex: 1;
         }
         
-        .win-repo-description {
+        .c64-repo-description {
             margin-bottom: 12px;
             padding: 8px;
-            background-color: var(--win-gray);
-            border: 1px solid var(--win-border-shadow);
-            box-shadow: inset 1px 1px 0 var(--win-border-shadow);
+            background-color: var(--c64-dark);
+            border: 2px solid var(--c64-border);
         }
         
-        .win-button-row {
+        .c64-button-row {
             display: flex;
             justify-content: flex-end;
-            gap: 8px;
+            gap: 12px;
             margin-top: 16px;
         }
         
-        .win-action-button {
-            padding: 4px 12px;
-            background-color: var(--win-button);
-            color: var(--win-button-text);
-            border: 2px solid var(--win-gray);
-            box-shadow: inset 1px 1px 0 var(--win-button-highlight), 
-                        inset -1px -1px 0 var(--win-button-shadow);
+        .c64-action-button {
+            padding: 6px 16px;
+            background-color: var(--c64-text);
+            color: var(--c64-bg);
+            border: 2px solid var(--c64-border);
             cursor: pointer;
-            min-width: 80px;
+            min-width: 100px;
             text-align: center;
             text-decoration: none;
             transition: all 0.1s;
+            font-size: 14px;
         }
         
-        .win-action-button:active {
-            box-shadow: inset -1px -1px 0 var(--win-button-highlight), 
-                        inset 1px 1px 0 var(--win-button-shadow);
-            transform: translateY(1px);
+        .c64-action-button:active {
+            background-color: var(--c64-secondary);
+            transform: translateY(2px);
         }
         
         /* --- Łądowanie --- */
-        .win-loading {
+        .c64-loading {
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -341,29 +326,29 @@
             height: 200px;
         }
         
-        .win-loading-text {
+        .c64-loading-text {
             margin-bottom: 16px;
             font-weight: bold;
+            color: var(--c64-accent1);
         }
         
-        .win-loading-animation {
+        .c64-loading-animation {
             width: 120px;
             height: 20px;
-            background-color: var(--win-gray);
-            border: 1px solid var(--win-border-shadow);
+            background-color: var(--c64-dark);
+            border: 2px solid var(--c64-border);
             padding: 2px;
             position: relative;
-            box-shadow: inset 1px 1px 0 var(--win-border-shadow);
         }
         
-        .win-loading-bar {
+        .c64-loading-bar {
             height: 100%;
-            background-color: var(--win-blue);
+            background-color: var(--c64-text);
             width: 20%;
-            animation: win-loading 2s infinite;
+            animation: c64-loading 2s infinite;
         }
         
-        @keyframes win-loading {
+        @keyframes c64-loading {
             0% { width: 0; }
             25% { width: 40%; }
             50% { width: 70%; }
@@ -371,24 +356,14 @@
             100% { width: 100%; }
         }
         
-        /* --- Stare ikony Windows --- */
-        @font-face {
-            font-family: 'Webdings';
-            src: url('https://cdn.jsdelivr.net/npm/webdings-font@1.0.0/webdings.woff') format('woff');
-        }
-        
-        .webdings {
-            font-family: 'Webdings', sans-serif;
-        }
-        
         /* --- Startup screen --- */
-        .win-startup {
+        .c64-startup {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: var(--win-dark-blue);
+            background-color: var(--c64-bg);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -397,54 +372,51 @@
             transition: opacity 0.5s, visibility 0.5s;
         }
         
-        .win-startup.hidden {
+        .c64-startup.hidden {
             opacity: 0;
             visibility: hidden;
         }
         
-        .win-logo {
-            font-size: 72px;
-            color: white;
+        .c64-logo {
+            font-size: 48px;
+            color: var(--c64-text);
             font-weight: bold;
-            margin-bottom: 20px;
+            margin-bottom: 30px;
             text-align: center;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
         }
         
-        .win-startup-loading {
+        .c64-startup-loading {
             width: 300px;
             height: 20px;
-            background-color: var(--win-gray);
-            border: 1px solid var(--win-border-light);
+            background-color: var(--c64-dark);
+            border: 2px solid var(--c64-border);
             padding: 2px;
             position: relative;
         }
         
-        .win-startup-bar {
+        .c64-startup-bar {
             height: 100%;
-            background-color: var(--win-blue);
+            background-color: var(--c64-text);
             width: 0%;
-            animation: win-startup-loading 3s forwards;
+            animation: c64-startup-loading 3s forwards;
         }
         
-        @keyframes win-startup-loading {
+        @keyframes c64-startup-loading {
             0% { width: 0; }
             70% { width: 70%; }
             100% { width: 100%; }
         }
         
-        .win-startup-text {
+        .c64-startup-text {
             margin-top: 20px;
-            color: white;
-            font-size: 14px;
+            color: var(--c64-text);
+            font-size: 16px;
         }
         
         /* --- Error Window --- */
-        .win-error {
-            border: 2px solid var(--win-gray);
-            background-color: var(--win-dark-gray);
-            box-shadow: inset 1px 1px 0 var(--win-border-light), 
-                        inset -1px -1px 0 var(--win-border-shadow);
+        .c64-error {
+            border: 4px solid var(--c64-accent2);
+            background-color: var(--c64-bg);
             max-width: 400px;
             margin: 100px auto;
             animation: errorBounce 0.5s;
@@ -456,34 +428,33 @@
             100% { transform: scale(1); }
         }
         
-        .win-error-title {
-            background-color: #aa0000;
+        .c64-error-title {
+            background-color: var(--c64-accent2);
             color: white;
-            padding: 2px 4px;
+            padding: 6px 8px;
             font-weight: bold;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin: 2px;
         }
         
-        .win-error-content {
+        .c64-error-content {
             padding: 16px;
             display: flex;
             align-items: flex-start;
             gap: 12px;
         }
         
-        .win-error-icon {
+        .c64-error-icon {
             font-size: 32px;
-            color: #aa0000;
+            color: var(--c64-accent2);
         }
         
-        .win-error-message {
+        .c64-error-message {
             flex: 1;
         }
         
-        .win-error-buttons {
+        .c64-error-buttons {
             display: flex;
             justify-content: center;
             margin-top: 20px;
@@ -491,407 +462,373 @@
         }
 
         /* --- Toolbar --- */
-        .win-toolbar {
+        .c64-toolbar {
             display: flex;
-            background-color: var(--win-gray);
-            padding: 4px;
-            margin: 2px;
-            gap: 8px;
+            background-color: var(--c64-text);
+            color: var(--c64-bg);
+            padding: 8px;
+            gap: 12px;
             align-items: center;
         }
         
-        .win-toolbar-button {
-            background-color: var(--win-button);
-            border: 2px solid var(--win-gray);
-            box-shadow: inset 1px 1px 0 var(--win-button-highlight), 
-                        inset -1px -1px 0 var(--win-button-shadow);
-            color: var(--win-text);
-            padding: 2px 6px;
-            font-size: 11px;
+        .c64-toolbar-button {
+            background-color: var(--c64-text);
+            border: 2px solid var(--c64-border);
+            color: var(--c64-bg);
+            padding: 4px 8px;
+            font-size: 14px;
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 6px;
             transition: all 0.1s;
         }
         
-        .win-toolbar-button:active {
-            box-shadow: inset -1px -1px 0 var(--win-button-highlight), 
-                        inset 1px 1px 0 var(--win-button-shadow);
+        .c64-toolbar-button:active {
+            background-color: var(--c64-accent1);
             transform: translateY(1px);
         }
         
-        .win-toolbar-separator {
-            width: 1px;
-            height: 20px;
-            background-color: var(--win-light-gray);
+        .c64-toolbar-separator {
+            width: 4px;
+            height: 24px;
+            background-color: var(--c64-border);
             margin: 0 4px;
         }
         
-        .win-toolbar-search {
-            background-color: black;
-            border: 2px solid var(--win-gray);
-            box-shadow: inset 1px 1px 0 var(--win-border-shadow), 
-                        inset -1px -1px 0 var(--win-button-highlight);
-            color: var(--win-text);
-            padding: 2px 6px;
-            font-size: 11px;
+        .c64-toolbar-search {
+            background-color: var(--c64-bg);
+            border: 2px solid var(--c64-border);
+            color: var(--c64-text);
+            padding: 4px 8px;
+            font-size: 14px;
             flex-grow: 1;
             max-width: 200px;
         }
         
-        .win-toolbar-search:focus {
+        .c64-toolbar-search:focus {
             outline: none;
-            border-color: var(--win-blue);
+            border-color: var(--c64-accent1);
         }
         
         /* --- Minimized Window --- */
-        .win-minimized {
+        .c64-minimized {
             position: absolute;
             bottom: 0;
             left: 0;
-            background-color: var(--win-gray);
-            border: 2px solid var(--win-light-gray);
-            padding: 4px 10px;
+            background-color: var(--c64-text);
+            color: var(--c64-bg);
+            border: 2px solid var(--c64-border);
+            padding: 8px 16px;
             cursor: pointer;
             display: none;
             z-index: 900;
-            box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.3);
         }
         
         /* --- Context Menu --- */
-        .win-context-menu {
+        .c64-context-menu {
             position: absolute;
-            background-color: var(--win-gray);
-            border: 2px solid var(--win-light-gray);
-            box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.5);
+            background-color: var(--c64-text);
+            color: var(--c64-bg);
+            border: 4px solid var(--c64-border);
             z-index: 1000;
             display: none;
         }
         
-        .win-context-item {
-            padding: 4px 10px;
-            color: var(--win-text);
+        .c64-context-item {
+            padding: 6px 12px;
+            color: var(--c64-bg);
             cursor: pointer;
             white-space: nowrap;
         }
         
-        .win-context-item:hover {
-            background-color: var(--win-blue);
-            color: var(--win-title-text);
+        .c64-context-item:hover {
+            background-color: var(--c64-accent1);
+            color: var(--c64-bg);
         }
         
-        /* --- Light Mode --- */
-        body.light-mode {
-            background-color: var(--win-light-bg);
+        /* --- Cursor --- */
+        .c64-cursor {
+            display: inline-block;
+            width: 12px;
+            height: 16px;
+            background-color: var(--c64-text);
+            animation: blink 1s infinite;
+            vertical-align: middle;
+            margin-left: 4px;
         }
         
-        body.light-mode .win-window {
-            border-color: #888888;
-            background-color: var(--win-light-window);
+        @keyframes blink {
+            0%, 49% { opacity: 1; }
+            50%, 100% { opacity: 0; }
         }
-        
-        body.light-mode .win-content {
-            background-color: var(--win-light-window);
-            color: var(--win-light-text);
-        }
-        
-        body.light-mode .win-title-bar {
-            background-color: #000080;
-        }
-        
-        body.light-mode .win-repo-name {
-            color: var(--win-light-text);
-        }
-        
-        body.light-mode .win-status-bar {
-            color: var(--win-light-text);
-        }
-        
-        body.light-mode .win-menu-bar {
-            background-color: var(--win-light-window);
-        }
-        
-        body.light-mode .win-menu-item {
-            color: var(--win-light-text);
-        }
-        
-        body.light-mode .win-submenu {
-            background-color: var(--win-light-window);
-            border-color: #888888;
-        }
-        
-        body.light-mode .win-submenu-item {
-            color: var(--win-light-text);
-        }
-        
-        body.light-mode .win-repo-description {
-            background-color: #dddddd;
-            color: var(--win-light-text);
-        }
-        
-        /* --- About Dialog --- */
-        .win-about {
-            text-align: center;
-            padding: 20px;
-        }
-        
-        .win-about-logo {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-        
-        .win-about-version {
-            font-size: 12px;
-            color: var(--win-inactive-text);
-            margin-bottom: 20px;
+
+        /* --- PETSCII Graphics --- */
+        .petscii {
+            font-family: 'C64', monospace;
+            white-space: pre;
+            line-height: 1;
         }
         
         /* --- Responsywność --- */
         @media (max-width: 768px) {
-            .win-repo-grid {
+            .c64-repo-grid {
                 grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
             }
             
-            .win-modal {
+            .c64-modal {
                 width: 95%;
             }
             
-            .win-logo {
-                font-size: 48px;
+            .c64-logo {
+                font-size: 36px;
             }
         }
 
         @media (max-width: 480px) {
-            .win-repo-grid {
+            .c64-repo-grid {
                 grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
             }
             
-            .win-toolbar {
+            .c64-toolbar {
                 flex-wrap: wrap;
             }
             
-            .win-toolbar-search {
+            .c64-toolbar-search {
                 max-width: 100%;
                 width: 100%;
                 order: -1;
-                margin-bottom: 4px;
+                margin-bottom: 8px;
             }
         }
 
         /* --- System dźwięku --- */
-        .win-audio {
+        .c64-audio {
             display: none;
         }
     </style>
 </head>
 <body>
     <!-- Dźwięki -->
-    <audio id="win-startup-sound" class="win-audio">
-        <source src="https://archive.org/download/WindowsStartupSounds/Windows%203.1.mp3" type="audio/mpeg">
+    <audio id="c64-startup-sound" class="c64-audio">
+        <source src="https://archive.org/download/Commodore64SoundEffects/Start-Up.mp3" type="audio/mpeg">
     </audio>
-    <audio id="win-error-sound" class="win-audio">
-        <source src="https://archive.org/download/WindowsXpSoundEffects/Windows%20XP%20Error.mp3" type="audio/mpeg">
+    <audio id="c64-error-sound" class="c64-audio">
+        <source src="https://archive.org/download/Commodore64SoundEffects/Error.mp3" type="audio/mpeg">
     </audio>
-    <audio id="win-click-sound" class="win-audio">
-        <source src="https://archive.org/download/WindowsXpSoundEffects/Windows%20XP%20Navigation%20Start.mp3" type="audio/mpeg">
+    <audio id="c64-click-sound" class="c64-audio">
+        <source src="https://archive.org/download/Commodore64SoundEffects/Click.mp3" type="audio/mpeg">
     </audio>
 
-    <!-- Ekran startowy Windows -->
-    <div class="win-startup">
-        <div class="win-logo">Windows 3.11</div>
-        <div class="win-startup-loading">
-            <div class="win-startup-bar"></div>
+    <!-- Ekran startowy Commodore 64 -->
+    <div class="c64-startup">
+        <div class="c64-logo">
+            **** COMMODORE 64 BASIC V2 ****<br>
+            64K RAM SYSTEM 38911 BASIC BYTES FREE<br><br>
+            READY.
         </div>
-        <div class="win-startup-text">Starting Program Manager...</div>
+        <div class="c64-startup-text">LOADING GITHUB BROWSER... <span class="c64-cursor"></span></div>
     </div>
 
     <!-- Główne okno aplikacji -->
-    <div class="win-window" id="main-window">
-        <div class="win-title-bar" id="main-window-title">
-            <div class="win-title">Program Manager - Swir GitHub</div>
-            <div class="win-buttons">
-                <div class="win-button" id="minimize-button" title="Minimize">_</div>
-                <div class="win-button" id="maximize-button" title="Maximize">□</div>
-                <div class="win-button" id="close-button" title="Close">×</div>
+    <div class="c64-window" id="main-window">
+        <div class="c64-title-bar" id="main-window-title">
+            <div class="c64-title">SWIR GITHUB BROWSER</div>
+            <div class="c64-buttons">
+                <div class="c64-button" id="minimize-button" title="Minimize">_</div>
+                <div class="c64-button" id="maximize-button" title="Maximize">[]</div>
+                <div class="c64-button" id="close-button" title="Close">X</div>
             </div>
         </div>
         
-        <div class="win-menu-bar">
-            <div class="win-menu-item">
-                File
-                <div class="win-submenu">
-                    <div class="win-submenu-item" id="refresh-button">Refresh Repositories</div>
-                    <div class="win-separator"></div>
-                    <div class="win-submenu-item" id="exit-button">Exit</div>
+        <div class="c64-menu-bar">
+            <div class="c64-menu-item">
+                F1:FILE
+                <div class="c64-submenu">
+                    <div class="c64-submenu-item" id="refresh-button">REFRESH REPOS</div>
+                    <div class="c64-separator"></div>
+                    <div class="c64-submenu-item" id="exit-button">EXIT</div>
                 </div>
             </div>
-            <div class="win-menu-item">
-                View
-                <div class="win-submenu">
-                    <div class="win-submenu-item" id="view-large">Large Icons</div>
-                    <div class="win-submenu-item" id="view-small">Small Icons</div>
-                    <div class="win-separator"></div>
-                    <div class="win-submenu-item" id="toggle-theme">Toggle Light/Dark</div>
+            <div class="c64-menu-item">
+                F3:VIEW
+                <div class="c64-submenu">
+                    <div class="c64-submenu-item" id="view-large">LARGE ICONS</div>
+                    <div class="c64-submenu-item" id="view-small">SMALL ICONS</div>
                 </div>
             </div>
-            <div class="win-menu-item">
-                Sort
-                <div class="win-submenu">
-                    <div class="win-submenu-item" id="sort-name">By Name</div>
-                    <div class="win-submenu-item" id="sort-updated">By Last Updated</div>
-                    <div class="win-submenu-item" id="sort-stars">By Stars</div>
-                    <div class="win-submenu-item" id="sort-size">By Size</div>
+            <div class="c64-menu-item">
+                F5:SORT
+                <div class="c64-submenu">
+                    <div class="c64-submenu-item" id="sort-name">BY NAME</div>
+                    <div class="c64-submenu-item" id="sort-updated">BY UPDATED</div>
+                    <div class="c64-submenu-item" id="sort-stars">BY STARS</div>
+                    <div class="c64-submenu-item" id="sort-size">BY SIZE</div>
                 </div>
             </div>
-            <div class="win-menu-item">
-                Help
-                <div class="win-submenu">
-                    <div class="win-submenu-item" id="keyboard-shortcuts">Keyboard Shortcuts</div>
-                    <div class="win-submenu-item" id="about-button">About</div>
+            <div class="c64-menu-item">
+                F7:HELP
+                <div class="c64-submenu">
+                    <div class="c64-submenu-item" id="keyboard-shortcuts">KEYS</div>
+                    <div class="c64-submenu-item" id="about-button">ABOUT</div>
                 </div>
             </div>
         </div>
         
-        <div class="win-toolbar">
-            <input type="text" class="win-toolbar-search" id="repo-search" placeholder="Search repositories...">
-            <div class="win-toolbar-separator"></div>
-            <div class="win-toolbar-button" id="refresh-repos">
-                <i class="fas fa-sync-alt"></i> Refresh
+        <div class="c64-toolbar">
+            <input type="text" class="c64-toolbar-search" id="repo-search" placeholder="SEARCH...">
+            <div class="c64-toolbar-separator"></div>
+            <div class="c64-toolbar-button" id="refresh-repos">
+                <i class="fas fa-sync-alt"></i> REFRESH
             </div>
-            <div class="win-toolbar-button" id="sort-repos">
-                <i class="fas fa-sort"></i> Sort
+            <div class="c64-toolbar-button" id="sort-repos">
+                <i class="fas fa-sort"></i> SORT
             </div>
-            <div class="win-toolbar-button" id="view-toggle">
-                <i class="fas fa-th-large"></i> View
-            </div>
-            <div class="win-toolbar-separator"></div>
-            <div class="win-toolbar-button" id="theme-toggle">
-                <i class="fas fa-adjust"></i> Theme
+            <div class="c64-toolbar-button" id="view-toggle">
+                <i class="fas fa-th-large"></i> VIEW
             </div>
         </div>
         
-        <div class="win-content">
+        <div class="c64-content">
             <div id="repos-container">
                 <!-- Tutaj będą wczytywane repozytoria -->
-                <div class="win-loading">
-                    <div class="win-loading-text">Loading repositories...</div>
-                    <div class="win-loading-animation">
-                        <div class="win-loading-bar"></div>
+                <div class="c64-loading">
+                    <div class="c64-loading-text">LOADING REPOSITORIES...</div>
+                    <div class="c64-loading-animation">
+                        <div class="c64-loading-bar"></div>
                     </div>
                 </div>
             </div>
         </div>
         
-        <div class="win-status-bar">
-            <div>0 object(s)</div>
-            <div id="memory-display">1.44MB free</div>
+        <div class="c64-status-bar">
+            <div>0 OBJECTS</div>
+            <div id="memory-display">38911 BYTES FREE</div>
         </div>
     </div>
     
     <!-- Zminimalizowane okno -->
-    <div class="win-minimized" id="minimized-window">
-        Program Manager
+    <div class="c64-minimized" id="minimized-window">
+        GITHUB BROWSER
     </div>
     
     <!-- Modal okno ze szczegółami repozytorium -->
-    <div class="win-modal" id="repo-details-modal">
-        <div class="win-window">
-            <div class="win-title-bar" id="repo-modal-title">
-                <div class="win-title" id="modal-repo-name">Repository Properties</div>
-                <div class="win-buttons">
-                    <div class="win-button" onclick="closeRepoModal()">×</div>
+    <div class="c64-modal" id="repo-details-modal">
+        <div class="c64-window">
+            <div class="c64-title-bar" id="repo-modal-title">
+                <div class="c64-title" id="modal-repo-name">REPOSITORY INFO</div>
+                <div class="c64-buttons">
+                    <div class="c64-button" onclick="closeRepoModal()">X</div>
                 </div>
             </div>
             
-            <div class="win-content win-repo-details" id="repo-details-content">
+            <div class="c64-content c64-repo-details" id="repo-details-content">
                 <!-- Tu zostanie wstawiona zawartość modalu -->
             </div>
             
-            <div class="win-status-bar">
-                <div>GitHub Repository</div>
+            <div class="c64-status-bar">
+                <div>PRESS RETURN TO CONTINUE</div>
             </div>
         </div>
     </div>
     
     <!-- Modal z informacjami o aplikacji -->
-    <div class="win-modal" id="about-modal">
-        <div class="win-window">
-            <div class="win-title-bar">
-                <div class="win-title">About GitHub Viewer</div>
-                <div class="win-buttons">
-                    <div class="win-button" id="close-about">×</div>
+    <div class="c64-modal" id="about-modal">
+        <div class="c64-window">
+            <div class="c64-title-bar">
+                <div class="c64-title">ABOUT</div>
+                <div class="c64-buttons">
+                    <div class="c64-button" id="close-about">X</div>
                 </div>
             </div>
             
-            <div class="win-content win-about">
-                <div class="win-about-logo">Windows 3.11 GitHub Viewer</div>
-                <div class="win-about-version">Version 1.1</div>
-                <p>A nostalgic Windows 3.11 style interface for browsing GitHub repositories.</p>
-                <p>© 2025 Swir</p>
+            <div class="c64-content">
+                <div style="text-align: center; padding: 20px;">
+                    <div style="font-size: 24px; color: var(--c64-accent1); margin-bottom: 10px;">
+                        COMMODORE 64 GITHUB BROWSER
+                    </div>
+                    <div style="font-size: 14px; color: var(--c64-text); margin-bottom: 20px;">
+                        VERSION 1.0
+                    </div>
+                    <p>A NOSTALGIC C64 STYLE INTERFACE FOR BROWSING GITHUB REPOSITORIES.</p>
+                    <p>(C) 2025 SWIR</p>
+                    
+                    <div class="petscii" style="margin-top: 20px; color: var(--c64-accent1);">
+┌──────────────────────────┐
+│                          │
+│     **** GITHUB ****     │
+│                          │
+│   POWERED BY COMMODORE   │
+│                          │
+└──────────────────────────┘
+                    </div>
+                </div>
             </div>
             
-            <div class="win-status-bar">
-                <div>GitHub Viewer</div>
+            <div class="c64-status-bar">
+                <div>PRESS ANY KEY TO CONTINUE</div>
             </div>
         </div>
     </div>
     
     <!-- Modal z skrótami klawiszowymi -->
-    <div class="win-modal" id="shortcuts-modal">
-        <div class="win-window">
-            <div class="win-title-bar">
-                <div class="win-title">Keyboard Shortcuts</div>
-                <div class="win-buttons">
-                    <div class="win-button" id="close-shortcuts">×</div>
+    <div class="c64-modal" id="shortcuts-modal">
+        <div class="c64-window">
+            <div class="c64-title-bar">
+                <div class="c64-title">KEYBOARD COMMANDS</div>
+                <div class="c64-buttons">
+                    <div class="c64-button" id="close-shortcuts">X</div>
                 </div>
             </div>
             
-            <div class="win-content">
-                <div class="win-repo-details">
-                    <div class="win-repo-details-row">
-                        <div class="win-repo-details-label">Refresh (F5)</div>
-                        <div class="win-repo-details-value">Reload repositories</div>
+            <div class="c64-content">
+                <div class="c64-repo-details">
+                    <div class="c64-repo-details-row">
+                        <div class="c64-repo-details-label">F1</div>
+                        <div class="c64-repo-details-value">FILE MENU</div>
                     </div>
-                    <div class="win-repo-details-row">
-                        <div class="win-repo-details-label">Search (Ctrl+F)</div>
-                        <div class="win-repo-details-value">Focus search box</div>
+                    <div class="c64-repo-details-row">
+                        <div class="c64-repo-details-label">F3</div>
+                        <div class="c64-repo-details-value">VIEW MENU</div>
                     </div>
-                    <div class="win-repo-details-row">
-                        <div class="win-repo-details-label">Escape (Esc)</div>
-                        <div class="win-repo-details-value">Close dialogs</div>
+                    <div class="c64-repo-details-row">
+                        <div class="c64-repo-details-label">F5</div>
+                        <div class="c64-repo-details-value">SORT MENU</div>
                     </div>
-                    <div class="win-repo-details-row">
-                        <div class="win-repo-details-label">Arrow keys</div>
-                        <div class="win-repo-details-value">Navigate repositories</div>
+                    <div class="c64-repo-details-row">
+                        <div class="c64-repo-details-label">F7</div>
+                        <div class="c64-repo-details-value">HELP MENU</div>
                     </div>
-                    <div class="win-repo-details-row">
-                        <div class="win-repo-details-label">Enter</div>
-                        <div class="win-repo-details-value">Open selected repository</div>
+                    <div class="c64-repo-details-row">
+                        <div class="c64-repo-details-label">R</div>
+                        <div class="c64-repo-details-value">REFRESH REPOS</div>
                     </div>
-                    <div class="win-repo-details-row">
-                        <div class="win-repo-details-label">T (Theme)</div>
-                        <div class="win-repo-details-value">Toggle light/dark mode</div>
+                    <div class="c64-repo-details-row">
+                        <div class="c64-repo-details-label">RETURN</div>
+                        <div class="c64-repo-details-value">OPEN SELECTED</div>
+                    </div>
+                    <div class="c64-repo-details-row">
+                        <div class="c64-repo-details-label">RUN/STOP</div>
+                        <div class="c64-repo-details-value">EXIT</div>
                     </div>
                 </div>
             </div>
             
-            <div class="win-status-bar">
-                <div>Keyboard Shortcuts</div>
+            <div class="c64-status-bar">
+                <div>READY.</div>
             </div>
         </div>
     </div>
     
     <!-- Menu kontekstowe -->
-    <div class="win-context-menu" id="repo-context-menu">
-        <div class="win-context-item" id="context-open">Open</div>
-        <div class="win-context-item" id="context-view-github">View on GitHub</div>
-        <div class="win-separator"></div>
-        <div class="win-context-item" id="context-copy-url">Copy URL</div>
+    <div class="c64-context-menu" id="repo-context-menu">
+        <div class="c64-context-item" id="context-open">OPEN</div>
+        <div class="c64-context-item" id="context-view-github">VIEW ON GITHUB</div>
+        <div class="c64-separator"></div>
+        <div class="c64-context-item" id="context-copy-url">COPY URL</div>
     </div>
     
-    <div class="win-modal-background" id="modal-background"></div>
+    <div class="c64-modal-background" id="modal-background"></div>
 
     <script>
         // Zmienne globalne
@@ -907,9 +844,29 @@
         
         // Inicjalizacja
         document.addEventListener('DOMContentLoaded', () => {
+            // Zmień klasę z win-* na c64-*
+            document.querySelectorAll('[class^="win-"]').forEach(element => {
+                const classes = element.className.split(' ');
+                const newClasses = classes.map(cls => {
+                    if (cls.startsWith('win-')) {
+                        return cls.replace('win-', 'c64-');
+                    }
+                    return cls;
+                });
+                element.className = newClasses.join(' ');
+            });
+            
+            // Identyfikatory
+            document.querySelectorAll('[id^="win-"]').forEach(element => {
+                const id = element.id;
+                if (id.startsWith('win-')) {
+                    element.id = id.replace('win-', 'c64-');
+                }
+            });
+            
             // Dźwięk startowy
             try {
-                document.getElementById('win-startup-sound').play().catch(() => {
+                document.getElementById('c64-startup-sound').play().catch(() => {
                     console.log('Autoplay prevented by browser');
                 });
             } catch (e) {
@@ -918,7 +875,7 @@
             
             // Zamknięcie ekranu startowego po załadowaniu
             setTimeout(() => {
-                document.querySelector('.win-startup').classList.add('hidden');
+                document.querySelector('.c64-startup').classList.add('hidden');
                 
                 // Wczytaj repozytoria
                 fetchRepositories();
@@ -974,7 +931,6 @@
             // Menu View
             document.getElementById('view-large').addEventListener('click', () => setViewMode('large'));
             document.getElementById('view-small').addEventListener('click', () => setViewMode('small'));
-            document.getElementById('toggle-theme').addEventListener('click', toggleTheme);
             
             // Menu Sort
             document.getElementById('sort-name').addEventListener('click', () => sortRepositories('name'));
@@ -989,26 +945,25 @@
             // Toolbar
             document.getElementById('repo-search').addEventListener('input', filterRepositories);
             document.getElementById('refresh-repos').addEventListener('click', fetchRepositories);
-            document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
             document.getElementById('view-toggle').addEventListener('click', cycleViewMode);
             
             document.getElementById('sort-repos').addEventListener('click', (e) => {
                 const menu = document.createElement('div');
-                menu.className = 'win-context-menu';
+                menu.className = 'c64-context-menu';
                 menu.style.display = 'block';
                 menu.style.left = e.pageX + 'px';
                 menu.style.top = e.pageY + 'px';
                 
                 menu.innerHTML = `
-                    <div class="win-context-item" id="sort-context-name">By Name</div>
-                    <div class="win-context-item" id="sort-context-updated">By Last Updated</div>
-                    <div class="win-context-item" id="sort-context-stars">By Stars</div>
-                    <div class="win-context-item" id="sort-context-size">By Size</div>
+                    <div class="c64-context-item" id="sort-context-name">BY NAME</div>
+                    <div class="c64-context-item" id="sort-context-updated">BY UPDATED</div>
+                    <div class="c64-context-item" id="sort-context-stars">BY STARS</div>
+                    <div class="c64-context-item" id="sort-context-size">BY SIZE</div>
                 `;
                 
                 document.body.appendChild(menu);
                 
-                menu.querySelectorAll('.win-context-item').forEach(item => {
+                menu.querySelectorAll('.c64-context-item').forEach(item => {
                     item.addEventListener('click', () => {
                         const sortType = item.id.replace('sort-context-', '');
                         sortRepositories(sortType);
@@ -1040,7 +995,7 @@
             document.getElementById('context-copy-url').addEventListener('click', () => {
                 if (selectedRepo) {
                     navigator.clipboard.writeText(selectedRepo.html_url).then(() => {
-                        showTemporaryMessage('URL copied to clipboard');
+                        showTemporaryMessage('URL COPIED TO CLIPBOARD');
                     }).catch(err => {
                         console.error('Could not copy text: ', err);
                     });
@@ -1054,7 +1009,7 @@
             const mainWindow = document.getElementById('main-window');
             
             mainTitleBar.addEventListener('mousedown', (e) => {
-                if (e.target.classList.contains('win-button')) return;
+                if (e.target.classList.contains('c64-button')) return;
                 
                 isDragging = true;
                 const rect = mainWindow.getBoundingClientRect();
@@ -1081,10 +1036,10 @@
             
             // Również dla okna modalnego
             const modalTitleBar = document.getElementById('repo-modal-title');
-            const modalWindow = document.getElementById('repo-details-modal').querySelector('.win-window');
+            const modalWindow = document.getElementById('repo-details-modal').querySelector('.c64-window');
             
             modalTitleBar.addEventListener('mousedown', (e) => {
-                if (e.target.classList.contains('win-button')) return;
+                if (e.target.classList.contains('c64-button')) return;
                 
                 isDragging = true;
                 const rect = modalWindow.getBoundingClientRect();
@@ -1098,34 +1053,43 @@
         // Inicjalizacja skrótów klawiszowych
         function initializeKeyboardShortcuts() {
             document.addEventListener('keydown', (e) => {
-                // F5 - odświeżenie
-                if (e.key === 'F5') {
+                // F1, F3, F5, F7 dla menu
+                if (e.key === 'F1') {
                     e.preventDefault();
+                    document.querySelector('.c64-menu-item:nth-child(1)').click();
+                } else if (e.key === 'F3') {
+                    e.preventDefault();
+                    document.querySelector('.c64-menu-item:nth-child(2)').click();
+                } else if (e.key === 'F5') {
+                    e.preventDefault();
+                    document.querySelector('.c64-menu-item:nth-child(3)').click();
+                } else if (e.key === 'F7') {
+                    e.preventDefault();
+                    document.querySelector('.c64-menu-item:nth-child(4)').click();
+                }
+                
+                // R - odświeżenie
+                if (e.key === 'r' || e.key === 'R') {
                     fetchRepositories();
                 }
                 
-                // Ctrl+F - fokus na wyszukiwaniu
-                if (e.key === 'f' && e.ctrlKey) {
-                    e.preventDefault();
-                    document.getElementById('repo-search').focus();
-                }
-                
-                // Esc - zamknięcie modali
+                // Esc (RUN/STOP) - zamknięcie modali lub wyjście
                 if (e.key === 'Escape') {
-                    closeAllModals();
-                }
-                
-                // T - przełączenie motywu
-                if (e.key === 't' || e.key === 'T') {
-                    toggleTheme();
+                    if (document.getElementById('about-modal').style.display === 'block' ||
+                        document.getElementById('shortcuts-modal').style.display === 'block' ||
+                        document.getElementById('repo-details-modal').style.display === 'block') {
+                        closeAllModals();
+                    } else {
+                        closeWindow();
+                    }
                 }
                 
                 // Strzałki do nawigacji po repozytoriach
                 if (e.key.startsWith('Arrow')) {
-                    const grid = document.querySelector('.win-repo-grid');
+                    const grid = document.querySelector('.c64-repo-grid');
                     if (!grid) return;
                     
-                    const items = Array.from(grid.querySelectorAll('.win-repo-item'));
+                    const items = Array.from(grid.querySelectorAll('.c64-repo-item'));
                     if (items.length === 0) return;
                     
                     // Jeśli nic nie jest zaznaczone, zaznacz pierwszy element
@@ -1156,10 +1120,10 @@
                 
                 // Enter - otwórz zaznaczone repozytorium
                 if (e.key === 'Enter') {
-                    const grid = document.querySelector('.win-repo-grid');
+                    const grid = document.querySelector('.c64-repo-grid');
                     if (!grid) return;
                     
-                    const items = Array.from(grid.querySelectorAll('.win-repo-item'));
+                    const items = Array.from(grid.querySelectorAll('.c64-repo-item'));
                     if (items.length === 0 || selectedRepoIndex === -1) return;
                     
                     items[selectedRepoIndex].click();
@@ -1169,17 +1133,17 @@
         
         // Podświetl element repozytorium
         function highlightRepoItem(item) {
-            document.querySelectorAll('.win-repo-item').forEach(el => {
+            document.querySelectorAll('.c64-repo-item').forEach(el => {
                 el.style.borderColor = 'transparent';
                 el.style.backgroundColor = '';
             });
             
-            item.style.borderColor = 'var(--win-highlight)';
-            item.style.backgroundColor = 'var(--win-dark-blue)';
+            item.style.borderColor = 'var(--c64-accent1)';
+            item.style.backgroundColor = 'var(--c64-dark)';
             item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             
             // Znajdź odpowiednie repozytorium
-            const repoName = item.querySelector('.win-repo-name').textContent;
+            const repoName = item.querySelector('.c64-repo-name').textContent;
             selectedRepo = allRepos.find(repo => repo.name === repoName);
         }
         
@@ -1217,13 +1181,16 @@
         // Zamknięcie okna
         function closeWindow() {
             playSound('click');
-            if (confirm('Are you sure you want to exit?')) {
+            if (confirm('ARE YOU SURE YOU WANT TO EXIT?')) {
                 window.close();
                 // Jako alternatywa, jeśli window.close() nie zadziała
                 document.body.innerHTML = `
-                    <div class="win-startup" style="opacity: 1; visibility: visible;">
-                        <div class="win-logo">Windows 3.11</div>
-                        <div class="win-startup-text">It is now safe to turn off your computer.</div>
+                    <div class="c64-startup" style="opacity: 1; visibility: visible;">
+                        <div class="c64-logo">
+                            **** COMMODORE 64 BASIC V2 ****<br><br>
+                            READY.<br>
+                            SYSTEM HALTED
+                        </div>
                     </div>
                 `;
             }
@@ -1235,12 +1202,6 @@
             document.getElementById('main-window').style.display = 'block';
             document.getElementById('minimized-window').style.display = 'none';
             isMinimized = false;
-        }
-        
-        // Przełączanie motywu
-        function toggleTheme() {
-            playSound('click');
-            document.body.classList.toggle('light-mode');
         }
         
         // Pokaż okno About
@@ -1263,7 +1224,7 @@
             document.getElementById('about-modal').style.display = 'none';
             document.getElementById('shortcuts-modal').style.display = 'none';
             document.getElementById('modal-background').style.display = 'none';
-            document.querySelectorAll('.win-context-menu').forEach(menu => {
+            document.querySelectorAll('.c64-context-menu').forEach(menu => {
                 if (document.body.contains(menu)) {
                     document.body.removeChild(menu);
                 }
@@ -1275,22 +1236,22 @@
             playSound('click');
             currentView = mode;
             
-            const grid = document.querySelector('.win-repo-grid');
+            const grid = document.querySelector('.c64-repo-grid');
             if (!grid) return;
             
             if (mode === 'small') {
                 grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(120px, 1fr))';
-                grid.querySelectorAll('.win-repo-icon').forEach(icon => {
-                    icon.style.width = '24px';
-                    icon.style.height = '24px';
-                    icon.style.fontSize = '12px';
+                grid.querySelectorAll('.c64-repo-icon').forEach(icon => {
+                    icon.style.width = '32px';
+                    icon.style.height = '32px';
+                    icon.style.fontSize = '14px';
                 });
             } else {
                 grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(180px, 1fr))';
-                grid.querySelectorAll('.win-repo-icon').forEach(icon => {
-                    icon.style.width = '32px';
-                    icon.style.height = '32px';
-                    icon.style.fontSize = '16px';
+                grid.querySelectorAll('.c64-repo-icon').forEach(icon => {
+                    icon.style.width = '40px';
+                    icon.style.height = '40px';
+                    icon.style.fontSize = '18px';
                 });
             }
         }
@@ -1349,8 +1310,8 @@
         // Aktualizacja wyświetlania pamięci
         function updateMemoryDisplay() {
             const memoryDisplay = document.getElementById('memory-display');
-            const memory = Math.floor(Math.random() * 10) + 1;
-            memoryDisplay.textContent = `${memory}.${Math.floor(Math.random() * 100)}MB free`;
+            const memory = Math.floor(Math.random() * 10000) + 30000;
+            memoryDisplay.textContent = `${memory} BYTES FREE`;
         }
         
         // Odtwarzanie dźwięków
@@ -1358,14 +1319,14 @@
             try {
                 switch (type) {
                     case 'startup':
-                        document.getElementById('win-startup-sound').play().catch(() => {});
+                        document.getElementById('c64-startup-sound').play().catch(() => {});
                         break;
                     case 'error':
-                        document.getElementById('win-error-sound').play().catch(() => {});
+                        document.getElementById('c64-error-sound').play().catch(() => {});
                         break;
                     case 'click':
-                        document.getElementById('win-click-sound').currentTime = 0;
-                        document.getElementById('win-click-sound').play().catch(() => {});
+                        document.getElementById('c64-click-sound').currentTime = 0;
+                        document.getElementById('c64-click-sound').play().catch(() => {});
                         break;
                 }
             } catch (e) {
@@ -1380,11 +1341,10 @@
             messageElement.style.bottom = '20px';
             messageElement.style.left = '50%';
             messageElement.style.transform = 'translateX(-50%)';
-            messageElement.style.backgroundColor = 'var(--win-blue)';
-            messageElement.style.color = 'white';
+            messageElement.style.backgroundColor = 'var(--c64-text)';
+            messageElement.style.color = 'var(--c64-bg)';
             messageElement.style.padding = '8px 16px';
-            messageElement.style.borderRadius = '4px';
-            messageElement.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.3)';
+            messageElement.style.border = '2px solid var(--c64-border)';
             messageElement.style.zIndex = '2000';
             messageElement.textContent = message;
             
@@ -1402,10 +1362,10 @@
             
             // Zmień zawartość kontenera na ekran ładowania
             reposContainer.innerHTML = `
-                <div class="win-loading">
-                    <div class="win-loading-text">Loading repositories...</div>
-                    <div class="win-loading-animation">
-                        <div class="win-loading-bar"></div>
+                <div class="c64-loading">
+                    <div class="c64-loading-text">LOADING REPOSITORIES...</div>
+                    <div class="c64-loading-animation">
+                        <div class="c64-loading-bar"></div>
                     </div>
                 </div>
             `;
@@ -1414,7 +1374,7 @@
                 const response = await fetch(`https://api.github.com/users/${username}/repos?per_page=100`);
                 
                 if (!response.ok) {
-                    throw new Error(`GitHub API responded with status: ${response.status}`);
+                    throw new Error(`GITHUB API ERROR: ${response.status}`);
                 }
                 
                 allRepos = await response.json();
@@ -1423,7 +1383,7 @@
                 sortRepositories(currentSort);
                 
                 // Aktualizuj licznik repozytoriów
-                document.querySelector('.win-status-bar div:first-child').textContent = `${allRepos.length} object(s)`;
+                document.querySelector('.c64-status-bar div:first-child').textContent = `${allRepos.length} OBJECTS`;
                 
                 // Aktualizuj wyświetlanie pamięci
                 updateMemoryDisplay();
@@ -1431,7 +1391,7 @@
             } catch (error) {
                 console.error('Error fetching repositories:', error);
                 playSound('error');
-                showErrorWindow("Connection Error", error.message);
+                showErrorWindow("CONNECTION ERROR", error.message);
             }
         }
         
@@ -1440,16 +1400,16 @@
             const reposContainer = document.getElementById('repos-container');
             
             // Aktualizuj licznik repozytoriów
-            document.querySelector('.win-status-bar div:first-child').textContent = `${repos.length} object(s)`;
+            document.querySelector('.c64-status-bar div:first-child').textContent = `${repos.length} OBJECTS`;
             
             // Utwórz siatkę repozytoriów
             const repoGrid = document.createElement('div');
-            repoGrid.className = 'win-repo-grid';
+            repoGrid.className = 'c64-repo-grid';
             
             // Dodaj każde repozytorium jako ikonę
             repos.forEach((repo, index) => {
                 const repoItem = document.createElement('div');
-                repoItem.className = 'win-repo-item';
+                repoItem.className = 'c64-repo-item';
                 repoItem.tabIndex = 0; // Dla nawigacji klawiaturą
                 
                 repoItem.addEventListener('click', () => {
@@ -1491,10 +1451,10 @@
                 }
                 
                 repoItem.innerHTML = `
-                    <div class="win-repo-icon">
+                    <div class="c64-repo-icon">
                         <i class="${iconClass}"></i>
                     </div>
-                    <div class="win-repo-name">${repo.name}</div>
+                    <div class="c64-repo-name">${repo.name.toUpperCase()}</div>
                 `;
                 
                 repoGrid.appendChild(repoItem);
@@ -1515,7 +1475,7 @@
             const modalTitle = document.getElementById('modal-repo-name');
             
             // Ustaw tytuł
-            modalTitle.textContent = repo.name;
+            modalTitle.textContent = repo.name.toUpperCase();
             
             // Formatuj datę
             const createdDate = new Date(repo.created_at).toLocaleDateString();
@@ -1523,48 +1483,48 @@
             
             // Przygotuj zawartość
             content.innerHTML = `
-                <div class="win-repo-description">
-                    ${repo.description || "No description available."}
+                <div class="c64-repo-description">
+                    ${repo.description ? repo.description.toUpperCase() : "NO DESCRIPTION AVAILABLE."}
                 </div>
                 
-                <div class="win-repo-details-row">
-                    <div class="win-repo-details-label">Created:</div>
-                    <div class="win-repo-details-value">${createdDate}</div>
+                <div class="c64-repo-details-row">
+                    <div class="c64-repo-details-label">CREATED:</div>
+                    <div class="c64-repo-details-value">${createdDate}</div>
                 </div>
                 
-                <div class="win-repo-details-row">
-                    <div class="win-repo-details-label">Last Updated:</div>
-                    <div class="win-repo-details-value">${updatedDate}</div>
+                <div class="c64-repo-details-row">
+                    <div class="c64-repo-details-label">UPDATED:</div>
+                    <div class="c64-repo-details-value">${updatedDate}</div>
                 </div>
                 
-                <div class="win-repo-details-row">
-                    <div class="win-repo-details-label">Language:</div>
-                    <div class="win-repo-details-value">${repo.language || "Not specified"}</div>
+                <div class="c64-repo-details-row">
+                    <div class="c64-repo-details-label">LANGUAGE:</div>
+                    <div class="c64-repo-details-value">${repo.language ? repo.language.toUpperCase() : "UNKNOWN"}</div>
                 </div>
                 
-                <div class="win-repo-details-row">
-                    <div class="win-repo-details-label">Stars:</div>
-                    <div class="win-repo-details-value">${repo.stargazers_count}</div>
+                <div class="c64-repo-details-row">
+                    <div class="c64-repo-details-label">STARS:</div>
+                    <div class="c64-repo-details-value">${repo.stargazers_count}</div>
                 </div>
                 
-                <div class="win-repo-details-row">
-                    <div class="win-repo-details-label">Forks:</div>
-                    <div class="win-repo-details-value">${repo.forks_count}</div>
+                <div class="c64-repo-details-row">
+                    <div class="c64-repo-details-label">FORKS:</div>
+                    <div class="c64-repo-details-value">${repo.forks_count}</div>
                 </div>
                 
-                <div class="win-repo-details-row">
-                    <div class="win-repo-details-label">Watchers:</div>
-                    <div class="win-repo-details-value">${repo.watchers_count}</div>
+                <div class="c64-repo-details-row">
+                    <div class="c64-repo-details-label">WATCHERS:</div>
+                    <div class="c64-repo-details-value">${repo.watchers_count}</div>
                 </div>
                 
-                <div class="win-repo-details-row">
-                    <div class="win-repo-details-label">Size:</div>
-                    <div class="win-repo-details-value">${repo.size} KB</div>
+                <div class="c64-repo-details-row">
+                    <div class="c64-repo-details-label">SIZE:</div>
+                    <div class="c64-repo-details-value">${repo.size} BYTES</div>
                 </div>
                 
-                <div class="win-button-row">
-                    <a href="${repo.html_url}" target="_blank" class="win-action-button">Open in GitHub</a>
-                    <button class="win-action-button" onclick="closeRepoModal()">Close</button>
+                <div class="c64-button-row">
+                    <a href="${repo.html_url}" target="_blank" class="c64-action-button">OPEN REPO</a>
+                    <button class="c64-action-button" onclick="closeRepoModal()">CLOSE</button>
                 </div>
             `;
             
@@ -1586,19 +1546,19 @@
             const reposContainer = document.getElementById('repos-container');
             
             reposContainer.innerHTML = `
-                <div class="win-error">
-                    <div class="win-error-title">
+                <div class="c64-error">
+                    <div class="c64-error-title">
                         <div>${title}</div>
-                        <div class="win-buttons">
-                            <div class="win-button" onclick="location.reload()">×</div>
+                        <div class="c64-buttons">
+                            <div class="c64-button" onclick="location.reload()">X</div>
                         </div>
                     </div>
-                    <div class="win-error-content">
-                        <div class="win-error-icon">×</div>
-                        <div class="win-error-message">${message}</div>
+                    <div class="c64-error-content">
+                        <div class="c64-error-icon">?</div>
+                        <div class="c64-error-message">${message.toUpperCase()}</div>
                     </div>
-                    <div class="win-error-buttons">
-                        <button class="win-action-button" onclick="location.reload()">Retry</button>
+                    <div class="c64-error-buttons">
+                        <button class="c64-action-button" onclick="location.reload()">RETRY</button>
                     </div>
                 </div>
             `;
