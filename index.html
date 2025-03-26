@@ -13,11 +13,23 @@
             --mac-white: #FFFFFF;
             --mac-black: #000000;
             --mac-bg: #FFFFFF;
-            --mac-text: #000000; /* Added explicit text color variable */
+            --mac-text: #000000;
+            --mac-highlight-bg: #000000;
+            --mac-highlight-text: #FFFFFF;
+            --mac-shadow: rgba(0, 0, 0, 0.5);
+            
+            /* Pixelizacja */
+            --mac-pixel-size: 1px;
+            
+            /* Rozmiary */
+            --menu-height: 20px;
+            --title-bar-height: 19px;
+            --window-border-width: 1px;
+            --scrollbar-width: 16px;
         }
         
         /* --- Reset i podstawowe style --- */
-        * {
+        *, *::before, *::after {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
@@ -28,12 +40,22 @@
         @font-face {
             font-family: 'Chicago';
             src: url('https://cdn.jsdelivr.net/gh/codepo8/chicanery/fonts/ChicagoFLF.ttf') format('truetype');
-            font-display: swap; /* Improve font loading */
+            font-display: swap;
+            font-weight: normal;
+            font-style: normal;
+        }
+        
+        @font-face {
+            font-family: 'Monaco';
+            src: url('https://www.cdnfonts.com/download/monaco.woff') format('woff');
+            font-display: swap;
+            font-weight: normal;
+            font-style: normal;
         }
         
         html, body {
             background-color: var(--mac-bg);
-            color: var(--mac-text); /* Using explicit text color */
+            color: var(--mac-text);
             font-family: 'Chicago', monospace;
             font-size: 12px;
             line-height: 1.4;
@@ -41,6 +63,8 @@
             height: 100%;
             margin: 0;
             padding: 0;
+            position: relative;
+            image-rendering: pixelated;
         }
         
         body {
@@ -50,19 +74,25 @@
             flex-direction: column;
         }
 
-        /* --- Menu Bar --- */
+        /* --- Utilites --- */
+        .pixel-perfect {
+            image-rendering: pixelated;
+        }
+        
+        /* ---------- Menu Bar ---------- */
         .mac-menu-bar {
             background-color: var(--mac-white);
             border-bottom: 1px solid var(--mac-black);
             display: flex;
             align-items: center;
-            height: 20px;
+            height: var(--menu-height);
             padding: 0;
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             z-index: 9999;
+            image-rendering: pixelated;
         }
         
         .mac-menu-logo {
@@ -101,18 +131,20 @@
             display: flex;
             align-items: center;
             height: 100%;
-            color: var(--mac-black); /* Ensure menu text is black */
+            color: var(--mac-black);
+            user-select: none;
         }
         
-        .mac-menu-item:hover {
-            background-color: var(--mac-black);
-            color: var(--mac-white);
+        .mac-menu-item:hover,
+        .mac-menu-item.active {
+            background-color: var(--mac-highlight-bg);
+            color: var(--mac-highlight-text);
         }
         
         .mac-submenu {
             position: absolute;
             display: none;
-            top: 20px;
+            top: var(--menu-height);
             left: 0;
             background-color: var(--mac-white);
             border: 1px solid var(--mac-black);
@@ -122,8 +154,15 @@
             z-index: 10000;
         }
         
-        .mac-menu-item:hover .mac-submenu {
+        .mac-menu-item:hover .mac-submenu,
+        .mac-menu-item.active .mac-submenu {
             display: block;
+            animation: menuFadeIn 0.1s ease-out;
+        }
+        
+        @keyframes menuFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
         
         .mac-submenu-item {
@@ -132,12 +171,38 @@
             font-size: 11px;
             cursor: pointer;
             white-space: nowrap;
-            color: var(--mac-black); /* Ensure submenu text is black */
+            color: var(--mac-black);
+            user-select: none;
         }
         
-        .mac-submenu-item:hover {
-            background-color: var(--mac-black);
-            color: var(--mac-white);
+        .mac-submenu-item:hover,
+        .mac-submenu-item.active {
+            background-color: var(--mac-highlight-bg);
+            color: var(--mac-highlight-text);
+        }
+        
+        .mac-submenu-item.disabled {
+            color: #888;
+            cursor: default;
+        }
+        
+        .mac-submenu-item.disabled:hover {
+            background-color: transparent;
+            color: #888;
+        }
+        
+        .mac-submenu-item.has-shortcut {
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .mac-shortcut {
+            margin-left: 20px;
+            color: #666;
+        }
+        
+        .mac-submenu-item:hover .mac-shortcut {
+            color: var(--mac-highlight-text);
         }
         
         .mac-separator {
@@ -146,32 +211,44 @@
             margin: 2px 5px;
         }
 
-        /* --- Desktop Area --- */
+        /* ---------- Desktop Area ---------- */
         .mac-desktop {
             background-color: var(--mac-white);
+            background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAEklEQVQImWNgYGD4z4AEGBgYAEYSA/l78ZW5AAAAAElFTkSuQmCC');
+            background-repeat: repeat;
+            background-size: 2px 2px;
             flex: 1;
-            margin-top: 20px;
+            margin-top: var(--menu-height);
             padding: 20px;
             position: relative;
         }
 
-        /* --- Window Style --- */
+        /* ---------- Window Style ---------- */
         .mac-window {
             background-color: var(--mac-white);
-            border: 1px solid var(--mac-black);
+            border: var(--window-border-width) solid var(--mac-black);
             box-shadow: 2px 2px 0 var(--mac-black);
             position: relative;
             margin: 0 auto;
             max-width: 800px;
             max-height: calc(100vh - 60px);
             overflow: hidden;
-            image-rendering: pixelated;
+            transition: all 0.2s ease-out;
+        }
+        
+        .mac-window.active {
+            z-index: 100;
+        }
+        
+        .mac-window.dragging {
+            opacity: 0.8;
+            box-shadow: 4px 4px 0 var(--mac-shadow);
         }
         
         .mac-title-bar {
             background-color: var(--mac-white);
             border-bottom: 1px solid var(--mac-black);
-            height: 19px;
+            height: var(--title-bar-height);
             position: relative;
             display: flex;
             align-items: center;
@@ -181,6 +258,7 @@
             background-size: 4px 1px;
             background-repeat: repeat-x;
             background-position: 0 9px; /* Center the line vertically */
+            user-select: none;
         }
         
         .mac-title {
@@ -191,7 +269,7 @@
             position: absolute;
             left: 0;
             pointer-events: none;
-            color: var(--mac-black); /* Ensure title text is black */
+            color: var(--mac-black);
         }
         
         .mac-close-box {
@@ -203,6 +281,15 @@
             position: relative;
             z-index: 1;
             background-color: var(--mac-white);
+            transition: background-color 0.1s;
+        }
+        
+        .mac-close-box:hover {
+            background-color: #ddd;
+        }
+        
+        .mac-close-box:active {
+            background-color: #bbb;
         }
         
         .mac-close-box::after {
@@ -223,6 +310,15 @@
             position: relative;
             z-index: 1;
             background-color: var(--mac-white);
+            transition: background-color 0.1s;
+        }
+        
+        .mac-zoom-box:hover {
+            background-color: #ddd;
+        }
+        
+        .mac-zoom-box:active {
+            background-color: #bbb;
         }
         
         .mac-zoom-box::after {
@@ -238,22 +334,28 @@
         .mac-window-body {
             background-color: var(--mac-white);
             padding: 0;
-            overflow: hidden; /* Changed from auto to hidden to handle scrollbar separately */
-            height: calc(100% - 19px);
-            max-height: calc(100vh - 80px);
-            position: relative; /* Added for scrollbar positioning */
+            overflow: hidden;
+            height: calc(100% - var(--title-bar-height));
+            max-height: calc(100vh - var(--menu-height) - var(--title-bar-height) - 40px);
+            position: relative;
         }
         
-        /* --- Content Area --- */
+        /* ---------- Content Area ---------- */
         .mac-content {
             padding: 5px;
             overflow: auto;
             height: 100%;
-            width: calc(100% - 16px); /* Make room for scrollbar */
-            color: var(--mac-black); /* Ensure content text is black */
+            width: calc(100% - var(--scrollbar-width));
+            color: var(--mac-black);
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE and Edge */
         }
         
-        /* --- Icons Grid --- */
+        .mac-content::-webkit-scrollbar {
+            display: none; /* Chrome, Safari and Opera */
+        }
+        
+        /* ---------- Icons Grid ---------- */
         .mac-icon-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
@@ -267,14 +369,19 @@
             align-items: center;
             cursor: pointer;
             padding: 3px;
+            transition: transform 0.05s ease-out;
+        }
+        
+        .mac-icon:active {
+            transform: scale(0.97);
         }
         
         .mac-icon.selected {
-            background-color: var(--mac-black);
+            background-color: var(--mac-highlight-bg);
         }
         
         .mac-icon.selected .mac-icon-label {
-            color: var(--mac-white);
+            color: var(--mac-highlight-text);
         }
         
         .mac-icon-box {
@@ -282,7 +389,6 @@
             height: 32px;
             margin-bottom: 5px;
             position: relative;
-            image-rendering: pixelated;
         }
         
         .mac-icon-graphic {
@@ -298,10 +404,10 @@
             max-width: 70px;
             font-size: 9px;
             word-wrap: break-word;
-            color: var(--mac-black); /* Ensure icon label is black */
+            color: var(--mac-black);
         }
 
-        /* --- Toolbar --- */
+        /* ---------- Toolbar ---------- */
         .mac-toolbar {
             background-color: var(--mac-white);
             border-bottom: 1px solid var(--mac-black);
@@ -320,12 +426,19 @@
             font-size: 9px;
             min-width: 50px;
             text-align: center;
-            color: var(--mac-black); /* Ensure button text is black */
+            color: var(--mac-black);
+            user-select: none;
+            transition: all 0.05s ease-out;
+        }
+        
+        .mac-button:hover {
+            background-color: #f0f0f0;
         }
         
         .mac-button:active {
             background-color: var(--mac-black);
             color: var(--mac-white);
+            transform: translateY(1px);
         }
         
         .mac-search {
@@ -334,19 +447,23 @@
             margin-left: auto;
             width: 150px;
             font-size: 9px;
-            font-family: 'Chicago', monospace;
-            color: var(--mac-black); /* Ensure search text is black */
-            background-color: var(--mac-white); /* Ensure search background is white */
+            font-family: 'Monaco', monospace;
+            color: var(--mac-black);
+            background-color: var(--mac-white);
         }
         
         .mac-search:focus {
             outline: none;
             box-shadow: 0 0 0 1px var(--mac-black);
         }
+        
+        .mac-search::placeholder {
+            color: #888;
+        }
 
-        /* --- Scrollbar --- */
+        /* ---------- Custom Scrollbar ---------- */
         .mac-scrollbar {
-            width: 16px;
+            width: var(--scrollbar-width);
             height: 100%;
             position: absolute;
             right: 0;
@@ -364,6 +481,15 @@
             top: 20px;
             left: 0;
             cursor: pointer;
+            transition: background-color 0.1s;
+        }
+        
+        .mac-scrollbar-thumb:hover {
+            background-color: #ddd;
+        }
+        
+        .mac-scrollbar-thumb:active {
+            background-color: #bbb;
         }
         
         .mac-scrollbar-thumb::before {
@@ -391,6 +517,16 @@
             border: 1px solid var(--mac-black);
             position: relative;
             cursor: pointer;
+            background-color: var(--mac-white);
+            transition: background-color 0.1s;
+        }
+        
+        .mac-scrollbar-button:hover {
+            background-color: #ddd;
+        }
+        
+        .mac-scrollbar-button:active {
+            background-color: #bbb;
         }
         
         .mac-scrollbar-button:first-child {
@@ -421,7 +557,7 @@
             border-top: 3px solid var(--mac-black);
         }
 
-        /* --- Modal Styles --- */
+        /* ---------- Modal Styles ---------- */
         .mac-modal {
             position: fixed;
             top: 50%;
@@ -431,6 +567,18 @@
             display: none;
             width: 90%;
             max-width: 400px;
+            animation: windowOpen 0.2s ease-out;
+        }
+        
+        @keyframes windowOpen {
+            from { 
+                transform: translate(-50%, -50%) scale(0.9);
+                opacity: 0; 
+            }
+            to { 
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1; 
+            }
         }
         
         .mac-overlay {
@@ -439,19 +587,25 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background-color: transparent;
+            background-color: rgba(255, 255, 255, 0.5);
             z-index: 10000;
             display: none;
+            animation: fadeIn 0.2s ease-out;
         }
         
-        /* --- Detail View --- */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        /* ---------- Detail View ---------- */
         .mac-detail-window {
             max-width: 400px;
         }
         
         .mac-detail-content {
             padding: 10px;
-            color: var(--mac-black); /* Ensure detail content is black */
+            color: var(--mac-black);
         }
         
         .mac-detail-header {
@@ -460,7 +614,7 @@
             margin-bottom: 8px;
             border-bottom: 1px solid var(--mac-black);
             padding-bottom: 3px;
-            color: var(--mac-black); /* Ensure header text is black */
+            color: var(--mac-black);
         }
         
         .mac-detail-row {
@@ -472,12 +626,13 @@
         .mac-detail-label {
             width: 100px;
             font-weight: bold;
-            color: var(--mac-black); /* Ensure label text is black */
+            color: var(--mac-black);
         }
         
         .mac-detail-value {
             flex: 1;
-            color: var(--mac-black); /* Ensure value text is black */
+            color: var(--mac-black);
+            font-family: 'Monaco', monospace;
         }
         
         .mac-detail-description {
@@ -486,7 +641,10 @@
             border: 1px solid var(--mac-black);
             background-color: var(--mac-white);
             font-size: 9px;
-            color: var(--mac-black); /* Ensure description text is black */
+            color: var(--mac-black);
+            font-family: 'Monaco', monospace;
+            max-height: 120px;
+            overflow-y: auto;
         }
         
         .mac-button-row {
@@ -495,7 +653,7 @@
             margin-top: 10px;
         }
 
-        /* --- Context Menu --- */
+        /* ---------- Context Menu ---------- */
         .mac-context-menu {
             position: absolute;
             background-color: var(--mac-white);
@@ -503,6 +661,7 @@
             box-shadow: 2px 2px 0 var(--mac-black);
             z-index: 10002;
             display: none;
+            animation: menuFadeIn 0.1s ease-out;
         }
         
         .mac-context-item {
@@ -511,15 +670,26 @@
             font-size: 11px;
             cursor: pointer;
             white-space: nowrap;
-            color: var(--mac-black); /* Ensure context menu text is black */
+            color: var(--mac-black);
+            user-select: none;
         }
         
         .mac-context-item:hover {
-            background-color: var(--mac-black);
-            color: var(--mac-white);
+            background-color: var(--mac-highlight-bg);
+            color: var(--mac-highlight-text);
+        }
+        
+        .mac-context-item.disabled {
+            color: #888;
+            cursor: default;
+        }
+        
+        .mac-context-item.disabled:hover {
+            background-color: transparent;
+            color: #888;
         }
 
-        /* --- Dialog Boxes --- */
+        /* ---------- Dialog Boxes ---------- */
         .mac-dialog {
             width: 300px;
             position: fixed;
@@ -531,6 +701,22 @@
             box-shadow: 2px 2px 0 var(--mac-black);
             z-index: 10002;
             display: none;
+            animation: dialogBounce 0.3s ease-out;
+        }
+        
+        @keyframes dialogBounce {
+            0% { 
+                transform: translateX(-50%) scale(0.8);
+                opacity: 0;
+            }
+            70% { 
+                transform: translateX(-50%) scale(1.05);
+                opacity: 1;
+            }
+            100% { 
+                transform: translateX(-50%) scale(1);
+                opacity: 1;
+            }
         }
         
         .mac-dialog-content {
@@ -555,7 +741,8 @@
         .mac-dialog-message {
             flex: 1;
             font-size: 11px;
-            color: var(--mac-black); /* Ensure dialog message is black */
+            color: var(--mac-black);
+            font-family: 'Chicago', monospace;
         }
         
         .mac-dialog-buttons {
@@ -576,14 +763,25 @@
             font-family: 'Chicago', monospace;
             font-size: 11px;
             padding: 1px 10px;
-            color: var(--mac-black); /* Ensure dialog button text is black */
+            color: var(--mac-black);
+            transition: all 0.05s ease-out;
+        }
+        
+        .mac-dialog-button:hover {
+            background-color: #f0f0f0;
+        }
+        
+        .mac-dialog-button:active {
+            background-color: #ddd;
+            transform: translateY(1px);
         }
         
         .mac-dialog-button.default {
             border: 2px solid var(--mac-black);
+            font-weight: bold;
         }
 
-        /* --- Startup Screen --- */
+        /* ---------- Startup Screen ---------- */
         .mac-startup {
             position: fixed;
             top: 0;
@@ -623,10 +821,30 @@
             font-family: 'Chicago', monospace;
             text-align: center;
             font-size: 12px;
-            color: var(--mac-black); /* Ensure startup text is black */
+            color: var(--mac-black);
+            margin-top: 10px;
+        }
+        
+        .mac-startup-progress {
+            width: 200px;
+            height: 10px;
+            border: 1px solid var(--mac-black);
+            margin-top: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .mac-progress-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 0%;
+            background-color: var(--mac-black);
+            transition: width 2s ease-in-out;
         }
 
-        /* --- Loading Indicator --- */
+        /* ---------- Loading Indicator ---------- */
         .mac-loading {
             display: flex;
             flex-direction: column;
@@ -639,7 +857,7 @@
             font-family: 'Chicago', monospace;
             margin-bottom: 10px;
             font-size: 11px;
-            color: var(--mac-black); /* Ensure loading text is black */
+            color: var(--mac-black);
         }
         
         .mac-watch {
@@ -660,7 +878,7 @@
             to { opacity: 1; }
         }
 
-        /* --- List View --- */
+        /* ---------- List View ---------- */
         .mac-list-view {
             width: 100%;
             border-collapse: collapse;
@@ -672,25 +890,41 @@
             padding: 2px 5px;
             border-bottom: 1px solid var(--mac-black);
             font-weight: bold;
-            color: var(--mac-black); /* Ensure table header is black */
+            color: var(--mac-black);
+            font-family: 'Chicago', monospace;
+            position: sticky;
+            top: 0;
+            background-color: var(--mac-white);
+            z-index: 1;
+            user-select: none;
         }
         
         .mac-list-view td {
             padding: 2px 5px;
-            border-bottom: 1px solid var(--mac-black);
-            color: var(--mac-black); /* Ensure table cell is black */
+            border-bottom: 1px solid #ddd;
+            color: var(--mac-black);
+            font-family: 'Monaco', monospace;
+        }
+        
+        .mac-list-view tr {
+            cursor: pointer;
+            transition: background-color 0.1s;
+        }
+        
+        .mac-list-view tr:hover:not(.selected) {
+            background-color: #f5f5f5;
         }
         
         .mac-list-view tr.selected {
-            background-color: var(--mac-black);
-            color: var(--mac-white);
+            background-color: var(--mac-highlight-bg);
+            color: var(--mac-highlight-text);
         }
         
         .mac-list-view tr.selected td {
-            color: var(--mac-white); /* Ensure selected row text is white */
+            color: var(--mac-highlight-text);
         }
         
-        /* --- Alert & Note Icons --- */
+        /* ---------- Alert & Note Icons ---------- */
         .mac-alert-icon {
             mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M16,2C8.3,2,2,8.3,2,16s6.3,14,14,14s14-6.3,14-14S23.7,2,16,2z M16,28C9.4,28,4,22.6,4,16S9.4,4,16,4s12,5.4,12,12S22.6,28,16,28z M14,8h4v12h-4V8z M14,22h4v4h-4V22z"/></svg>');
             -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M16,2C8.3,2,2,8.3,2,16s6.3,14,14,14s14-6.3,14-14S23.7,2,16,2z M16,28C9.4,28,4,22.6,4,16S9.4,4,16,4s12,5.4,12,12S22.6,28,16,28z M14,8h4v12h-4V8z M14,22h4v4h-4V22z"/></svg>');
@@ -700,21 +934,65 @@
             mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M16,2C8.3,2,2,8.3,2,16s6.3,14,14,14s14-6.3,14-14S23.7,2,16,2z M16,28C9.4,28,4,22.6,4,16S9.4,4,16,4s12,5.4,12,12S22.6,28,16,28z M15,8h2v12h-2V8z M15,22h2v2h-2V22z"/></svg>');
             -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M16,2C8.3,2,2,8.3,2,16s6.3,14,14,14s14-6.3,14-14S23.7,2,16,2z M16,28C9.4,28,4,22.6,4,16S9.4,4,16,4s12,5.4,12,12S22.6,28,16,28z M15,8h2v12h-2V8z M15,22h2v2h-2V22z"/></svg>');
         }
+        
+        .mac-help-icon {
+            mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M16,2C8.3,2,2,8.3,2,16s6.3,14,14,14s14-6.3,14-14S23.7,2,16,2z M16,28C9.4,28,4,22.6,4,16S9.4,4,16,4s12,5.4,12,12S22.6,28,16,28z M16,6c-3.9,0-7,3.1-7,7h2c0-2.8,2.2-5,5-5s5,2.2,5,5c0,1.3-0.5,2.5-1.4,3.4c-1,1-1.9,1.2-2.6,1.6c-1.2,0.7-2,1.9-2,3.3V22h2c0-0.9,0.4-1.3,1.2-1.7c0.4-0.2,0.9-0.4,1.4-0.7c0.9-0.5,1.9-1.1,2.6-1.8c1.2-1.2,1.8-2.9,1.8-4.6C22,9.1,19.3,6,16,6z M15,24h2v2h-2V24z"/></svg>');
+            -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M16,2C8.3,2,2,8.3,2,16s6.3,14,14,14s14-6.3,14-14S23.7,2,16,2z M16,28C9.4,28,4,22.6,4,16S9.4,4,16,4s12,5.4,12,12S22.6,28,16,28z M16,6c-3.9,0-7,3.1-7,7h2c0-2.8,2.2-5,5-5s5,2.2,5,5c0,1.3-0.5,2.5-1.4,3.4c-1,1-1.9,1.2-2.6,1.6c-1.2,0.7-2,1.9-2,3.3V22h2c0-0.9,0.4-1.3,1.2-1.7c0.4-0.2,0.9-0.4,1.4-0.7c0.9-0.5,1.9-1.1,2.6-1.8c1.2-1.2,1.8-2.9,1.8-4.6C22,9.1,19.3,6,16,6z M15,24h2v2h-2V24z"/></svg>');
+        }
+        
+        /* ---------- Disk & File Icons ---------- */
+        .mac-disk-icon {
+            mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M4,4v24h24V4H4z M24,8h-5V6h5V8z M16,22c-2.2,0-4-1.8-4-4s1.8-4,4-4s4,1.8,4,4S18.2,22,16,22z M8,8V6h5v2H8z"/></svg>');
+            -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M4,4v24h24V4H4z M24,8h-5V6h5V8z M16,22c-2.2,0-4-1.8-4-4s1.8-4,4-4s4,1.8,4,4S18.2,22,16,22z M8,8V6h5v2H8z"/></svg>');
+        }
+        
+        .mac-folder-icon {
+            mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M2,6v20h28V10H16L12,6H2z"/></svg>');
+            -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M2,6v20h28V10H16L12,6H2z"/></svg>');
+        }
+        
+        .mac-file-icon {
+            mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M6,2v28h20V10L18,2H6z M18,6l4,4h-4V6z"/></svg>');
+            -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M6,2v28h20V10L18,2H6z M18,6l4,4h-4V6z"/></svg>');
+        }
+        
+        /* ---------- Tooltip ---------- */
+        .mac-tooltip {
+            position: absolute;
+            background-color: var(--mac-white);
+            border: 1px solid var(--mac-black);
+            padding: 2px 5px;
+            font-family: 'Chicago', monospace;
+            font-size: 9px;
+            z-index: 10003;
+            pointer-events: none;
+            white-space: nowrap;
+            display: none;
+            color: var(--mac-black);
+        }
 
-        /* --- Responsive Styles --- */
+        /* ---------- Responsive Styles ---------- */
         @media (max-width: 768px) {
             .mac-icon-grid {
                 grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+                gap: 15px;
             }
             
             .mac-search {
                 width: 120px;
+            }
+            
+            .mac-window {
+                max-width: 100%;
+                max-height: calc(100vh - 50px);
+                width: calc(100% - 20px);
             }
         }
 
         @media (max-width: 480px) {
             .mac-icon-grid {
                 grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+                gap: 10px;
             }
             
             .mac-toolbar {
@@ -726,9 +1004,22 @@
                 margin-top: 3px;
                 order: 10;
             }
+            
+            .mac-submenu {
+                left: -50px;
+            }
+            
+            .mac-detail-row {
+                flex-direction: column;
+            }
+            
+            .mac-detail-label {
+                width: 100%;
+                margin-bottom: 2px;
+            }
         }
 
-        /* Fix for mobile devices */
+        /* Mobile support */
         @media (hover: none) {
             .mac-menu-item:hover .mac-submenu {
                 display: none;
@@ -736,6 +1027,68 @@
             
             .mac-menu-item.active .mac-submenu {
                 display: block;
+            }
+            
+            .mac-button:active {
+                background-color: var(--mac-black);
+                color: var(--mac-white);
+            }
+            
+            .mac-dialog-button:active {
+                background-color: #ddd;
+            }
+        }
+        
+        /* Print styles */
+        @media print {
+            .mac-menu-bar, .mac-toolbar, .mac-scrollbar, .mac-button-row {
+                display: none !important;
+            }
+            
+            .mac-desktop {
+                margin-top: 0;
+                padding: 0;
+                background: none;
+            }
+            
+            .mac-window {
+                box-shadow: none;
+                border: none;
+            }
+            
+            .mac-title-bar {
+                display: none;
+            }
+            
+            .mac-window-body {
+                height: auto;
+                max-height: none;
+            }
+            
+            .mac-content {
+                width: 100%;
+                padding: 0;
+                overflow: visible;
+            }
+        }
+
+        /* High-contrast mode */
+        @media (prefers-contrast: more) {
+            :root {
+                --mac-white: #FFFFFF;
+                --mac-black: #000000;
+                --mac-bg: #FFFFFF;
+                --mac-text: #000000;
+                --mac-highlight-bg: #000000;
+                --mac-highlight-text: #FFFFFF;
+            }
+            
+            .mac-submenu-item.disabled {
+                color: #555;
+            }
+            
+            .mac-shortcut {
+                color: #444;
             }
         }
     </style>
@@ -747,29 +1100,49 @@
             <div class="mac-apple-logo"></div>
         </div>
         <div class="mac-menu-items">
-            <div class="mac-menu-item">
+            <div class="mac-menu-item" data-menu="file">
                 File
                 <div class="mac-submenu">
-                    <div class="mac-submenu-item" id="new-window">New Window</div>
+                    <div class="mac-submenu-item has-shortcut" id="new-window">
+                        New Window
+                        <span class="mac-shortcut">⌘N</span>
+                    </div>
                     <div class="mac-separator"></div>
-                    <div class="mac-submenu-item" id="close-window">Close</div>
+                    <div class="mac-submenu-item has-shortcut" id="close-window">
+                        Close
+                        <span class="mac-shortcut">⌘W</span>
+                    </div>
                     <div class="mac-separator"></div>
-                    <div class="mac-submenu-item" id="refresh-button">Refresh</div>
+                    <div class="mac-submenu-item has-shortcut" id="refresh-button">
+                        Refresh
+                        <span class="mac-shortcut">⌘R</span>
+                    </div>
                     <div class="mac-separator"></div>
-                    <div class="mac-submenu-item" id="quit-button">Quit</div>
+                    <div class="mac-submenu-item has-shortcut" id="quit-button">
+                        Quit
+                        <span class="mac-shortcut">⌘Q</span>
+                    </div>
                 </div>
             </div>
-            <div class="mac-menu-item">
+            <div class="mac-menu-item" data-menu="edit">
                 Edit
                 <div class="mac-submenu">
-                    <div class="mac-submenu-item">Cut</div>
-                    <div class="mac-submenu-item">Copy</div>
-                    <div class="mac-submenu-item">Paste</div>
+                    <div class="mac-submenu-item disabled">Cut</div>
+                    <div class="mac-submenu-item has-shortcut" id="copy-url">
+                        Copy URL
+                        <span class="mac-shortcut">⌘C</span>
+                    </div>
+                    <div class="mac-submenu-item disabled">Paste</div>
                     <div class="mac-separator"></div>
-                    <div class="mac-submenu-item">Select All</div>
+                    <div class="mac-submenu-item has-shortcut" id="find-repo">
+                        Find...
+                        <span class="mac-shortcut">⌘F</span>
+                    </div>
+                    <div class="mac-separator"></div>
+                    <div class="mac-submenu-item disabled">Select All</div>
                 </div>
             </div>
-            <div class="mac-menu-item">
+            <div class="mac-menu-item" data-menu="view">
                 View
                 <div class="mac-submenu">
                     <div class="mac-submenu-item" id="view-icon">by Icon</div>
@@ -780,12 +1153,14 @@
                     <div class="mac-submenu-item" id="sort-stars">Sort by Stars</div>
                 </div>
             </div>
-            <div class="mac-menu-item">
+            <div class="mac-menu-item" data-menu="special">
                 Special
                 <div class="mac-submenu">
                     <div class="mac-submenu-item" id="about-button">About GitHub Browser</div>
                     <div class="mac-separator"></div>
                     <div class="mac-submenu-item" id="keyboard-shortcuts">Keyboard Shortcuts</div>
+                    <div class="mac-separator"></div>
+                    <div class="mac-submenu-item" id="toggle-sound">Toggle Sound Effects</div>
                 </div>
             </div>
         </div>
@@ -796,17 +1171,17 @@
         <!-- Main Window -->
         <div class="mac-window" id="main-window">
             <div class="mac-title-bar" id="main-title-bar">
-                <div class="mac-close-box" id="window-close"></div>
-                <div class="mac-zoom-box" id="window-zoom"></div>
+                <div class="mac-close-box" id="window-close" title="Close Window"></div>
+                <div class="mac-zoom-box" id="window-zoom" title="Zoom Window"></div>
                 <div class="mac-title">GitHub Browser</div>
             </div>
             
             <div class="mac-window-body">
                 <div class="mac-toolbar">
-                    <div class="mac-button" id="refresh-repos">Refresh</div>
-                    <div class="mac-button" id="view-toggle">View</div>
-                    <div class="mac-button" id="sort-button">Sort</div>
-                    <input type="text" class="mac-search" id="repo-search" placeholder="Find...">
+                    <div class="mac-button" id="refresh-repos" title="Refresh Repository List">Refresh</div>
+                    <div class="mac-button" id="view-toggle" title="Toggle View Mode">View</div>
+                    <div class="mac-button" id="sort-button" title="Sort Repositories">Sort</div>
+                    <input type="text" class="mac-search" id="repo-search" placeholder="Find..." title="Search Repositories">
                 </div>
                 
                 <div class="mac-content" id="repos-container">
@@ -866,6 +1241,7 @@
                         A classic Macintosh style interface for browsing GitHub repositories.
                     </p>
                     <p style="font-size: 9px; color: var(--mac-black);">© 2025 Swir</p>
+                    <div class="mac-button" id="visit-github" style="margin-top: 15px; display: inline-block;">Visit GitHub</div>
                 </div>
             </div>
         </div>
@@ -881,6 +1257,14 @@
             
             <div class="mac-window-body">
                 <div class="mac-content">
+                    <div class="mac-detail-row">
+                        <div class="mac-detail-label">⌘N</div>
+                        <div class="mac-detail-value">New Window</div>
+                    </div>
+                    <div class="mac-detail-row">
+                        <div class="mac-detail-label">⌘W</div>
+                        <div class="mac-detail-value">Close Window</div>
+                    </div>
                     <div class="mac-detail-row">
                         <div class="mac-detail-label">⌘R</div>
                         <div class="mac-detail-value">Refresh Repositories</div>
@@ -905,6 +1289,10 @@
                         <div class="mac-detail-label">Esc</div>
                         <div class="mac-detail-value">Close Dialog</div>
                     </div>
+                    <div class="mac-detail-row">
+                        <div class="mac-detail-label">Space</div>
+                        <div class="mac-detail-value">Quick Look Repository</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -916,6 +1304,8 @@
         <div class="mac-context-item" id="context-view-github">View on GitHub</div>
         <div class="mac-separator"></div>
         <div class="mac-context-item" id="context-copy-url">Copy URL</div>
+        <div class="mac-separator"></div>
+        <div class="mac-context-item" id="context-quick-look">Quick Look</div>
     </div>
 
     <!-- Modal Overlay -->
@@ -944,11 +1334,50 @@
         </div>
     </div>
 
+    <!-- Tooltip Element -->
+    <div class="mac-tooltip" id="mac-tooltip"></div>
+
+    <!-- Quick Look Modal -->
+    <div class="mac-modal" id="quick-look-modal">
+        <div class="mac-window">
+            <div class="mac-title-bar">
+                <div class="mac-close-box" onclick="closeModal('quick-look-modal')"></div>
+                <div class="mac-title" id="quick-look-title">Quick Look</div>
+            </div>
+            
+            <div class="mac-window-body">
+                <div class="mac-content" id="quick-look-content" style="padding: 10px;">
+                    <!-- Content will be filled dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Startup Screen -->
     <div class="mac-startup" id="startup-screen">
         <div class="mac-happy-mac"></div>
         <div class="mac-startup-text">Welcome to Macintosh</div>
+        <div class="mac-startup-progress">
+            <div class="mac-progress-bar" id="startup-progress-bar"></div>
+        </div>
+        <div class="mac-startup-text" style="font-size: 9px; margin-top: 5px;">
+            Starting GitHub Browser...
+        </div>
     </div>
+
+    <!-- Audio Elements -->
+    <audio id="sound-startup" preload="none">
+        <source src="https://archive.org/download/MacSounds/Mac%20Startup.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="sound-error" preload="none">
+        <source src="https://archive.org/download/MacSounds/Sosumi.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="sound-click" preload="none">
+        <source src="https://archive.org/download/MacSounds/Mac%20Click.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="sound-alert" preload="none">
+        <source src="https://archive.org/download/MacSounds/Mac%20Alert.mp3" type="audio/mpeg">
+    </audio>
 
     <script>
         // Global Variables
@@ -960,6 +1389,10 @@
         let dragOffsetX = 0;
         let dragOffsetY = 0;
         let selectedRepoIndex = -1;
+        let soundEnabled = true;
+        let tooltipTimer = null;
+        let lastApiCall = 0;
+        const apiRateLimit = 1000; // min time between API calls in ms
 
         // Repository Icon Mapping
         const repoIcons = {
@@ -970,17 +1403,38 @@
             Python: 'M16,2C9,2,9,6,9,6v4h8v2H6C6,12,2,12,2,19s4,7,4,7h3v-4c0,0,0-4,7-4s7,4,7,4v7c0,0,0,4-7,4s-7-4-7-4v-3H2c0,0-4,0-4-7s4-7,4-7h4V6c0,0,0-4,7-4s7,4,7,4v4h-4V6C16,6,16,2,16,2z M13,8c-1,0-2-1-2-2s1-2,2-2s2,1,2,2S14,8,13,8z M23,26c1,0,2,1,2,2s-1,2-2,2s-2-1-2-2S22,26,23,26z', // Python icon
             Java: 'M12,2v8c-3,0-6,3-6,6v6c0,3,3,6,6,6h8c3,0,6-3,6-6v-6h-8V8c0-3,3-6,6-6H12z M22,14h2v2h-2V14z M18,8h2v4h-2V8z', // Java icon
             Ruby: 'M16,2C6,2,6,12,6,12v4c0,0,0,4,4,4h12c4,0,4-4,4-4v-4C26,12,26,2,16,2z M16,6c6,0,6,6,6,6v4H10v-4C10,12,10,6,16,6z M14,13c-1,0-2-1-2-2s1-2,2-2s2,1,2,2S15,13,14,13z M18,13c-1,0-2-1-2-2s1-2,2-2s2,1,2,2S19,13,18,13z', // Ruby icon
-            PHP: 'M8,12v8h16v-8H8z M12,14h2c1,0,2,0,2,1l-2,3h2l2-3c0-1-1-2-2-2h-4V14z M20,14h2v1h-2v2h2v1h-4v-4H20z M6,16h2v2H6V16z M24,16h2v2h-2V16z M4,18h2v2H4V18z M26,18h2v2h-2V18z M6,20h18v2H6V20z' // PHP icon
+            PHP: 'M8,12v8h16v-8H8z M12,14h2c1,0,2,0,2,1l-2,3h2l2-3c0-1-1-2-2-2h-4V14z M20,14h2v1h-2v2h2v1h-4v-4H20z M6,16h2v2H6V16z M24,16h2v2h-2V16z M4,18h2v2H4V18z M26,18h2v2h-2V18z M6,20h18v2H6V20z', // PHP icon
+            TypeScript: 'M9,2v28h20V10L21,2H9z M23,10h-4V6l4,4z M24,26h-2v-8h-6v8h-2v-10h10V26z M14,20v2h-2v-2H9v-2h3v-2h-3v-2h5v6H14z', // TS icon
+            C: 'M16,2C8.3,2,2,8.3,2,16s6.3,14,14,14s14-6.3,14-14S23.7,2,16,2z M16,24c-4.4,0-8-3.6-8-8s3.6-8,8-8s8,3.6,8,8S20.4,24,16,24z M20,14h-3v-3h-2v3h-3v2h3v3h2v-3h3V14z', // C icon
+            'C++': 'M27,11l-6-6c-0.4-0.4-1-0.6-1.6-0.6H7C5.9,4.4,5,5.3,5,6.4v19.2c0,1.1,0.9,2,2,2h18c1.1,0,2-0.9,2-2V12.6C27,12,27,11.4,27,11z M20,8c0,0,2,0,2,2h-6V6C16,6,20,6,20,8z M16,16v-2h2v2H16z M12,16v-2h2v2H12z M20,20v2h-2v-2H20z M24,16v-2h2v2H24z M20,16v-2h2v2H20z M12,20v2h-2v-2H12z M8,16v-2h2v2H8z', // C++ icon
+            'C#': 'M25.4,8.5l-8-4.5c-0.4-0.2-0.9-0.2-1.3,0C15.4,4.3,8.9,7.9,8.5,8.1c-0.4,0.2-0.7,0.6-0.7,1.1v13.5c0,0.5,0.3,0.9,0.7,1.1c0.4,0.2,6.9,3.8,7.5,4.2c0.4,0.2,0.9,0.2,1.3,0l8-4.5c0.4-0.2,0.7-0.6,0.7-1.1V9.6C26,9.1,25.7,8.7,25.4,8.5z M16.5,23.3c-2.2,0-4-1.8-4-4s1.8-4,4-4s4,1.8,4,4S18.7,23.3,16.5,23.3z M24,15h-2v-2h-2v2h-2v2h2v2h2v-2h2V15z', // C# icon
+            Go: 'M11.5,20.1c-0.5,0-0.9-0.4-0.9-0.9c0-0.5,0.4-0.9,0.9-0.9c0.5,0,0.9,0.4,0.9,0.9C12.4,19.7,12,20.1,11.5,20.1z M20.4,20.1c-0.5,0-0.9-0.4-0.9-0.9c0-0.5,0.4-0.9,0.9-0.9c0.5,0,0.9,0.4,0.9,0.9C21.3,19.7,20.9,20.1,20.4,20.1z M8,15.5v1.7c0,0.5,0.5,1,1,1h14c0.5,0,1-0.5,1-1v-10c0-0.5-0.5-1-1-1H9c-0.5,0-1,0.5-1,1V15.5z M26,22c0,0.5-0.5,1-1,1H7c-0.5,0-1-0.5-1-1v-1h20V22z M11,10.8c1.1,0,1.9,1.1,1.9,2.4c0,1.3-0.8,2.4-1.9,2.4c-1.1,0-1.9-1.1-1.9-2.4C9.1,11.8,10,10.8,11,10.8z M21,10.8c1.1,0,1.9,1.1,1.9,2.4c0,1.3-0.8,2.4-1.9,2.4c-1.1,0-1.9-1.1-1.9-2.4C19.1,11.8,19.9,10.8,21,10.8z', // Go icon
+            Rust: 'M16,2C8.3,2,2,8.3,2,16s6.3,14,14,14s14-6.3,14-14S23.7,2,16,2z M16,25.6c-5.3,0-9.6-4.3-9.6-9.6c0-5.3,4.3-9.6,9.6-9.6c5.3,0,9.6,4.3,9.6,9.6C25.6,21.3,21.3,25.6,16,25.6z M18,16c0,1.1-0.9,2-2,2s-2-0.9-2-2s0.9-2,2-2S18,14.9,18,16z M12,13c0-0.6,0.4-1,1-1s1,0.4,1,1s-0.4,1-1,1S12,13.6,12,13z M18,13c0-0.6,0.4-1,1-1s1,0.4,1,1s-0.4,1-1,1S18,13.6,18,13z'
         };
 
         // Initialize App
         document.addEventListener('DOMContentLoaded', () => {
+            // Start progress bar animation
+            const progressBar = document.getElementById('startup-progress-bar');
+            progressBar.style.width = '100%';
+            
+            // Play startup sound
+            if (soundEnabled) {
+                try {
+                    const startupSound = document.getElementById('sound-startup');
+                    startupSound.volume = 0.3;
+                    startupSound.play().catch(e => console.log('Audio play failed:', e));
+                } catch (e) {
+                    console.log('Audio error:', e);
+                }
+            }
+            
             // Hide startup screen after delay
             setTimeout(() => {
                 document.getElementById('startup-screen').classList.add('hidden');
                 // Load repositories
                 fetchRepositories();
-            }, 2000);
+            }, 2500);
 
             // Initialize event listeners
             initializeWindowControls();
@@ -990,10 +1444,74 @@
             initializeKeyboardShortcuts();
             initializeScrollbar();
             initializeMobileMenu();
+            initializeTooltips();
+            initializeVisitGitHub();
 
             // Modal overlay closes modals
             document.getElementById('modal-overlay').addEventListener('click', closeAllModals);
         });
+
+        // Initialize Visit GitHub button
+        function initializeVisitGitHub() {
+            document.getElementById('visit-github').addEventListener('click', () => {
+                window.open('https://github.com/Swir', '_blank');
+            });
+        }
+
+        // Initialize Tooltips
+        function initializeTooltips() {
+            const tooltip = document.getElementById('mac-tooltip');
+            
+            // Add tooltips to all elements with title attribute
+            document.querySelectorAll('[title]').forEach(el => {
+                el.addEventListener('mouseenter', (e) => {
+                    clearTimeout(tooltipTimer);
+                    const title = e.target.getAttribute('title');
+                    if (!title) return;
+                    
+                    e.target.setAttribute('data-original-title', title);
+                    e.target.removeAttribute('title');
+                    
+                    tooltip.textContent = title;
+                    tooltip.style.display = 'block';
+                    
+                    const rect = e.target.getBoundingClientRect();
+                    tooltip.style.left = (rect.left + rect.width / 2 - tooltip.offsetWidth / 2) + 'px';
+                    tooltip.style.top = (rect.bottom + 5) + 'px';
+                    
+                    // Ensure tooltip is within viewport
+                    const tooltipRect = tooltip.getBoundingClientRect();
+                    if (tooltipRect.left < 5) {
+                        tooltip.style.left = '5px';
+                    } else if (tooltipRect.right > window.innerWidth - 5) {
+                        tooltip.style.left = (window.innerWidth - tooltipRect.width - 5) + 'px';
+                    }
+                });
+                
+                el.addEventListener('mouseleave', (e) => {
+                    const originalTitle = e.target.getAttribute('data-original-title');
+                    if (originalTitle) {
+                        e.target.setAttribute('title', originalTitle);
+                        e.target.removeAttribute('data-original-title');
+                    }
+                    
+                    tooltipTimer = setTimeout(() => {
+                        tooltip.style.display = 'none';
+                    }, 100);
+                });
+            });
+            
+            // Hide tooltip when mouse moves out
+            tooltip.addEventListener('mouseenter', () => {
+                clearTimeout(tooltipTimer);
+            });
+            
+            tooltip.addEventListener('mouseleave', () => {
+                tooltipTimer = setTimeout(() => {
+                    tooltip.style.display = 'none';
+                }, 100);
+            });
+        }
 
         // Initialize Mobile Menu Support
         function initializeMobileMenu() {
@@ -1027,6 +1545,69 @@
                     }
                 });
             }
+            
+            // Handle touch events for context menu
+            document.addEventListener('touchstart', (e) => {
+                // Clear any existing long press timer
+                if (window.longPressTimer) {
+                    clearTimeout(window.longPressTimer);
+                }
+                
+                // Set a timer for long press
+                window.longPressTimer = setTimeout(() => {
+                    // Check if touch is on a repo item
+                    const repoItem = findRepoItemFromEvent(e);
+                    if (repoItem) {
+                        e.preventDefault();
+                        
+                        // Select the repository
+                        if (currentView === 'icon') {
+                            selectRepoItem(repoItem);
+                        } else {
+                            selectListItem(repoItem);
+                        }
+                        
+                        // Show context menu
+                        const contextMenu = document.getElementById('repo-context-menu');
+                        contextMenu.style.display = 'block';
+                        contextMenu.style.left = e.touches[0].pageX + 'px';
+                        contextMenu.style.top = e.touches[0].pageY + 'px';
+                        
+                        // Ensure context menu is within viewport
+                        const menuRect = contextMenu.getBoundingClientRect();
+                        if (menuRect.right > window.innerWidth) {
+                            contextMenu.style.left = (window.innerWidth - menuRect.width - 5) + 'px';
+                        }
+                        if (menuRect.bottom > window.innerHeight) {
+                            contextMenu.style.top = (e.touches[0].pageY - menuRect.height) + 'px';
+                        }
+                    }
+                }, 500); // 500ms for long press
+            });
+            
+            document.addEventListener('touchend', () => {
+                if (window.longPressTimer) {
+                    clearTimeout(window.longPressTimer);
+                }
+            });
+            
+            document.addEventListener('touchmove', () => {
+                if (window.longPressTimer) {
+                    clearTimeout(window.longPressTimer);
+                }
+            });
+        }
+        
+        // Find repository item from touch event
+        function findRepoItemFromEvent(e) {
+            const touch = e.touches[0];
+            const element = document.elementFromPoint(touch.clientX, touch.clientY);
+            
+            if (currentView === 'icon') {
+                return element.closest('.mac-icon');
+            } else {
+                return element.closest('.mac-list-view tr');
+            }
         }
 
         // Initialize Window Controls
@@ -1036,19 +1617,19 @@
             
             // Alert dialog
             document.getElementById('alert-ok').addEventListener('click', () => {
-                document.getElementById('alert-dialog').style.display = 'none';
-                document.getElementById('modal-overlay').style.display = 'none';
+                closeDialog('alert-dialog');
+                playSound('click');
             });
 
             // Confirm dialog
             document.getElementById('confirm-cancel').addEventListener('click', () => {
-                document.getElementById('confirm-dialog').style.display = 'none';
-                document.getElementById('modal-overlay').style.display = 'none';
+                closeDialog('confirm-dialog');
+                playSound('click');
             });
 
             document.getElementById('confirm-ok').addEventListener('click', () => {
-                document.getElementById('confirm-dialog').style.display = 'none';
-                document.getElementById('modal-overlay').style.display = 'none';
+                closeDialog('confirm-dialog');
+                playSound('click');
                 quitApplication();
             });
         }
@@ -1057,38 +1638,29 @@
         function initializeMenuItems() {
             // File menu
             document.getElementById('new-window').addEventListener('click', () => {
+                playSound('click');
                 window.open(window.location.href, '_blank');
             });
-            document.getElementById('close-window').addEventListener('click', confirmQuit);
-            document.getElementById('refresh-button').addEventListener('click', fetchRepositories);
-            document.getElementById('quit-button').addEventListener('click', confirmQuit);
-
-            // View menu
-            document.getElementById('view-icon').addEventListener('click', () => setViewMode('icon'));
-            document.getElementById('view-list').addEventListener('click', () => setViewMode('list'));
-            document.getElementById('sort-name').addEventListener('click', () => sortRepositories('name'));
-            document.getElementById('sort-date').addEventListener('click', () => sortRepositories('updated'));
-            document.getElementById('sort-stars').addEventListener('click', () => sortRepositories('stars'));
-
-            // Special menu
-            document.getElementById('about-button').addEventListener('click', () => showModal('about-modal'));
-            document.getElementById('keyboard-shortcuts').addEventListener('click', () => showModal('shortcuts-modal'));
-
-            // Context menu
-            document.getElementById('context-open').addEventListener('click', () => {
-                if (selectedRepo) {
-                    showRepoDetails(selectedRepo);
-                }
+            
+            document.getElementById('close-window').addEventListener('click', () => {
+                playSound('click');
+                confirmQuit();
+            });
+            
+            document.getElementById('refresh-button').addEventListener('click', () => {
+                playSound('click');
+                fetchRepositories();
+            });
+            
+            document.getElementById('quit-button').addEventListener('click', () => {
+                playSound('click');
+                confirmQuit();
             });
 
-            document.getElementById('context-view-github').addEventListener('click', () => {
+            // Edit menu
+            document.getElementById('copy-url').addEventListener('click', () => {
                 if (selectedRepo) {
-                    window.open(selectedRepo.html_url, '_blank');
-                }
-            });
-
-            document.getElementById('context-copy-url').addEventListener('click', () => {
-                if (selectedRepo) {
+                    playSound('click');
                     navigator.clipboard.writeText(selectedRepo.html_url).then(() => {
                         showAlert('URL copied to clipboard');
                     }).catch(err => {
@@ -1096,15 +1668,233 @@
                     });
                 }
             });
+            
+            document.getElementById('find-repo').addEventListener('click', () => {
+                playSound('click');
+                document.getElementById('repo-search').focus();
+            });
+
+            // View menu
+            document.getElementById('view-icon').addEventListener('click', () => {
+                playSound('click');
+                setViewMode('icon');
+            });
+            
+            document.getElementById('view-list').addEventListener('click', () => {
+                playSound('click');
+                setViewMode('list');
+            });
+            
+            document.getElementById('sort-name').addEventListener('click', () => {
+                playSound('click');
+                sortRepositories('name');
+            });
+            
+            document.getElementById('sort-date').addEventListener('click', () => {
+                playSound('click');
+                sortRepositories('updated');
+            });
+            
+            document.getElementById('sort-stars').addEventListener('click', () => {
+                playSound('click');
+                sortRepositories('stars');
+            });
+
+            // Special menu
+            document.getElementById('about-button').addEventListener('click', () => {
+                playSound('click');
+                showModal('about-modal');
+            });
+            
+            document.getElementById('keyboard-shortcuts').addEventListener('click', () => {
+                playSound('click');
+                showModal('shortcuts-modal');
+            });
+            
+            document.getElementById('toggle-sound').addEventListener('click', () => {
+                soundEnabled = !soundEnabled;
+                playSound('click');
+                showAlert(soundEnabled ? 'Sound effects enabled' : 'Sound effects disabled');
+            });
+
+            // Context menu
+            document.getElementById('context-open').addEventListener('click', () => {
+                if (selectedRepo) {
+                    playSound('click');
+                    showRepoDetails(selectedRepo);
+                }
+            });
+
+            document.getElementById('context-view-github').addEventListener('click', () => {
+                if (selectedRepo) {
+                    playSound('click');
+                    window.open(selectedRepo.html_url, '_blank');
+                }
+            });
+
+            document.getElementById('context-copy-url').addEventListener('click', () => {
+                if (selectedRepo) {
+                    playSound('click');
+                    navigator.clipboard.writeText(selectedRepo.html_url).then(() => {
+                        showAlert('URL copied to clipboard');
+                    }).catch(err => {
+                        console.error('Could not copy text: ', err);
+                    });
+                }
+            });
+            
+            document.getElementById('context-quick-look').addEventListener('click', () => {
+                if (selectedRepo) {
+                    playSound('click');
+                    showQuickLook(selectedRepo);
+                }
+            });
+        }
+
+        // Show Quick Look
+        function showQuickLook(repo) {
+            const modal = document.getElementById('quick-look-modal');
+            const title = document.getElementById('quick-look-title');
+            const content = document.getElementById('quick-look-content');
+            
+            title.textContent = repo.name;
+            
+            // Show loading indicator
+            content.innerHTML = `
+                <div class="mac-loading">
+                    <div class="mac-loading-text">Loading repository details...</div>
+                    <div class="mac-watch"></div>
+                </div>
+            `;
+            
+            // Show modal immediately
+            showModal('quick-look-modal');
+            
+            // Fetch repository details
+            fetch(repo.url)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`GitHub API error: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(repoDetails => {
+                    // Fetch repository languages
+                    return fetch(repo.languages_url)
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error(`GitHub API error: ${response.status}`);
+                            }
+                            return response.json();
+                        })
+                        .then(languages => {
+                            // Fetch recent commits
+                            return fetch(`${repo.commits_url.replace('{/sha}', '')}?per_page=5`)
+                                .then(response => {
+                                    if (!response.ok) {
+                                        throw new Error(`GitHub API error: ${response.status}`);
+                                    }
+                                    return response.json();
+                                })
+                                .then(commits => {
+                                    return { repoDetails, languages, commits };
+                                });
+                        });
+                })
+                .then(data => {
+                    // Format languages
+                    const totalBytes = Object.values(data.languages).reduce((a, b) => a + b, 0);
+                    const languageList = Object.entries(data.languages)
+                        .sort((a, b) => b[1] - a[1])
+                        .map(([lang, bytes]) => `${lang}: ${Math.round(bytes / totalBytes * 100)}%`)
+                        .join(', ');
+                    
+                    // Format commits
+                    const commitList = data.commits.map(commit => {
+                        const date = new Date(commit.commit.author.date).toLocaleDateString();
+                        const message = commit.commit.message.split('\n')[0]; // Get first line
+                        return `<div class="mac-detail-row" style="margin-bottom: 5px; padding-bottom: 5px; border-bottom: 1px solid #eee;">
+                            <div style="margin-bottom: 2px;"><strong>${message.substring(0, 50)}${message.length > 50 ? '...' : ''}</strong></div>
+                            <div style="font-size: 8px; color: #666;">by ${commit.commit.author.name} on ${date}</div>
+                        </div>`;
+                    }).join('');
+                    
+                    // Render content
+                    content.innerHTML = `
+                        <div style="display: flex; margin-bottom: 10px;">
+                            <div style="width: 32px; height: 32px; margin-right: 10px;">
+                                <svg viewBox="0 0 32 32" width="32" height="32">
+                                    <path d="${repoIcons[repo.language] || repoIcons.default}" fill="black"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <div style="font-family: 'Chicago', monospace; font-size: 14px; margin-bottom: 2px;">${repo.name}</div>
+                                <div style="font-size: 9px; color: #666;">
+                                    ${repo.stargazers_count} ★ &nbsp; ${repo.forks_count} ⑂ &nbsp; Updated: ${new Date(repo.updated_at).toLocaleDateString()}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mac-detail-description" style="max-height: 60px; margin-bottom: 15px;">
+                            ${repo.description || "No description available."}
+                        </div>
+                        
+                        <div style="margin-bottom: 15px;">
+                            <div style="font-family: 'Chicago', monospace; font-size: 11px; margin-bottom: 5px; border-bottom: 1px solid #000;">Languages</div>
+                            <div style="font-size: 9px; font-family: 'Monaco', monospace;">
+                                ${languageList || "No language information available."}
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div style="font-family: 'Chicago', monospace; font-size: 11px; margin-bottom: 5px; border-bottom: 1px solid #000;">Recent Commits</div>
+                            <div style="font-size: 9px; font-family: 'Monaco', monospace; max-height: 100px; overflow-y: auto;">
+                                ${commitList || "No recent commits available."}
+                            </div>
+                        </div>
+                        
+                        <div class="mac-button-row">
+                            <div class="mac-button" onclick="window.open('${repo.html_url}', '_blank')">Open in GitHub</div>
+                        </div>
+                    `;
+                })
+                .catch(error => {
+                    console.error('Error fetching repository details:', error);
+                    playSound('error');
+                    content.innerHTML = `
+                        <div style="text-align: center; padding: 20px;">
+                            <div class="mac-dialog-icon mac-alert-icon" style="margin: 0 auto 10px;"></div>
+                            <div style="font-family: 'Chicago', monospace; margin-bottom: 10px; color: var(--mac-black);">
+                                Sorry, a problem occurred.
+                            </div>
+                            <div style="font-size: 9px; color: var(--mac-black);">
+                                ${error.message}
+                            </div>
+                        </div>
+                    `;
+                });
         }
 
         // Initialize Toolbar
         function initializeToolbar() {
-            document.getElementById('refresh-repos').addEventListener('click', fetchRepositories);
-            document.getElementById('view-toggle').addEventListener('click', toggleViewMode);
+            document.getElementById('refresh-repos').addEventListener('click', () => {
+                playSound('click');
+                fetchRepositories();
+            });
+            
+            document.getElementById('view-toggle').addEventListener('click', () => {
+                playSound('click');
+                toggleViewMode();
+            });
+            
             document.getElementById('repo-search').addEventListener('input', filterRepositories);
+            document.getElementById('repo-search').addEventListener('focus', () => {
+                document.getElementById('repo-search').select();
+            });
             
             document.getElementById('sort-button').addEventListener('click', (e) => {
+                playSound('click');
+                
                 const menu = document.createElement('div');
                 menu.className = 'mac-context-menu';
                 menu.style.display = 'block';
@@ -1121,6 +1911,7 @@
                 
                 menu.querySelectorAll('.mac-context-item').forEach(item => {
                     item.addEventListener('click', () => {
+                        playSound('click');
                         const sortType = item.id.replace('sort-menu-', '');
                         if (sortType === 'name') sortRepositories('name');
                         else if (sortType === 'date') sortRepositories('updated');
@@ -1150,6 +1941,7 @@
                     e.target.classList.contains('mac-zoom-box')) return;
                 
                 isDragging = true;
+                mainWindow.classList.add('dragging');
                 const rect = mainWindow.getBoundingClientRect();
                 dragOffsetX = e.clientX - rect.left;
                 dragOffsetY = e.clientY - rect.top;
@@ -1164,7 +1956,10 @@
             });
             
             document.addEventListener('mouseup', () => {
-                isDragging = false;
+                if (isDragging) {
+                    isDragging = false;
+                    mainWindow.classList.remove('dragging');
+                }
             });
             
             // Detail window dragging
@@ -1176,6 +1971,7 @@
                     e.target.classList.contains('mac-zoom-box')) return;
                 
                 isDragging = true;
+                detailWindow.classList.add('dragging');
                 const rect = detailWindow.getBoundingClientRect();
                 dragOffsetX = e.clientX - rect.left;
                 dragOffsetY = e.clientY - rect.top;
@@ -1185,113 +1981,155 @@
         // Initialize Keyboard Shortcuts
         function initializeKeyboardShortcuts() {
             document.addEventListener('keydown', (e) => {
+                // Command+N - New Window
+                if (e.key === 'n' && (e.metaKey || e.ctrlKey)) {
+                    e.preventDefault();
+                    playSound('click');
+                    window.open(window.location.href, '_blank');
+                }
+                
+                // Command+W - Close Window
+                if (e.key === 'w' && (e.metaKey || e.ctrlKey)) {
+                    e.preventDefault();
+                    playSound('click');
+                    confirmQuit();
+                }
+                
                 // Command+R - Refresh
                 if (e.key === 'r' && (e.metaKey || e.ctrlKey)) {
                     e.preventDefault();
+                    playSound('click');
                     fetchRepositories();
                 }
                 
                 // Command+F - Focus on search
                 if (e.key === 'f' && (e.metaKey || e.ctrlKey)) {
                     e.preventDefault();
+                    playSound('click');
                     document.getElementById('repo-search').focus();
                 }
                 
                 // Command+Q - Quit
                 if (e.key === 'q' && (e.metaKey || e.ctrlKey)) {
                     e.preventDefault();
+                    playSound('click');
                     confirmQuit();
                 }
                 
                 // Esc - Close modals
                 if (e.key === 'Escape') {
-                    closeAllModals();
+                    const modalOpen = 
+                        document.getElementById('repo-detail-modal').style.display === 'block' ||
+                        document.getElementById('about-modal').style.display === 'block' ||
+                        document.getElementById('shortcuts-modal').style.display === 'block' ||
+                        document.getElementById('quick-look-modal').style.display === 'block' ||
+                        document.getElementById('alert-dialog').style.display === 'block' ||
+                        document.getElementById('confirm-dialog').style.display === 'block';
+                    
+                    if (modalOpen) {
+                        playSound('click');
+                        closeAllModals();
+                    }
                 }
                 
                 // Arrow keys for navigation
                 if (e.key.startsWith('Arrow')) {
                     if (currentView === 'icon') {
-                        const itemsContainer = document.querySelector('.mac-icon-grid');
-                        if (!itemsContainer) return;
-                        
-                        const items = Array.from(itemsContainer.querySelectorAll('.mac-icon'));
-                        if (items.length === 0) return;
-                        
-                        // If nothing is selected, select the first item
-                        if (selectedRepoIndex === -1) {
-                            selectedRepoIndex = 0;
-                            selectRepoItem(items[selectedRepoIndex]);
-                            return;
-                        }
-                        
-                        let newIndex = selectedRepoIndex;
-                        const columns = Math.floor(itemsContainer.clientWidth / 70); // Approximate column count
-                        
-                        if (e.key === 'ArrowRight') {
-                            newIndex = Math.min(items.length - 1, selectedRepoIndex + 1);
-                        } else if (e.key === 'ArrowLeft') {
-                            newIndex = Math.max(0, selectedRepoIndex - 1);
-                        } else if (e.key === 'ArrowDown') {
-                            newIndex = Math.min(items.length - 1, selectedRepoIndex + columns);
-                        } else if (e.key === 'ArrowUp') {
-                            newIndex = Math.max(0, selectedRepoIndex - columns);
-                        }
-                        
-                        if (newIndex !== selectedRepoIndex) {
-                            selectedRepoIndex = newIndex;
-                            selectRepoItem(items[selectedRepoIndex]);
-                        }
+                        navigateIconGrid(e.key);
                     } else {
-                        // List view navigation
-                        const listView = document.querySelector('.mac-list-view');
-                        if (!listView) return;
-                        
-                        const rows = Array.from(listView.querySelectorAll('tr')).slice(1); // Skip header
-                        if (rows.length === 0) return;
-                        
-                        // If nothing is selected, select the first item
-                        if (selectedRepoIndex === -1) {
-                            selectedRepoIndex = 0;
-                            selectListItem(rows[selectedRepoIndex]);
-                            return;
-                        }
-                        
-                        let newIndex = selectedRepoIndex;
-                        
-                        if (e.key === 'ArrowDown') {
-                            newIndex = Math.min(rows.length - 1, selectedRepoIndex + 1);
-                        } else if (e.key === 'ArrowUp') {
-                            newIndex = Math.max(0, selectedRepoIndex - 1);
-                        }
-                        
-                        if (newIndex !== selectedRepoIndex) {
-                            selectedRepoIndex = newIndex;
-                            selectListItem(rows[selectedRepoIndex]);
-                        }
+                        navigateListView(e.key);
                     }
                 }
                 
+                // Space - Quick Look
+                if (e.key === ' ' && selectedRepo) {
+                    e.preventDefault();
+                    playSound('click');
+                    showQuickLook(selectedRepo);
+                }
+                
                 // Enter - Open selected repository
-                if (e.key === 'Enter') {
-                    if (currentView === 'icon') {
-                        const itemsContainer = document.querySelector('.mac-icon-grid');
-                        if (!itemsContainer) return;
-                        
-                        const items = Array.from(itemsContainer.querySelectorAll('.mac-icon'));
-                        if (items.length === 0 || selectedRepoIndex === -1) return;
-                        
-                        showRepoDetails(selectedRepo);
-                    } else {
-                        const listView = document.querySelector('.mac-list-view');
-                        if (!listView) return;
-                        
-                        const rows = Array.from(listView.querySelectorAll('tr')).slice(1); // Skip header
-                        if (rows.length === 0 || selectedRepoIndex === -1) return;
-                        
-                        showRepoDetails(selectedRepo);
-                    }
+                if (e.key === 'Enter' && selectedRepo) {
+                    playSound('click');
+                    showRepoDetails(selectedRepo);
+                }
+                
+                // Command+C - Copy URL
+                if (e.key === 'c' && (e.metaKey || e.ctrlKey) && selectedRepo) {
+                    e.preventDefault();
+                    playSound('click');
+                    navigator.clipboard.writeText(selectedRepo.html_url).then(() => {
+                        showAlert('URL copied to clipboard');
+                    }).catch(err => {
+                        console.error('Could not copy text: ', err);
+                    });
                 }
             });
+        }
+        
+        // Navigate Icon Grid
+        function navigateIconGrid(key) {
+            const itemsContainer = document.querySelector('.mac-icon-grid');
+            if (!itemsContainer) return;
+            
+            const items = Array.from(itemsContainer.querySelectorAll('.mac-icon'));
+            if (items.length === 0) return;
+            
+            // If nothing is selected, select the first item
+            if (selectedRepoIndex === -1) {
+                selectedRepoIndex = 0;
+                selectRepoItem(items[selectedRepoIndex]);
+                return;
+            }
+            
+            let newIndex = selectedRepoIndex;
+            const columns = Math.max(1, Math.floor(itemsContainer.clientWidth / 80)); // Approximate column count
+            
+            if (key === 'ArrowRight') {
+                newIndex = Math.min(items.length - 1, selectedRepoIndex + 1);
+            } else if (key === 'ArrowLeft') {
+                newIndex = Math.max(0, selectedRepoIndex - 1);
+            } else if (key === 'ArrowDown') {
+                newIndex = Math.min(items.length - 1, selectedRepoIndex + columns);
+            } else if (key === 'ArrowUp') {
+                newIndex = Math.max(0, selectedRepoIndex - columns);
+            }
+            
+            if (newIndex !== selectedRepoIndex) {
+                playSound('click');
+                selectedRepoIndex = newIndex;
+                selectRepoItem(items[selectedRepoIndex]);
+            }
+        }
+        
+        // Navigate List View
+        function navigateListView(key) {
+            const listView = document.querySelector('.mac-list-view');
+            if (!listView) return;
+            
+            const rows = Array.from(listView.querySelectorAll('tr')).slice(1); // Skip header
+            if (rows.length === 0) return;
+            
+            // If nothing is selected, select the first item
+            if (selectedRepoIndex === -1) {
+                selectedRepoIndex = 0;
+                selectListItem(rows[selectedRepoIndex]);
+                return;
+            }
+            
+            let newIndex = selectedRepoIndex;
+            
+            if (key === 'ArrowDown') {
+                newIndex = Math.min(rows.length - 1, selectedRepoIndex + 1);
+            } else if (key === 'ArrowUp') {
+                newIndex = Math.max(0, selectedRepoIndex - 1);
+            }
+            
+            if (newIndex !== selectedRepoIndex) {
+                playSound('click');
+                selectedRepoIndex = newIndex;
+                selectListItem(rows[selectedRepoIndex]);
+            }
         }
 
         // Initialize Scrollbar
@@ -1330,13 +2168,27 @@
             });
             
             scrollbarUp.addEventListener('click', () => {
+                playSound('click');
                 content.scrollTop -= 30;
                 updateScrollbarThumb();
             });
             
             scrollbarDown.addEventListener('click', () => {
+                playSound('click');
                 content.scrollTop += 30;
                 updateScrollbarThumb();
+            });
+            
+            // Mousewheel scrolling
+            content.addEventListener('wheel', (e) => {
+                content.scrollTop += e.deltaY;
+                updateScrollbarThumb();
+                
+                // Prevent page scroll when at top or bottom
+                if ((content.scrollTop === 0 && e.deltaY < 0) || 
+                    (content.scrollTop + content.clientHeight >= content.scrollHeight && e.deltaY > 0)) {
+                    e.preventDefault();
+                }
             });
             
             content.addEventListener('scroll', updateScrollbarThumb);
@@ -1406,6 +2258,8 @@
         function toggleWindowSize() {
             const mainWindow = document.getElementById('main-window');
             
+            playSound('click');
+            
             if (mainWindow.style.position === 'fixed') {
                 // Restore original position and size
                 mainWindow.style.position = 'relative';
@@ -1439,6 +2293,8 @@
         // Set View Mode
         function setViewMode(mode) {
             currentView = mode;
+            // Update view toggle button text
+            document.getElementById('view-toggle').textContent = mode === 'icon' ? 'List View' : 'Icon View';
             renderRepositories(allRepos);
             
             // Update scrollbar after view change
@@ -1448,6 +2304,12 @@
         // Sort Repositories
         function sortRepositories(sortType) {
             currentSort = sortType;
+            
+            // Update sort button text
+            document.getElementById('sort-button').textContent = 
+                sortType === 'name' ? 'Sort: Name' : 
+                sortType === 'updated' ? 'Sort: Date' : 
+                'Sort: Stars';
             
             allRepos.sort((a, b) => {
                 switch (sortType) {
@@ -1479,7 +2341,8 @@
             
             const filteredRepos = allRepos.filter(repo => 
                 repo.name.toLowerCase().includes(searchTerm) || 
-                (repo.description && repo.description.toLowerCase().includes(searchTerm))
+                (repo.description && repo.description.toLowerCase().includes(searchTerm)) ||
+                (repo.language && repo.language.toLowerCase().includes(searchTerm))
             );
             
             renderRepositories(filteredRepos);
@@ -1501,6 +2364,14 @@
                 </div>
             `;
             
+            // Check API rate limit
+            const now = Date.now();
+            if (now - lastApiCall < apiRateLimit) {
+                await new Promise(resolve => setTimeout(resolve, apiRateLimit - (now - lastApiCall)));
+            }
+            
+            lastApiCall = Date.now();
+            
             try {
                 const response = await fetch(`https://api.github.com/users/${username}/repos?per_page=100`);
                 
@@ -1518,6 +2389,7 @@
                 
             } catch (error) {
                 console.error('Error fetching repositories:', error);
+                playSound('error');
                 showAlert(`Error: ${error.message}`);
                 reposContainer.innerHTML = `
                     <div style="text-align: center; padding: 40px;">
@@ -1528,6 +2400,7 @@
                         <div style="font-size: 9px; color: var(--mac-black);">
                             ${error.message}
                         </div>
+                        <div class="mac-button" style="margin-top: 15px; display: inline-block;" onclick="fetchRepositories()">Try Again</div>
                     </div>
                 `;
             }
@@ -1536,152 +2409,216 @@
         // Render Repositories
         function renderRepositories(repos) {
             const reposContainer = document.getElementById('repos-container');
+            selectedRepoIndex = -1; // Reset selection
+            
+            if (repos.length === 0) {
+                reposContainer.innerHTML = `
+                    <div style="text-align: center; padding: 40px;">
+                        <div style="font-family: 'Chicago', monospace; margin-bottom: 10px; color: var(--mac-black);">
+                            No repositories found.
+                        </div>
+                        <div style="font-size: 9px; color: var(--mac-black);">
+                            Try a different search term or fetch the repository list again.
+                        </div>
+                        <div class="mac-button" style="margin-top: 15px; display: inline-block;" onclick="fetchRepositories()">Refresh</div>
+                    </div>
+                `;
+                return;
+            }
             
             if (currentView === 'icon') {
-                const iconGrid = document.createElement('div');
-                iconGrid.className = 'mac-icon-grid';
-                
-                repos.forEach((repo, index) => {
-                    const icon = document.createElement('div');
-                    icon.className = 'mac-icon';
-                    if (selectedRepo && selectedRepo.id === repo.id) {
-                        icon.classList.add('selected');
-                        selectedRepoIndex = index;
-                    }
-                    
-                    // Choose appropriate icon path based on language
-                    let iconPath = repoIcons.default;
-                    if (repo.language && repoIcons[repo.language]) {
-                        iconPath = repoIcons[repo.language];
-                    }
-                    
-                    icon.innerHTML = `
-                        <div class="mac-icon-box">
-                            <svg viewBox="0 0 32 32" width="32" height="32">
-                                <path d="${iconPath}" fill="black"/>
-                            </svg>
-                        </div>
-                        <div class="mac-icon-label">${repo.name}</div>
-                    `;
-                    
-                    icon.addEventListener('click', (e) => {
-                        selectedRepo = repo;
-                        selectedRepoIndex = index;
-                        document.querySelectorAll('.mac-icon').forEach(el => {
-                            el.classList.remove('selected');
-                        });
-                        icon.classList.add('selected');
-                        
-                        // Double click
-                        if (e.detail === 2) {
-                            showRepoDetails(repo);
-                        }
-                    });
-                    
-                    icon.addEventListener('contextmenu', (e) => {
-                        e.preventDefault();
-                        selectedRepo = repo;
-                        selectedRepoIndex = index;
-                        
-                        document.querySelectorAll('.mac-icon').forEach(el => {
-                            el.classList.remove('selected');
-                        });
-                        icon.classList.add('selected');
-                        
-                        const contextMenu = document.getElementById('repo-context-menu');
-                        contextMenu.style.display = 'block';
-                        contextMenu.style.left = e.pageX + 'px';
-                        contextMenu.style.top = e.pageY + 'px';
-                        
-                        document.addEventListener('click', function hideMenu() {
-                            contextMenu.style.display = 'none';
-                            document.removeEventListener('click', hideMenu);
-                        });
-                    });
-                    
-                    iconGrid.appendChild(icon);
-                });
-                
-                reposContainer.innerHTML = '';
-                reposContainer.appendChild(iconGrid);
+                renderIconView(repos, reposContainer);
             } else {
-                // List view
-                const table = document.createElement('table');
-                table.className = 'mac-list-view';
-                
-                // Header row
-                const header = document.createElement('tr');
-                header.innerHTML = `
-                    <th>Name</th>
-                    <th>Language</th>
-                    <th style="text-align: right">Stars</th>
-                    <th style="text-align: right">Updated</th>
-                `;
-                table.appendChild(header);
-                
-                // Data rows
-                repos.forEach((repo, index) => {
-                    const row = document.createElement('tr');
-                    if (selectedRepo && selectedRepo.id === repo.id) {
-                        row.classList.add('selected');
-                        selectedRepoIndex = index;
-                    }
-                    
-                    const updatedDate = new Date(repo.updated_at).toLocaleDateString();
-                    
-                    row.innerHTML = `
-                        <td>${repo.name}</td>
-                        <td>${repo.language || '-'}</td>
-                        <td style="text-align: right">${repo.stargazers_count}</td>
-                        <td style="text-align: right">${updatedDate}</td>
-                    `;
-                    
-                    row.addEventListener('click', () => {
-                        selectedRepo = repo;
-                        selectedRepoIndex = index;
-                        
-                        document.querySelectorAll('.mac-list-view tr').forEach(el => {
-                            el.classList.remove('selected');
-                        });
-                        
-                        row.classList.add('selected');
-                    });
-                    
-                    row.addEventListener('dblclick', () => {
-                        showRepoDetails(repo);
-                    });
-                    
-                    row.addEventListener('contextmenu', (e) => {
-                        e.preventDefault();
-                        selectedRepo = repo;
-                        selectedRepoIndex = index;
-                        
-                        document.querySelectorAll('.mac-list-view tr').forEach(el => {
-                            el.classList.remove('selected');
-                        });
-                        
-                        row.classList.add('selected');
-                        
-                        const contextMenu = document.getElementById('repo-context-menu');
-                        contextMenu.style.display = 'block';
-                        contextMenu.style.left = e.pageX + 'px';
-                        contextMenu.style.top = e.pageY + 'px';
-                        
-                        document.addEventListener('click', function hideMenu() {
-                            contextMenu.style.display = 'none';
-                            document.removeEventListener('click', hideMenu);
-                        });
-                    });
-                    
-                    table.appendChild(row);
-                });
-                
-                reposContainer.innerHTML = '';
-                reposContainer.appendChild(table);
+                renderListView(repos, reposContainer);
             }
             
             // Update scrollbar after rendering
             setTimeout(updateScrollbarThumb, 100);
+        }
+        
+        // Render Icon View
+        function renderIconView(repos, container) {
+            const iconGrid = document.createElement('div');
+            iconGrid.className = 'mac-icon-grid';
+            
+            repos.forEach((repo, index) => {
+                const icon = document.createElement('div');
+                icon.className = 'mac-icon';
+                if (selectedRepo && selectedRepo.id === repo.id) {
+                    icon.classList.add('selected');
+                    selectedRepoIndex = index;
+                }
+                
+                // Choose appropriate icon path based on language
+                let iconPath = repoIcons.default;
+                if (repo.language && repoIcons[repo.language]) {
+                    iconPath = repoIcons[repo.language];
+                }
+                
+                icon.innerHTML = `
+                    <div class="mac-icon-box">
+                        <svg viewBox="0 0 32 32" width="32" height="32">
+                            <path d="${iconPath}" fill="black"/>
+                        </svg>
+                    </div>
+                    <div class="mac-icon-label">${repo.name}</div>
+                `;
+                
+                icon.addEventListener('click', (e) => {
+                    selectedRepo = repo;
+                    selectedRepoIndex = index;
+                    document.querySelectorAll('.mac-icon').forEach(el => {
+                        el.classList.remove('selected');
+                    });
+                    icon.classList.add('selected');
+                    
+                    // Double click
+                    if (e.detail === 2) {
+                        playSound('click');
+                        showRepoDetails(repo);
+                    }
+                });
+                
+                icon.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                    playSound('click');
+                    selectedRepo = repo;
+                    selectedRepoIndex = index;
+                    
+                    document.querySelectorAll('.mac-icon').forEach(el => {
+                        el.classList.remove('selected');
+                    });
+                    icon.classList.add('selected');
+                    
+                    const contextMenu = document.getElementById('repo-context-menu');
+                    contextMenu.style.display = 'block';
+                    contextMenu.style.left = e.pageX + 'px';
+                    contextMenu.style.top = e.pageY + 'px';
+                    
+                    // Ensure context menu is within viewport
+                    const menuRect = contextMenu.getBoundingClientRect();
+                    if (menuRect.right > window.innerWidth) {
+                        contextMenu.style.left = (window.innerWidth - menuRect.width - 5) + 'px';
+                    }
+                    if (menuRect.bottom > window.innerHeight) {
+                        contextMenu.style.top = (e.pageY - menuRect.height) + 'px';
+                    }
+                    
+                    document.addEventListener('click', function hideMenu() {
+                        contextMenu.style.display = 'none';
+                        document.removeEventListener('click', hideMenu);
+                    });
+                });
+                
+                iconGrid.appendChild(icon);
+            });
+            
+            container.innerHTML = '';
+            container.appendChild(iconGrid);
+        }
+        
+        // Render List View
+        function renderListView(repos, container) {
+            const table = document.createElement('table');
+            table.className = 'mac-list-view';
+            
+            // Header row
+            const header = document.createElement('tr');
+            header.innerHTML = `
+                <th>Name</th>
+                <th>Language</th>
+                <th style="text-align: right">Stars</th>
+                <th style="text-align: right">Updated</th>
+            `;
+            
+            // Add sort indicators
+            header.querySelectorAll('th').forEach((th, index) => {
+                const sortType = index === 0 ? 'name' : index === 1 ? '' : index === 2 ? 'stars' : 'updated';
+                if (sortType && sortType === currentSort) {
+                    th.innerHTML += ' ▼';
+                }
+                
+                if (sortType) {
+                    th.style.cursor = 'pointer';
+                    th.addEventListener('click', () => {
+                        playSound('click');
+                        sortRepositories(sortType);
+                    });
+                }
+            });
+            
+            table.appendChild(header);
+            
+            // Data rows
+            repos.forEach((repo, index) => {
+                const row = document.createElement('tr');
+                if (selectedRepo && selectedRepo.id === repo.id) {
+                    row.classList.add('selected');
+                    selectedRepoIndex = index;
+                }
+                
+                const updatedDate = new Date(repo.updated_at).toLocaleDateString();
+                
+                row.innerHTML = `
+                    <td>${repo.name}</td>
+                    <td>${repo.language || '-'}</td>
+                    <td style="text-align: right">${repo.stargazers_count}</td>
+                    <td style="text-align: right">${updatedDate}</td>
+                `;
+                
+                row.addEventListener('click', () => {
+                    selectedRepo = repo;
+                    selectedRepoIndex = index;
+                    
+                    document.querySelectorAll('.mac-list-view tr').forEach(el => {
+                        el.classList.remove('selected');
+                    });
+                    
+                    row.classList.add('selected');
+                });
+                
+                row.addEventListener('dblclick', () => {
+                    playSound('click');
+                    showRepoDetails(repo);
+                });
+                
+                row.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                    playSound('click');
+                    selectedRepo = repo;
+                    selectedRepoIndex = index;
+                    
+                    document.querySelectorAll('.mac-list-view tr').forEach(el => {
+                        el.classList.remove('selected');
+                    });
+                    
+                    row.classList.add('selected');
+                    
+                    const contextMenu = document.getElementById('repo-context-menu');
+                    contextMenu.style.display = 'block';
+                    contextMenu.style.left = e.pageX + 'px';
+                    contextMenu.style.top = e.pageY + 'px';
+                    
+                    // Ensure context menu is within viewport
+                    const menuRect = contextMenu.getBoundingClientRect();
+                    if (menuRect.right > window.innerWidth) {
+                        contextMenu.style.left = (window.innerWidth - menuRect.width - 5) + 'px';
+                    }
+                    if (menuRect.bottom > window.innerHeight) {
+                        contextMenu.style.top = (e.pageY - menuRect.height) + 'px';
+                    }
+                    
+                    document.addEventListener('click', function hideMenu() {
+                        contextMenu.style.display = 'none';
+                        document.removeEventListener('click', hideMenu);
+                    });
+                });
+                
+                table.appendChild(row);
+            });
+            
+            container.innerHTML = '';
+            container.appendChild(table);
         }
 
         // Show Repository Details
@@ -1743,13 +2680,21 @@
 
         // Show Modal
         function showModal(modalId) {
+            playSound('click');
             document.getElementById(modalId).style.display = 'block';
             document.getElementById('modal-overlay').style.display = 'block';
         }
 
         // Close Modal
         function closeModal(modalId) {
+            playSound('click');
             document.getElementById(modalId).style.display = 'none';
+            document.getElementById('modal-overlay').style.display = 'none';
+        }
+
+        // Close Dialog
+        function closeDialog(dialogId) {
+            document.getElementById(dialogId).style.display = 'none';
             document.getElementById('modal-overlay').style.display = 'none';
         }
 
@@ -1758,14 +2703,16 @@
             document.getElementById('repo-detail-modal').style.display = 'none';
             document.getElementById('about-modal').style.display = 'none';
             document.getElementById('shortcuts-modal').style.display = 'none';
-            document.getElementById('modal-overlay').style.display = 'none';
+            document.getElementById('quick-look-modal').style.display = 'none';
             document.getElementById('alert-dialog').style.display = 'none';
             document.getElementById('confirm-dialog').style.display = 'none';
             document.getElementById('repo-context-menu').style.display = 'none';
+            document.getElementById('modal-overlay').style.display = 'none';
         }
 
         // Show Alert
         function showAlert(message) {
+            playSound('alert');
             document.getElementById('alert-message').textContent = message;
             document.getElementById('alert-dialog').style.display = 'block';
             document.getElementById('modal-overlay').style.display = 'block';
@@ -1773,6 +2720,7 @@
 
         // Confirm Quit
         function confirmQuit() {
+            playSound('alert');
             document.getElementById('confirm-message').textContent = 'Are you sure you want to quit?';
             document.getElementById('confirm-dialog').style.display = 'block';
             document.getElementById('modal-overlay').style.display = 'block';
@@ -1788,6 +2736,37 @@
                     <div class="mac-startup-text">It is now safe to turn off your Macintosh.</div>
                 </div>
             `;
+        }
+
+        // Play Sound
+        function playSound(type) {
+            if (!soundEnabled) return;
+            
+            try {
+                let sound;
+                switch (type) {
+                    case 'click':
+                        sound = document.getElementById('sound-click');
+                        sound.volume = 0.2;
+                        break;
+                    case 'alert':
+                        sound = document.getElementById('sound-alert');
+                        sound.volume = 0.3;
+                        break;
+                    case 'error':
+                        sound = document.getElementById('sound-error');
+                        sound.volume = 0.3;
+                        break;
+                    default:
+                        return;
+                }
+                
+                // Reset and play sound
+                sound.currentTime = 0;
+                sound.play().catch(e => console.log('Audio play failed:', e));
+            } catch (e) {
+                console.log('Audio error:', e);
+            }
         }
     </script>
 </body>
