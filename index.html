@@ -3,20 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Swir GitHub - Macintosh</title>
+    <title>Swir GitHub - Classic Macintosh</title>
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* --- Zmienne CSS --- */
         :root {
-            /* Paleta Macintosh */
+            /* Ściśle czarno-biała paleta Classic Macintosh */
             --mac-white: #FFFFFF;
             --mac-black: #000000;
-            --mac-light-gray: #CCCCCC;
-            --mac-medium-gray: #999999;
-            --mac-dark-gray: #666666;
-            --mac-select: #000000;
-            --mac-select-text: #FFFFFF;
+            --mac-bg: #FFFFFF;
         }
         
         /* --- Reset i podstawowe style --- */
@@ -24,28 +20,26 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-font-smoothing: none;
+            font-smooth: never;
         }
         
         @font-face {
             font-family: 'Chicago';
-            src: url('https://cdn.jsdelivr.net/gh/Deskwizard/Chicago-Classic@master/Chicago_Classic.woff2') format('woff2');
-        }
-        
-        @font-face {
-            font-family: 'Geneva';
-            src: url('https://cdn.jsdelivr.net/gh/google/fonts/apache/opensans/OpenSans-Regular.ttf') format('truetype');
+            src: url('https://cdn.jsdelivr.net/gh/codepo8/chicanery/fonts/ChicagoFLF.ttf') format('truetype');
         }
         
         html, body {
-            background-color: var(--mac-light-gray);
+            background-color: var(--mac-bg);
             color: var(--mac-black);
-            font-family: 'Geneva', 'Arial', sans-serif;
+            font-family: 'Chicago', monospace;
             font-size: 12px;
             line-height: 1.4;
             overflow-x: hidden;
             height: 100%;
             margin: 0;
             padding: 0;
+            cursor: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAMCAQAAAD1lzQWAAAAAmJLR0QA/4ePzL8AAAAJcEhZcwAACxMAAAsTAQCanBgAAAAHdElNRQfeBRoTKgkaXgLYAAAAMklEQVQI12NgQAX/0cF/BkYGJgZGBoYJDAyM/zEBTBKbOCOcB5iBLokQZ4YLMMA1MQAA8J4F+fNJqRMAAAAASUVORK5CYII='), default;
         }
         
         body {
@@ -71,9 +65,19 @@
         }
         
         .mac-menu-logo {
-            margin-left: 10px;
-            margin-right: 10px;
-            font-size: 16px;
+            width: 16px;
+            height: 16px;
+            margin-left: 5px;
+            margin-right: 5px;
+            image-rendering: pixelated;
+        }
+        
+        .mac-apple-logo {
+            width: 100%;
+            height: 100%;
+            background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAwAAAAMCAQAAAD8fJRsAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAAAmJLR0QA/4ePzL8AAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAHdElNRQfeCxIQDzbpOfF0AAAAUElEQVQY083NsRGAIBBE0Q+GBhaIBdgKxdiN3VhAYGYw6BVs77gQnGDWZF7yg+VVA0qSUsvS2e2Z6YY7lduWF5sYjMT5ZzITx/npz/ZKH3wAPE0YjbCU9iQAAAAASUVORK5CYII=');
+            background-repeat: no-repeat;
+            background-position: center;
         }
         
         .mac-menu-items {
@@ -84,8 +88,8 @@
         .mac-menu-item {
             position: relative;
             padding: 0 10px;
-            font-family: 'Chicago', 'Arial', sans-serif;
-            font-size: 12px;
+            font-family: 'Chicago', monospace;
+            font-size: 11px;
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -105,7 +109,7 @@
             background-color: var(--mac-white);
             border: 1px solid var(--mac-black);
             border-top: none;
-            box-shadow: 2px 2px 0 var(--mac-dark-gray);
+            box-shadow: 2px 2px 0 var(--mac-black);
             min-width: 150px;
             z-index: 10000;
         }
@@ -115,9 +119,9 @@
         }
         
         .mac-submenu-item {
-            padding: 5px 15px;
-            font-family: 'Chicago', 'Arial', sans-serif;
-            font-size: 12px;
+            padding: 3px 10px;
+            font-family: 'Chicago', monospace;
+            font-size: 11px;
             cursor: pointer;
             white-space: nowrap;
         }
@@ -130,12 +134,13 @@
         .mac-separator {
             height: 1px;
             background-color: var(--mac-black);
-            margin: 2px 0;
+            margin: 2px 5px;
         }
 
         /* --- Desktop Area --- */
         .mac-desktop {
             background-color: var(--mac-white);
+            background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAEklEQVQImWNgYGD4z0AswK4SAFXuAf8EPy+xAAAAAElFTkSuQmCC');
             flex: 1;
             margin-top: 20px;
             padding: 20px;
@@ -146,71 +151,99 @@
         .mac-window {
             background-color: var(--mac-white);
             border: 1px solid var(--mac-black);
-            box-shadow: 2px 2px 0 var(--mac-dark-gray);
+            box-shadow: 2px 2px 0 var(--mac-black);
             position: relative;
             margin: 0 auto;
             max-width: 800px;
             max-height: calc(100vh - 60px);
             overflow: hidden;
+            image-rendering: pixelated;
         }
         
         .mac-title-bar {
             background-color: var(--mac-white);
             border-bottom: 1px solid var(--mac-black);
-            height: 20px;
+            height: 19px;
             position: relative;
             display: flex;
             align-items: center;
             cursor: move;
+            padding: 0 5px;
+            background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAABCAYAAAD0In+KAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH3gsSEBUFM5Cu7wAAABNJREFUCNdjYGBgYGhoaGD4//8/AN//A/WxCCUNAAAAAElFTkSuQmCC');
+            background-repeat: repeat;
         }
         
         .mac-title {
             width: 100%;
             text-align: center;
-            font-family: 'Chicago', 'Arial', sans-serif;
-            font-size: 12px;
+            font-family: 'Chicago', monospace;
+            font-size: 11px;
             position: absolute;
             left: 0;
             pointer-events: none;
         }
         
         .mac-close-box {
-            width: 16px;
-            height: 16px;
+            width: 11px;
+            height: 11px;
             border: 1px solid var(--mac-black);
-            margin-left: 5px;
+            margin-right: 5px;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            position: relative;
             z-index: 1;
+            background-color: var(--mac-white);
         }
         
-        .mac-close-box-inner {
-            font-size: 14px;
-            line-height: 1;
+        .mac-close-box::after {
+            content: '';
+            position: absolute;
+            top: 4px;
+            left: 1px;
+            width: 7px;
+            height: 1px;
+            background-color: var(--mac-black);
+        }
+        
+        .mac-zoom-box {
+            width: 11px;
+            height: 11px;
+            border: 1px solid var(--mac-black);
+            cursor: pointer;
+            position: relative;
+            z-index: 1;
+            background-color: var(--mac-white);
+        }
+        
+        .mac-zoom-box::after {
+            content: '';
+            position: absolute;
+            top: 1px;
+            left: 1px;
+            width: 7px;
+            height: 7px;
+            border: 1px solid var(--mac-black);
         }
         
         .mac-window-body {
             background-color: var(--mac-white);
             padding: 0;
             overflow-y: auto;
-            height: calc(100% - 20px);
+            height: calc(100% - 19px);
             max-height: calc(100vh - 80px);
         }
         
         /* --- Content Area --- */
         .mac-content {
-            padding: 10px;
+            padding: 5px;
             overflow: auto;
         }
         
         /* --- Icons Grid --- */
         .mac-icon-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
             gap: 20px;
-            padding: 20px;
+            padding: 15px;
         }
         
         .mac-icon {
@@ -218,7 +251,7 @@
             flex-direction: column;
             align-items: center;
             cursor: pointer;
-            padding: 5px;
+            padding: 3px;
         }
         
         .mac-icon.selected {
@@ -233,16 +266,22 @@
             width: 32px;
             height: 32px;
             margin-bottom: 5px;
-            border: 1px solid var(--mac-black);
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            position: relative;
+            image-rendering: pixelated;
+        }
+        
+        .mac-icon-graphic {
+            width: 100%;
+            height: 100%;
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: contain;
         }
         
         .mac-icon-label {
             text-align: center;
-            max-width: 80px;
-            font-size: 10px;
+            max-width: 70px;
+            font-size: 9px;
             word-wrap: break-word;
         }
 
@@ -250,7 +289,7 @@
         .mac-toolbar {
             background-color: var(--mac-white);
             border-bottom: 1px solid var(--mac-black);
-            padding: 5px;
+            padding: 3px;
             display: flex;
             align-items: center;
         }
@@ -258,12 +297,12 @@
         .mac-button {
             border: 1px solid var(--mac-black);
             background-color: var(--mac-white);
-            margin-right: 5px;
-            padding: 2px 5px;
+            margin-right: 3px;
+            padding: 1px 5px;
             cursor: pointer;
-            font-family: 'Chicago', 'Arial', sans-serif;
-            font-size: 10px;
-            min-width: 60px;
+            font-family: 'Chicago', monospace;
+            font-size: 9px;
+            min-width: 50px;
             text-align: center;
         }
         
@@ -274,15 +313,93 @@
         
         .mac-search {
             border: 1px solid var(--mac-black);
-            padding: 2px 5px;
+            padding: 1px 3px;
             margin-left: auto;
             width: 150px;
-            font-size: 10px;
+            font-size: 9px;
+            font-family: 'Chicago', monospace;
         }
         
         .mac-search:focus {
             outline: none;
             box-shadow: 0 0 0 1px var(--mac-black);
+        }
+
+        /* --- Scrollbar --- */
+        .mac-scrollbar {
+            width: 16px;
+            height: 100%;
+            position: absolute;
+            right: 0;
+            top: 0;
+            border-left: 1px solid var(--mac-black);
+            background-color: var(--mac-white);
+        }
+        
+        .mac-scrollbar-thumb {
+            width: 14px;
+            height: 40px;
+            background-color: var(--mac-white);
+            border: 1px solid var(--mac-black);
+            position: absolute;
+            top: 20px;
+            left: 0;
+            cursor: pointer;
+        }
+        
+        .mac-scrollbar-thumb::before {
+            content: '';
+            position: absolute;
+            top: 15px;
+            left: 3px;
+            width: 6px;
+            height: 1px;
+            background-color: var(--mac-black);
+            box-shadow: 0 3px 0 var(--mac-black), 0 6px 0 var(--mac-black);
+        }
+        
+        .mac-scrollbar-buttons {
+            width: 14px;
+            height: 28px;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+        }
+        
+        .mac-scrollbar-button {
+            width: 14px;
+            height: 14px;
+            border: 1px solid var(--mac-black);
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .mac-scrollbar-button:first-child {
+            margin-bottom: -1px;
+        }
+        
+        .mac-scrollbar-up::after {
+            content: '';
+            position: absolute;
+            top: 5px;
+            left: 3px;
+            width: 0;
+            height: 0;
+            border-left: 3px solid transparent;
+            border-right: 3px solid transparent;
+            border-bottom: 3px solid var(--mac-black);
+        }
+        
+        .mac-scrollbar-down::after {
+            content: '';
+            position: absolute;
+            top: 5px;
+            left: 3px;
+            width: 0;
+            height: 0;
+            border-left: 3px solid transparent;
+            border-right: 3px solid transparent;
+            border-top: 3px solid var(--mac-black);
         }
 
         /* --- Modal Styles --- */
@@ -310,24 +427,25 @@
         
         /* --- Detail View --- */
         .mac-detail-window {
-            max-width: 500px;
+            max-width: 400px;
         }
         
         .mac-detail-content {
-            padding: 15px;
+            padding: 10px;
         }
         
         .mac-detail-header {
-            font-family: 'Chicago', 'Arial', sans-serif;
-            font-size: 14px;
-            margin-bottom: 10px;
+            font-family: 'Chicago', monospace;
+            font-size: 12px;
+            margin-bottom: 8px;
             border-bottom: 1px solid var(--mac-black);
-            padding-bottom: 5px;
+            padding-bottom: 3px;
         }
         
         .mac-detail-row {
             display: flex;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
+            font-size: 9px;
         }
         
         .mac-detail-label {
@@ -340,16 +458,17 @@
         }
         
         .mac-detail-description {
-            margin: 10px 0;
-            padding: 5px;
+            margin: 8px 0;
+            padding: 3px;
             border: 1px solid var(--mac-black);
             background-color: var(--mac-white);
+            font-size: 9px;
         }
         
         .mac-button-row {
             display: flex;
             justify-content: flex-end;
-            margin-top: 15px;
+            margin-top: 10px;
         }
 
         /* --- Context Menu --- */
@@ -357,15 +476,15 @@
             position: absolute;
             background-color: var(--mac-white);
             border: 1px solid var(--mac-black);
-            box-shadow: 2px 2px 0 var(--mac-dark-gray);
+            box-shadow: 2px 2px 0 var(--mac-black);
             z-index: 10002;
             display: none;
         }
         
         .mac-context-item {
-            padding: 5px 15px;
-            font-family: 'Chicago', 'Arial', sans-serif;
-            font-size: 12px;
+            padding: 3px 10px;
+            font-family: 'Chicago', monospace;
+            font-size: 11px;
             cursor: pointer;
             white-space: nowrap;
         }
@@ -384,16 +503,8 @@
             transform: translateX(-50%);
             border: 1px solid var(--mac-black);
             background-color: var(--mac-white);
-            box-shadow: 4px 4px 0px var(--mac-dark-gray);
+            box-shadow: 2px 2px 0 var(--mac-black);
             z-index: 10002;
-        }
-        
-        .mac-dialog-title {
-            font-family: 'Chicago', 'Arial', sans-serif;
-            font-size: 12px;
-            text-align: center;
-            padding: 5px;
-            border-bottom: 1px solid var(--mac-black);
         }
         
         .mac-dialog-content {
@@ -403,13 +514,18 @@
         }
         
         .mac-dialog-icon {
-            font-size: 24px;
+            width: 32px;
+            height: 32px;
             margin-right: 10px;
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: contain;
+            image-rendering: pixelated;
         }
         
         .mac-dialog-message {
             flex: 1;
-            font-size: 12px;
+            font-size: 11px;
         }
         
         .mac-dialog-buttons {
@@ -419,15 +535,17 @@
         }
         
         .mac-dialog-button {
+            min-width: 60px;
+            height: 20px;
             border: 1px solid var(--mac-black);
+            border-radius: 10px;
             background-color: var(--mac-white);
-            padding: 2px 10px;
             margin-left: 5px;
             cursor: pointer;
-            min-width: 60px;
             text-align: center;
-            font-family: 'Chicago', 'Arial', sans-serif;
-            font-size: 10px;
+            font-family: 'Chicago', monospace;
+            font-size: 11px;
+            padding: 1px 10px;
         }
         
         .mac-dialog-button.default {
@@ -455,19 +573,21 @@
             pointer-events: none;
         }
         
-        .mac-logo {
-            font-size: 48px;
+        .mac-happy-mac {
+            width: 64px;
+            height: 64px;
             margin-bottom: 20px;
+            background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAACXBIWXMAAAsTAAALEwEAmpwYAAAF0WlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4gPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iQWRvYmUgWE1QIENvcmUgNS42LWMxNDUgNzkuMTYzNDk5LCAyMDE4LzA4LzEzLTE2OjQwOjIyICAgICAgICAiPiA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPiA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtbG5zOmRjPSJodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyIgeG1sbnM6cGhvdG9zaG9wPSJodHRwOi8vbnMuYWRvYmUuY29tL3Bob3Rvc2hvcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RFdnQ9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZUV2ZW50IyIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ0MgMjAxOSAoTWFjaW50b3NoKSIgeG1wOkNyZWF0ZURhdGU9IjIwMTktMDMtMTNUMTk6NDY6MDUrMDE6MDAiIHhtcDpNb2RpZnlEYXRlPSIyMDE5LTAzLTEzVDE5OjQ5OjA4KzAxOjAwIiB4bXA6TWV0YWRhdGFEYXRlPSIyMDE5LTAzLTEzVDE5OjQ5OjA4KzAxOjAwIiBkYzpmb3JtYXQ9ImltYWdlL3BuZyIgcGhvdG9zaG9wOkNvbG9yTW9kZT0iMyIgcGhvdG9zaG9wOklDQ1Byb2ZpbGU9InNSR0IgSUVDNjE5NjYtMi4xIiB4bXBNTTpJbnN0YW5jZUlEPSJ4bXAuaWlkOjdkYjk5YTI0LWI1YjktNGRjYS1hNzY1LTc1MjNjZTJmZTRhMSIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDo3ZGI5OWEyNC1iNWI5LTRkY2EtYTc2NS03NTIzY2UyZmU0YTEiIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDo3ZGI5OWEyNC1iNWI5LTRkY2EtYTc2NS03NTIzY2UyZmU0YTEiPiA8eG1wTU06SGlzdG9yeT4gPHJkZjpTZXE+IDxyZGY6bGkgc3RFdnQ6YWN0aW9uPSJjcmVhdGVkIiBzdEV2dDppbnN0YW5jZUlEPSJ4bXAuaWlkOjdkYjk5YTI0LWI1YjktNGRjYS1hNzY1LTc1MjNjZTJmZTRhMSIgc3RFdnQ6d2hlbj0iMjAxOS0wMy0xM1QxOTo0NjowNSswMTowMCIgc3RFdnQ6c29mdHdhcmVBZ2VudD0iQWRvYmUgUGhvdG9zaG9wIENDIDIwMTkgKE1hY2ludG9zaCkiLz4gPC9yZGY6U2VxPiA8L3htcE1NOkhpc3Rvcnk+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+KrL+xAAAA1JJREFUeJztml9IU1Ecxz+/rUGaWGYWaw9BUhpEEQUV5IP6qA/2siKHlRQERZH0SkVBRUQPRU8RRGFQVEST0F6SCiLSkqCHopBoQU9hg/VHM91u93d78G4zZ27udm+X9flCufecc8/5/c73/M65v3O8oijyL8P3twP4N5AA+LeRAJAA8G8jASAB4N9GAkDMrOI4jhHYCHR7PJ6wU45SbQr+qg3HcVqB7ZZmj2a4Gg1gBOzuABJxTOQOIAHg70YCQALAv40EgASAfxsJAP82EgASAP5tJAD+MgDkMxrY5nGcTwRgGmAK8EZ/RkY+CTDV53QGnDLEAUxEgdCnAP7D+xF4Fw3pZfUOAk4PGw3YnQTsAJJpQqMVIqkTMQCPkBkA+ryjAeTShhoCgCN0aSiAOABp8xCoBUwmmS0JnzgCDjHKJLtK7kgXAHkMFkIFM4nZgFMGk2wVOGJ7TcwAzOIVOGN7PeIA7OIYzQKkihGH82EKeTQjJYCtAGQO7p0RDagw+b1Z5JiQ1pBZE8rEfWCrR+p2X46tgAOGMwV0ATitf2ciqfMaOB8zNGJaClv6/dF+30EvvdkG8WuO43QnjrYMYKPHccQNYCZ7ATNnAZMAp+YwxxCQSTRo4uf9LSAZ1hgkKUwCXAGCYl1ZUr9VKApKHEfRniEPUFRVxasNFSgqihhQvaKgRnXiU7VhVBVQFbGqhlFTUeOzq6rqKaqKklBAhaJKXlGRc6bkFZCoaV1FRY36LaqKksxXnTAXTcQ9c+JljoqiR4Ojn3jfNR0YBQIVtHNXoRpWZQ5NJ6KzL8yPvqxGNFl9HEMc0d8Cs+SjZP3G3/jdSMdpnKcoHXpZpEPrrPiQi3CmbZyO9pJoO3Vl7WXjsrKpd5eFy5yXA3AxPOauC0m0lk2k44vS8SSy9JVjsB3MNK6ZNYHTWf8n2DnnD+ZmLkFnbTbKt1A5xwYcLlKK4yUjPVc8PB9OzOUNVUYJ0JDHPLXNwwwwzD1EIQHfLPcCyW4jZVZTIPGm6VKiAOZg0cPLH9Z/zHITCJymdcqJAJgNwJ0U9hqRcHgxlDtB6Eq8fvGEuxFj/Lp2kJdHGu8B7yGnfwWS/xX+LwB8A/t3mX35T8XfAAAAAElFTkSuQmCC');
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: contain;
+            image-rendering: pixelated;
         }
         
         .mac-startup-text {
-            font-family: 'Chicago', 'Arial', sans-serif;
+            font-family: 'Chicago', monospace;
             text-align: center;
-        }
-        
-        .mac-happy-mac {
-            font-size: 64px;
-            margin-bottom: 20px;
+            font-size: 12px;
         }
 
         /* --- Loading Indicator --- */
@@ -476,17 +596,23 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 40px;
+            padding: 30px;
         }
         
         .mac-loading-text {
-            font-family: 'Chicago', 'Arial', sans-serif;
+            font-family: 'Chicago', monospace;
             margin-bottom: 10px;
+            font-size: 11px;
         }
         
         .mac-watch {
-            font-size: 24px;
+            width: 24px;
+            height: 24px;
+            background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAACXBIWXMAAAsTAAALEwEAmpwYAAABCElEQVR4nO2UQU7DMBBF30+ULgtdIlZwAo7CEbpvk0UXoRKJE8ARuEG4QY/ADdjSRZGQKLFnGilBIhQFN4QFI1mWRqPxf3u+Pf4LoLUeAE/AG9B0SIC31rjxNoDWegDMAJVHnAMp4D3PXwEDTM+LzgEXIRlwD1TAHDhVoAU/5cR5m9hnxTkp+A/3Ii6AU2JVgBV8WuJHCn7HpMTnFLM/FLXgT/RW8JRe9h+grvPeRfuqd7j+JoIGc9TfZNdYNTgDroGizP0cuLQgd8Ac5E02dbEvga9S8BFIgSFwVSLwpGcRtI9PcgCMPOJ7C7APFPzZ0kXBPuC7lJdAfypAUttv4j+Aj32iB46S13XsAAAAAElFTkSuQmCC');
+            background-repeat: no-repeat;
+            background-position: center;
             animation: pulse 1s infinite alternate;
+            image-rendering: pixelated;
         }
         
         @keyframes pulse {
@@ -494,10 +620,34 @@
             to { opacity: 1; }
         }
 
+        /* --- List View --- */
+        .mac-list-view {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 9px;
+        }
+        
+        .mac-list-view th {
+            text-align: left;
+            padding: 2px 5px;
+            border-bottom: 1px solid var(--mac-black);
+            font-weight: bold;
+        }
+        
+        .mac-list-view td {
+            padding: 2px 5px;
+            border-bottom: 1px solid var(--mac-black);
+        }
+        
+        .mac-list-view tr.selected {
+            background-color: var(--mac-black);
+            color: var(--mac-white);
+        }
+
         /* --- Responsive Styles --- */
         @media (max-width: 768px) {
             .mac-icon-grid {
-                grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+                grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
             }
             
             .mac-search {
@@ -507,7 +657,7 @@
 
         @media (max-width: 480px) {
             .mac-icon-grid {
-                grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+                grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
             }
             
             .mac-toolbar {
@@ -516,7 +666,7 @@
             
             .mac-search {
                 width: 100%;
-                margin-top: 5px;
+                margin-top: 3px;
                 order: 10;
             }
         }
@@ -525,14 +675,20 @@
 <body>
     <!-- Menu Bar -->
     <div class="mac-menu-bar">
-        <div class="mac-menu-logo">🍎</div>
+        <div class="mac-menu-logo">
+            <div class="mac-apple-logo"></div>
+        </div>
         <div class="mac-menu-items">
             <div class="mac-menu-item">
                 File
                 <div class="mac-submenu">
+                    <div class="mac-submenu-item" id="new-window">New Window</div>
+                    <div class="mac-separator"></div>
+                    <div class="mac-submenu-item" id="close-window">Close</div>
+                    <div class="mac-separator"></div>
                     <div class="mac-submenu-item" id="refresh-button">Refresh</div>
                     <div class="mac-separator"></div>
-                    <div class="mac-submenu-item" id="close-button">Quit</div>
+                    <div class="mac-submenu-item" id="quit-button">Quit</div>
                 </div>
             </div>
             <div class="mac-menu-item">
@@ -541,13 +697,15 @@
                     <div class="mac-submenu-item">Cut</div>
                     <div class="mac-submenu-item">Copy</div>
                     <div class="mac-submenu-item">Paste</div>
+                    <div class="mac-separator"></div>
+                    <div class="mac-submenu-item">Select All</div>
                 </div>
             </div>
             <div class="mac-menu-item">
                 View
                 <div class="mac-submenu">
-                    <div class="mac-submenu-item" id="view-large">By Icon</div>
-                    <div class="mac-submenu-item" id="view-list">By List</div>
+                    <div class="mac-submenu-item" id="view-icon">by Icon</div>
+                    <div class="mac-submenu-item" id="view-list">by List</div>
                     <div class="mac-separator"></div>
                     <div class="mac-submenu-item" id="sort-name">Sort by Name</div>
                     <div class="mac-submenu-item" id="sort-date">Sort by Date</div>
@@ -570,9 +728,8 @@
         <!-- Main Window -->
         <div class="mac-window" id="main-window">
             <div class="mac-title-bar" id="main-title-bar">
-                <div class="mac-close-box" id="window-close">
-                    <div class="mac-close-box-inner">×</div>
-                </div>
+                <div class="mac-close-box" id="window-close"></div>
+                <div class="mac-zoom-box" id="window-zoom"></div>
                 <div class="mac-title">GitHub Browser</div>
             </div>
             
@@ -581,14 +738,23 @@
                     <div class="mac-button" id="refresh-repos">Refresh</div>
                     <div class="mac-button" id="view-toggle">View</div>
                     <div class="mac-button" id="sort-button">Sort</div>
-                    <input type="text" class="mac-search" id="repo-search" placeholder="Search...">
+                    <input type="text" class="mac-search" id="repo-search" placeholder="Find...">
                 </div>
                 
                 <div class="mac-content" id="repos-container">
                     <!-- Loading Indicator -->
                     <div class="mac-loading">
                         <div class="mac-loading-text">Loading Repositories...</div>
-                        <div class="mac-watch">⏱</div>
+                        <div class="mac-watch"></div>
+                    </div>
+                </div>
+                
+                <!-- Classic Mac Scrollbar -->
+                <div class="mac-scrollbar">
+                    <div class="mac-scrollbar-thumb"></div>
+                    <div class="mac-scrollbar-buttons">
+                        <div class="mac-scrollbar-button mac-scrollbar-up"></div>
+                        <div class="mac-scrollbar-button mac-scrollbar-down"></div>
                     </div>
                 </div>
             </div>
@@ -599,9 +765,7 @@
     <div class="mac-modal" id="repo-detail-modal">
         <div class="mac-window mac-detail-window">
             <div class="mac-title-bar" id="detail-title-bar">
-                <div class="mac-close-box" onclick="closeModal('repo-detail-modal')">
-                    <div class="mac-close-box-inner">×</div>
-                </div>
+                <div class="mac-close-box" onclick="closeModal('repo-detail-modal')"></div>
                 <div class="mac-title" id="repo-detail-title">Repository Info</div>
             </div>
             
@@ -617,25 +781,23 @@
     <div class="mac-modal" id="about-modal">
         <div class="mac-window">
             <div class="mac-title-bar">
-                <div class="mac-close-box" onclick="closeModal('about-modal')">
-                    <div class="mac-close-box-inner">×</div>
-                </div>
+                <div class="mac-close-box" onclick="closeModal('about-modal')"></div>
                 <div class="mac-title">About GitHub Browser</div>
             </div>
             
             <div class="mac-window-body">
                 <div class="mac-content" style="text-align: center; padding: 20px;">
-                    <div style="font-size: 36px; margin-bottom: 10px;">🍎</div>
-                    <div style="font-family: 'Chicago', 'Arial', sans-serif; font-size: 14px; margin-bottom: 5px;">
+                    <div class="mac-happy-mac" style="margin: 0 auto 20px;"></div>
+                    <div style="font-family: 'Chicago', monospace; font-size: 14px; margin-bottom: 5px;">
                         GitHub Browser
                     </div>
-                    <div style="font-size: 12px; margin-bottom: 15px;">
+                    <div style="font-size: 9px; margin-bottom: 15px;">
                         Version 1.0
                     </div>
-                    <p style="margin-bottom: 10px;">
-                        A nostalgic Macintosh style interface for browsing GitHub repositories.
+                    <p style="margin-bottom: 10px; font-size: 9px;">
+                        A classic Macintosh style interface for browsing GitHub repositories.
                     </p>
-                    <p>© 2025 Swir</p>
+                    <p style="font-size: 9px;">© 2025 Swir</p>
                 </div>
             </div>
         </div>
@@ -645,9 +807,7 @@
     <div class="mac-modal" id="shortcuts-modal">
         <div class="mac-window">
             <div class="mac-title-bar">
-                <div class="mac-close-box" onclick="closeModal('shortcuts-modal')">
-                    <div class="mac-close-box-inner">×</div>
-                </div>
+                <div class="mac-close-box" onclick="closeModal('shortcuts-modal')"></div>
                 <div class="mac-title">Keyboard Shortcuts</div>
             </div>
             
@@ -666,7 +826,7 @@
                         <div class="mac-detail-value">Quit Application</div>
                     </div>
                     <div class="mac-detail-row">
-                        <div class="mac-detail-label">↑ ↓ ← →</div>
+                        <div class="mac-detail-label">↑↓←→</div>
                         <div class="mac-detail-value">Navigate Repositories</div>
                     </div>
                     <div class="mac-detail-row">
@@ -695,9 +855,8 @@
 
     <!-- Alert Dialog -->
     <div class="mac-dialog" id="alert-dialog" style="display: none;">
-        <div class="mac-dialog-title">Alert</div>
         <div class="mac-dialog-content">
-            <div class="mac-dialog-icon">⚠️</div>
+            <div class="mac-dialog-icon" style="background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAsTAAALEwEAmpwYAAAAb0lEQVR4nO3WQQqAIBCF4V/pKLbqJl7VTWqRm6AgaOoMhPODBwMuyMfAiIjIkxGYgMJ3ZcCZ9WP9of4LbAmbf/W0Ow+/BO5aYNfiK9C1gP0dAmgPYPvfAqiARLDtMxANkEzugQZoRvfAJiIiH1tA8BT7M1eOvAAAAABJRU5ErkJggg==');"></div>
             <div class="mac-dialog-message" id="alert-message"></div>
         </div>
         <div class="mac-dialog-buttons">
@@ -707,9 +866,8 @@
 
     <!-- Confirm Dialog -->
     <div class="mac-dialog" id="confirm-dialog" style="display: none;">
-        <div class="mac-dialog-title">Confirm</div>
         <div class="mac-dialog-content">
-            <div class="mac-dialog-icon">❓</div>
+            <div class="mac-dialog-icon" style="background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAsTAAALEwEAmpwYAAAAmElEQVR4nO2WQQ6AIAwER+Ml+v8n+RT1RyYmJi1CLbRcnORucLtbQIQQQghRBdAAHcD2MvW5htkKWJIGV59rmK2Ahb6yL/BQJwcC9hKQHEBOPaSAi4Z1aQFIFbBnCkhW/48CUEvBcP+RKgFLC+jHAaMJyXfJBRwxC4hZwB6zgOcXMP0imr6Mph/E0y/j04u/g9FXEELI57kAsusQG0EMmqIAAAAASUVORK5CYII=');"></div>
             <div class="mac-dialog-message" id="confirm-message"></div>
         </div>
         <div class="mac-dialog-buttons">
@@ -720,7 +878,7 @@
 
     <!-- Startup Screen -->
     <div class="mac-startup" id="startup-screen">
-        <div class="mac-happy-mac">😊</div>
+        <div class="mac-happy-mac"></div>
         <div class="mac-startup-text">Welcome to Macintosh</div>
     </div>
 
@@ -734,6 +892,18 @@
         let dragOffsetX = 0;
         let dragOffsetY = 0;
         let selectedRepoIndex = -1;
+
+        // Repository Icon Mapping
+        const repoIcons = {
+            default: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAsTAAALEwEAmpwYAAAA00lEQVR4nO2WQQ6DMAwExyA9kcf0/3+gR9ITRbKUqqEhTuKWA3OSJRRnvY5NCCGEEP+CpAXYSMrvQlIhaZGUn+z1tpckF2ut3WfL3uD+FvDekmYAE0n3CfaS8u0t5XAU2ntP0kDSdkLx2DuShjYTPX2s4GtLylFxBKXpZ56rUrzkAkqcbmEUL7kAmuI1CYniBcCieE0ConiNgChek4jneM2Lxw1jnK6E3DA+iBvGDeMTwYbxlcQN4/NJbhjZoWVHtx3ed8H4LjrfhUcIIQTwBhm4HgNYn16dAAAAAElFTkSuQmCC',
+            JavaScript: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAsTAAALEwEAmpwYAAAApklEQVR4nO2WSwrDMAxErxfepfcf9ypdBWxQgjGeUX602JAXgT+jZyEhpSRJkiSnAbSzjstz9u8OXbQDY7j83lDnCpA/mQqFpRqVClMLgN1SL4XcKwJTAPwmvbDJ2AJgOzxKxiYDC4DdsArlhSk0LBDHdRq5M6OXuMUC3QM9Uii3/z0C1gdo7Qpa/4HWC9H6JWx9FS2+jBZXkq1r2WKj+vRmliRJf+UBKHw7X7Ri7YkAAAAASUVORK5CYII=',
+            HTML: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAsTAAALEwEAmpwYAAAAsUlEQVR4nO2WQQrDIBBFX6HQk+QEOXAPULrpqlfoFbrtqifIUbLPQREUGR0mGkJ/4IMwKvieTAbFGGOMMTeAB7ACwYrRXwGvA/cWYLKyKPpnjTmrjhN9mj3QpIYTJXH2wHuPOJF6+/EO+KsTqbdvNeDUiQ7lF+IDdPZZmXgHnL9YpB7oYT2+K/FWzT1g/R9ofRAtPorWj6LlYdTiOGtxIX/5Sr66mRhjzKN5AJWIGi2E5c8qAAAAAElFTkSuQmCC',
+            CSS: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAsTAAALEwEAmpwYAAAArklEQVR4nO2WQQrDIBBFnxQKXbSTBHIRPYC79KK9Qm/gKr1Ij+AJsndSBEVGx4mGkA/8IGYU/E9mBsUYY4wxN4AXsAHBitlbAa8D9xZgsrIo+meNpaqOE32aPdCkhhMlcfbA+4g4kXrH8QH4qxOpdx41kOpEp/IL8QE6+6xMfADO3yxSD/SwHt+VeKvmHrD+D7Q+iBYfRevH0fIwanGctbiQv3wlX91MjDHm0bwB62ka7dXyoGcAAAAASUVORK5CYII=',
+            Python: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAsTAAALEwEAmpwYAAAA8ElEQVR4nO2VQQ6CMBBFP8T1iI/E+5/Bo7hyIakhNoUO7UxRE/6kC0Ln95c2HeDxeDzaAi9gA4Iloy/hy4J7C9BbWAR91GguquNEH30P1KnhQkk8euBzhjgRjmnaFf7qRDjmqQGnTlQov2C+AxfWOeKmXwNWd8CsEzUqL5hb4Cz63pEtwxPwqgTYgXsRHsC9CC/gHoQl8P8JesE9CPt3YASeRK44qYb/DfAmXKtQlKAX3IJw7U+wBlsQbiUoStCCcCtBUYIWhFsJihLUItwJSiXYKtxGqEbYcBuhaLjHYztWDXfY7iDUDPd4PJ7OfAGEmDBgZXzg3wAAAABJRU5ErkJggg==',
+            Java: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAsTAAALEwEAmpwYAAABjklEQVR4nO2WTU7DMBCFP4rYIVYsEVIrOAEcARbddVFuUG7ADVhyAzgCHKCwRYgVYgkSP/MkVpWqxI5jN1GUSU0UxR6/92XGKZTK01ABjzF9mXnJ6xwqiVONfE1aJsLrGngBWqCLJOoO+IjpN0NMIb8F/JT8b5sI913h7wBVQm5Cf42XUAn3t5H5OTABzpzeAhNlaIMXjPwR3/IHdAGGgbme0XVAm0GQYqXfAzuOPo8k+gNwCFzKeKk1N4Gmx7KXYs+4uY38FpgCLbCvdWdAJ+MDFboEVv59Z/4MWFeEj7TuF3CoP5eRBMkKKAMvmXnJ6xVwBqxlgFpiKJUYauQztEVUvzjsgjffzKXdqwuXYnMAjlV5DZgBz1rXVcLzVR20Gk5UHFX2f7O4AY4igVrJb+yM2wJwAXzqq1i1c1UTTY9hKu08C7iYsedq9FEAcROw1OXb6OLmA3AMfOsEz4bGjQW41n75NoTmQwEMZfk2huZDAQxl+TYyv4qpv+NGc84fZfnKXrJQKf35/gCdCi9hzqUYygAAAABJRU5ErkJggg==',
+            Ruby: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAsTAAALEwEAmpwYAAAA2ElEQVR4nO2VQQ6CMBREn8bbuJMb8f6H4ShujOtqDK0mpaUzLaLGl3RByvx/tFMQy7KsVnkgAguQDFn/ZuAZsW8GBhMWiX1uNFdFuZPEP50BdTQ4MhL3GeCbGjkhfO6e9qFWToRwf5mgKCdqKC+En4AnxzkxjLgAP9QJQh4Fh3AH3IGjA92BC1DWnoAHbsgdGMGjcgdS4FG5y7M/hUflDswNOHJeROz/ht6Kj8GRA+9NcKTA+xIcIfC+BUcGvK/BkQDve3ClwFMIrhB4SsEtyzLLD8tWHPCn+Uu9AAAAAElFTkSuQmCC',
+            PHP: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAsTAAALEwEAmpwYAAAA5UlEQVR4nO2VwQrCMBBEXwX/w09S/P+v8JN68CKiIU1md7OpFw/OodB2+mbTbEopFUqlD8AVeADPBnngfJlWXIBdi3lBNnNeWOb7mhMLi4HdCLqcKXjvRKvhvRJZ8N6ITHgvRGZ4a2IK+GdiBJFsD7HUjwF/A45LNDC/E6ZEJrw1EUR+DFsiA94KEURh1BORIZY6rw1/rGm/JHC28SJfgE+RKfAnYhb4IzEb/JuYFb4QV+DWYrg2Y3dPIhu8ipgFXk3MAq8m0uErEenwVUSaeal/yKbNPLQSVvODiXRZ5jdZ5lJKrfQCHmsLiouE4CoAAAAASUVORK5CYII='
+        };
 
         // Initialize App
         document.addEventListener('DOMContentLoaded', () => {
@@ -750,6 +920,7 @@
             initializeToolbar();
             initializeDragAndDrop();
             initializeKeyboardShortcuts();
+            initializeScrollbar();
 
             // Modal overlay closes modals
             document.getElementById('modal-overlay').addEventListener('click', closeAllModals);
@@ -758,6 +929,7 @@
         // Initialize Window Controls
         function initializeWindowControls() {
             document.getElementById('window-close').addEventListener('click', confirmQuit);
+            document.getElementById('window-zoom').addEventListener('click', toggleWindowSize);
             
             // Alert dialog
             document.getElementById('alert-ok').addEventListener('click', () => {
@@ -781,11 +953,15 @@
         // Initialize Menu Items
         function initializeMenuItems() {
             // File menu
+            document.getElementById('new-window').addEventListener('click', () => {
+                window.open(window.location.href, '_blank');
+            });
+            document.getElementById('close-window').addEventListener('click', confirmQuit);
             document.getElementById('refresh-button').addEventListener('click', fetchRepositories);
-            document.getElementById('close-button').addEventListener('click', confirmQuit);
+            document.getElementById('quit-button').addEventListener('click', confirmQuit);
 
             // View menu
-            document.getElementById('view-large').addEventListener('click', () => setViewMode('icon'));
+            document.getElementById('view-icon').addEventListener('click', () => setViewMode('icon'));
             document.getElementById('view-list').addEventListener('click', () => setViewMode('list'));
             document.getElementById('sort-name').addEventListener('click', () => sortRepositories('name'));
             document.getElementById('sort-date').addEventListener('click', () => sortRepositories('updated'));
@@ -833,9 +1009,9 @@
                 menu.style.top = (e.target.offsetTop + e.target.offsetHeight) + 'px';
                 
                 menu.innerHTML = `
-                    <div class="mac-context-item" id="sort-menu-name">By Name</div>
-                    <div class="mac-context-item" id="sort-menu-date">By Date</div>
-                    <div class="mac-context-item" id="sort-menu-stars">By Stars</div>
+                    <div class="mac-context-item" id="sort-menu-name">by Name</div>
+                    <div class="mac-context-item" id="sort-menu-date">by Date</div>
+                    <div class="mac-context-item" id="sort-menu-stars">by Stars</div>
                 `;
                 
                 document.body.appendChild(menu);
@@ -868,7 +1044,7 @@
             
             mainTitleBar.addEventListener('mousedown', (e) => {
                 if (e.target.classList.contains('mac-close-box') || 
-                    e.target.classList.contains('mac-close-box-inner')) return;
+                    e.target.classList.contains('mac-zoom-box')) return;
                 
                 isDragging = true;
                 const rect = mainWindow.getBoundingClientRect();
@@ -894,7 +1070,7 @@
             
             detailTitleBar.addEventListener('mousedown', (e) => {
                 if (e.target.classList.contains('mac-close-box') || 
-                    e.target.classList.contains('mac-close-box-inner')) return;
+                    e.target.classList.contains('mac-zoom-box')) return;
                 
                 isDragging = true;
                 const rect = detailWindow.getBoundingClientRect();
@@ -931,52 +1107,168 @@
                 
                 // Arrow keys for navigation
                 if (e.key.startsWith('Arrow')) {
-                    const itemsContainer = document.querySelector('.mac-icon-grid');
-                    if (!itemsContainer) return;
-                    
-                    const items = Array.from(itemsContainer.querySelectorAll('.mac-icon'));
-                    if (items.length === 0) return;
-                    
-                    // If nothing is selected, select the first item
-                    if (selectedRepoIndex === -1) {
-                        selectedRepoIndex = 0;
-                        selectRepoItem(items[selectedRepoIndex]);
-                        return;
-                    }
-                    
-                    let newIndex = selectedRepoIndex;
-                    const columns = Math.floor(itemsContainer.clientWidth / 100); // Approximate column count
-                    
-                    if (e.key === 'ArrowRight') {
-                        newIndex = Math.min(items.length - 1, selectedRepoIndex + 1);
-                    } else if (e.key === 'ArrowLeft') {
-                        newIndex = Math.max(0, selectedRepoIndex - 1);
-                    } else if (e.key === 'ArrowDown') {
-                        newIndex = Math.min(items.length - 1, selectedRepoIndex + columns);
-                    } else if (e.key === 'ArrowUp') {
-                        newIndex = Math.max(0, selectedRepoIndex - columns);
-                    }
-                    
-                    if (newIndex !== selectedRepoIndex) {
-                        selectedRepoIndex = newIndex;
-                        selectRepoItem(items[selectedRepoIndex]);
+                    if (currentView === 'icon') {
+                        const itemsContainer = document.querySelector('.mac-icon-grid');
+                        if (!itemsContainer) return;
+                        
+                        const items = Array.from(itemsContainer.querySelectorAll('.mac-icon'));
+                        if (items.length === 0) return;
+                        
+                        // If nothing is selected, select the first item
+                        if (selectedRepoIndex === -1) {
+                            selectedRepoIndex = 0;
+                            selectRepoItem(items[selectedRepoIndex]);
+                            return;
+                        }
+                        
+                        let newIndex = selectedRepoIndex;
+                        const columns = Math.floor(itemsContainer.clientWidth / 70); // Approximate column count
+                        
+                        if (e.key === 'ArrowRight') {
+                            newIndex = Math.min(items.length - 1, selectedRepoIndex + 1);
+                        } else if (e.key === 'ArrowLeft') {
+                            newIndex = Math.max(0, selectedRepoIndex - 1);
+                        } else if (e.key === 'ArrowDown') {
+                            newIndex = Math.min(items.length - 1, selectedRepoIndex + columns);
+                        } else if (e.key === 'ArrowUp') {
+                            newIndex = Math.max(0, selectedRepoIndex - columns);
+                        }
+                        
+                        if (newIndex !== selectedRepoIndex) {
+                            selectedRepoIndex = newIndex;
+                            selectRepoItem(items[selectedRepoIndex]);
+                        }
+                    } else {
+                        // List view navigation
+                        const listView = document.querySelector('.mac-list-view');
+                        if (!listView) return;
+                        
+                        const rows = Array.from(listView.querySelectorAll('tr')).slice(1); // Skip header
+                        if (rows.length === 0) return;
+                        
+                        // If nothing is selected, select the first item
+                        if (selectedRepoIndex === -1) {
+                            selectedRepoIndex = 0;
+                            selectListItem(rows[selectedRepoIndex]);
+                            return;
+                        }
+                        
+                        let newIndex = selectedRepoIndex;
+                        
+                        if (e.key === 'ArrowDown') {
+                            newIndex = Math.min(rows.length - 1, selectedRepoIndex + 1);
+                        } else if (e.key === 'ArrowUp') {
+                            newIndex = Math.max(0, selectedRepoIndex - 1);
+                        }
+                        
+                        if (newIndex !== selectedRepoIndex) {
+                            selectedRepoIndex = newIndex;
+                            selectListItem(rows[selectedRepoIndex]);
+                        }
                     }
                 }
                 
                 // Enter - Open selected repository
                 if (e.key === 'Enter') {
-                    const itemsContainer = document.querySelector('.mac-icon-grid');
-                    if (!itemsContainer) return;
-                    
-                    const items = Array.from(itemsContainer.querySelectorAll('.mac-icon'));
-                    if (items.length === 0 || selectedRepoIndex === -1) return;
-                    
-                    items[selectedRepoIndex].click();
+                    if (currentView === 'icon') {
+                        const itemsContainer = document.querySelector('.mac-icon-grid');
+                        if (!itemsContainer) return;
+                        
+                        const items = Array.from(itemsContainer.querySelectorAll('.mac-icon'));
+                        if (items.length === 0 || selectedRepoIndex === -1) return;
+                        
+                        showRepoDetails(selectedRepo);
+                    } else {
+                        const listView = document.querySelector('.mac-list-view');
+                        if (!listView) return;
+                        
+                        const rows = Array.from(listView.querySelectorAll('tr')).slice(1); // Skip header
+                        if (rows.length === 0 || selectedRepoIndex === -1) return;
+                        
+                        showRepoDetails(selectedRepo);
+                    }
                 }
             });
         }
 
-        // Select Repository Item
+        // Initialize Scrollbar
+        function initializeScrollbar() {
+            const scrollbarThumb = document.querySelector('.mac-scrollbar-thumb');
+            const scrollbarUp = document.querySelector('.mac-scrollbar-up');
+            const scrollbarDown = document.querySelector('.mac-scrollbar-down');
+            const content = document.getElementById('repos-container');
+            
+            if (!scrollbarThumb || !scrollbarUp || !scrollbarDown || !content) return;
+            
+            scrollbarThumb.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                const startY = e.clientY;
+                const startTop = parseInt(getComputedStyle(scrollbarThumb).top);
+                const scrollbarHeight = scrollbarThumb.parentElement.clientHeight - 28; // minus buttons height
+                
+                function onMouseMove(e) {
+                    let newTop = startTop + (e.clientY - startY);
+                    newTop = Math.max(0, Math.min(scrollbarHeight - scrollbarThumb.clientHeight, newTop));
+                    scrollbarThumb.style.top = newTop + 'px';
+                    
+                    // Calculate scroll position
+                    const scrollRatio = newTop / (scrollbarHeight - scrollbarThumb.clientHeight);
+                    const scrollMax = content.scrollHeight - content.clientHeight;
+                    content.scrollTop = scrollRatio * scrollMax;
+                }
+                
+                function onMouseUp() {
+                    document.removeEventListener('mousemove', onMouseMove);
+                    document.removeEventListener('mouseup', onMouseUp);
+                }
+                
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+            });
+            
+            scrollbarUp.addEventListener('click', () => {
+                content.scrollTop -= 30;
+                updateScrollbarThumb();
+            });
+            
+            scrollbarDown.addEventListener('click', () => {
+                content.scrollTop += 30;
+                updateScrollbarThumb();
+            });
+            
+            content.addEventListener('scroll', updateScrollbarThumb);
+            
+            // Update on window resize
+            window.addEventListener('resize', updateScrollbarThumb);
+        }
+
+        // Update Scrollbar Thumb position
+        function updateScrollbarThumb() {
+            const scrollbarThumb = document.querySelector('.mac-scrollbar-thumb');
+            const content = document.getElementById('repos-container');
+            
+            if (!scrollbarThumb || !content) return;
+            
+            const scrollbarHeight = scrollbarThumb.parentElement.clientHeight - 28; // minus buttons height
+            
+            if (content.scrollHeight <= content.clientHeight) {
+                scrollbarThumb.style.display = 'none';
+                return;
+            }
+            
+            scrollbarThumb.style.display = 'block';
+            
+            // Calculate thumb size and position
+            const thumbSizeRatio = content.clientHeight / content.scrollHeight;
+            const thumbSize = Math.max(30, scrollbarHeight * thumbSizeRatio);
+            const scrollRatio = content.scrollTop / (content.scrollHeight - content.clientHeight);
+            const thumbPosition = scrollRatio * (scrollbarHeight - thumbSize);
+            
+            scrollbarThumb.style.height = thumbSize + 'px';
+            scrollbarThumb.style.top = thumbPosition + 'px';
+        }
+
+        // Select Repository Item (Icon View)
         function selectRepoItem(item) {
             document.querySelectorAll('.mac-icon').forEach(el => {
                 el.classList.remove('selected');
@@ -990,360 +1282,33 @@
             selectedRepo = allRepos.find(repo => repo.name === repoName);
         }
 
-        // Toggle View Mode
-        function toggleViewMode() {
-            currentView = currentView === 'icon' ? 'list' : 'icon';
-            setViewMode(currentView);
-        }
-
-        // Set View Mode
-        function setViewMode(mode) {
-            currentView = mode;
-            renderRepositories(allRepos);
-        }
-
-        // Sort Repositories
-        function sortRepositories(sortType) {
-            currentSort = sortType;
-            
-            allRepos.sort((a, b) => {
-                switch (sortType) {
-                    case 'name':
-                        return a.name.localeCompare(b.name);
-                    case 'updated':
-                        return new Date(b.updated_at) - new Date(a.updated_at);
-                    case 'stars':
-                        return b.stargazers_count - a.stargazers_count;
-                    default:
-                        return 0;
-                }
+        // Select List Item (List View)
+        function selectListItem(row) {
+            document.querySelectorAll('.mac-list-view tr').forEach(el => {
+                el.classList.remove('selected');
             });
             
-            renderRepositories(allRepos);
+            row.classList.add('selected');
+            row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            
+            // Find the corresponding repository
+            const repoName = row.cells[0].textContent;
+            selectedRepo = allRepos.find(repo => repo.name === repoName);
         }
 
-        // Filter Repositories
-        function filterRepositories() {
-            const searchTerm = document.getElementById('repo-search').value.toLowerCase();
+        // Toggle Window Size
+        function toggleWindowSize() {
+            const mainWindow = document.getElementById('main-window');
             
-            if (!searchTerm) {
-                renderRepositories(allRepos);
-                return;
-            }
-            
-            const filteredRepos = allRepos.filter(repo => 
-                repo.name.toLowerCase().includes(searchTerm) || 
-                (repo.description && repo.description.toLowerCase().includes(searchTerm))
-            );
-            
-            renderRepositories(filteredRepos);
-        }
-
-        // Fetch Repositories
-        async function fetchRepositories() {
-            const username = 'Swir';
-            const reposContainer = document.getElementById('repos-container');
-            
-            // Show loading indicator
-            reposContainer.innerHTML = `
-                <div class="mac-loading">
-                    <div class="mac-loading-text">Loading Repositories...</div>
-                    <div class="mac-watch">⏱</div>
-                </div>
-            `;
-            
-            try {
-                const response = await fetch(`https://api.github.com/users/${username}/repos?per_page=100`);
-                
-                if (!response.ok) {
-                    throw new Error(`GitHub API responded with status: ${response.status}`);
-                }
-                
-                allRepos = await response.json();
-                
-                // Sort repositories
-                sortRepositories(currentSort);
-                
-            } catch (error) {
-                console.error('Error fetching repositories:', error);
-                showAlert(`Error: ${error.message}`);
-                reposContainer.innerHTML = `
-                    <div style="text-align: center; padding: 40px;">
-                        <div style="font-size: 32px; margin-bottom: 10px;">⚠️</div>
-                        <div style="font-family: 'Chicago', 'Arial', sans-serif; margin-bottom: 10px;">
-                            Sorry, a problem occurred.
-                        </div>
-                        <div>
-                            ${error.message}
-                        </div>
-                    </div>
-                `;
-            }
-        }
-
-        // Render Repositories
-        function renderRepositories(repos) {
-            const reposContainer = document.getElementById('repos-container');
-            
-            if (currentView === 'icon') {
-                const iconGrid = document.createElement('div');
-                iconGrid.className = 'mac-icon-grid';
-                
-                repos.forEach((repo, index) => {
-                    const icon = document.createElement('div');
-                    icon.className = 'mac-icon';
-                    if (selectedRepo && selectedRepo.id === repo.id) {
-                        icon.classList.add('selected');
-                        selectedRepoIndex = index;
-                    }
-                    
-                    // Choose appropriate icon based on language
-                    let iconSymbol = '📄';
-                    if (repo.language) {
-                        if (repo.language === 'JavaScript') iconSymbol = '📜';
-                        else if (repo.language === 'HTML') iconSymbol = '🌐';
-                        else if (repo.language === 'CSS') iconSymbol = '🎨';
-                        else if (repo.language === 'Python') iconSymbol = '🐍';
-                        else if (repo.language === 'Java') iconSymbol = '☕';
-                        else if (repo.language === 'Ruby') iconSymbol = '💎';
-                        else if (repo.language === 'PHP') iconSymbol = '🔄';
-                    }
-                    
-                    icon.innerHTML = `
-                        <div class="mac-icon-box">${iconSymbol}</div>
-                        <div class="mac-icon-label">${repo.name}</div>
-                    `;
-                    
-                    icon.addEventListener('click', (e) => {
-                        selectedRepo = repo;
-                        selectedRepoIndex = index;
-                        document.querySelectorAll('.mac-icon').forEach(el => {
-                            el.classList.remove('selected');
-                        });
-                        icon.classList.add('selected');
-                        
-                        // Double click
-                        if (e.detail === 2) {
-                            showRepoDetails(repo);
-                        }
-                    });
-                    
-                    icon.addEventListener('contextmenu', (e) => {
-                        e.preventDefault();
-                        selectedRepo = repo;
-                        selectedRepoIndex = index;
-                        
-                        document.querySelectorAll('.mac-icon').forEach(el => {
-                            el.classList.remove('selected');
-                        });
-                        icon.classList.add('selected');
-                        
-                        const contextMenu = document.getElementById('repo-context-menu');
-                        contextMenu.style.display = 'block';
-                        contextMenu.style.left = e.pageX + 'px';
-                        contextMenu.style.top = e.pageY + 'px';
-                        
-                        document.addEventListener('click', function hideMenu() {
-                            contextMenu.style.display = 'none';
-                            document.removeEventListener('click', hideMenu);
-                        });
-                    });
-                    
-                    iconGrid.appendChild(icon);
-                });
-                
-                reposContainer.innerHTML = '';
-                reposContainer.appendChild(iconGrid);
+            if (mainWindow.style.position === 'fixed') {
+                // Restore original position and size
+                mainWindow.style.position = 'relative';
+                mainWindow.style.top = '';
+                mainWindow.style.left = '';
+                mainWindow.style.width = '';
+                mainWindow.style.height = '';
+                mainWindow.style.maxWidth = '800px';
+                mainWindow.style.margin = '0 auto';
             } else {
-                // List view
-                const listView = document.createElement('table');
-                listView.style.width = '100%';
-                listView.style.borderCollapse = 'collapse';
-                
-                // Header row
-                const header = document.createElement('tr');
-                header.innerHTML = `
-                    <th style="text-align: left; padding: 5px; border-bottom: 1px solid var(--mac-black);">Name</th>
-                    <th style="text-align: left; padding: 5px; border-bottom: 1px solid var(--mac-black);">Language</th>
-                    <th style="text-align: right; padding: 5px; border-bottom: 1px solid var(--mac-black);">Stars</th>
-                    <th style="text-align: right; padding: 5px; border-bottom: 1px solid var(--mac-black);">Updated</th>
-                `;
-                listView.appendChild(header);
-                
-                // Data rows
-                repos.forEach((repo, index) => {
-                    const row = document.createElement('tr');
-                    if (selectedRepo && selectedRepo.id === repo.id) {
-                        row.style.backgroundColor = 'var(--mac-black)';
-                        row.style.color = 'var(--mac-white)';
-                        selectedRepoIndex = index;
-                    }
-                    
-                    const updatedDate = new Date(repo.updated_at).toLocaleDateString();
-                    
-                    row.innerHTML = `
-                        <td style="padding: 5px; border-bottom: 1px solid var(--mac-light-gray);">${repo.name}</td>
-                        <td style="padding: 5px; border-bottom: 1px solid var(--mac-light-gray);">${repo.language || '-'}</td>
-                        <td style="text-align: right; padding: 5px; border-bottom: 1px solid var(--mac-light-gray);">${repo.stargazers_count}</td>
-                        <td style="text-align: right; padding: 5px; border-bottom: 1px solid var(--mac-light-gray);">${updatedDate}</td>
-                    `;
-                    
-                    row.addEventListener('click', () => {
-                        selectedRepo = repo;
-                        selectedRepoIndex = index;
-                        
-                        document.querySelectorAll('tr').forEach(el => {
-                            el.style.backgroundColor = '';
-                            el.style.color = '';
-                        });
-                        
-                        row.style.backgroundColor = 'var(--mac-black)';
-                        row.style.color = 'var(--mac-white)';
-                    });
-                    
-                    row.addEventListener('dblclick', () => {
-                        showRepoDetails(repo);
-                    });
-                    
-                    row.addEventListener('contextmenu', (e) => {
-                        e.preventDefault();
-                        selectedRepo = repo;
-                        selectedRepoIndex = index;
-                        
-                        document.querySelectorAll('tr').forEach(el => {
-                            if (el !== header) {
-                                el.style.backgroundColor = '';
-                                el.style.color = '';
-                            }
-                        });
-                        
-                        row.style.backgroundColor = 'var(--mac-black)';
-                        row.style.color = 'var(--mac-white)';
-                        
-                        const contextMenu = document.getElementById('repo-context-menu');
-                        contextMenu.style.display = 'block';
-                        contextMenu.style.left = e.pageX + 'px';
-                        contextMenu.style.top = e.pageY + 'px';
-                        
-                        document.addEventListener('click', function hideMenu() {
-                            contextMenu.style.display = 'none';
-                            document.removeEventListener('click', hideMenu);
-                        });
-                    });
-                    
-                    listView.appendChild(row);
-                });
-                
-                reposContainer.innerHTML = '';
-                reposContainer.appendChild(listView);
-            }
-        }
-
-        // Show Repository Details
-        function showRepoDetails(repo) {
-            const modal = document.getElementById('repo-detail-modal');
-            const title = document.getElementById('repo-detail-title');
-            const content = document.getElementById('repo-detail-content');
-            
-            title.textContent = repo.name;
-            
-            const createdDate = new Date(repo.created_at).toLocaleDateString();
-            const updatedDate = new Date(repo.updated_at).toLocaleDateString();
-            
-            content.innerHTML = `
-                <div class="mac-detail-header">${repo.name}</div>
-                
-                <div class="mac-detail-description">
-                    ${repo.description || "No description available."}
-                </div>
-                
-                <div class="mac-detail-row">
-                    <div class="mac-detail-label">Created:</div>
-                    <div class="mac-detail-value">${createdDate}</div>
-                </div>
-                
-                <div class="mac-detail-row">
-                    <div class="mac-detail-label">Updated:</div>
-                    <div class="mac-detail-value">${updatedDate}</div>
-                </div>
-                
-                <div class="mac-detail-row">
-                    <div class="mac-detail-label">Language:</div>
-                    <div class="mac-detail-value">${repo.language || "Not specified"}</div>
-                </div>
-                
-                <div class="mac-detail-row">
-                    <div class="mac-detail-label">Stars:</div>
-                    <div class="mac-detail-value">${repo.stargazers_count}</div>
-                </div>
-                
-                <div class="mac-detail-row">
-                    <div class="mac-detail-label">Forks:</div>
-                    <div class="mac-detail-value">${repo.forks_count}</div>
-                </div>
-                
-                <div class="mac-detail-row">
-                    <div class="mac-detail-label">Size:</div>
-                    <div class="mac-detail-value">${repo.size} KB</div>
-                </div>
-                
-                <div class="mac-button-row">
-                    <div class="mac-button" onclick="closeModal('repo-detail-modal')">Close</div>
-                    <div class="mac-button" onclick="window.open('${repo.html_url}', '_blank')">Open on GitHub</div>
-                </div>
-            `;
-            
-            showModal('repo-detail-modal');
-        }
-
-        // Show Modal
-        function showModal(modalId) {
-            document.getElementById(modalId).style.display = 'block';
-            document.getElementById('modal-overlay').style.display = 'block';
-        }
-
-        // Close Modal
-        function closeModal(modalId) {
-            document.getElementById(modalId).style.display = 'none';
-            document.getElementById('modal-overlay').style.display = 'none';
-        }
-
-        // Close All Modals
-        function closeAllModals() {
-            document.getElementById('repo-detail-modal').style.display = 'none';
-            document.getElementById('about-modal').style.display = 'none';
-            document.getElementById('shortcuts-modal').style.display = 'none';
-            document.getElementById('modal-overlay').style.display = 'none';
-            document.getElementById('alert-dialog').style.display = 'none';
-            document.getElementById('confirm-dialog').style.display = 'none';
-            document.getElementById('repo-context-menu').style.display = 'none';
-        }
-
-        // Show Alert
-        function showAlert(message) {
-            document.getElementById('alert-message').textContent = message;
-            document.getElementById('alert-dialog').style.display = 'block';
-            document.getElementById('modal-overlay').style.display = 'block';
-        }
-
-        // Confirm Quit
-        function confirmQuit() {
-            document.getElementById('confirm-message').textContent = 'Are you sure you want to quit?';
-            document.getElementById('confirm-dialog').style.display = 'block';
-            document.getElementById('modal-overlay').style.display = 'block';
-        }
-
-        // Quit Application
-        function quitApplication() {
-            window.close();
-            // Fallback if window.close doesn't work
-            document.body.innerHTML = `
-                <div class="mac-startup">
-                    <div style="font-size: 64px; margin-bottom: 20px;">🍎</div>
-                    <div class="mac-startup-text">It is now safe to turn off your Macintosh.</div>
-                </div>
-            `;
-        }
-    </script>
-</body>
-</html>
+                // Maximize window
+                mainWindow.style.position =
