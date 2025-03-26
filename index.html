@@ -3,16 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Swir GitHub - Classic Macintosh</title>
+    <title>Swir GitHub - Atari ST GEM</title>
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* --- Zmienne CSS --- */
         :root {
-            /* Ściśle czarno-biała paleta Classic Macintosh */
-            --mac-white: #FFFFFF;
-            --mac-black: #000000;
-            --mac-bg: #FFFFFF;
+            /* Atari ST GEM kolorystyka */
+            --gem-white: #FFFFFF;
+            --gem-black: #000000;
+            --gem-grey: #AAAAAA;
+            --gem-light-grey: #DDDDDD;
+            --gem-dark-grey: #444444;
+            --gem-blue: #0000AA;
+            --gem-dark-blue: #000088;
+            --gem-green: #008800;
+            --gem-light-green: #00FF00;
+            --gem-red: #FF0000;
+            --gem-yellow: #FFFF00;
         }
         
         /* --- Reset i podstawowe style --- */
@@ -20,21 +28,19 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            -webkit-font-smoothing: none;
-            font-smooth: never;
         }
         
         @font-face {
-            font-family: 'Chicago';
-            src: url('https://cdn.jsdelivr.net/gh/codepo8/chicanery/fonts/ChicagoFLF.ttf') format('truetype');
+            font-family: 'AtariST';
+            src: url('https://cdn.jsdelivr.net/gh/ParaWestGames/system-fonts/TTF/AtariST8x16SystemFont.ttf') format('truetype');
         }
         
         html, body {
-            background-color: var(--mac-bg);
-            color: var(--mac-black);
-            font-family: 'Chicago', monospace;
-            font-size: 12px;
-            line-height: 1.4;
+            background-color: var(--gem-light-grey);
+            color: var(--gem-black);
+            font-family: 'AtariST', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.3;
             overflow-x: hidden;
             height: 100%;
             margin: 0;
@@ -49,12 +55,12 @@
         }
 
         /* --- Menu Bar --- */
-        .mac-menu-bar {
-            background-color: var(--mac-white);
-            border-bottom: 1px solid var(--mac-black);
+        .gem-menu-bar {
+            background-color: var(--gem-white);
+            border-bottom: 2px solid var(--gem-black);
             display: flex;
             align-items: center;
-            height: 20px;
+            height: 24px;
             padding: 0;
             position: fixed;
             top: 0;
@@ -63,199 +69,166 @@
             z-index: 9999;
         }
         
-        .mac-menu-logo {
-            width: 16px;
-            height: 16px;
-            margin-left: 5px;
-            margin-right: 5px;
-            image-rendering: pixelated;
-        }
-        
-        .mac-apple-logo {
-            width: 100%;
-            height: 100%;
-            background-color: var(--mac-black);
-            mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 170 170"><path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.2-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.71 3.35-4.92.21-9.82-1.96-14.7-6.5-3.18-2.82-7.15-7.64-11.9-14.47-5.11-7.31-9.28-15.76-12.51-25.43-3.44-10.44-5.16-20.55-5.16-30.32 0-11.24 2.43-20.87 7.28-28.88 3.79-6.45 8.81-11.54 15.06-15.29 6.25-3.74 13.02-5.67 20.32-5.78 4.02 0 9.28 1.26 15.84 3.70 6.54 2.46 10.75 3.72 12.62 3.72 1.37 0 6.02-1.47 13.93-4.39 7.47-2.7 13.8-3.83 19.02-3.39 14.05 1.14 24.61 6.7 31.67 16.76-12.57 7.56-18.77 18.19-18.6 31.68.16 10.63 3.97 19.46 11.42 26.46 3.38 3.23 7.17 5.72 11.38 7.5-1.82 5.31-4.7 11.74-7.4 17.54zM110.93 4.43c0 8.33-3.05 16.11-9.11 23.31-7.31 8.61-16.16 13.59-25.57 12.8-.12-1.01-.19-2.07-.19-3.15 0-7.98 3.48-16.52 9.65-23.19 3.07-3.39 6.98-6.21 11.72-8.46 4.73-2.21 9.21-3.43 13.46-3.65.12 1.01.19 2.03.19 3.05z"/></svg>');
-            mask-repeat: no-repeat;
-            mask-position: center;
-            mask-size: 80%;
-            -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 170 170"><path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.2-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.71 3.35-4.92.21-9.82-1.96-14.7-6.5-3.18-2.82-7.15-7.64-11.9-14.47-5.11-7.31-9.28-15.76-12.51-25.43-3.44-10.44-5.16-20.55-5.16-30.32 0-11.24 2.43-20.87 7.28-28.88 3.79-6.45 8.81-11.54 15.06-15.29 6.25-3.74 13.02-5.67 20.32-5.78 4.02 0 9.28 1.26 15.84 3.70 6.54 2.46 10.75 3.72 12.62 3.72 1.37 0 6.02-1.47 13.93-4.39 7.47-2.7 13.8-3.83 19.02-3.39 14.05 1.14 24.61 6.7 31.67 16.76-12.57 7.56-18.77 18.19-18.6 31.68.16 10.63 3.97 19.46 11.42 26.46 3.38 3.23 7.17 5.72 11.38 7.5-1.82 5.31-4.7 11.74-7.4 17.54zM110.93 4.43c0 8.33-3.05 16.11-9.11 23.31-7.31 8.61-16.16 13.59-25.57 12.8-.12-1.01-.19-2.07-.19-3.15 0-7.98 3.48-16.52 9.65-23.19 3.07-3.39 6.98-6.21 11.72-8.46 4.73-2.21 9.21-3.43 13.46-3.65.12 1.01.19 2.03.19 3.05z"/></svg>');
-            -webkit-mask-repeat: no-repeat;
-            -webkit-mask-position: center;
-            -webkit-mask-size: 80%;
-        }
-        
-        .mac-menu-items {
+        .gem-menu-items {
             display: flex;
             height: 100%;
         }
         
-        .mac-menu-item {
+        .gem-menu-item {
             position: relative;
-            padding: 0 10px;
-            font-family: 'Chicago', monospace;
-            font-size: 11px;
+            padding: 2px 15px;
+            font-family: 'AtariST', 'Courier New', monospace;
+            font-size: 14px;
             cursor: pointer;
             display: flex;
             align-items: center;
             height: 100%;
+            border-right: 2px solid var(--gem-black);
+            font-weight: bold;
+            color: var(--gem-black); /* Explicitly setting text color */
+            background-color: var(--gem-light-grey); /* Light grey background for better contrast */
         }
         
-        .mac-menu-item:hover {
-            background-color: var(--mac-black);
-            color: var(--mac-white);
+        .gem-menu-item:first-child {
+            border-left: 2px solid var(--gem-black);
         }
         
-        .mac-submenu {
+        .gem-menu-item:hover {
+            background-color: var(--gem-blue);
+            color: var(--gem-white);
+        }
+        
+        .gem-submenu {
             position: absolute;
             display: none;
-            top: 20px;
+            top: 24px;
             left: 0;
-            background-color: var(--mac-white);
-            border: 1px solid var(--mac-black);
+            background-color: var(--gem-white);
+            border: 2px solid var(--gem-black);
             border-top: none;
-            box-shadow: 2px 2px 0 var(--mac-black);
-            min-width: 150px;
+            min-width: 180px;
             z-index: 10000;
+            box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.3);
         }
         
-        .mac-menu-item:hover .mac-submenu {
+        .gem-menu-item:hover .gem-submenu {
             display: block;
         }
         
-        .mac-submenu-item {
-            padding: 3px 10px;
-            font-family: 'Chicago', monospace;
-            font-size: 11px;
+        .gem-submenu-item {
+            padding: 5px 15px;
+            font-family: 'AtariST', 'Courier New', monospace;
+            font-size: 14px;
             cursor: pointer;
             white-space: nowrap;
+            font-weight: bold;
+            color: var(--gem-black); /* Explicitly setting text color */
         }
         
-        .mac-submenu-item:hover {
-            background-color: var(--mac-black);
-            color: var(--mac-white);
+        .gem-submenu-item:hover {
+            background-color: var(--gem-blue);
+            color: var(--gem-white);
         }
         
-        .mac-separator {
-            height: 1px;
-            background-color: var(--mac-black);
-            margin: 2px 5px;
+        .gem-separator {
+            height: 2px;
+            background-color: var(--gem-black);
+            margin: 3px 0;
         }
 
         /* --- Desktop Area --- */
-        .mac-desktop {
-            background-color: var(--mac-white);
+        .gem-desktop {
+            background-color: var(--gem-grey);
+            background-image: linear-gradient(45deg, var(--gem-light-grey) 25%, transparent 25%), 
+                             linear-gradient(-45deg, var(--gem-light-grey) 25%, transparent 25%),
+                             linear-gradient(45deg, transparent 75%, var(--gem-light-grey) 75%),
+                             linear-gradient(-45deg, transparent 75%, var(--gem-light-grey) 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
             flex: 1;
-            margin-top: 20px;
+            margin-top: 24px;
             padding: 20px;
             position: relative;
         }
 
         /* --- Window Style --- */
-        .mac-window {
-            background-color: var(--mac-white);
-            border: 1px solid var(--mac-black);
-            box-shadow: 2px 2px 0 var(--mac-black);
+        .gem-window {
+            background-color: var(--gem-white);
+            border: 2px solid var(--gem-black);
+            outline: 2px solid var(--gem-white);
+            outline-offset: -6px;
             position: relative;
             margin: 0 auto;
-            max-width: 800px;
+            max-width: 900px;
             max-height: calc(100vh - 60px);
             overflow: hidden;
-            image-rendering: pixelated;
+            box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.3);
         }
         
-        .mac-title-bar {
-            background-color: var(--mac-white);
-            border-bottom: 1px solid var(--mac-black);
-            height: 19px;
+        .gem-title-bar {
+            background-color: var(--gem-blue);
+            height: 28px;
             position: relative;
             display: flex;
             align-items: center;
+            justify-content: space-between;
             cursor: move;
-            padding: 0 5px;
-            background-image: linear-gradient(to right, var(--mac-black) 50%, transparent 50%);
-            background-size: 4px 1px;
-            background-repeat: repeat-x;
-            background-position: 0 9px; /* Center the line vertically */
+            padding: 0 10px;
+            color: var(--gem-white);
         }
         
-        .mac-title {
-            width: 100%;
+        .gem-title {
+            font-family: 'AtariST', 'Courier New', monospace;
+            font-size: 16px;
             text-align: center;
-            font-family: 'Chicago', monospace;
-            font-size: 11px;
-            position: absolute;
-            left: 0;
-            pointer-events: none;
+            flex-grow: 1;
+            font-weight: bold;
         }
         
-        .mac-close-box {
-            width: 11px;
-            height: 11px;
-            border: 1px solid var(--mac-black);
-            margin-right: 5px;
+        .gem-window-controls {
+            display: flex;
+            gap: 6px;
+        }
+        
+        .gem-window-button {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--gem-black);
+            background-color: var(--gem-white);
             cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            color: var(--gem-black);
+        }
+        
+        .gem-window-body {
+            padding: 2px;
+            overflow: hidden;
+            height: calc(100% - 28px);
+            max-height: calc(100vh - 88px);
             position: relative;
-            z-index: 1;
-            background-color: var(--mac-white);
-        }
-        
-        .mac-close-box::after {
-            content: '';
-            position: absolute;
-            top: 4px;
-            left: 1px;
-            width: 7px;
-            height: 1px;
-            background-color: var(--mac-black);
-        }
-        
-        .mac-zoom-box {
-            width: 11px;
-            height: 11px;
-            border: 1px solid var(--mac-black);
-            cursor: pointer;
-            position: relative;
-            z-index: 1;
-            background-color: var(--mac-white);
-        }
-        
-        .mac-zoom-box::after {
-            content: '';
-            position: absolute;
-            top: 1px;
-            left: 1px;
-            width: 7px;
-            height: 7px;
-            border: 1px solid var(--mac-black);
-        }
-        
-        .mac-window-body {
-            background-color: var(--mac-white);
-            padding: 0;
-            overflow: hidden; /* Changed from auto to hidden to handle scrollbar separately */
-            height: calc(100% - 19px);
-            max-height: calc(100vh - 80px);
-            position: relative; /* Added for scrollbar positioning */
+            border-top: 2px solid var(--gem-black);
         }
         
         /* --- Content Area --- */
-        .mac-content {
-            padding: 5px;
-            overflow: auto;
+        .gem-content {
+            padding: 10px;
             height: 100%;
-            width: calc(100% - 16px); /* Make room for scrollbar */
+            overflow: auto;
         }
         
         /* --- Icons Grid --- */
-        .mac-icon-grid {
+        .gem-icon-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
             gap: 20px;
-            padding: 15px;
+            padding: 10px;
         }
         
-        .mac-icon {
+        .gem-icon {
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -263,156 +236,147 @@
             padding: 3px;
         }
         
-        .mac-icon.selected {
-            background-color: var(--mac-black);
+        .gem-icon.selected {
+            background-color: var(--gem-blue);
         }
         
-        .mac-icon.selected .mac-icon-label {
-            color: var(--mac-white);
+        .gem-icon.selected .gem-icon-label {
+            color: var(--gem-white);
         }
         
-        .mac-icon-box {
-            width: 32px;
-            height: 32px;
+        .gem-icon-box {
+            width: 40px;
+            height: 40px;
+            border: 2px solid var(--gem-black);
+            background-color: var(--gem-white);
             margin-bottom: 5px;
             position: relative;
-            image-rendering: pixelated;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
-        .mac-icon-graphic {
-            width: 100%;
-            height: 100%;
-            background-repeat: no-repeat;
-            background-position: center;
-            background-size: contain;
-        }
-        
-        .mac-icon-label {
+        .gem-icon-label {
             text-align: center;
-            max-width: 70px;
-            font-size: 9px;
+            max-width: 90px;
+            font-size: 14px;
             word-wrap: break-word;
+            font-weight: bold;
         }
 
         /* --- Toolbar --- */
-        .mac-toolbar {
-            background-color: var(--mac-white);
-            border-bottom: 1px solid var(--mac-black);
-            padding: 3px;
+        .gem-toolbar {
+            background-color: var(--gem-light-grey);
+            border-bottom: 2px solid var(--gem-black);
+            padding: 6px;
             display: flex;
             align-items: center;
+            gap: 15px;
         }
         
-        .mac-button {
-            border: 1px solid var(--mac-black);
-            background-color: var(--mac-white);
-            margin-right: 3px;
-            padding: 1px 5px;
+        .gem-button {
+            border: 2px solid var(--gem-black);
+            background-color: var(--gem-white);
+            padding: 3px 10px;
             cursor: pointer;
-            font-family: 'Chicago', monospace;
-            font-size: 9px;
-            min-width: 50px;
+            font-family: 'AtariST', 'Courier New', monospace;
+            font-size: 14px;
+            min-width: 80px;
             text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 28px;
+            font-weight: bold;
+            color: var(--gem-black); /* Ensuring text color */
         }
         
-        .mac-button:active {
-            background-color: var(--mac-black);
-            color: var(--mac-white);
+        .gem-button:active {
+            background-color: var(--gem-grey);
         }
         
-        .mac-search {
-            border: 1px solid var(--mac-black);
-            padding: 1px 3px;
+        .gem-search {
+            border: 2px solid var(--gem-black);
+            background-color: var(--gem-white);
+            padding: 3px 6px;
             margin-left: auto;
-            width: 150px;
-            font-size: 9px;
-            font-family: 'Chicago', monospace;
+            width: 180px;
+            height: 28px;
+            font-size: 14px;
+            font-family: 'AtariST', 'Courier New', monospace;
+            color: var(--gem-black); /* Ensuring text color */
         }
         
-        .mac-search:focus {
+        .gem-search:focus {
             outline: none;
-            box-shadow: 0 0 0 1px var(--mac-black);
         }
 
         /* --- Scrollbar --- */
-        .mac-scrollbar {
-            width: 16px;
+        .gem-scrollbar {
+            width: 20px;
             height: 100%;
             position: absolute;
             right: 0;
             top: 0;
-            border-left: 1px solid var(--mac-black);
-            background-color: var(--mac-white);
+            border-left: 2px solid var(--gem-black);
+            background-color: var(--gem-light-grey);
         }
         
-        .mac-scrollbar-thumb {
-            width: 14px;
-            height: 40px;
-            background-color: var(--mac-white);
-            border: 1px solid var(--mac-black);
+        .gem-scrollbar-thumb {
+            width: 16px;
+            background-color: var(--gem-white);
+            border: 2px solid var(--gem-black);
             position: absolute;
-            top: 20px;
             left: 0;
             cursor: pointer;
         }
         
-        .mac-scrollbar-thumb::before {
-            content: '';
-            position: absolute;
-            top: 15px;
-            left: 3px;
-            width: 6px;
-            height: 1px;
-            background-color: var(--mac-black);
-            box-shadow: 0 3px 0 var(--mac-black), 0 6px 0 var(--mac-black);
-        }
-        
-        .mac-scrollbar-buttons {
-            width: 14px;
-            height: 28px;
+        .gem-scrollbar-buttons {
+            width: 16px;
+            height: 36px;
             position: absolute;
             bottom: 0;
             left: 0;
         }
         
-        .mac-scrollbar-button {
-            width: 14px;
-            height: 14px;
-            border: 1px solid var(--mac-black);
+        .gem-scrollbar-button {
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--gem-black);
+            background-color: var(--gem-white);
             position: relative;
             cursor: pointer;
         }
         
-        .mac-scrollbar-button:first-child {
+        .gem-scrollbar-button:first-child {
             margin-bottom: -1px;
         }
         
-        .mac-scrollbar-up::after {
+        .gem-scrollbar-up::after,
+        .gem-scrollbar-down::after {
             content: '';
             position: absolute;
-            top: 5px;
-            left: 3px;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
             width: 0;
             height: 0;
-            border-left: 3px solid transparent;
-            border-right: 3px solid transparent;
-            border-bottom: 3px solid var(--mac-black);
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
         }
         
-        .mac-scrollbar-down::after {
-            content: '';
-            position: absolute;
-            top: 5px;
-            left: 3px;
-            width: 0;
-            height: 0;
-            border-left: 3px solid transparent;
-            border-right: 3px solid transparent;
-            border-top: 3px solid var(--mac-black);
+        .gem-scrollbar-up::after {
+            border-bottom: 4px solid var(--gem-black);
+            border-top: none;
+        }
+        
+        .gem-scrollbar-down::after {
+            border-top: 4px solid var(--gem-black);
+            border-bottom: none;
         }
 
         /* --- Modal Styles --- */
-        .mac-modal {
+        .gem-modal {
             position: fixed;
             top: 50%;
             left: 50%;
@@ -420,159 +384,158 @@
             z-index: 10001;
             display: none;
             width: 90%;
-            max-width: 400px;
+            max-width: 500px;
         }
         
-        .mac-overlay {
+        .gem-overlay {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background-color: transparent;
+            background-color: rgba(0, 0, 0, 0.3);
             z-index: 10000;
             display: none;
         }
         
         /* --- Detail View --- */
-        .mac-detail-window {
-            max-width: 400px;
+        .gem-detail-window {
+            max-width: 500px;
         }
         
-        .mac-detail-content {
-            padding: 10px;
+        .gem-detail-content {
+            padding: 15px;
         }
         
-        .mac-detail-header {
-            font-family: 'Chicago', monospace;
-            font-size: 12px;
-            margin-bottom: 8px;
-            border-bottom: 1px solid var(--mac-black);
-            padding-bottom: 3px;
-        }
-        
-        .mac-detail-row {
-            display: flex;
-            margin-bottom: 6px;
-            font-size: 9px;
-        }
-        
-        .mac-detail-label {
-            width: 100px;
+        .gem-detail-header {
+            font-family: 'AtariST', 'Courier New', monospace;
+            font-size: 16px;
+            margin-bottom: 15px;
+            border-bottom: 2px solid var(--gem-black);
+            padding-bottom: 8px;
             font-weight: bold;
         }
         
-        .mac-detail-value {
+        .gem-detail-row {
+            display: flex;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        
+        .gem-detail-label {
+            width: 120px;
+            font-weight: bold;
+        }
+        
+        .gem-detail-value {
             flex: 1;
         }
         
-        .mac-detail-description {
-            margin: 8px 0;
-            padding: 3px;
-            border: 1px solid var(--mac-black);
-            background-color: var(--mac-white);
-            font-size: 9px;
+        .gem-detail-description {
+            margin: 15px 0;
+            padding: 8px;
+            border: 2px solid var(--gem-black);
+            background-color: var(--gem-white);
+            font-size: 14px;
         }
         
-        .mac-button-row {
+        .gem-button-row {
             display: flex;
-            justify-content: flex-end;
-            margin-top: 10px;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
         }
 
         /* --- Context Menu --- */
-        .mac-context-menu {
+        .gem-context-menu {
             position: absolute;
-            background-color: var(--mac-white);
-            border: 1px solid var(--mac-black);
-            box-shadow: 2px 2px 0 var(--mac-black);
+            background-color: var(--gem-white);
+            border: 2px solid var(--gem-black);
             z-index: 10002;
             display: none;
+            box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.3);
         }
         
-        .mac-context-item {
-            padding: 3px 10px;
-            font-family: 'Chicago', monospace;
-            font-size: 11px;
+        .gem-context-item {
+            padding: 5px 15px;
+            font-family: 'AtariST', 'Courier New', monospace;
+            font-size: 14px;
             cursor: pointer;
             white-space: nowrap;
+            font-weight: bold;
+            color: var(--gem-black); /* Ensuring text color */
         }
         
-        .mac-context-item:hover {
-            background-color: var(--mac-black);
-            color: var(--mac-white);
+        .gem-context-item:hover {
+            background-color: var(--gem-blue);
+            color: var(--gem-white);
         }
 
         /* --- Dialog Boxes --- */
-        .mac-dialog {
-            width: 300px;
+        .gem-dialog {
+            width: 350px;
             position: fixed;
             top: 40%;
             left: 50%;
             transform: translateX(-50%);
-            border: 1px solid var(--mac-black);
-            background-color: var(--mac-white);
-            box-shadow: 2px 2px 0 var(--mac-black);
+            border: 2px solid var(--gem-black);
+            background-color: var(--gem-white);
+            outline: 2px solid var(--gem-white);
+            outline-offset: -6px;
             z-index: 10002;
             display: none;
+            box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.3);
         }
         
-        .mac-dialog-content {
-            padding: 15px;
+        .gem-dialog-content {
+            padding: 25px;
+            text-align: center;
+        }
+        
+        .gem-dialog-icon {
+            font-size: 30px;
+            margin-bottom: 15px;
+        }
+        
+        .gem-dialog-message {
+            margin-bottom: 25px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        .gem-dialog-buttons {
             display: flex;
-            align-items: center;
+            justify-content: center;
+            gap: 30px;
+            padding-bottom: 25px;
         }
         
-        .mac-dialog-icon {
-            width: 32px;
-            height: 32px;
-            margin-right: 10px;
-            background-color: var(--mac-black);
-            mask-repeat: no-repeat;
-            mask-position: center;
-            mask-size: contain;
-            -webkit-mask-repeat: no-repeat;
-            -webkit-mask-position: center;
-            -webkit-mask-size: contain;
-        }
-        
-        .mac-dialog-message {
-            flex: 1;
-            font-size: 11px;
-        }
-        
-        .mac-dialog-buttons {
-            display: flex;
-            justify-content: flex-end;
-            padding: 0 15px 15px;
-        }
-        
-        .mac-dialog-button {
-            min-width: 60px;
-            height: 20px;
-            border: 1px solid var(--mac-black);
-            border-radius: 10px;
-            background-color: var(--mac-white);
-            margin-left: 5px;
+        .gem-dialog-button {
+            min-width: 100px;
+            border: 2px solid var(--gem-black);
+            background-color: var(--gem-white);
             cursor: pointer;
             text-align: center;
-            font-family: 'Chicago', monospace;
-            font-size: 11px;
-            padding: 1px 10px;
+            font-family: 'AtariST', 'Courier New', monospace;
+            font-size: 14px;
+            padding: 5px 15px;
+            font-weight: bold;
+            color: var(--gem-black); /* Ensuring text color */
         }
         
-        .mac-dialog-button.default {
-            border: 2px solid var(--mac-black);
+        .gem-dialog-button.default {
+            outline: 2px dotted var(--gem-black);
+            outline-offset: -5px;
         }
 
         /* --- Startup Screen --- */
-        .mac-startup {
+        .gem-startup {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: var(--mac-white);
+            background-color: var(--gem-white);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -581,211 +544,300 @@
             transition: opacity 0.5s;
         }
         
-        .mac-startup.hidden {
+        .gem-startup.hidden {
             opacity: 0;
             pointer-events: none;
         }
         
-        .mac-happy-mac {
-            width: 64px;
-            height: 64px;
-            margin-bottom: 20px;
-            background-color: var(--mac-black);
-            mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><path d="M5,5h54v42c0,5-7,12-12,12H17c-5,0-12-7-12-12V5z M10,10v32c0,2.8,4.2,7,7,7h30c2.8,0,7-4.2,7-7V10H10z M18,38v4h28v-4H18z M18,32h4v-4h4v-4h-4v4h-4V32z M38,32h4v-4h4v-4h-4v4h-4V32z"/></svg>');
-            mask-repeat: no-repeat;
-            mask-position: center;
-            mask-size: contain;
-            -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><path d="M5,5h54v42c0,5-7,12-12,12H17c-5,0-12-7-12-12V5z M10,10v32c0,2.8,4.2,7,7,7h30c2.8,0,7-4.2,7-7V10H10z M18,38v4h28v-4H18z M18,32h4v-4h4v-4h-4v4h-4V32z M38,32h4v-4h4v-4h-4v4h-4V32z"/></svg>');
-            -webkit-mask-repeat: no-repeat;
-            -webkit-mask-position: center;
-            -webkit-mask-size: contain;
+        .gem-logo {
+            width: 150px;
+            height: 150px;
+            margin-bottom: 30px;
+            position: relative;
+            background-color: var(--gem-light-grey);
+            border: 3px solid var(--gem-black);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
-        .mac-startup-text {
-            font-family: 'Chicago', monospace;
+        .gem-logo::after {
+            content: "ATARI ST";
+            font-family: 'AtariST', 'Courier New', monospace;
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--gem-blue);
+        }
+        
+        .gem-startup-text {
+            font-family: 'AtariST', 'Courier New', monospace;
             text-align: center;
-            font-size: 12px;
+            font-size: 18px;
+            margin-bottom: 15px;
+            font-weight: bold;
+            color: var(--gem-black); /* Ensuring text color */
+        }
+        
+        .gem-startup-version {
+            font-family: 'AtariST', 'Courier New', monospace;
+            text-align: center;
+            font-size: 16px;
+            color: var(--gem-dark-grey);
+            font-weight: bold;
         }
 
         /* --- Loading Indicator --- */
-        .mac-loading {
+        .gem-loading {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 30px;
+            padding: 40px;
         }
         
-        .mac-loading-text {
-            font-family: 'Chicago', monospace;
-            margin-bottom: 10px;
-            font-size: 11px;
+        .gem-loading-text {
+            font-family: 'AtariST', 'Courier New', monospace;
+            margin-bottom: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--gem-black); /* Ensuring text color */
         }
         
-        .mac-watch {
-            width: 24px;
-            height: 24px;
-            background-color: var(--mac-black);
-            mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12,0C5.4,0,0,5.4,0,12s5.4,12,12,12s12-5.4,12-12S18.6,0,12,0z M12,22c-5.5,0-10-4.5-10-10S6.5,2,12,2s10,4.5,10,10S17.5,22,12,22z M12.5,12V6h-1v7l4.3,2.5l0.5-0.9L12.5,12z"/></svg>');
-            mask-repeat: no-repeat;
-            mask-position: center;
-            animation: pulse 1s infinite alternate;
-            -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12,0C5.4,0,0,5.4,0,12s5.4,12,12,12s12-5.4,12-12S18.6,0,12,0z M12,22c-5.5,0-10-4.5-10-10S6.5,2,12,2s10,4.5,10,10S17.5,22,12,22z M12.5,12V6h-1v7l4.3,2.5l0.5-0.9L12.5,12z"/></svg>');
-            -webkit-mask-repeat: no-repeat;
-            -webkit-mask-position: center;
+        .gem-loading-animation {
+            width: 250px;
+            height: 20px;
+            border: 2px solid var(--gem-black);
+            background-color: var(--gem-white);
+            position: relative;
+            overflow: hidden;
         }
         
-        @keyframes pulse {
-            from { opacity: 0.5; }
-            to { opacity: 1; }
+        .gem-loading-bar {
+            height: 100%;
+            width: 30%;
+            background-color: var(--gem-blue);
+            position: absolute;
+            left: -30%;
+            animation: gem-loading 2s infinite linear;
+        }
+        
+        @keyframes gem-loading {
+            0% { left: -30%; }
+            100% { left: 100%; }
         }
 
         /* --- List View --- */
-        .mac-list-view {
+        .gem-list-view {
             width: 100%;
             border-collapse: collapse;
-            font-size: 9px;
+            font-size: 14px;
+            border: 2px solid var(--gem-black);
+            color: var(--gem-black); /* Ensuring text color */
         }
         
-        .mac-list-view th {
+        .gem-list-view th {
             text-align: left;
-            padding: 2px 5px;
-            border-bottom: 1px solid var(--mac-black);
+            padding: 6px 10px;
+            border-bottom: 2px solid var(--gem-black);
             font-weight: bold;
+            background-color: var(--gem-light-grey);
         }
         
-        .mac-list-view td {
-            padding: 2px 5px;
-            border-bottom: 1px solid var(--mac-black);
+        .gem-list-view td {
+            padding: 6px 10px;
+            border-bottom: 1px solid var(--gem-dark-grey);
         }
         
-        .mac-list-view tr.selected {
-            background-color: var(--mac-black);
-            color: var(--mac-white);
+        .gem-list-view tr.selected {
+            background-color: var(--gem-blue);
+            color: var(--gem-white);
         }
         
-        /* --- Alert & Note Icons --- */
-        .mac-alert-icon {
-            mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M16,2C8.3,2,2,8.3,2,16s6.3,14,14,14s14-6.3,14-14S23.7,2,16,2z M16,28C9.4,28,4,22.6,4,16S9.4,4,16,4s12,5.4,12,12S22.6,28,16,28z M14,8h4v12h-4V8z M14,22h4v4h-4V22z"/></svg>');
-            -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M16,2C8.3,2,2,8.3,2,16s6.3,14,14,14s14-6.3,14-14S23.7,2,16,2z M16,28C9.4,28,4,22.6,4,16S9.4,4,16,4s12,5.4,12,12S22.6,28,16,28z M14,8h4v12h-4V8z M14,22h4v4h-4V22z"/></svg>');
-        }
-        
-        .mac-note-icon {
-            mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M16,2C8.3,2,2,8.3,2,16s6.3,14,14,14s14-6.3,14-14S23.7,2,16,2z M16,28C9.4,28,4,22.6,4,16S9.4,4,16,4s12,5.4,12,12S22.6,28,16,28z M15,8h2v12h-2V8z M15,22h2v2h-2V22z"/></svg>');
-            -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M16,2C8.3,2,2,8.3,2,16s6.3,14,14,14s14-6.3,14-14S23.7,2,16,2z M16,28C9.4,28,4,22.6,4,16S9.4,4,16,4s12,5.4,12,12S22.6,28,16,28z M15,8h2v12h-2V8z M15,22h2v2h-2V22z"/></svg>');
-        }
-
         /* --- Responsive Styles --- */
         @media (max-width: 768px) {
-            .mac-icon-grid {
-                grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+            .gem-icon-grid {
+                grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
             }
             
-            .mac-search {
-                width: 120px;
+            .gem-search {
+                width: 140px;
             }
         }
 
         @media (max-width: 480px) {
-            .mac-icon-grid {
-                grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+            .gem-icon-grid {
+                grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
             }
             
-            .mac-toolbar {
+            .gem-toolbar {
                 flex-wrap: wrap;
             }
             
-            .mac-search {
+            .gem-search {
                 width: 100%;
-                margin-top: 3px;
+                margin-top: 5px;
                 order: 10;
             }
+        }
+        
+        /* Ikony dla typów plików */
+        .icon-file {
+            width: 32px;
+            height: 32px;
+            display: block;
+            margin: auto;
+            background-color: var(--gem-black);
+            mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M6,2V30H26V8L20,2H6z"/><path d="M20,2V8H26"/></svg>');
+            mask-repeat: no-repeat;
+            mask-position: center;
+            -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M6,2V30H26V8L20,2H6z"/><path d="M20,2V8H26"/></svg>');
+            -webkit-mask-repeat: no-repeat;
+            -webkit-mask-position: center;
+        }
+        
+        .icon-js {
+            width: 32px;
+            height: 32px;
+            background-color: var(--gem-black);
+            mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M6,2V30H26V8L20,2H6z"/><path d="M20,2V8H26"/><path d="M12,22v-4c0-1,0-2,2-2s2,1,2,2h2c0-2-1-4-4-4s-4,2-4,4v4c0,1,0,2,2,2s2-1,2-2h-2"/><path d="M22,16c0-2-1-4-4-4v2c1,0,2,1,2,2v4c0,1-1,2-2,2v2c3,0,4-2,4-4v-4"/></svg>');
+            mask-repeat: no-repeat;
+            mask-position: center;
+            -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M6,2V30H26V8L20,2H6z"/><path d="M20,2V8H26"/><path d="M12,22v-4c0-1,0-2,2-2s2,1,2,2h2c0-2-1-4-4-4s-4,2-4,4v4c0,1,0,2,2,2s2-1,2-2h-2"/><path d="M22,16c0-2-1-4-4-4v2c1,0,2,1,2,2v4c0,1-1,2-2,2v2c3,0,4-2,4-4v-4"/></svg>');
+            -webkit-mask-repeat: no-repeat;
+            -webkit-mask-position: center;
+            display: block;
+            margin: auto;
+        }
+        
+        .icon-html {
+            width: 32px;
+            height: 32px;
+            background-color: var(--gem-black);
+            mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M6,2V30H26V8L20,2H6z"/><path d="M20,2V8H26"/><path d="M10,12L16,20L22,12"/><path d="M12,16H20"/></svg>');
+            mask-repeat: no-repeat;
+            mask-position: center;
+            -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M6,2V30H26V8L20,2H6z"/><path d="M20,2V8H26"/><path d="M10,12L16,20L22,12"/><path d="M12,16H20"/></svg>');
+            -webkit-mask-repeat: no-repeat;
+            -webkit-mask-position: center;
+            display: block;
+            margin: auto;
+        }
+        
+        .icon-css {
+            width: 32px;
+            height: 32px;
+            background-color: var(--gem-black);
+            mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M6,2V30H26V8L20,2H6z"/><path d="M20,2V8H26"/><path d="M10,12H22V14H10z"/><path d="M10,16H22V18H10z"/><path d="M10,20H22V22H10z"/></svg>');
+            mask-repeat: no-repeat;
+            mask-position: center;
+            -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M6,2V30H26V8L20,2H6z"/><path d="M20,2V8H26"/><path d="M10,12H22V14H10z"/><path d="M10,16H22V18H10z"/><path d="M10,20H22V22H10z"/></svg>');
+            -webkit-mask-repeat: no-repeat;
+            -webkit-mask-position: center;
+            display: block;
+            margin: auto;
+        }
+        
+        .icon-py {
+            width: 32px;
+            height: 32px;
+            background-color: var(--gem-black);
+            mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M6,2V30H26V8L20,2H6z"/><path d="M20,2V8H26"/><path d="M14,10c0-1,1-2,2-2s2,1,2,2v4c0,1-1,2-2,2h-4v4c0,1,1,2,2,2s2-1,2-2"/><path d="M14,14c0,1,1,2,2,2s2-1,2-2"/></svg>');
+            mask-repeat: no-repeat;
+            mask-position: center;
+            -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M6,2V30H26V8L20,2H6z"/><path d="M20,2V8H26"/><path d="M14,10c0-1,1-2,2-2s2,1,2,2v4c0,1-1,2-2,2h-4v4c0,1,1,2,2,2s2-1,2-2"/><path d="M14,14c0,1,1,2,2,2s2-1,2-2"/></svg>');
+            -webkit-mask-repeat: no-repeat;
+            -webkit-mask-position: center;
+            display: block;
+            margin: auto;
+        }
+
+        /* Menu Label Highlight */
+        .gem-menu-label {
+            display: inline-block;
+            text-decoration: underline;
+            padding: 0 1px;
+            margin-right: 3px;
         }
     </style>
 </head>
 <body>
     <!-- Menu Bar -->
-    <div class="mac-menu-bar">
-        <div class="mac-menu-logo">
-            <div class="mac-apple-logo"></div>
-        </div>
-        <div class="mac-menu-items">
-            <div class="mac-menu-item">
-                File
-                <div class="mac-submenu">
-                    <div class="mac-submenu-item" id="new-window">New Window</div>
-                    <div class="mac-separator"></div>
-                    <div class="mac-submenu-item" id="close-window">Close</div>
-                    <div class="mac-separator"></div>
-                    <div class="mac-submenu-item" id="refresh-button">Refresh</div>
-                    <div class="mac-separator"></div>
-                    <div class="mac-submenu-item" id="quit-button">Quit</div>
+    <div class="gem-menu-bar">
+        <div class="gem-menu-items">
+            <div class="gem-menu-item">
+                <span class="gem-menu-label">D</span>esk
+                <div class="gem-submenu">
+                    <div class="gem-submenu-item" id="about-button">About GitHub Browser...</div>
+                    <div class="gem-separator"></div>
+                    <div class="gem-submenu-item" id="quit-button">Quit</div>
                 </div>
             </div>
-            <div class="mac-menu-item">
-                Edit
-                <div class="mac-submenu">
-                    <div class="mac-submenu-item">Cut</div>
-                    <div class="mac-submenu-item">Copy</div>
-                    <div class="mac-submenu-item">Paste</div>
-                    <div class="mac-separator"></div>
-                    <div class="mac-submenu-item">Select All</div>
+            <div class="gem-menu-item">
+                <span class="gem-menu-label">F</span>ile
+                <div class="gem-submenu">
+                    <div class="gem-submenu-item" id="open-window">Open</div>
+                    <div class="gem-submenu-item" id="close-window">Close</div>
+                    <div class="gem-separator"></div>
+                    <div class="gem-submenu-item" id="refresh-button">Refresh</div>
                 </div>
             </div>
-            <div class="mac-menu-item">
-                View
-                <div class="mac-submenu">
-                    <div class="mac-submenu-item" id="view-icon">by Icon</div>
-                    <div class="mac-submenu-item" id="view-list">by List</div>
-                    <div class="mac-separator"></div>
-                    <div class="mac-submenu-item" id="sort-name">Sort by Name</div>
-                    <div class="mac-submenu-item" id="sort-date">Sort by Date</div>
-                    <div class="mac-submenu-item" id="sort-stars">Sort by Stars</div>
+            <div class="gem-menu-item">
+                <span class="gem-menu-label">V</span>iew
+                <div class="gem-submenu">
+                    <div class="gem-submenu-item" id="view-icon">Show as Icons</div>
+                    <div class="gem-submenu-item" id="view-list">Show as Text</div>
+                    <div class="gem-separator"></div>
+                    <div class="gem-submenu-item" id="sort-name">Sort by Name</div>
+                    <div class="gem-submenu-item" id="sort-date">Sort by Date</div>
+                    <div class="gem-submenu-item" id="sort-stars">Sort by Stars</div>
                 </div>
             </div>
-            <div class="mac-menu-item">
-                Special
-                <div class="mac-submenu">
-                    <div class="mac-submenu-item" id="about-button">About GitHub Browser</div>
-                    <div class="mac-separator"></div>
-                    <div class="mac-submenu-item" id="keyboard-shortcuts">Keyboard Shortcuts</div>
+            <div class="gem-menu-item">
+                <span class="gem-menu-label">O</span>ptions
+                <div class="gem-submenu">
+                    <div class="gem-submenu-item" id="keyboard-shortcuts">Keyboard Shortcuts</div>
+                    <div class="gem-submenu-item" id="preferences">Preferences</div>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Desktop Area -->
-    <div class="mac-desktop">
+    <div class="gem-desktop">
         <!-- Main Window -->
-        <div class="mac-window" id="main-window">
-            <div class="mac-title-bar" id="main-title-bar">
-                <div class="mac-close-box" id="window-close"></div>
-                <div class="mac-zoom-box" id="window-zoom"></div>
-                <div class="mac-title">GitHub Browser</div>
+        <div class="gem-window" id="main-window">
+            <div class="gem-title-bar" id="main-title-bar">
+                <div class="gem-title">GitHub Browser</div>
+                <div class="gem-window-controls">
+                    <div class="gem-window-button" id="window-full">↕</div>
+                    <div class="gem-window-button" id="window-close">×</div>
+                </div>
             </div>
             
-            <div class="mac-window-body">
-                <div class="mac-toolbar">
-                    <div class="mac-button" id="refresh-repos">Refresh</div>
-                    <div class="mac-button" id="view-toggle">View</div>
-                    <div class="mac-button" id="sort-button">Sort</div>
-                    <input type="text" class="mac-search" id="repo-search" placeholder="Find...">
+            <div class="gem-window-body">
+                <div class="gem-toolbar">
+                    <div class="gem-button" id="refresh-repos">Refresh</div>
+                    <div class="gem-button" id="view-toggle">View</div>
+                    <div class="gem-button" id="sort-button">Sort</div>
+                    <input type="text" class="gem-search" id="repo-search" placeholder="Search...">
                 </div>
                 
-                <div class="mac-content" id="repos-container">
+                <div class="gem-content" id="repos-container">
                     <!-- Loading Indicator -->
-                    <div class="mac-loading">
-                        <div class="mac-loading-text">Loading Repositories...</div>
-                        <div class="mac-watch"></div>
+                    <div class="gem-loading">
+                        <div class="gem-loading-text">Loading Repositories...</div>
+                        <div class="gem-loading-animation">
+                            <div class="gem-loading-bar"></div>
+                        </div>
                     </div>
                 </div>
                 
-                <!-- Classic Mac Scrollbar -->
-                <div class="mac-scrollbar">
-                    <div class="mac-scrollbar-thumb"></div>
-                    <div class="mac-scrollbar-buttons">
-                        <div class="mac-scrollbar-button mac-scrollbar-up"></div>
-                        <div class="mac-scrollbar-button mac-scrollbar-down"></div>
+                <!-- Atari ST GEM Scrollbar -->
+                <div class="gem-scrollbar">
+                    <div class="gem-scrollbar-thumb"></div>
+                    <div class="gem-scrollbar-buttons">
+                        <div class="gem-scrollbar-button gem-scrollbar-up"></div>
+                        <div class="gem-scrollbar-button gem-scrollbar-down"></div>
                     </div>
                 </div>
             </div>
@@ -793,15 +845,17 @@
     </div>
 
     <!-- Repository Detail Modal -->
-    <div class="mac-modal" id="repo-detail-modal">
-        <div class="mac-window mac-detail-window">
-            <div class="mac-title-bar" id="detail-title-bar">
-                <div class="mac-close-box" onclick="closeModal('repo-detail-modal')"></div>
-                <div class="mac-title" id="repo-detail-title">Repository Info</div>
+    <div class="gem-modal" id="repo-detail-modal">
+        <div class="gem-window gem-detail-window">
+            <div class="gem-title-bar" id="detail-title-bar">
+                <div class="gem-title" id="repo-detail-title">Repository Info</div>
+                <div class="gem-window-controls">
+                    <div class="gem-window-button" onclick="closeModal('repo-detail-modal')">×</div>
+                </div>
             </div>
             
-            <div class="mac-window-body">
-                <div class="mac-detail-content" id="repo-detail-content">
+            <div class="gem-window-body">
+                <div class="gem-detail-content" id="repo-detail-content">
                     <!-- Content will be filled dynamically -->
                 </div>
             </div>
@@ -809,64 +863,68 @@
     </div>
 
     <!-- About Modal -->
-    <div class="mac-modal" id="about-modal">
-        <div class="mac-window">
-            <div class="mac-title-bar">
-                <div class="mac-close-box" onclick="closeModal('about-modal')"></div>
-                <div class="mac-title">About GitHub Browser</div>
+    <div class="gem-modal" id="about-modal">
+        <div class="gem-window">
+            <div class="gem-title-bar">
+                <div class="gem-title">About GitHub Browser</div>
+                <div class="gem-window-controls">
+                    <div class="gem-window-button" onclick="closeModal('about-modal')">×</div>
+                </div>
             </div>
             
-            <div class="mac-window-body">
-                <div class="mac-content" style="text-align: center; padding: 20px;">
-                    <div class="mac-happy-mac" style="margin: 0 auto 20px;"></div>
-                    <div style="font-family: 'Chicago', monospace; font-size: 14px; margin-bottom: 5px;">
+            <div class="gem-window-body">
+                <div class="gem-content" style="text-align: center; padding: 20px;">
+                    <div class="gem-logo" style="margin: 0 auto 30px; width: 120px; height: 120px;"></div>
+                    <div style="font-family: 'AtariST', 'Courier New', monospace; font-size: 20px; margin-bottom: 10px; font-weight: bold;">
                         GitHub Browser
                     </div>
-                    <div style="font-size: 9px; margin-bottom: 15px;">
+                    <div style="font-size: 16px; margin-bottom: 20px; color: var(--gem-dark-grey); font-weight: bold;">
                         Version 1.0
                     </div>
-                    <p style="margin-bottom: 10px; font-size: 9px;">
-                        A classic Macintosh style interface for browsing GitHub repositories.
+                    <p style="margin-bottom: 15px; font-size: 14px; font-weight: bold;">
+                        An Atari ST GEM style interface for browsing GitHub repositories.
                     </p>
-                    <p style="font-size: 9px;">© 2025 Swir</p>
+                    <p style="font-size: 14px; color: var(--gem-dark-grey); font-weight: bold;">© 2025 Swir</p>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Keyboard Shortcuts Modal -->
-    <div class="mac-modal" id="shortcuts-modal">
-        <div class="mac-window">
-            <div class="mac-title-bar">
-                <div class="mac-close-box" onclick="closeModal('shortcuts-modal')"></div>
-                <div class="mac-title">Keyboard Shortcuts</div>
+    <div class="gem-modal" id="shortcuts-modal">
+        <div class="gem-window">
+            <div class="gem-title-bar">
+                <div class="gem-title">Keyboard Shortcuts</div>
+                <div class="gem-window-controls">
+                    <div class="gem-window-button" onclick="closeModal('shortcuts-modal')">×</div>
+                </div>
             </div>
             
-            <div class="mac-window-body">
-                <div class="mac-content">
-                    <div class="mac-detail-row">
-                        <div class="mac-detail-label">⌘R</div>
-                        <div class="mac-detail-value">Refresh Repositories</div>
+            <div class="gem-window-body">
+                <div class="gem-content">
+                    <div class="gem-detail-row">
+                        <div class="gem-detail-label">F5</div>
+                        <div class="gem-detail-value">Refresh Repositories</div>
                     </div>
-                    <div class="mac-detail-row">
-                        <div class="mac-detail-label">⌘F</div>
-                        <div class="mac-detail-value">Find Repositories</div>
+                    <div class="gem-detail-row">
+                        <div class="gem-detail-label">Ctrl+F</div>
+                        <div class="gem-detail-value">Find Repositories</div>
                     </div>
-                    <div class="mac-detail-row">
-                        <div class="mac-detail-label">⌘Q</div>
-                        <div class="mac-detail-value">Quit Application</div>
+                    <div class="gem-detail-row">
+                        <div class="gem-detail-label">Alt+Q</div>
+                        <div class="gem-detail-value">Quit Application</div>
                     </div>
-                    <div class="mac-detail-row">
-                        <div class="mac-detail-label">↑↓←→</div>
-                        <div class="mac-detail-value">Navigate Repositories</div>
+                    <div class="gem-detail-row">
+                        <div class="gem-detail-label">Arrows</div>
+                        <div class="gem-detail-value">Navigate Repositories</div>
                     </div>
-                    <div class="mac-detail-row">
-                        <div class="mac-detail-label">Return</div>
-                        <div class="mac-detail-value">Open Selected Repository</div>
+                    <div class="gem-detail-row">
+                        <div class="gem-detail-label">Return</div>
+                        <div class="gem-detail-value">Open Selected Repository</div>
                     </div>
-                    <div class="mac-detail-row">
-                        <div class="mac-detail-label">Esc</div>
-                        <div class="mac-detail-value">Close Dialog</div>
+                    <div class="gem-detail-row">
+                        <div class="gem-detail-label">Esc</div>
+                        <div class="gem-detail-value">Close Dialog</div>
                     </div>
                 </div>
             </div>
@@ -874,43 +932,44 @@
     </div>
 
     <!-- Context Menu -->
-    <div class="mac-context-menu" id="repo-context-menu">
-        <div class="mac-context-item" id="context-open">Open</div>
-        <div class="mac-context-item" id="context-view-github">View on GitHub</div>
-        <div class="mac-separator"></div>
-        <div class="mac-context-item" id="context-copy-url">Copy URL</div>
+    <div class="gem-context-menu" id="repo-context-menu">
+        <div class="gem-context-item" id="context-open">Open</div>
+        <div class="gem-context-item" id="context-view-github">View on GitHub</div>
+        <div class="gem-separator"></div>
+        <div class="gem-context-item" id="context-copy-url">Copy URL</div>
     </div>
 
     <!-- Modal Overlay -->
-    <div class="mac-overlay" id="modal-overlay"></div>
+    <div class="gem-overlay" id="modal-overlay"></div>
 
     <!-- Alert Dialog -->
-    <div class="mac-dialog" id="alert-dialog" style="display: none;">
-        <div class="mac-dialog-content">
-            <div class="mac-dialog-icon mac-alert-icon"></div>
-            <div class="mac-dialog-message" id="alert-message"></div>
-        </div>
-        <div class="mac-dialog-buttons">
-            <button class="mac-dialog-button default" id="alert-ok">OK</button>
+    <div class="gem-dialog" id="alert-dialog" style="display: none;">
+        <div class="gem-dialog-content">
+            <div class="gem-dialog-icon">⚠</div>
+            <div class="gem-dialog-message" id="alert-message"></div>
+            <div class="gem-dialog-buttons">
+                <button class="gem-dialog-button default" id="alert-ok">OK</button>
+            </div>
         </div>
     </div>
 
     <!-- Confirm Dialog -->
-    <div class="mac-dialog" id="confirm-dialog" style="display: none;">
-        <div class="mac-dialog-content">
-            <div class="mac-dialog-icon mac-note-icon"></div>
-            <div class="mac-dialog-message" id="confirm-message"></div>
-        </div>
-        <div class="mac-dialog-buttons">
-            <button class="mac-dialog-button" id="confirm-cancel">Cancel</button>
-            <button class="mac-dialog-button default" id="confirm-ok">OK</button>
+    <div class="gem-dialog" id="confirm-dialog" style="display: none;">
+        <div class="gem-dialog-content">
+            <div class="gem-dialog-icon">?</div>
+            <div class="gem-dialog-message" id="confirm-message"></div>
+            <div class="gem-dialog-buttons">
+                <button class="gem-dialog-button" id="confirm-cancel">Cancel</button>
+                <button class="gem-dialog-button default" id="confirm-ok">OK</button>
+            </div>
         </div>
     </div>
 
     <!-- Startup Screen -->
-    <div class="mac-startup" id="startup-screen">
-        <div class="mac-happy-mac"></div>
-        <div class="mac-startup-text">Welcome to Macintosh</div>
+    <div class="gem-startup" id="startup-screen">
+        <div class="gem-logo"></div>
+        <div class="gem-startup-text">Atari ST GEM Desktop</div>
+        <div class="gem-startup-version">Version 1.0</div>
     </div>
 
     <script>
@@ -923,18 +982,6 @@
         let dragOffsetX = 0;
         let dragOffsetY = 0;
         let selectedRepoIndex = -1;
-
-        // Repository Icon Mapping
-        const repoIcons = {
-            default: 'M16,2L2,14l2,16h28l2-16L16,2z M28,26H10.5L9,18h22L28,26z', // Document icon
-            JavaScript: 'M9,2v28h20V10L21,2H9z M24,19v8c0,3-2,3-4,2v-2c1,0,2,0,2-1v-7H9v13h14V19H24z M23,10h-4V6l4,4z M11,19h3v8h-2v-6h-1V19z M16,19h2c2,0,4,0,4,3c0,3-2,3-4,3h-2V19z M18,23h-1v-2h1c1,0,2,0,2,1C20,23,19,23,18,23z', // JS icon
-            HTML: 'M9,2v28h20V10L21,2H9z M23,10h-4V6l4,4z M14,21l-2,1l2,1v2l-4-2v-2l4-2V21z M16,16h4v1h-4V16z M20,24h-4v-1h4V24z M24,21l-2,1l2,1v2l-4-2v-2l4-2V21z', // HTML icon
-            CSS: 'M9,2v28h20V10L21,2H9z M23,10h-4V6l4,4z M21,24H18l-1,4h-2l4-16h1l4,16h-2L21,24z M20,22l-1-6l-1,6H20z', // CSS icon
-            Python: 'M16,2C9,2,9,6,9,6v4h8v2H6C6,12,2,12,2,19s4,7,4,7h3v-4c0,0,0-4,7-4s7,4,7,4v7c0,0,0,4-7,4s-7-4-7-4v-3H2c0,0-4,0-4-7s4-7,4-7h4V6c0,0,0-4,7-4s7,4,7,4v4h-4V6C16,6,16,2,16,2z M13,8c-1,0-2-1-2-2s1-2,2-2s2,1,2,2S14,8,13,8z M23,26c1,0,2,1,2,2s-1,2-2,2s-2-1-2-2S22,26,23,26z', // Python icon
-            Java: 'M12,2v8c-3,0-6,3-6,6v6c0,3,3,6,6,6h8c3,0,6-3,6-6v-6h-8V8c0-3,3-6,6-6H12z M22,14h2v2h-2V14z M18,8h2v4h-2V8z', // Java icon
-            Ruby: 'M16,2C6,2,6,12,6,12v4c0,0,0,4,4,4h12c4,0,4-4,4-4v-4C26,12,26,2,16,2z M16,6c6,0,6,6,6,6v4H10v-4C10,12,10,6,16,6z M14,13c-1,0-2-1-2-2s1-2,2-2s2,1,2,2S15,13,14,13z M18,13c-1,0-2-1-2-2s1-2,2-2s2,1,2,2S19,13,18,13z', // Ruby icon
-            PHP: 'M8,12v8h16v-8H8z M12,14h2c1,0,2,0,2,1l-2,3h2l2-3c0-1-1-2-2-2h-4V14z M20,14h2v1h-2v2h2v1h-4v-4H20z M6,16h2v2H6V16z M24,16h2v2h-2V16z M4,18h2v2H4V18z M26,18h2v2h-2V18z M6,20h18v2H6V20z' // PHP icon
-        };
 
         // Initialize App
         document.addEventListener('DOMContentLoaded', () => {
@@ -960,7 +1007,7 @@
         // Initialize Window Controls
         function initializeWindowControls() {
             document.getElementById('window-close').addEventListener('click', confirmQuit);
-            document.getElementById('window-zoom').addEventListener('click', toggleWindowSize);
+            document.getElementById('window-full').addEventListener('click', toggleWindowSize);
             
             // Alert dialog
             document.getElementById('alert-ok').addEventListener('click', () => {
@@ -983,13 +1030,16 @@
 
         // Initialize Menu Items
         function initializeMenuItems() {
+            // Desk menu
+            document.getElementById('about-button').addEventListener('click', () => showModal('about-modal'));
+            document.getElementById('quit-button').addEventListener('click', confirmQuit);
+            
             // File menu
-            document.getElementById('new-window').addEventListener('click', () => {
+            document.getElementById('open-window').addEventListener('click', () => {
                 window.open(window.location.href, '_blank');
             });
             document.getElementById('close-window').addEventListener('click', confirmQuit);
             document.getElementById('refresh-button').addEventListener('click', fetchRepositories);
-            document.getElementById('quit-button').addEventListener('click', confirmQuit);
 
             // View menu
             document.getElementById('view-icon').addEventListener('click', () => setViewMode('icon'));
@@ -998,9 +1048,9 @@
             document.getElementById('sort-date').addEventListener('click', () => sortRepositories('updated'));
             document.getElementById('sort-stars').addEventListener('click', () => sortRepositories('stars'));
 
-            // Special menu
-            document.getElementById('about-button').addEventListener('click', () => showModal('about-modal'));
+            // Options menu
             document.getElementById('keyboard-shortcuts').addEventListener('click', () => showModal('shortcuts-modal'));
+            document.getElementById('preferences').addEventListener('click', () => showAlert('Preferences are not available in this version.'));
 
             // Context menu
             document.getElementById('context-open').addEventListener('click', () => {
@@ -1034,20 +1084,20 @@
             
             document.getElementById('sort-button').addEventListener('click', (e) => {
                 const menu = document.createElement('div');
-                menu.className = 'mac-context-menu';
+                menu.className = 'gem-context-menu';
                 menu.style.display = 'block';
                 menu.style.left = e.target.offsetLeft + 'px';
                 menu.style.top = (e.target.offsetTop + e.target.offsetHeight) + 'px';
                 
                 menu.innerHTML = `
-                    <div class="mac-context-item" id="sort-menu-name">by Name</div>
-                    <div class="mac-context-item" id="sort-menu-date">by Date</div>
-                    <div class="mac-context-item" id="sort-menu-stars">by Stars</div>
+                    <div class="gem-context-item" id="sort-menu-name">By Name</div>
+                    <div class="gem-context-item" id="sort-menu-date">By Date</div>
+                    <div class="gem-context-item" id="sort-menu-stars">By Stars</div>
                 `;
                 
                 document.body.appendChild(menu);
                 
-                menu.querySelectorAll('.mac-context-item').forEach(item => {
+                menu.querySelectorAll('.gem-context-item').forEach(item => {
                     item.addEventListener('click', () => {
                         const sortType = item.id.replace('sort-menu-', '');
                         if (sortType === 'name') sortRepositories('name');
@@ -1074,8 +1124,7 @@
             const mainWindow = document.getElementById('main-window');
             
             mainTitleBar.addEventListener('mousedown', (e) => {
-                if (e.target.classList.contains('mac-close-box') || 
-                    e.target.classList.contains('mac-zoom-box')) return;
+                if (e.target.classList.contains('gem-window-button')) return;
                 
                 isDragging = true;
                 const rect = mainWindow.getBoundingClientRect();
@@ -1097,11 +1146,10 @@
             
             // Detail window dragging
             const detailTitleBar = document.getElementById('detail-title-bar');
-            const detailWindow = document.querySelector('#repo-detail-modal .mac-window');
+            const detailWindow = document.querySelector('#repo-detail-modal .gem-window');
             
             detailTitleBar.addEventListener('mousedown', (e) => {
-                if (e.target.classList.contains('mac-close-box') || 
-                    e.target.classList.contains('mac-zoom-box')) return;
+                if (e.target.classList.contains('gem-window-button')) return;
                 
                 isDragging = true;
                 const rect = detailWindow.getBoundingClientRect();
@@ -1113,22 +1161,46 @@
         // Initialize Keyboard Shortcuts
         function initializeKeyboardShortcuts() {
             document.addEventListener('keydown', (e) => {
-                // Command+R - Refresh
-                if (e.key === 'r' && (e.metaKey || e.ctrlKey)) {
+                // F5 - Refresh
+                if (e.key === 'F5') {
                     e.preventDefault();
                     fetchRepositories();
                 }
                 
-                // Command+F - Focus on search
-                if (e.key === 'f' && (e.metaKey || e.ctrlKey)) {
+                // Ctrl+F - Focus on search
+                if (e.key === 'f' && e.ctrlKey) {
                     e.preventDefault();
                     document.getElementById('repo-search').focus();
                 }
                 
-                // Command+Q - Quit
-                if (e.key === 'q' && (e.metaKey || e.ctrlKey)) {
+                // Alt+Q - Quit
+                if (e.key === 'q' && e.altKey) {
                     e.preventDefault();
                     confirmQuit();
+                }
+                
+                // Menu accelerators
+                if (e.altKey) {
+                    // Alt+D - Desk menu
+                    if (e.key === 'd' || e.key === 'D') {
+                        e.preventDefault();
+                        document.querySelector('.gem-menu-item:nth-child(1)').click();
+                    }
+                    // Alt+F - File menu
+                    else if (e.key === 'f' || e.key === 'F') {
+                        e.preventDefault();
+                        document.querySelector('.gem-menu-item:nth-child(2)').click();
+                    }
+                    // Alt+V - View menu
+                    else if (e.key === 'v' || e.key === 'V') {
+                        e.preventDefault();
+                        document.querySelector('.gem-menu-item:nth-child(3)').click();
+                    }
+                    // Alt+O - Options menu
+                    else if (e.key === 'o' || e.key === 'O') {
+                        e.preventDefault();
+                        document.querySelector('.gem-menu-item:nth-child(4)').click();
+                    }
                 }
                 
                 // Esc - Close modals
@@ -1139,10 +1211,10 @@
                 // Arrow keys for navigation
                 if (e.key.startsWith('Arrow')) {
                     if (currentView === 'icon') {
-                        const itemsContainer = document.querySelector('.mac-icon-grid');
+                        const itemsContainer = document.querySelector('.gem-icon-grid');
                         if (!itemsContainer) return;
                         
-                        const items = Array.from(itemsContainer.querySelectorAll('.mac-icon'));
+                        const items = Array.from(itemsContainer.querySelectorAll('.gem-icon'));
                         if (items.length === 0) return;
                         
                         // If nothing is selected, select the first item
@@ -1153,7 +1225,7 @@
                         }
                         
                         let newIndex = selectedRepoIndex;
-                        const columns = Math.floor(itemsContainer.clientWidth / 70); // Approximate column count
+                        const columns = Math.floor(itemsContainer.clientWidth / 100); // Approximate column count
                         
                         if (e.key === 'ArrowRight') {
                             newIndex = Math.min(items.length - 1, selectedRepoIndex + 1);
@@ -1171,7 +1243,7 @@
                         }
                     } else {
                         // List view navigation
-                        const listView = document.querySelector('.mac-list-view');
+                        const listView = document.querySelector('.gem-list-view');
                         if (!listView) return;
                         
                         const rows = Array.from(listView.querySelectorAll('tr')).slice(1); // Skip header
@@ -1202,15 +1274,15 @@
                 // Enter - Open selected repository
                 if (e.key === 'Enter') {
                     if (currentView === 'icon') {
-                        const itemsContainer = document.querySelector('.mac-icon-grid');
+                        const itemsContainer = document.querySelector('.gem-icon-grid');
                         if (!itemsContainer) return;
                         
-                        const items = Array.from(itemsContainer.querySelectorAll('.mac-icon'));
+                        const items = Array.from(itemsContainer.querySelectorAll('.gem-icon'));
                         if (items.length === 0 || selectedRepoIndex === -1) return;
                         
                         showRepoDetails(selectedRepo);
                     } else {
-                        const listView = document.querySelector('.mac-list-view');
+                        const listView = document.querySelector('.gem-list-view');
                         if (!listView) return;
                         
                         const rows = Array.from(listView.querySelectorAll('tr')).slice(1); // Skip header
@@ -1224,10 +1296,10 @@
 
         // Initialize Scrollbar
         function initializeScrollbar() {
-            const scrollbarThumb = document.querySelector('.mac-scrollbar-thumb');
-            const scrollbarUp = document.querySelector('.mac-scrollbar-up');
-            const scrollbarDown = document.querySelector('.mac-scrollbar-down');
-            const content = document.getElementById('repos-container');
+            const scrollbarThumb = document.querySelector('.gem-scrollbar-thumb');
+            const scrollbarUp = document.querySelector('.gem-scrollbar-up');
+            const scrollbarDown = document.querySelector('.gem-scrollbar-down');
+            const content = document.querySelector('.gem-content');
             
             if (!scrollbarThumb || !scrollbarUp || !scrollbarDown || !content) return;
             
@@ -1235,7 +1307,7 @@
                 e.preventDefault();
                 const startY = e.clientY;
                 const startTop = parseInt(getComputedStyle(scrollbarThumb).top || '0');
-                const scrollbarHeight = scrollbarThumb.parentElement.clientHeight - 28; // minus buttons height
+                const scrollbarHeight = scrollbarThumb.parentElement.clientHeight - 36; // minus buttons height
                 
                 function onMouseMove(e) {
                     let newTop = startTop + (e.clientY - startY);
@@ -1258,12 +1330,12 @@
             });
             
             scrollbarUp.addEventListener('click', () => {
-                content.scrollTop -= 30;
+                content.scrollTop -= 50;
                 updateScrollbarThumb();
             });
             
             scrollbarDown.addEventListener('click', () => {
-                content.scrollTop += 30;
+                content.scrollTop += 50;
                 updateScrollbarThumb();
             });
             
@@ -1278,12 +1350,12 @@
 
         // Update Scrollbar Thumb position
         function updateScrollbarThumb() {
-            const scrollbarThumb = document.querySelector('.mac-scrollbar-thumb');
-            const content = document.getElementById('repos-container');
+            const scrollbarThumb = document.querySelector('.gem-scrollbar-thumb');
+            const content = document.querySelector('.gem-content');
             
             if (!scrollbarThumb || !content) return;
             
-            const scrollbarHeight = scrollbarThumb.parentElement.clientHeight - 28; // minus buttons height
+            const scrollbarHeight = scrollbarThumb.parentElement.clientHeight - 36; // minus buttons height
             
             if (content.scrollHeight <= content.clientHeight) {
                 scrollbarThumb.style.display = 'none';
@@ -1294,7 +1366,7 @@
             
             // Calculate thumb size and position
             const thumbSizeRatio = content.clientHeight / content.scrollHeight;
-            const thumbSize = Math.max(30, scrollbarHeight * thumbSizeRatio);
+            const thumbSize = Math.max(40, scrollbarHeight * thumbSizeRatio);
             const scrollRatio = content.scrollTop / (content.scrollHeight - content.clientHeight);
             const thumbPosition = scrollRatio * (scrollbarHeight - thumbSize);
             
@@ -1304,7 +1376,7 @@
 
         // Select Repository Item (Icon View)
         function selectRepoItem(item) {
-            document.querySelectorAll('.mac-icon').forEach(el => {
+            document.querySelectorAll('.gem-icon').forEach(el => {
                 el.classList.remove('selected');
             });
             
@@ -1312,13 +1384,13 @@
             item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             
             // Find the corresponding repository
-            const repoName = item.querySelector('.mac-icon-label').textContent;
+            const repoName = item.querySelector('.gem-icon-label').textContent;
             selectedRepo = allRepos.find(repo => repo.name === repoName);
         }
 
         // Select List Item (List View)
         function selectListItem(row) {
-            document.querySelectorAll('.mac-list-view tr').forEach(el => {
+            document.querySelectorAll('.gem-list-view tr').forEach(el => {
                 el.classList.remove('selected');
             });
             
@@ -1341,15 +1413,15 @@
                 mainWindow.style.left = '';
                 mainWindow.style.width = '';
                 mainWindow.style.height = '';
-                mainWindow.style.maxWidth = '800px';
+                mainWindow.style.maxWidth = '900px';
                 mainWindow.style.margin = '0 auto';
             } else {
                 // Maximize window
                 mainWindow.style.position = 'fixed';
-                mainWindow.style.top = '20px'; // Below menu bar
+                mainWindow.style.top = '24px'; // Below menu bar
                 mainWindow.style.left = '0';
                 mainWindow.style.width = '100%';
-                mainWindow.style.height = 'calc(100vh - 20px)';
+                mainWindow.style.height = 'calc(100vh - 24px)';
                 mainWindow.style.maxWidth = 'none';
                 mainWindow.style.margin = '0';
             }
@@ -1423,9 +1495,11 @@
             
             // Show loading indicator
             reposContainer.innerHTML = `
-                <div class="mac-loading">
-                    <div class="mac-loading-text">Loading Repositories...</div>
-                    <div class="mac-watch"></div>
+                <div class="gem-loading">
+                    <div class="gem-loading-text">Loading Repositories...</div>
+                    <div class="gem-loading-animation">
+                        <div class="gem-loading-bar"></div>
+                    </div>
                 </div>
             `;
             
@@ -1449,15 +1523,33 @@
                 showAlert(`Error: ${error.message}`);
                 reposContainer.innerHTML = `
                     <div style="text-align: center; padding: 40px;">
-                        <div class="mac-dialog-icon mac-alert-icon" style="margin: 0 auto 10px;"></div>
-                        <div style="font-family: 'Chicago', monospace; margin-bottom: 10px;">
-                            Sorry, a problem occurred.
+                        <div style="font-size: 30px; margin-bottom: 15px;">⚠</div>
+                        <div style="font-family: 'AtariST', 'Courier New', monospace; margin-bottom: 15px; font-size: 16px; font-weight: bold;">
+                            Error loading repositories
                         </div>
-                        <div style="font-size: 9px;">
+                        <div style="font-size: 14px; font-weight: bold;">
                             ${error.message}
                         </div>
                     </div>
                 `;
+            }
+        }
+
+        // Get icon for repository based on language
+        function getRepoIcon(language) {
+            if (!language) return 'icon-file';
+            
+            switch(language) {
+                case 'JavaScript':
+                    return 'icon-js';
+                case 'HTML':
+                    return 'icon-html';
+                case 'CSS':
+                    return 'icon-css';
+                case 'Python':
+                    return 'icon-py';
+                default:
+                    return 'icon-file';
             }
         }
 
@@ -1467,35 +1559,30 @@
             
             if (currentView === 'icon') {
                 const iconGrid = document.createElement('div');
-                iconGrid.className = 'mac-icon-grid';
+                iconGrid.className = 'gem-icon-grid';
                 
                 repos.forEach((repo, index) => {
                     const icon = document.createElement('div');
-                    icon.className = 'mac-icon';
+                    icon.className = 'gem-icon';
                     if (selectedRepo && selectedRepo.id === repo.id) {
                         icon.classList.add('selected');
                         selectedRepoIndex = index;
                     }
                     
-                    // Choose appropriate icon path based on language
-                    let iconPath = repoIcons.default;
-                    if (repo.language && repoIcons[repo.language]) {
-                        iconPath = repoIcons[repo.language];
-                    }
+                    // Get icon class based on repository language
+                    const iconClass = getRepoIcon(repo.language);
                     
                     icon.innerHTML = `
-                        <div class="mac-icon-box">
-                            <svg viewBox="0 0 32 32" width="32" height="32">
-                                <path d="${iconPath}" fill="black"/>
-                            </svg>
+                        <div class="gem-icon-box">
+                            <div class="${iconClass}"></div>
                         </div>
-                        <div class="mac-icon-label">${repo.name}</div>
+                        <div class="gem-icon-label">${repo.name}</div>
                     `;
                     
                     icon.addEventListener('click', (e) => {
                         selectedRepo = repo;
                         selectedRepoIndex = index;
-                        document.querySelectorAll('.mac-icon').forEach(el => {
+                        document.querySelectorAll('.gem-icon').forEach(el => {
                             el.classList.remove('selected');
                         });
                         icon.classList.add('selected');
@@ -1511,7 +1598,7 @@
                         selectedRepo = repo;
                         selectedRepoIndex = index;
                         
-                        document.querySelectorAll('.mac-icon').forEach(el => {
+                        document.querySelectorAll('.gem-icon').forEach(el => {
                             el.classList.remove('selected');
                         });
                         icon.classList.add('selected');
@@ -1535,15 +1622,15 @@
             } else {
                 // List view
                 const table = document.createElement('table');
-                table.className = 'mac-list-view';
+                table.className = 'gem-list-view';
                 
                 // Header row
                 const header = document.createElement('tr');
                 header.innerHTML = `
                     <th>Name</th>
                     <th>Language</th>
-                    <th style="text-align: right">Stars</th>
-                    <th style="text-align: right">Updated</th>
+                    <th>Stars</th>
+                    <th>Updated</th>
                 `;
                 table.appendChild(header);
                 
@@ -1560,15 +1647,15 @@
                     row.innerHTML = `
                         <td>${repo.name}</td>
                         <td>${repo.language || '-'}</td>
-                        <td style="text-align: right">${repo.stargazers_count}</td>
-                        <td style="text-align: right">${updatedDate}</td>
+                        <td>${repo.stargazers_count}</td>
+                        <td>${updatedDate}</td>
                     `;
                     
                     row.addEventListener('click', () => {
                         selectedRepo = repo;
                         selectedRepoIndex = index;
                         
-                        document.querySelectorAll('.mac-list-view tr').forEach(el => {
+                        document.querySelectorAll('.gem-list-view tr').forEach(el => {
                             el.classList.remove('selected');
                         });
                         
@@ -1584,7 +1671,7 @@
                         selectedRepo = repo;
                         selectedRepoIndex = index;
                         
-                        document.querySelectorAll('.mac-list-view tr').forEach(el => {
+                        document.querySelectorAll('.gem-list-view tr').forEach(el => {
                             el.classList.remove('selected');
                         });
                         
@@ -1624,45 +1711,45 @@
             const updatedDate = new Date(repo.updated_at).toLocaleDateString();
             
             content.innerHTML = `
-                <div class="mac-detail-header">${repo.name}</div>
+                <div class="gem-detail-header">${repo.name}</div>
                 
-                <div class="mac-detail-description">
+                <div class="gem-detail-description">
                     ${repo.description || "No description available."}
                 </div>
                 
-                <div class="mac-detail-row">
-                    <div class="mac-detail-label">Created:</div>
-                    <div class="mac-detail-value">${createdDate}</div>
+                <div class="gem-detail-row">
+                    <div class="gem-detail-label">Created:</div>
+                    <div class="gem-detail-value">${createdDate}</div>
                 </div>
                 
-                <div class="mac-detail-row">
-                    <div class="mac-detail-label">Updated:</div>
-                    <div class="mac-detail-value">${updatedDate}</div>
+                <div class="gem-detail-row">
+                    <div class="gem-detail-label">Updated:</div>
+                    <div class="gem-detail-value">${updatedDate}</div>
                 </div>
                 
-                <div class="mac-detail-row">
-                    <div class="mac-detail-label">Language:</div>
-                    <div class="mac-detail-value">${repo.language || "Not specified"}</div>
+                <div class="gem-detail-row">
+                    <div class="gem-detail-label">Language:</div>
+                    <div class="gem-detail-value">${repo.language || "Not specified"}</div>
                 </div>
                 
-                <div class="mac-detail-row">
-                    <div class="mac-detail-label">Stars:</div>
-                    <div class="mac-detail-value">${repo.stargazers_count}</div>
+                <div class="gem-detail-row">
+                    <div class="gem-detail-label">Stars:</div>
+                    <div class="gem-detail-value">${repo.stargazers_count}</div>
                 </div>
                 
-                <div class="mac-detail-row">
-                    <div class="mac-detail-label">Forks:</div>
-                    <div class="mac-detail-value">${repo.forks_count}</div>
+                <div class="gem-detail-row">
+                    <div class="gem-detail-label">Forks:</div>
+                    <div class="gem-detail-value">${repo.forks_count}</div>
                 </div>
                 
-                <div class="mac-detail-row">
-                    <div class="mac-detail-label">Size:</div>
-                    <div class="mac-detail-value">${repo.size} KB</div>
+                <div class="gem-detail-row">
+                    <div class="gem-detail-label">Size:</div>
+                    <div class="gem-detail-value">${repo.size} KB</div>
                 </div>
                 
-                <div class="mac-button-row">
-                    <div class="mac-button" onclick="closeModal('repo-detail-modal')">Close</div>
-                    <div class="mac-button" onclick="window.open('${repo.html_url}', '_blank')">Open</div>
+                <div class="gem-button-row">
+                    <div class="gem-button" onclick="closeModal('repo-detail-modal')">Cancel</div>
+                    <div class="gem-button" onclick="window.open('${repo.html_url}', '_blank')">Open</div>
                 </div>
             `;
             
@@ -1711,9 +1798,10 @@
             window.close();
             // Fallback if window.close doesn't work
             document.body.innerHTML = `
-                <div class="mac-startup">
-                    <div class="mac-happy-mac"></div>
-                    <div class="mac-startup-text">It is now safe to turn off your Macintosh.</div>
+                <div class="gem-startup">
+                    <div class="gem-logo"></div>
+                    <div class="gem-startup-text">Thank you for using</div>
+                    <div class="gem-startup-text">Atari ST GEM GitHub Browser</div>
                 </div>
             `;
         }
