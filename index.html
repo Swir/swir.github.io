@@ -1,4 +1,27 @@
-// Widok listy/szczegółów
+// Zapasowy kod inicjalizujący na wypadek problemów z sekwencją startową
+        // Automatyczne uruchomienie po 10 sekundach, jeśli ekran startowy jest nadal widoczny
+        setTimeout(function() {
+            const dosStartupScreen = document.getElementById('dos-startup');
+            const windowsStartupScreen = document.getElementById('win-startup');
+            const mainWindow = document.getElementById('main-window');
+            
+            if ((!dosStartupScreen || !dosStartupScreen.classList.contains('hidden')) ||
+                (!windowsStartupScreen || windowsStartupScreen.style.display === 'flex') ||
+                (!mainWindow || mainWindow.style.display === 'none')) {
+                
+                console.log("Detected startup hang, forcing application initialization...");
+                
+                // Ukryj ekrany startowe
+                if (dosStartupScreen) dosStartupScreen.classList.add('hidden');
+                if (windowsStartupScreen) windowsStartupScreen.style.display = 'none';
+                
+                // Pokaż główne okno
+                if (mainWindow) mainWindow.style.display = 'block';
+                
+                // Zainicjalizuj aplikację
+                initializeApplication();
+            }
+        }, 10000);            // Widok listy/szczegółów
             document.getElementById('fm-view-list').addEventListener('click', function() {
                 playSound('click');
                 document.getElementById('file-list').classList.remove('details-view');
@@ -533,6 +556,7 @@
         .win-dos-startup.hidden {
             opacity: 0;
             visibility: hidden;
+            display: none;
         }
         
         .win-dos-text {
@@ -563,7 +587,7 @@
             width: 100%;
             height: 100%;
             background-color: var(--win-bg);
-            display: flex;
+            display: none;
             flex-direction: column;
             align-items: center;
             justify-content: center;
@@ -574,6 +598,7 @@
         .win-startup.hidden {
             opacity: 0;
             visibility: hidden;
+            display: none;
         }
         
         .win-logo {
@@ -1112,7 +1137,7 @@
     </audio>
 
     <!-- DOS Startup screen -->
-    <div class="win-dos-startup" id="dos-startup">
+    <div class="win-dos-startup" id="dos-startup" style="display: block; opacity: 1; visibility: visible;">
         <div class="win-dos-text">Starting MS-DOS...</div>
         <div class="win-dos-text">
 Microsoft(R) MS-DOS(R) Version 6.22
@@ -1514,26 +1539,63 @@ C:\>cd windows<span class="win-cursor"></span>
         let programGroups = [];
         let currentGroup = null;
         let memoryInterval;
+        let fileTypes = [];
         
         // Inicjalizacja
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("DOM loaded, starting initialization...");
+            // Inicjalizacja zmiennych
+            fileTypes = [
+                { name: 'README.MD', icon: 'fa-file-alt' },
+                { name: 'index.html', icon: 'fa-html5' },
+                { name: 'style.css', icon: 'fa-css3-alt' },
+                { name: 'script.js', icon: 'fa-js-square' },
+                { name: 'package.json', icon: 'fa-file-code' },
+                { name: 'tsconfig.json', icon: 'fa-file-code' },
+                { name: '.gitignore', icon: 'fa-github' },
+                { name: 'LICENSE', icon: 'fa-file-contract' },
+                { name: 'Dockerfile', icon: 'fa-docker' },
+                { name: 'main.py', icon: 'fa-python' },
+                { name: 'index.php', icon: 'fa-php' },
+                { name: 'webpack.config.js', icon: 'fa-cogs' },
+                { name: 'server.js', icon: 'fa-server' },
+                { name: 'db.json', icon: 'fa-database' }
+            ];
+            
             // Symulacja startu DOS
             simulateDOSStartup();
         });
         
         // Symulacja startu DOS
         function simulateDOSStartup() {
+            console.log("Starting DOS simulation...");
             const dosStartupScreen = document.getElementById('dos-startup');
             const dosCommand = document.getElementById('dos-command');
             
+            if (!dosStartupScreen || !dosCommand) {
+                console.error("DOS startup elements not found, starting Windows directly");
+                simulateWindowsStartup();
+                return;
+            }
+            
+            // Upewnij się, że ekran DOS jest widoczny
+            dosStartupScreen.classList.remove('hidden');
+            dosStartupScreen.style.opacity = '1';
+            dosStartupScreen.style.visibility = 'visible';
+            
             setTimeout(function() {
-                dosCommand.textContent = "C:\\WINDOWS>win";
+                dosCommand.textContent = "C:\\>cd windows";
                 
                 setTimeout(function() {
-                    dosCommand.textContent = "C:\\WINDOWS>win /s";
+                    dosCommand.textContent = "C:\\WINDOWS>win";
                     
                     setTimeout(function() {
-                        simulateWindowsStartup();
+                        dosCommand.textContent = "C:\\WINDOWS>win /s";
+                        
+                        setTimeout(function() {
+                            console.log("DOS startup complete, launching Windows...");
+                            simulateWindowsStartup();
+                        }, 1000);
                     }, 1000);
                 }, 1000);
             }, 1500);
@@ -1541,23 +1603,34 @@ C:\>cd windows<span class="win-cursor"></span>
         
         // Symulacja startu Windows
         function simulateWindowsStartup() {
+            console.log("Starting Windows simulation...");
             const dosStartupScreen = document.getElementById('dos-startup');
             const windowsStartupScreen = document.getElementById('win-startup');
+            
+            if (!dosStartupScreen || !windowsStartupScreen) {
+                console.error("Startup elements not found, initializing application directly");
+                initializeApplication();
+                return;
+            }
             
             dosStartupScreen.classList.add('hidden');
             windowsStartupScreen.style.display = 'flex';
             
             // Dźwięk startowy
             try {
-                document.getElementById('win-startup-sound').play().catch(() => {
-                    console.log('Autoplay prevented by browser');
-                });
+                const startupSound = document.getElementById('win-startup-sound');
+                if (startupSound) {
+                    startupSound.play().catch(function(e) {
+                        console.log('Autoplay prevented by browser', e);
+                    });
+                }
             } catch (e) {
-                console.log('Audio not supported');
+                console.log('Audio not supported', e);
             }
             
             // Zamknięcie ekranu startowego po załadowaniu
-            setTimeout(() => {
+            setTimeout(function() {
+                console.log("Windows startup complete, initializing application...");
                 windowsStartupScreen.classList.add('hidden');
                 initializeApplication();
             }, 3500);
@@ -1565,38 +1638,71 @@ C:\>cd windows<span class="win-cursor"></span>
         
         // Inicjalizacja aplikacji
         function initializeApplication() {
-            // Wczytaj repozytoria
-            fetchRepositories();
-            
-            // Inicjalizacja pamięci
-            updateMemoryDisplay();
-            
-            // Rozpocznij cykliczne aktualizacje pamięci
-            memoryInterval = setInterval(updateMemoryDisplay, 10000);
-            
-            // Event listenery dla przycisków okna
-            initializeWindowButtons();
-            
-            // Event listenery dla menu i toolbara
-            initializeMenuAndToolbar();
-            
-            // Event listenery dla przeciągania okien
-            initializeDragAndDrop();
-            
-            // Event listenery dla skrótów klawiszowych
-            initializeKeyboardShortcuts();
-            
-            // Event listenery dla okna pomocy
-            initializeHelpSystem();
-            
-            // Event listenery dla File Managera
-            initializeFileManager();
-            
-            // Tło modalu zamyka modalne okna
-            document.getElementById('modal-background').addEventListener('click', closeAllModals);
-            
-            // Stwórz domyślne grupy programowe
-            createDefaultProgramGroups();
+            console.log("Initializing application...");
+            try {
+                // Wczytaj repozytoria
+                fetchRepositories();
+                
+                // Inicjalizacja pamięci
+                updateMemoryDisplay();
+                
+                // Rozpocznij cykliczne aktualizacje pamięci
+                memoryInterval = setInterval(updateMemoryDisplay, 10000);
+                
+                // Event listenery dla przycisków okna
+                initializeWindowButtons();
+                
+                // Event listenery dla menu i toolbara
+                initializeMenuAndToolbar();
+                
+                // Event listenery dla przeciągania okien
+                initializeDragAndDrop();
+                
+                // Event listenery dla skrótów klawiszowych
+                initializeKeyboardShortcuts();
+                
+                // Event listenery dla okna pomocy
+                initializeHelpSystem();
+                
+                // Event listenery dla File Managera
+                initializeFileManager();
+                
+                // Tło modalu zamyka modalne okna
+                const modalBackground = document.getElementById('modal-background');
+                if (modalBackground) {
+                    modalBackground.addEventListener('click', closeAllModals);
+                }
+                
+                // Stwórz domyślne grupy programowe
+                createDefaultProgramGroups();
+                
+                console.log("Application initialized successfully");
+            } catch (error) {
+                console.error("Error during application initialization:", error);
+                
+                // Pokaż błąd na ekranie
+                const mainWindow = document.getElementById('main-window');
+                if (mainWindow) {
+                    mainWindow.innerHTML = `
+                        <div class="win-error">
+                            <div class="win-error-title">
+                                <div>Initialization Error</div>
+                            </div>
+                            <div class="win-error-content">
+                                <div class="win-error-icon">!</div>
+                                <div class="win-error-message">
+                                    <p>An error occurred while initializing Windows:</p>
+                                    <p>${error.message || "Unknown error"}</p>
+                                </div>
+                            </div>
+                            <div class="win-error-buttons">
+                                <button class="win-action-button" onclick="location.reload()">Restart</button>
+                            </div>
+                        </div>
+                    `;
+                    mainWindow.style.display = 'block';
+                }
+            }
         }
         
         // Stwórz domyślne grupy programowe
