@@ -39,11 +39,6 @@
             --win-pattern-gray: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAEklEQVQImWNgYGD4z8DAwMDAAMYAELgCFMRqdQgAAAAASUVORK5CYII=');
             --win-pattern-grid: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAFElEQVQYlWNgYGD4z4AGGIgTQAUAFL0Q5QkqZfAAAAAASUVORK5CYII=');
             --win-pattern-dots: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAEklEQVQImWNgYGD4z8DAwMAAADIABVJYxTEAAAAASUVORK5CYII=');
-            --win-pattern-houndstooth: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAGklEQVQYlWNgYGD4z0ABYCJVAEPTVWhkYAAANHgECNMq+ZkAAAAASUVORK5CYII=');
-            --win-pattern-bricks: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAGElEQVQYlWNgYGD4TyQGEHMSI86A8ocBAEQjDAESrW7oAAAAAElFTkSuQmCC');
-            
-            /* Animations speed */
-            --win-animation-speed: 0.3s;
         }
         
         /* --- Reset i podstawowe style --- */
@@ -82,7 +77,7 @@
         body {
             padding: 10px;
             min-height: 100vh;
-            transition: background-color 0.3s, background-image 0.3s;
+            transition: background-color 0.3s;
         }
 
         /* --- 3D Windows 3.11 Style --- */
@@ -90,13 +85,11 @@
             border: 2px solid var(--win-border-shadow);
             background-color: var(--win-window-bg);
             box-shadow: inset 1px 1px 0 var(--win-border-light), 
-                        inset -1px -1px 0 var(--win-border-shadow),
-                        3px 3px 5px rgba(0,0,0,0.2);
+                        inset -1px -1px 0 var(--win-border-shadow);
             margin-bottom: 20px;
             position: relative;
             overflow: hidden;
-            transition: all var(--win-animation-speed);
-            animation: windowOpen var(--win-animation-speed);
+            transition: all 0.2s;
         }
         
         .win-window::before {
@@ -214,7 +207,6 @@
             box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
             z-index: 100;
             min-width: 150px;
-            animation: fadeIn 0.15s;
         }
         
         .win-menu-item:hover .win-submenu {
@@ -255,23 +247,11 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 8px 4px;
-            border: 1px dashed transparent;
-            transition: all 0.2s;
         }
         
-        .win-program-group:hover {
-            background-color: rgba(255, 255, 255, 0.2);
-            border-color: var(--win-highlight);
-        }
-        
-        .win-program-group:active {
-            background-color: rgba(255, 255, 255, 0.3);
-        }
-        
-        .win-program-icon {
-            width: 36px;
-            height: 36px;
+        .win-group-icon {
+            width: 32px;
+            height: 32px;
             background-color: var(--win-gray);
             border-top: 1px solid var(--win-border-light);
             border-left: 1px solid var(--win-border-light);
@@ -281,10 +261,6 @@
             align-items: center;
             justify-content: center;
             margin-bottom: 4px;
-        }
-        
-        .win-program-icon-inner {
-            font-size: 18px;
         }
         
         .win-group-name {
@@ -373,7 +349,7 @@
             max-width: 500px;
             z-index: 1000;
             display: none;
-            animation: windowOpen var(--win-animation-speed);
+            animation: windowOpen 0.3s;
         }
         
         @keyframes windowOpen {
@@ -390,7 +366,7 @@
             background-color: rgba(0, 0, 0, 0.2);
             z-index: 999;
             display: none;
-            animation: fadeIn var(--win-animation-speed);
+            animation: fadeIn 0.3s;
         }
         
         @keyframes fadeIn {
@@ -709,7 +685,6 @@
             gap: 8px;
             align-items: center;
             border-bottom: 1px solid var(--win-border-shadow);
-            flex-wrap: wrap;
         }
         
         .win-toolbar-button {
@@ -792,7 +767,6 @@
             box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
             z-index: 1000;
             display: none;
-            animation: fadeIn 0.15s;
         }
         
         .win-context-item {
@@ -801,16 +775,9 @@
             cursor: pointer;
             white-space: nowrap;
             font-size: 11px;
-            display: flex;
-            align-items: center;
         }
         
         .win-context-item:hover {
-            background-color: var(--win-blue);
-            color: var(--win-title-text);
-        }
-        
-        .win-context-item-selected {
             background-color: var(--win-blue);
             color: var(--win-title-text);
         }
@@ -866,15 +833,6 @@
             color: var(--win-dark-mode-text);
         }
         
-        body.dark-mode .win-toolbar {
-            background-color: var(--win-dark-mode-window);
-        }
-        
-        body.dark-mode .win-toolbar-button {
-            background-color: var(--win-dark-mode-window);
-            color: var(--win-dark-mode-text);
-        }
-        
         /* --- About Dialog --- */
         .win-about {
             text-align: center;
@@ -915,93 +873,6 @@
             display: none !important;
         }
         
-        /* --- Temporary Message --- */
-        .win-temp-message {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: var(--win-window-bg);
-            color: var(--win-text);
-            padding: 8px 16px;
-            border-top: 1px solid var(--win-border-light);
-            border-left: 1px solid var(--win-border-light);
-            border-right: 1px solid var(--win-border-shadow);
-            border-bottom: 1px solid var(--win-border-shadow);
-            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
-            z-index: 3000;
-            font-size: 12px;
-            font-weight: bold;
-            animation: messageAppear 0.3s;
-            min-width: 180px;
-            text-align: center;
-        }
-        
-        @keyframes messageAppear {
-            from { transform: translate(-50%, 100%); opacity: 0; }
-            to { transform: translate(-50%, 0); opacity: 1; }
-        }
-        
-        /* --- Tooltip --- */
-        .win-tooltip {
-            position: absolute;
-            background-color: #ffffe1;
-            border: 1px solid #000000;
-            padding: 2px 5px;
-            font-size: 10px;
-            z-index: 1500;
-            pointer-events: none;
-            max-width: 200px;
-        }
-        
-        /* --- File content preview --- */
-        .win-file-preview {
-            background-color: #ffffff;
-            border-top: 1px solid var(--win-border-shadow);
-            border-left: 1px solid var(--win-border-shadow);
-            border-right: 1px solid var(--win-border-light);
-            border-bottom: 1px solid var(--win-border-light);
-            padding: 8px;
-            font-family: 'Courier New', monospace;
-            font-size: 11px;
-            white-space: pre-wrap;
-            max-height: 200px;
-            overflow-y: auto;
-            color: #000000;
-        }
-        
-        /* --- BSoD --- */
-        .win-bsod {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: #0000aa;
-            color: #ffffff;
-            font-family: 'Courier New', monospace;
-            font-size: 16px;
-            padding: 40px;
-            z-index: 9999;
-            display: none;
-        }
-        
-        .win-bsod-title {
-            text-align: center;
-            margin-bottom: 30px;
-            font-size: 20px;
-        }
-        
-        .win-bsod-content {
-            margin-bottom: 30px;
-            line-height: 1.5;
-        }
-        
-        .win-bsod-footer {
-            margin-top: 40px;
-            text-align: center;
-        }
-        
         /* --- Responsywność --- */
         @media (max-width: 768px) {
             .win-repo-grid {
@@ -1015,17 +886,6 @@
             .win-logo {
                 font-size: 28px;
             }
-            
-            .win-toolbar {
-                flex-wrap: wrap;
-            }
-            
-            .win-toolbar-search {
-                order: -1;
-                max-width: 100%;
-                width: 100%;
-                margin-bottom: 5px;
-            }
         }
 
         @media (max-width: 480px) {
@@ -1033,70 +893,21 @@
                 grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
             }
             
-            .win-toolbar-button {
-                padding: 2px 4px;
-                font-size: 10px;
+            .win-toolbar {
+                flex-wrap: wrap;
             }
             
-            .win-logo-text-line1 {
-                font-size: 28px;
+            .win-toolbar-search {
+                max-width: 100%;
+                width: 100%;
+                order: -1;
+                margin-bottom: 4px;
             }
-            
-            .win-logo-text-line2 {
-                font-size: 22px;
-            }
-            
-            .win-logo-img {
-                width: 160px;
-                height: 120px;
-            }
-        }
-        
-        /* --- Pulse animation for error --- */
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
-        }
-        
-        .pulse {
-            animation: pulse 0.5s infinite;
-        }
-        
-        /* --- Spin animation for loading --- */
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .spin {
-            animation: spin 1s linear infinite;
-        }
-        
-        /* --- Easter egg --- */
-        .win-flying-toaster {
-            position: fixed;
-            display: none;
-            z-index: 9000;
-            font-size: 24px;
-            filter: drop-shadow(2px 2px 3px rgba(0,0,0,0.3));
-            animation: flyAcross 15s linear;
-        }
-        
-        @keyframes flyAcross {
-            0% { left: -50px; top: 50px; transform: rotate(0deg); }
-            10% { transform: rotate(10deg); }
-            20% { transform: rotate(-5deg); }
-            30% { transform: rotate(5deg); }
-            40% { transform: rotate(-2deg); }
-            50% { transform: rotate(0deg); }
-            60% { transform: rotate(2deg); }
-            70% { transform: rotate(-1deg); }
-            100% { left: calc(100% + 50px); top: 50px; transform: rotate(0deg); }
         }
     </style>
 </head>
 <body>
+    <body>
     <!-- Dźwięki -->
     <audio id="win-startup-sound" preload="auto">
         <source src="https://archive.org/download/WindowsStartupSounds/Windows%203.1.mp3" type="audio/mpeg">
@@ -1106,12 +917,6 @@
     </audio>
     <audio id="win-click-sound" preload="auto">
         <source src="https://archive.org/download/WindowsXpSoundEffects/Windows%20XP%20Navigation%20Start.mp3" type="audio/mpeg">
-    </audio>
-    <audio id="win-open-sound" preload="auto">
-        <source src="https://archive.org/download/WindowsXpSoundEffects/Windows%20XP%20Menu%20Command.mp3" type="audio/mpeg">
-    </audio>
-    <audio id="win-close-sound" preload="auto">
-        <source src="https://archive.org/download/WindowsXpSoundEffects/Windows%20XP%20Recycle.mp3" type="audio/mpeg">
     </audio>
 
     <!-- DOS Startup screen -->
@@ -1179,8 +984,6 @@ C:\><span class="win-cursor"></span>
                     <div class="win-submenu-item" id="pattern-gray">Gray Pattern</div>
                     <div class="win-submenu-item" id="pattern-grid">Grid Pattern</div>
                     <div class="win-submenu-item" id="pattern-dots">Dots Pattern</div>
-                    <div class="win-submenu-item" id="pattern-houndstooth">Houndstooth Pattern</div>
-                    <div class="win-submenu-item" id="pattern-bricks">Brick Pattern</div>
                     <div class="win-separator"></div>
                     <div class="win-submenu-item" id="auto-arrange">Auto Arrange</div>
                     <div class="win-submenu-item" id="save-settings">Save Settings</div>
@@ -1211,23 +1014,20 @@ C:\><span class="win-cursor"></span>
         <div class="win-toolbar">
             <input type="text" class="win-toolbar-search" id="repo-search" placeholder="Search repositories...">
             <div class="win-toolbar-separator"></div>
-            <div class="win-toolbar-button" id="refresh-repos" title="Refresh repositories">
+            <div class="win-toolbar-button" id="refresh-repos">
                 <i class="fas fa-sync-alt"></i> Refresh
             </div>
-            <div class="win-toolbar-button" id="sort-repos" title="Sort repositories">
+            <div class="win-toolbar-button" id="sort-repos">
                 <i class="fas fa-sort"></i> Sort
             </div>
-            <div class="win-toolbar-button" id="view-toggle" title="Change view">
+            <div class="win-toolbar-button" id="view-toggle">
                 <i class="fas fa-th-large"></i> View
             </div>
             <div class="win-toolbar-separator"></div>
-            <div class="win-toolbar-button" id="home-button" title="Return to program groups">
-                <i class="fas fa-home"></i> Home
-            </div>
-            <div class="win-toolbar-button" id="theme-toggle" title="Toggle dark mode">
+            <div class="win-toolbar-button" id="theme-toggle">
                 <i class="fas fa-adjust"></i> Colors
             </div>
-            <div class="win-toolbar-button" id="help-button" title="Help">
+            <div class="win-toolbar-button" id="help-button">
                 <i class="fas fa-question-circle"></i> Help
             </div>
         </div>
@@ -1254,7 +1054,6 @@ C:\><span class="win-cursor"></span>
         
         <div class="win-status-bar">
             <div>0 object(s)</div>
-            <div id="clock-display">00:00:00</div>
             <div id="memory-display">634KB free</div>
         </div>
     </div>
@@ -1296,7 +1095,7 @@ C:\><span class="win-cursor"></span>
             
             <div class="win-content win-about">
                 <div class="win-about-logo">Windows 3.11 GitHub Viewer</div>
-                <div class="win-about-version">Version 3.0</div>
+                <div class="win-about-version">Version 2.0</div>
                 
                 <div class="win-about-box">
                     <p>Microsoft® Windows™ 3.11<br>
@@ -1308,7 +1107,6 @@ C:\><span class="win-cursor"></span>
                 <p>© 2025 Swir</p>
                 
                 <div class="win-button-row">
-                    <button class="win-action-button" id="easter-egg-button">Credits</button>
                     <button class="win-action-button" id="close-about-button">OK</button>
                 </div>
             </div>
@@ -1359,14 +1157,6 @@ C:\><span class="win-cursor"></span>
                         <div class="win-repo-details-label">Alt+Tab</div>
                         <div class="win-repo-details-value">Switch between windows (system)</div>
                     </div>
-                    <div class="win-repo-details-row">
-                        <div class="win-repo-details-label">Home</div>
-                        <div class="win-repo-details-value">Return to program groups</div>
-                    </div>
-                    <div class="win-repo-details-row">
-                        <div class="win-repo-details-label">H</div>
-                        <div class="win-repo-details-value">Show help window</div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -1382,179 +1172,7 @@ C:\><span class="win-cursor"></span>
         <div class="win-context-item" id="context-properties">Properties</div>
     </div>
     
-    <!-- Sort Menu -->
-    <div class="win-context-menu" id="sort-menu">
-        <div class="win-context-item" id="sort-by-name">
-            <i class="fas fa-check" style="margin-right: 5px; visibility: hidden;"></i>
-            By Name
-        </div>
-        <div class="win-context-item" id="sort-by-updated">
-            <i class="fas fa-check" style="margin-right: 5px; visibility: hidden;"></i>
-            By Last Updated
-        </div>
-        <div class="win-context-item" id="sort-by-stars">
-            <i class="fas fa-check" style="margin-right: 5px; visibility: hidden;"></i>
-            By Stars
-        </div>
-        <div class="win-context-item" id="sort-by-size">
-            <i class="fas fa-check" style="margin-right: 5px; visibility: hidden;"></i>
-            By Size
-        </div>
-    </div>
-    
-    <!-- Help Window -->
-    <div class="win-modal" id="help-modal">
-        <div class="win-window">
-            <div class="win-title-bar">
-                <div class="win-title">Windows Help</div>
-                <div class="win-buttons">
-                    <div class="win-button" id="close-help">×</div>
-                </div>
-            </div>
-            
-            <div class="win-content">
-                <h3 style="margin-bottom: 10px;">GitHub Viewer Help</h3>
-                
-                <p style="margin-bottom: 15px;">This application allows you to browse GitHub repositories in a classic Windows 3.11 interface.</p>
-                
-                <h4 style="margin-bottom: 5px; margin-top: 15px;">Main Features:</h4>
-                <ul style="margin-left: 20px; margin-bottom: 15px;">
-                    <li>Browse and search repositories</li>
-                    <li>View repository details</li>
-                    <li>Sort repositories by name, update date, stars, or size</li>
-                    <li>Change view between large and small icons</li>
-                    <li>Toggle between light and dark mode</li>
-                </ul>
-                
-                <h4 style="margin-bottom: 5px; margin-top: 15px;">Getting Started:</h4>
-                <p>Double-click on a program group to see repositories in that category. Use the toolbar to search, sort, or change views.</p>
-                
-                <div class="win-button-row">
-                    <button class="win-action-button" id="view-shortcuts-button">Keyboard Shortcuts</button>
-                    <button class="win-action-button" id="close-help-button">Close</button>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- File Manager Window -->
-    <div class="win-modal" id="file-manager-modal">
-        <div class="win-window">
-            <div class="win-title-bar" id="file-manager-title-bar">
-                <div class="win-title">File Manager</div>
-                <div class="win-buttons">
-                    <div class="win-button" id="minimize-file-manager">_</div>
-                    <div class="win-button" id="maximize-file-manager">□</div>
-                    <div class="win-button" id="close-file-manager">×</div>
-                </div>
-            </div>
-            
-            <div class="win-menu-bar">
-                <div class="win-menu-item">
-                    File
-                    <div class="win-submenu">
-                        <div class="win-submenu-item" id="fm-open">Open</div>
-                        <div class="win-submenu-item" id="fm-copy">Copy</div>
-                        <div class="win-submenu-item" id="fm-delete">Delete</div>
-                        <div class="win-separator"></div>
-                        <div class="win-submenu-item" id="fm-properties">Properties</div>
-                        <div class="win-separator"></div>
-                        <div class="win-submenu-item" id="fm-exit">Exit</div>
-                    </div>
-                </div>
-                <div class="win-menu-item">
-                    View
-                    <div class="win-submenu">
-                        <div class="win-submenu-item" id="fm-tree">Tree</div>
-                        <div class="win-submenu-item" id="fm-details">Details</div>
-                        <div class="win-separator"></div>
-                        <div class="win-submenu-item" id="fm-refresh">Refresh</div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="win-toolbar">
-                <div class="win-toolbar-button" id="fm-back">
-                    <i class="fas fa-arrow-left"></i>
-                </div>
-                <div class="win-toolbar-button" id="fm-forward">
-                    <i class="fas fa-arrow-right"></i>
-                </div>
-                <div class="win-toolbar-button" id="fm-up">
-                    <i class="fas fa-arrow-up"></i>
-                </div>
-                <div class="win-toolbar-separator"></div>
-                <div class="win-toolbar-button" id="fm-refresh-button">
-                    <i class="fas fa-sync-alt"></i> Refresh
-                </div>
-            </div>
-            
-            <div class="win-content" id="file-manager-content" style="display: flex; min-height: 300px;">
-                <div style="width: 30%; border-right: 1px solid var(--win-border-shadow); padding-right: 8px;">
-                    <div style="font-weight: bold; margin-bottom: 5px;">Drives</div>
-                    <div class="win-repo-item" style="border: 1px dotted var(--win-highlight); background-color: rgba(0, 0, 255, 0.1);">
-                        <div class="win-repo-icon">
-                            <i class="fas fa-hdd"></i>
-                        </div>
-                        <div class="win-repo-name">C:</div>
-                    </div>
-                </div>
-                
-                <div style="width: 70%; padding-left: 8px;">
-                    <div style="font-weight: bold; margin-bottom: 5px;">C:\GITHUB</div>
-                    <div class="win-repo-grid" id="file-manager-files" style="grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));">
-                        <div class="win-repo-item">
-                            <div class="win-repo-icon">
-                                <i class="fas fa-folder"></i>
-                            </div>
-                            <div class="win-repo-name">REPOS</div>
-                        </div>
-                        <div class="win-repo-item">
-                            <div class="win-repo-icon">
-                                <i class="fas fa-file-code"></i>
-                            </div>
-                            <div class="win-repo-name">README.MD</div>
-                        </div>
-                        <div class="win-repo-item">
-                            <div class="win-repo-icon">
-                                <i class="fas fa-file-alt"></i>
-                            </div>
-                            <div class="win-repo-name">CONFIG.SYS</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="win-status-bar">
-                <div>3 object(s)</div>
-                <div>149MB free on drive C:</div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Blue Screen of Death -->
-    <div class="win-bsod" id="bsod-screen">
-        <div class="win-bsod-title">Windows</div>
-        <div class="win-bsod-content">
-            A fatal exception 0E has occurred at 0028:C000A00D in VXD GITHUB(01) + 
-            00001978. The current application will be terminated.
-            
-            * Press any key to terminate the current application.
-            * Press CTRL+ALT+DEL to restart your computer. You will
-              lose any unsaved information in all applications.
-        </div>
-        <div class="win-bsod-footer">
-            Press any key to continue...
-        </div>
-    </div>
-    
-    <!-- Flying Toaster Easter Egg -->
-    <div id="flying-toaster" class="win-flying-toaster">
-        <i class="fas fa-bread-slice" style="font-size: 32px;"></i>
-    </div>
-    
     <div class="win-modal-background" id="modal-background"></div>
-    
     <script>
         // Zmienne globalne
         let allRepos = [];
@@ -1569,12 +1187,8 @@ C:\><span class="win-cursor"></span>
         let programGroups = [];
         let currentGroup = null;
         let memoryInterval;
-        let clockInterval;
         let audioEnabled = true;
         let startupComplete = false;
-        let easterEggCounter = 0;
-        let tooltipTimeout;
-        let sortMenuVisible = false;
         
         // Tablice z danymi
         const fileTypes = [
@@ -1608,14 +1222,10 @@ C:\><span class="win-cursor"></span>
             const startupSound = document.getElementById('win-startup-sound');
             const errorSound = document.getElementById('win-error-sound');
             const clickSound = document.getElementById('win-click-sound');
-            const openSound = document.getElementById('win-open-sound');
-            const closeSound = document.getElementById('win-close-sound');
             
             if (startupSound) startupSound.load();
             if (errorSound) errorSound.load();
             if (clickSound) clickSound.load();
-            if (openSound) openSound.load();
-            if (closeSound) closeSound.load();
         }
         
         // Start the DOS startup sequence
@@ -1682,23 +1292,20 @@ C:\><span class="win-cursor"></span>
             
             if (!winStartup || !mainWindow) {
                 console.error('Windows elements not found');
-                skipToMainWindow();
                 return;
             }
             
-            // Hide startup screen with animation
-            winStartup.classList.add('hidden');
+            // Hide startup screen
+            winStartup.style.display = 'none';
             
-            setTimeout(function() {
-                // Show main window
-                mainWindow.classList.remove('system-hidden');
-                
-                // Set startup as complete
-                startupComplete = true;
-                
-                // Initialize the application
-                initializeApplication();
-            }, 500);
+            // Show main window
+            mainWindow.classList.remove('system-hidden');
+            
+            // Set startup as complete
+            startupComplete = true;
+            
+            // Initialize the application
+            initializeApplication();
         }
         
         // Skip to Windows startup (emergency function)
@@ -1743,7 +1350,6 @@ C:\><span class="win-cursor"></span>
                 skipToMainWindow();
             }
         }, 8000);
-        
         // Initialize the application
         function initializeApplication() {
             console.log('Initializing application');
@@ -1755,66 +1361,18 @@ C:\><span class="win-cursor"></span>
                 // Initialize memory display
                 updateMemoryDisplay();
                 
-                // Initialize clock display
-                updateClockDisplay();
-                
                 // Start memory update interval
                 memoryInterval = setInterval(updateMemoryDisplay, 10000);
-                
-                // Start clock update interval
-                clockInterval = setInterval(updateClockDisplay, 1000);
                 
                 // Create default program groups
                 createDefaultProgramGroups();
                 
                 // Fetch repositories
                 fetchRepositories();
-                
-                // Initialize tooltips
-                initializeTooltips();
             } catch (error) {
                 console.error('Error during initialization:', error);
                 showErrorWindow('Initialization Error', 'An error occurred while initializing Windows: ' + error.message);
             }
-        }
-        
-        // Initialize tooltips
-        function initializeTooltips() {
-            // Create tooltip element
-            const tooltip = document.createElement('div');
-            tooltip.className = 'win-tooltip';
-            tooltip.style.display = 'none';
-            document.body.appendChild(tooltip);
-            
-            // Add event listeners to all elements with title attribute
-            document.addEventListener('mouseover', function(e) {
-                if (e.target.title) {
-                    clearTimeout(tooltipTimeout);
-                    
-                    tooltipTimeout = setTimeout(function() {
-                        const title = e.target.title;
-                        e.target.dataset.originalTitle = title;
-                        e.target.title = '';
-                        
-                        tooltip.textContent = title;
-                        tooltip.style.display = 'block';
-                        
-                        // Position tooltip
-                        const rect = e.target.getBoundingClientRect();
-                        tooltip.style.left = rect.left + 'px';
-                        tooltip.style.top = (rect.bottom + 5) + 'px';
-                    }, 500);
-                }
-            });
-            
-            document.addEventListener('mouseout', function(e) {
-                if (e.target.dataset && e.target.dataset.originalTitle) {
-                    clearTimeout(tooltipTimeout);
-                    e.target.title = e.target.dataset.originalTitle;
-                    e.target.dataset.originalTitle = '';
-                    tooltip.style.display = 'none';
-                }
-            });
         }
         
         // Initialize all event listeners
@@ -1843,15 +1401,10 @@ C:\><span class="win-cursor"></span>
             const patternGray = document.getElementById('pattern-gray');
             const patternGrid = document.getElementById('pattern-grid');
             const patternDots = document.getElementById('pattern-dots');
-            const patternHoundstooth = document.getElementById('pattern-houndstooth');
-            const patternBricks = document.getElementById('pattern-bricks');
             
             if (refreshButton) refreshButton.addEventListener('click', fetchRepositories);
             if (exitButton) exitButton.addEventListener('click', closeWindow);
-            if (restartButton) restartButton.addEventListener('click', function() { 
-                playSound('click');
-                location.reload(); 
-            });
+            if (restartButton) restartButton.addEventListener('click', function() { location.reload(); });
             if (viewLarge) viewLarge.addEventListener('click', function() { 
                 setViewMode('large');
                 showTemporaryMessage('Large Icons selected');
@@ -1875,8 +1428,6 @@ C:\><span class="win-cursor"></span>
             if (patternGray) patternGray.addEventListener('click', function() { changePattern('gray'); });
             if (patternGrid) patternGrid.addEventListener('click', function() { changePattern('grid'); });
             if (patternDots) patternDots.addEventListener('click', function() { changePattern('dots'); });
-            if (patternHoundstooth) patternHoundstooth.addEventListener('click', function() { changePattern('houndstooth'); });
-            if (patternBricks) patternBricks.addEventListener('click', function() { changePattern('bricks'); });
             
             // Window menu
             const cascadeWindows = document.getElementById('cascade-windows');
@@ -1914,7 +1465,6 @@ C:\><span class="win-cursor"></span>
             const refreshRepos = document.getElementById('refresh-repos');
             const sortRepos = document.getElementById('sort-repos');
             const viewToggle = document.getElementById('view-toggle');
-            const homeButton = document.getElementById('home-button');
             const themeToggle = document.getElementById('theme-toggle');
             const helpButton = document.getElementById('help-button');
             
@@ -1922,7 +1472,6 @@ C:\><span class="win-cursor"></span>
             if (refreshRepos) refreshRepos.addEventListener('click', fetchRepositories);
             if (sortRepos) sortRepos.addEventListener('click', showSortMenu);
             if (viewToggle) viewToggle.addEventListener('click', cycleViewMode);
-            if (homeButton) homeButton.addEventListener('click', returnToHome);
             if (themeToggle) themeToggle.addEventListener('click', toggleDarkMode);
             if (helpButton) helpButton.addEventListener('click', showHelpWindow);
             
@@ -1932,39 +1481,12 @@ C:\><span class="win-cursor"></span>
             const closeAboutButton = document.getElementById('close-about-button');
             const closeShortcuts = document.getElementById('close-shortcuts');
             const modalBackground = document.getElementById('modal-background');
-            const easterEggButton = document.getElementById('easter-egg-button');
-            const closeHelp = document.getElementById('close-help');
-            const closeHelpButton = document.getElementById('close-help-button');
-            const viewShortcutsButton = document.getElementById('view-shortcuts-button');
             
             if (closeRepoModal) closeRepoModal.addEventListener('click', closeAllModals);
             if (closeAbout) closeAbout.addEventListener('click', closeAllModals);
             if (closeAboutButton) closeAboutButton.addEventListener('click', closeAllModals);
             if (closeShortcuts) closeShortcuts.addEventListener('click', closeAllModals);
-            if (closeHelp) closeHelp.addEventListener('click', closeAllModals);
-            if (closeHelpButton) closeHelpButton.addEventListener('click', closeAllModals);
             if (modalBackground) modalBackground.addEventListener('click', closeAllModals);
-            if (easterEggButton) easterEggButton.addEventListener('click', triggerEasterEgg);
-            if (viewShortcutsButton) viewShortcutsButton.addEventListener('click', function() {
-                closeAllModals();
-                showShortcutsWindow();
-            });
-            
-            // File Manager buttons
-            const openFileManager = document.getElementById('open-file-manager');
-            const closeFileManager = document.getElementById('close-file-manager');
-            
-            if (openFileManager) openFileManager.addEventListener('click', showFileManager);
-            if (closeFileManager) closeFileManager.addEventListener('click', function() {
-                const fileManagerModal = document.getElementById('file-manager-modal');
-                if (fileManagerModal) {
-                    playSound('close');
-                    fileManagerModal.style.display = 'none';
-                }
-                
-                const modalBg = document.getElementById('modal-background');
-                if (modalBg) modalBg.style.display = 'none';
-            });
             
             // Context menu items
             const contextOpen = document.getElementById('context-open');
@@ -2000,46 +1522,6 @@ C:\><span class="win-cursor"></span>
                 }
             });
             
-            // Sort menu items
-            const sortByName = document.getElementById('sort-by-name');
-            const sortByUpdated = document.getElementById('sort-by-updated');
-            const sortByStars = document.getElementById('sort-by-stars');
-            const sortBySize = document.getElementById('sort-by-size');
-            
-            if (sortByName) sortByName.addEventListener('click', function() {
-                sortRepositories('name');
-                hideSortMenu();
-            });
-            
-            if (sortByUpdated) sortByUpdated.addEventListener('click', function() {
-                sortRepositories('updated');
-                hideSortMenu();
-            });
-            
-            if (sortByStars) sortByStars.addEventListener('click', function() {
-                sortRepositories('stars');
-                hideSortMenu();
-            });
-            
-            if (sortBySize) sortBySize.addEventListener('click', function() {
-                sortRepositories('size');
-                hideSortMenu();
-            });
-            
-            // Blue Screen of Death
-            const bsodScreen = document.getElementById('bsod-screen');
-            if (bsodScreen) {
-                bsodScreen.addEventListener('click', function() {
-                    location.reload();
-                });
-                
-                document.addEventListener('keydown', function(e) {
-                    if (bsodScreen.style.display === 'block') {
-                        location.reload();
-                    }
-                });
-            }
-            
             // Keyboard shortcuts
             document.addEventListener('keydown', function(e) {
                 // F5 - refresh
@@ -2058,121 +1540,16 @@ C:\><span class="win-cursor"></span>
                 // Esc - close modals
                 if (e.key === 'Escape') {
                     closeAllModals();
-                    hideSortMenu();
                 }
                 
                 // T - toggle theme
                 if (e.key === 't' || e.key === 'T') {
                     toggleDarkMode();
                 }
-                
-                // Arrow keys navigation
-                if (e.key.startsWith('Arrow') && allRepos.length > 0) {
-                    e.preventDefault();
-                    
-                    const repoItems = document.querySelectorAll('.win-repo-item');
-                    if (repoItems.length === 0) return;
-                    
-                    if (selectedRepoIndex === -1) {
-                        selectedRepoIndex = 0;
-                    } else {
-                        const columns = Math.floor(document.querySelector('.win-repo-grid').offsetWidth / 100);
-                        
-                        switch(e.key) {
-                            case 'ArrowRight':
-                                selectedRepoIndex = Math.min(selectedRepoIndex + 1, repoItems.length - 1);
-                                break;
-                            case 'ArrowLeft':
-                                selectedRepoIndex = Math.max(selectedRepoIndex - 1, 0);
-                                break;
-                            case 'ArrowDown':
-                                selectedRepoIndex = Math.min(selectedRepoIndex + columns, repoItems.length - 1);
-                                break;
-                            case 'ArrowUp':
-                                selectedRepoIndex = Math.max(selectedRepoIndex - columns, 0);
-                                break;
-                        }
-                    }
-                    
-                    selectedRepo = selectedRepoIndex >= 0 ? allRepos[selectedRepoIndex] : null;
-                    
-                    if (repoItems[selectedRepoIndex]) {
-                        highlightRepoItem(repoItems[selectedRepoIndex]);
-                    }
-                }
-                
-                // Enter - open selected repository
-                if (e.key === 'Enter' && selectedRepo) {
-                    showRepoDetails(selectedRepo);
-                }
-                
-                // Home - return to program groups
-                if (e.key === 'Home') {
-                    returnToHome();
-                }
-                
-                // H - help
-                if (e.key === 'h' || e.key === 'H') {
-                    showHelpWindow();
-                }
-                
-                // Konami code for easter egg (up, up, down, down, left, right, left, right, b, a)
-                if (e.key === 'ArrowUp' && easterEggCounter === 0 || easterEggCounter === 1) {
-                    easterEggCounter = easterEggCounter === 0 ? 1 : 2;
-                } else if (e.key === 'ArrowDown' && easterEggCounter === 2 || easterEggCounter === 3) {
-                    easterEggCounter = easterEggCounter === 2 ? 3 : 4;
-                } else if (e.key === 'ArrowLeft' && easterEggCounter === 4 || easterEggCounter === 6) {
-                    easterEggCounter = easterEggCounter === 4 ? 5 : 7;
-                } else if (e.key === 'ArrowRight' && easterEggCounter === 5 || easterEggCounter === 7) {
-                    easterEggCounter = easterEggCounter === 5 ? 6 : 8;
-                } else if (e.key === 'b' && easterEggCounter === 8) {
-                    easterEggCounter = 9;
-                } else if (e.key === 'a' && easterEggCounter === 9) {
-                    triggerEasterEgg();
-                    easterEggCounter = 0;
-                } else {
-                    easterEggCounter = 0;
-                }
             });
             
             // Initialize drag and drop for windows
             initializeWindowDrag();
-            
-            // Hide sort menu when clicking outside
-            document.addEventListener('click', function(e) {
-                if (sortMenuVisible && (!e.target.closest('#sort-menu') && !e.target.closest('#sort-repos'))) {
-                    hideSortMenu();
-                }
-            });
-        }
-        
-        // Return to home/program groups
-        function returnToHome() {
-            playSound('click');
-            
-            // Reset current group
-            currentGroup = null;
-            
-            // Show program groups container
-            const programGroups = document.getElementById('program-groups');
-            if (programGroups) {
-                programGroups.style.display = 'flex';
-            }
-            
-            // Hide repositories or set to empty
-            const reposContainer = document.getElementById('repos-container');
-            if (reposContainer) {
-                reposContainer.innerHTML = '';
-            }
-            
-            // Update window title
-            const titleElement = document.querySelector('#main-window .win-title');
-            if (titleElement) {
-                titleElement.textContent = 'Program Manager - Swir GitHub';
-            }
-            
-            // Show success message
-            showTemporaryMessage('Returned to Program Groups');
         }
         
         // Initialize window dragging
@@ -2181,8 +1558,6 @@ C:\><span class="win-cursor"></span>
             const mainWindow = document.getElementById('main-window');
             const repoModalTitle = document.getElementById('repo-modal-title');
             const repoModal = document.querySelector('#repo-details-modal .win-window');
-            const fileManagerTitleBar = document.getElementById('file-manager-title-bar');
-            const fileManagerModal = document.querySelector('#file-manager-modal .win-window');
             
             // Main window dragging
             if (mainTitleBar && mainWindow) {
@@ -2195,7 +1570,6 @@ C:\><span class="win-cursor"></span>
                     dragOffsetY = e.clientY - rect.top;
                     
                     mainWindow.style.opacity = '0.8';
-                    mainWindow.style.cursor = 'move';
                 });
             }
             
@@ -2210,37 +1584,13 @@ C:\><span class="win-cursor"></span>
                     dragOffsetY = e.clientY - rect.top;
                     
                     repoModal.style.opacity = '0.8';
-                    repoModal.style.cursor = 'move';
-                });
-            }
-            
-            // File Manager dragging
-            if (fileManagerTitleBar && fileManagerModal) {
-                fileManagerTitleBar.addEventListener('mousedown', function(e) {
-                    if (e.target.classList.contains('win-button')) return;
-                    
-                    isDragging = true;
-                    const rect = fileManagerModal.getBoundingClientRect();
-                    dragOffsetX = e.clientX - rect.left;
-                    dragOffsetY = e.clientY - rect.top;
-                    
-                    fileManagerModal.style.opacity = '0.8';
-                    fileManagerModal.style.cursor = 'move';
                 });
             }
             
             // Mouse move and up events for dragging
             document.addEventListener('mousemove', function(e) {
                 if (isDragging) {
-                    let targetWindow = null;
-                    
-                    if (mainWindow && mainWindow.style.opacity === '0.8') {
-                        targetWindow = mainWindow;
-                    } else if (repoModal && repoModal.style.opacity === '0.8') {
-                        targetWindow = repoModal;
-                    } else if (fileManagerModal && fileManagerModal.style.opacity === '0.8') {
-                        targetWindow = fileManagerModal;
-                    }
+                    const targetWindow = mainWindow.style.opacity === '0.8' ? mainWindow : repoModal;
                     
                     if (targetWindow) {
                         targetWindow.style.position = 'absolute';
@@ -2254,19 +1604,12 @@ C:\><span class="win-cursor"></span>
                 if (isDragging) {
                     isDragging = false;
                     
-                    if (mainWindow && mainWindow.style.opacity === '0.8') {
+                    if (mainWindow.style.opacity === '0.8') {
                         mainWindow.style.opacity = '1';
-                        mainWindow.style.cursor = '';
                     }
                     
                     if (repoModal && repoModal.style.opacity === '0.8') {
                         repoModal.style.opacity = '1';
-                        repoModal.style.cursor = '';
-                    }
-                    
-                    if (fileManagerModal && fileManagerModal.style.opacity === '0.8') {
-                        fileManagerModal.style.opacity = '1';
-                        fileManagerModal.style.cursor = '';
                     }
                 }
             });
@@ -2288,14 +1631,6 @@ C:\><span class="win-cursor"></span>
                         break;
                     case 'click':
                         sound = document.getElementById('win-click-sound');
-                        if (sound) sound.currentTime = 0;
-                        break;
-                    case 'open':
-                        sound = document.getElementById('win-open-sound');
-                        if (sound) sound.currentTime = 0;
-                        break;
-                    case 'close':
-                        sound = document.getElementById('win-close-sound');
                         if (sound) sound.currentTime = 0;
                         break;
                     default:
@@ -2327,7 +1662,7 @@ C:\><span class="win-cursor"></span>
                     description: 'Main repositories', 
                     icon: 'folder',
                     color: '#000080',
-                    iconHtml: '<i class="fas fa-folder"></i>'
+                    iconHtml: '<i class="fas fa-star"></i>'
                 },
                 { 
                     id: 'javascript', 
@@ -2344,14 +1679,6 @@ C:\><span class="win-cursor"></span>
                     icon: 'html5',
                     color: '#e34c26',
                     iconHtml: '<i class="fab fa-html5"></i>'
-                },
-                { 
-                    id: 'python', 
-                    name: 'Python', 
-                    description: 'Python repositories', 
-                    icon: 'python',
-                    color: '#3776ab',
-                    iconHtml: '<i class="fab fa-python"></i>'
                 },
                 { 
                     id: 'other', 
@@ -2405,7 +1732,7 @@ C:\><span class="win-cursor"></span>
         
         // Open a program group
         function openProgramGroup(group) {
-            playSound('open');
+            playSound('click');
             currentGroup = group;
             
             // Filter repositories based on group
@@ -2427,18 +1754,12 @@ C:\><span class="win-cursor"></span>
                         repo.name.toLowerCase().includes('web') || repo.name.toLowerCase().includes('site') || 
                         repo.name.toLowerCase().includes('html') || repo.name.toLowerCase().includes('css'));
                     break;
-                case 'python':
-                    groupRepos = allRepos.filter(repo => 
-                        repo.language === 'Python' || 
-                        repo.name.toLowerCase().includes('py') || repo.name.toLowerCase().includes('python'));
-                    break;
                 case 'other':
                     groupRepos = allRepos.filter(repo => 
                         repo.language !== 'JavaScript' && 
                         repo.language !== 'TypeScript' &&
                         repo.language !== 'HTML' &&
-                        repo.language !== 'CSS' &&
-                        repo.language !== 'Python');
+                        repo.language !== 'CSS');
                     break;
                 case 'starred':
                     groupRepos = allRepos.filter(repo => repo.stargazers_count > 0);
@@ -2459,9 +1780,6 @@ C:\><span class="win-cursor"></span>
             if (groupsContainer) {
                 groupsContainer.style.display = 'none';
             }
-            
-            // Show temporary message
-            showTemporaryMessage(`Opened ${group.name} Group - ${groupRepos.length} items`);
             
             // Render repositories
             renderRepositories(groupRepos);
@@ -2514,7 +1832,7 @@ C:\><span class="win-cursor"></span>
                 allRepos = await response.json();
                 
                 // Sort repositories
-                sortRepositories(currentSort, false);
+                sortRepositories(currentSort);
                 
                 // Update repository count
                 const statusBar = document.querySelector('.win-status-bar div:first-child');
@@ -2540,7 +1858,6 @@ C:\><span class="win-cursor"></span>
                 document.body.classList.remove('win-wait-cursor');
             }
         }
-        
         // Render repositories
         function renderRepositories(repos) {
             const reposContainer = document.getElementById('repos-container');
@@ -2573,7 +1890,7 @@ C:\><span class="win-cursor"></span>
                     
                     // Double-click event to open repository details
                     repoItem.addEventListener('dblclick', function() {
-                        playSound('open');
+                        playSound('click');
                         showRepoDetails(repo);
                     });
                     
@@ -2699,9 +2016,6 @@ C:\><span class="win-cursor"></span>
                 return `${date.getMonth()+1}/${date.getDate()}/${date.getFullYear().toString().substr(-2)} ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
             };
             
-            // Get random sample file content for preview
-            const randomFileContent = getRandomFileContent();
-            
             // Prepare modal content
             content.innerHTML = `
                 <div class="win-repo-description">
@@ -2743,9 +2057,6 @@ C:\><span class="win-cursor"></span>
                     <div class="win-repo-details-value">${repo.size} KB</div>
                 </div>
                 
-                <div style="font-weight: bold; margin-top: 10px; margin-bottom: 5px;">File Preview:</div>
-                <div class="win-file-preview">${randomFileContent}</div>
-                
                 <div class="win-button-row">
                     <a href="${repo.html_url}" target="_blank" class="win-action-button">Open in GitHub</a>
                     <button class="win-action-button" id="close-repo-details">Close</button>
@@ -2762,122 +2073,14 @@ C:\><span class="win-cursor"></span>
             modal.style.display = 'block';
             modalBg.style.display = 'block';
             
-            playSound('open');
-        }
-        
-        // Get random file content for preview
-        function getRandomFileContent() {
-            const sampleContents = [
-                `// Main JavaScript file
-const app = {
-    init: function() {
-        console.log('Application initialized');
-        this.bindEvents();
-    },
-    bindEvents: function() {
-        document.querySelector('#button').addEventListener('click', this.handleClick);
-    },
-    handleClick: function(e) {
-        e.preventDefault();
-        console.log('Button clicked');
-    }
-};
-
-document.addEventListener('DOMContentLoaded', function() {
-    app.init();
-});`,
-                `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Project</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <header>
-        <h1>Welcome to My Project</h1>
-    </header>
-    <main>
-        <section class="content">
-            <p>This is a sample HTML file.</p>
-        </section>
-    </main>
-    <footer>
-        <p>&copy; 2025 My Project</p>
-    </footer>
-    <script src="script.js"></script>
-</body>
-</html>`,
-                `/* Main styles */
-body {
-    font-family: Arial, sans-serif;
-    line-height: 1.6;
-    color: #333;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
-}
-
-header {
-    background: #f4f4f4;
-    padding: 1rem;
-    text-align: center;
-}
-
-.content {
-    padding: 20px;
-    background: #fff;
-    border-radius: 5px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
-}`,
-                `# Project README
-
-## Overview
-This is a sample project that demonstrates various features and functionality.
-
-## Installation
-1. Clone the repository
-2. Run \`npm install\`
-3. Start the server with \`npm start\`
-
-## Features
-- Responsive design
-- Cross-browser compatibility
-- Modern JavaScript practices
-
-## License
-MIT`
-            ];
-            
-            return sampleContents[Math.floor(Math.random() * sampleContents.length)];
-        }
-        
-        // Show file manager window
-        function showFileManager() {
-            playSound('open');
-            
-            const fileManagerModal = document.getElementById('file-manager-modal');
-            const modalBg = document.getElementById('modal-background');
-            
-            if (fileManagerModal && modalBg) {
-                fileManagerModal.style.display = 'block';
-                modalBg.style.display = 'block';
-            }
+            playSound('click');
         }
         
         // Close all modals
         function closeAllModals() {
-            playSound('close');
+            playSound('click');
             
-            const modals = [
-                'repo-details-modal', 
-                'about-modal', 
-                'shortcuts-modal', 
-                'help-modal', 
-                'file-manager-modal'
-            ];
-            
+            const modals = ['repo-details-modal', 'about-modal', 'shortcuts-modal'];
             modals.forEach(function(id) {
                 const modal = document.getElementById(id);
                 if (modal) modal.style.display = 'none';
@@ -2896,7 +2099,7 @@ MIT`
         
         // Show about window
         function showAboutWindow() {
-            playSound('open');
+            playSound('click');
             
             const aboutModal = document.getElementById('about-modal');
             const modalBg = document.getElementById('modal-background');
@@ -2909,7 +2112,7 @@ MIT`
         
         // Show shortcuts window
         function showShortcutsWindow() {
-            playSound('open');
+            playSound('click');
             
             const shortcutsModal = document.getElementById('shortcuts-modal');
             const modalBg = document.getElementById('modal-background');
@@ -2922,15 +2125,8 @@ MIT`
         
         // Show help window
         function showHelpWindow() {
-            playSound('open');
-            
-            const helpModal = document.getElementById('help-modal');
-            const modalBg = document.getElementById('modal-background');
-            
-            if (helpModal && modalBg) {
-                helpModal.style.display = 'block';
-                modalBg.style.display = 'block';
-            }
+            playSound('click');
+            showTemporaryMessage('Help functionality is not implemented yet');
         }
         
         // Show error window
@@ -2949,9 +2145,7 @@ MIT`
                         </div>
                     </div>
                     <div class="win-error-content">
-                        <div class="win-error-icon">
-                            <i class="fas fa-exclamation-triangle pulse"></i>
-                        </div>
+                        <div class="win-error-icon">!</div>
                         <div class="win-error-message">
                             <p>${message}</p>
                             <p style="margin-top: 10px;">Windows cannot connect to GitHub. Make sure your network connection is working properly.</p>
@@ -2965,37 +2159,6 @@ MIT`
             `;
         }
         
-        // Show blue screen of death
-        function showBSOD() {
-            const bsodScreen = document.getElementById('bsod-screen');
-            if (bsodScreen) {
-                bsodScreen.style.display = 'block';
-            }
-            
-            // Play error sound
-            playSound('error');
-        }
-        
-        // Show Easter egg
-        function triggerEasterEgg() {
-            // Show flying toaster
-            const toaster = document.getElementById('flying-toaster');
-            if (toaster) {
-                toaster.style.display = 'block';
-                
-                // Hide toaster after animation completes
-                setTimeout(function() {
-                    toaster.style.display = 'none';
-                }, 15000);
-            }
-            
-            // Play startup sound
-            playSound('startup');
-            
-            // Show message
-            showTemporaryMessage('After Dark Flying Toasters Activated!');
-        }
-        
         // Show temporary message
         function showTemporaryMessage(message) {
             const existingMessage = document.querySelector('.win-temp-message');
@@ -3005,18 +2168,27 @@ MIT`
             
             const messageElement = document.createElement('div');
             messageElement.className = 'win-temp-message';
+            messageElement.style.position = 'fixed';
+            messageElement.style.bottom = '20px';
+            messageElement.style.left = '50%';
+            messageElement.style.transform = 'translateX(-50%)';
+            messageElement.style.backgroundColor = 'var(--win-window-bg)';
+            messageElement.style.color = 'var(--win-text)';
+            messageElement.style.padding = '5px 15px';
+            messageElement.style.borderTop = '1px solid var(--win-border-light)';
+            messageElement.style.borderLeft = '1px solid var(--win-border-light)';
+            messageElement.style.borderRight = '1px solid var(--win-border-shadow)';
+            messageElement.style.borderBottom = '1px solid var(--win-border-shadow)';
+            messageElement.style.boxShadow = '2px 2px 5px rgba(0, 0, 0, 0.3)';
+            messageElement.style.zIndex = '3000';
+            messageElement.style.fontSize = '12px';
             messageElement.textContent = message;
             
             document.body.appendChild(messageElement);
             
             setTimeout(function() {
                 if (document.body.contains(messageElement)) {
-                    messageElement.style.opacity = '0';
-                    setTimeout(function() {
-                        if (document.body.contains(messageElement)) {
-                            document.body.removeChild(messageElement);
-                        }
-                    }, 300);
+                    document.body.removeChild(messageElement);
                 }
             }, 2000);
         }
@@ -3046,8 +2218,8 @@ MIT`
         }
         
         // Sort repositories
-        function sortRepositories(sortType, showMessage = true) {
-            if (showMessage) playSound('click');
+        function sortRepositories(sortType) {
+            playSound('click');
             currentSort = sortType;
             
             // Create a deep copy of repositories to avoid sorting issues
@@ -3072,80 +2244,66 @@ MIT`
             // Update allRepos with sorted repositories
             allRepos = reposToSort;
             
-            // Update the sort menu check marks
-            updateSortMenuCheckmarks();
-            
-            // Re-render repositories if needed
+            // Re-render repositories
             if (currentGroup) {
                 openProgramGroup(currentGroup);
-            } else if (document.querySelector('.win-repo-grid')) {
+            } else {
                 renderRepositories(allRepos);
             }
             
-            if (showMessage) {
-                showTemporaryMessage(`Sorted by ${sortType}`);
-            }
-        }
-        
-        // Update the sort menu check marks
-        function updateSortMenuCheckmarks() {
-            const sortMenu = document.getElementById('sort-menu');
-            if (!sortMenu) return;
-            
-            // Remove all existing check marks
-            sortMenu.querySelectorAll('.fa-check').forEach(function(check) {
-                check.style.visibility = 'hidden';
-            });
-            
-            // Add check mark for current sort
-            const currentSortItem = document.getElementById(`sort-by-${currentSort}`);
-            if (currentSortItem) {
-                const checkIcon = currentSortItem.querySelector('.fa-check');
-                if (checkIcon) {
-                    checkIcon.style.visibility = 'visible';
-                }
-                
-                // Add selected class
-                sortMenu.querySelectorAll('.win-context-item').forEach(function(item) {
-                    item.classList.remove('win-context-item-selected');
-                });
-                currentSortItem.classList.add('win-context-item-selected');
-            }
+            showTemporaryMessage(`Sorted by ${sortType}`);
         }
         
         // Show sort menu
         function showSortMenu(e) {
             playSound('click');
             
-            const sortMenu = document.getElementById('sort-menu');
-            if (!sortMenu) return;
-            
-            // Get position of sort button
-            const sortButton = document.getElementById('sort-repos');
-            if (!sortButton) return;
-            
-            const rect = sortButton.getBoundingClientRect();
-            
-            // Position menu under the button
+            const sortMenu = document.createElement('div');
+            sortMenu.className = 'win-context-menu';
             sortMenu.style.display = 'block';
-            sortMenu.style.left = rect.left + 'px';
-            sortMenu.style.top = (rect.bottom + window.scrollY) + 'px';
+            sortMenu.style.left = e.pageX + 'px';
+            sortMenu.style.top = e.pageY + 'px';
+            sortMenu.style.zIndex = '1500';
             
-            // Update check marks
-            updateSortMenuCheckmarks();
+            sortMenu.innerHTML = `
+                <div class="win-context-item" id="sort-by-name">By Name</div>
+                <div class="win-context-item" id="sort-by-updated">By Last Updated</div>
+                <div class="win-context-item" id="sort-by-stars">By Stars</div>
+                <div class="win-context-item" id="sort-by-size">By Size</div>
+            `;
             
-            // Set flag
-            sortMenuVisible = true;
-        }
-        
-        // Hide sort menu
-        function hideSortMenu() {
-            const sortMenu = document.getElementById('sort-menu');
-            if (sortMenu) {
-                sortMenu.style.display = 'none';
-            }
+            document.body.appendChild(sortMenu);
             
-            sortMenuVisible = false;
+            // Add event listeners for sort options
+            document.getElementById('sort-by-name').addEventListener('click', function() {
+                sortRepositories('name');
+                document.body.removeChild(sortMenu);
+            });
+            
+            document.getElementById('sort-by-updated').addEventListener('click', function() {
+                sortRepositories('updated');
+                document.body.removeChild(sortMenu);
+            });
+            
+            document.getElementById('sort-by-stars').addEventListener('click', function() {
+                sortRepositories('stars');
+                document.body.removeChild(sortMenu);
+            });
+            
+            document.getElementById('sort-by-size').addEventListener('click', function() {
+                sortRepositories('size');
+                document.body.removeChild(sortMenu);
+            });
+            
+            // Close menu when clicking outside
+            document.addEventListener('click', function hideMenu(event) {
+                if (!sortMenu.contains(event.target)) {
+                    if (document.body.contains(sortMenu)) {
+                        document.body.removeChild(sortMenu);
+                    }
+                    document.removeEventListener('click', hideMenu);
+                }
+            });
         }
         
         // Set view mode (large or small icons)
@@ -3238,16 +2396,6 @@ MIT`
                     document.body.style.backgroundImage = 'var(--win-pattern-dots)';
                     showTemporaryMessage('Desktop pattern: Dots');
                     break;
-                case 'houndstooth':
-                    document.documentElement.style.setProperty('--win-bg', '#4a4a4a');
-                    document.body.style.backgroundImage = 'var(--win-pattern-houndstooth)';
-                    showTemporaryMessage('Desktop pattern: Houndstooth');
-                    break;
-                case 'bricks':
-                    document.documentElement.style.setProperty('--win-bg', '#8b0000');
-                    document.body.style.backgroundImage = 'var(--win-pattern-bricks)';
-                    showTemporaryMessage('Desktop pattern: Bricks');
-                    break;
             }
         }
         
@@ -3262,19 +2410,6 @@ MIT`
             const freeMemory = initialMemory - usedMemory;
             
             memoryDisplay.textContent = `${freeMemory}KB free of ${initialMemory}KB`;
-        }
-        
-        // Update clock display
-        function updateClockDisplay() {
-            const clockDisplay = document.getElementById('clock-display');
-            if (!clockDisplay) return;
-            
-            const now = new Date();
-            const hours = String(now.getHours()).padStart(2, '0');
-            const minutes = String(now.getMinutes()).padStart(2, '0');
-            const seconds = String(now.getSeconds()).padStart(2, '0');
-            
-            clockDisplay.textContent = `${hours}:${minutes}:${seconds}`;
         }
         
         // Minimize window
@@ -3368,9 +2503,6 @@ MIT`
             document.getElementById('confirm-exit').addEventListener('click', function() {
                 document.body.removeChild(confirmDialog);
                 
-                // Play close sound
-                playSound('close');
-                
                 // Show shutdown screen
                 document.body.innerHTML = `
                     <div class="win-dos-startup" style="display: block; opacity: 1; visibility: visible;">
@@ -3384,7 +2516,6 @@ MIT`
             
             document.getElementById('cancel-exit').addEventListener('click', function() {
                 document.body.removeChild(confirmDialog);
-                playSound('click');
             });
         }
     </script>
