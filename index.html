@@ -33,6 +33,12 @@
             --win-dark-mode-bg: #000000;
             --win-dark-mode-window: #222222;
             --win-dark-mode-text: #cccccc;
+            
+            /* Desktop patterns */
+            --win-pattern-teal: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAEklEQVQImWNgYGD4z0AswK4SAFXuAf8EPy+xAAAAAElFTkSuQmCC');
+            --win-pattern-gray: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAEklEQVQImWNgYGD4z8DAwMDAAMYAELgCFMRqdQgAAAAASUVORK5CYII=');
+            --win-pattern-grid: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAFElEQVQYlWNgYGD4z4AGGIgTQAUAFL0Q5QkqZfAAAAAASUVORK5CYII=');
+            --win-pattern-dots: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAEklEQVQImWNgYGD4z8DAwMAAADIABVJYxTEAAAAASUVORK5CYII=');
         }
         
         /* --- Reset i podstawowe style --- */
@@ -57,7 +63,7 @@
         
         html, body {
             background-color: var(--win-bg);
-            background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAEklEQVQImWNgYGD4z0AswK4SAFXuAf8EPy+xAAAAAElFTkSuQmCC');
+            background-image: var(--win-pattern-teal);
             color: var(--win-text);
             font-size: 12px;
             line-height: 1.4;
@@ -406,6 +412,11 @@
             margin-top: 16px;
         }
         
+        /* --- Hourglass cursor dla dłuższych operacji --- */
+        .win-wait-cursor {
+            cursor: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA8AAAAQCAYAAADJViUEAAAACXBIWXMAAAsTAAALEwEAmpwYAAAApElEQVQ4jY2S0Q3DIAxEH1EH6CgdgZE6SkbqCB2hI3QDdoRu0lGqfKQyUBJITkLGPp7PBhV6ZA9gEwFwGaRpDAUzZl9lzC7Aic17AeZJtQJwE9+7CF+BhTQTnwAfgY14L5G/i/Nu/lUoJrYY+HJ8eSbPwK9gGG12+8GXh6PQtTcl1kGe3RQtB0fyuWgMrDrRb/scC/wKLKQDcFSB4u9LYdLFP81UiOEQgB47AAAAAElFTkSuQmCC'), wait;
+        }
+        
         .win-action-button {
             padding: 4px 12px;
             background-color: var(--win-button);
@@ -428,6 +439,7 @@
             border-right: 1px solid var(--win-border-light);
             border-bottom: 1px solid var(--win-border-light);
             transform: translateY(1px);
+            background-color: var(--win-dark-gray);
         }
         
         /* --- Łądowanie --- */
@@ -700,6 +712,7 @@
             border-right: 1px solid var(--win-border-light);
             border-bottom: 1px solid var(--win-border-light);
             transform: translateY(1px);
+            background-color: var(--win-dark-gray);
         }
         
         .win-toolbar-separator {
@@ -1561,10 +1574,54 @@ C:\>cd windows<span class="win-cursor"></span>
         // Stwórz domyślne grupy programowe
         function createDefaultProgramGroups() {
             programGroups = [
-                { id: 'main', name: 'Main', description: 'Main repositories', icon: 'folder' },
-                { id: 'javascript', name: 'JavaScript', description: 'JavaScript repositories', icon: 'js-square' },
-                { id: 'web', name: 'Web', description: 'HTML/CSS repositories', icon: 'html5' },
-                { id: 'other', name: 'Other', description: 'Other repositories', icon: 'code' }
+                { 
+                    id: 'main', 
+                    name: 'Main', 
+                    description: 'Main repositories', 
+                    icon: 'folder',
+                    color: '#000080',
+                    iconHtml: '<i class="fas fa-star"></i>'
+                },
+                { 
+                    id: 'javascript', 
+                    name: 'JavaScript', 
+                    description: 'JavaScript repositories', 
+                    icon: 'js-square',
+                    color: '#f7df1e',
+                    iconHtml: '<i class="fab fa-js-square"></i>'
+                },
+                { 
+                    id: 'web', 
+                    name: 'Web', 
+                    description: 'HTML/CSS repositories', 
+                    icon: 'html5',
+                    color: '#e34c26',
+                    iconHtml: '<i class="fab fa-html5"></i>'
+                },
+                { 
+                    id: 'other', 
+                    name: 'Other', 
+                    description: 'Other repositories', 
+                    icon: 'code',
+                    color: '#4CAF50',
+                    iconHtml: '<i class="fas fa-code"></i>'
+                },
+                { 
+                    id: 'accessories', 
+                    name: 'Accessories', 
+                    description: 'Useful GitHub tools', 
+                    icon: 'toolbox',
+                    color: '#9c27b0',
+                    iconHtml: '<i class="fas fa-toolbox"></i>'
+                },
+                { 
+                    id: 'starred', 
+                    name: 'Starred', 
+                    description: 'Starred repositories', 
+                    icon: 'star',
+                    color: '#ffc107',
+                    iconHtml: '<i class="fas fa-star"></i>'
+                }
             ];
             
             renderProgramGroups();
@@ -1586,8 +1643,8 @@ C:\>cd windows<span class="win-cursor"></span>
                 
                 groupElement.innerHTML = `
                     <div class="win-program-icon">
-                        <div class="win-program-icon-inner">
-                            <i class="fab fa-${group.icon}"></i>
+                        <div class="win-program-icon-inner" style="color: ${group.color || '#000000'}">
+                            ${group.iconHtml || `<i class="fab fa-${group.icon}"></i>`}
                         </div>
                     </div>
                     <div class="win-group-name">${group.name}</div>
@@ -1608,15 +1665,18 @@ C:\>cd windows<span class="win-cursor"></span>
             switch(group.id) {
                 case 'main':
                     groupRepos = allRepos.filter(repo => 
-                        repo.stargazers_count > 0 || repo.size > 1000);
+                        repo.stargazers_count > 0 || repo.size > 1000 || repo.name.toLowerCase().includes('main'));
                     break;
                 case 'javascript':
                     groupRepos = allRepos.filter(repo => 
-                        repo.language === 'JavaScript' || repo.language === 'TypeScript');
+                        repo.language === 'JavaScript' || repo.language === 'TypeScript' || 
+                        repo.name.toLowerCase().includes('js') || repo.name.toLowerCase().includes('script'));
                     break;
                 case 'web':
                     groupRepos = allRepos.filter(repo => 
-                        repo.language === 'HTML' || repo.language === 'CSS');
+                        repo.language === 'HTML' || repo.language === 'CSS' || 
+                        repo.name.toLowerCase().includes('web') || repo.name.toLowerCase().includes('site') || 
+                        repo.name.toLowerCase().includes('html') || repo.name.toLowerCase().includes('css'));
                     break;
                 case 'other':
                     groupRepos = allRepos.filter(repo => 
@@ -1624,6 +1684,16 @@ C:\>cd windows<span class="win-cursor"></span>
                         repo.language !== 'TypeScript' &&
                         repo.language !== 'HTML' &&
                         repo.language !== 'CSS');
+                    break;
+                case 'accessories':
+                    groupRepos = allRepos.filter(repo => 
+                        repo.name.toLowerCase().includes('util') || 
+                        repo.name.toLowerCase().includes('tool') || 
+                        repo.description && repo.description.toLowerCase().includes('tool'));
+                    break;
+                case 'starred':
+                    groupRepos = allRepos.filter(repo => repo.stargazers_count > 0);
+                    groupRepos.sort((a, b) => b.stargazers_count - a.stargazers_count);
                     break;
                 default:
                     groupRepos = allRepos;
@@ -1700,11 +1770,20 @@ C:\>cd windows<span class="win-cursor"></span>
             document.getElementById('view-large').addEventListener('click', () => setViewMode('large'));
             document.getElementById('view-small').addEventListener('click', () => setViewMode('small'));
             document.getElementById('toggle-theme').addEventListener('click', toggleTheme);
-            document.getElementById('auto-arrange').addEventListener('click', () => alert('Auto Arrange is now enabled'));
+            document.getElementById('auto-arrange').addEventListener('click', () => {
+                playSound('click');
+                showTemporaryMessage('Auto Arrange is now enabled');
+            });
             document.getElementById('save-settings').addEventListener('click', () => {
                 playSound('click');
                 showTemporaryMessage('Settings saved');
             });
+            
+            // Desktop patterns
+            document.getElementById('pattern-teal').addEventListener('click', () => changePattern('teal'));
+            document.getElementById('pattern-gray').addEventListener('click', () => changePattern('gray'));
+            document.getElementById('pattern-grid').addEventListener('click', () => changePattern('grid'));
+            document.getElementById('pattern-dots').addEventListener('click', () => changePattern('dots'));
             
             // Menu Window
             document.getElementById('cascade-windows').addEventListener('click', () => alert('Windows cascaded'));
@@ -1745,6 +1824,7 @@ C:\>cd windows<span class="win-cursor"></span>
                     item.addEventListener('click', () => {
                         const sortType = item.id.replace('sort-context-', '');
                         sortRepositories(sortType);
+                        showTemporaryMessage('Sorted by ' + item.textContent);
                         document.body.removeChild(menu);
                     });
                 });
@@ -2191,6 +2271,35 @@ C:\>cd windows<span class="win-cursor"></span>
         function toggleTheme() {
             playSound('click');
             document.body.classList.toggle('dark-mode');
+            showTemporaryMessage(document.body.classList.contains('dark-mode') ? 'Dark mode enabled' : 'Light mode enabled');
+        }
+        
+        // Zmiana wzoru tła pulpitu
+        function changePattern(type) {
+            playSound('click');
+            
+            switch(type) {
+                case 'teal':
+                    document.documentElement.style.setProperty('--win-bg', '#008080');
+                    document.body.style.backgroundImage = 'var(--win-pattern-teal)';
+                    showTemporaryMessage('Desktop pattern: Teal');
+                    break;
+                case 'gray':
+                    document.documentElement.style.setProperty('--win-bg', '#c0c0c0');
+                    document.body.style.backgroundImage = 'var(--win-pattern-gray)';
+                    showTemporaryMessage('Desktop pattern: Gray');
+                    break;
+                case 'grid':
+                    document.documentElement.style.setProperty('--win-bg', '#008080');
+                    document.body.style.backgroundImage = 'var(--win-pattern-grid)';
+                    showTemporaryMessage('Desktop pattern: Grid');
+                    break;
+                case 'dots':
+                    document.documentElement.style.setProperty('--win-bg', '#000080');
+                    document.body.style.backgroundImage = 'var(--win-pattern-dots)';
+                    showTemporaryMessage('Desktop pattern: Dots');
+                    break;
+            }
         }
         
         // Pokaż okno About
@@ -2282,20 +2391,26 @@ C:\>cd windows<span class="win-cursor"></span>
             playSound('click');
             currentSort = sortType;
             
-            allRepos.sort((a, b) => {
+            // Głęboka kopia tablicy repozytoriów - zabezpieczenie przed problemami z sortowaniem
+            const reposToSort = [...allRepos];
+            
+            reposToSort.sort((a, b) => {
                 switch (sortType) {
                     case 'name':
                         return a.name.localeCompare(b.name);
                     case 'updated':
                         return new Date(b.updated_at) - new Date(a.updated_at);
                     case 'stars':
-                        return b.stargazers_count - a.stargazers_count;
+                        return b.stargazers_count - a.stargazers_count || 0;
                     case 'size':
-                        return b.size - a.size;
+                        return (b.size || 0) - (a.size || 0);
                     default:
                         return 0;
                 }
             });
+            
+            // Aktualizacja głównej tablicy
+            allRepos = reposToSort;
             
             // Jeśli jesteśmy w grupie, renderuj tylko repozytoria z tej grupy
             if (currentGroup) {
@@ -2303,6 +2418,8 @@ C:\>cd windows<span class="win-cursor"></span>
             } else {
                 renderRepositories(allRepos);
             }
+            
+            console.log(`Repositories sorted by: ${sortType}`);
         }
         
         // Filtrowanie repozytoriów
@@ -2388,12 +2505,18 @@ C:\>cd windows<span class="win-cursor"></span>
             const username = 'Swir';
             const reposContainer = document.getElementById('repos-container');
             
+            // Dodaj klasę kursora hourglass do body
+            document.body.classList.add('win-wait-cursor');
+            
             // Symulacja działania Windows 3.11 - powolne ładowanie
             reposContainer.innerHTML = `
                 <div class="win-loading">
                     <div class="win-loading-text">Working...</div>
                     <div class="win-loading-animation">
                         <div class="win-loading-bar"></div>
+                    </div>
+                    <div style="margin-top: 15px; font-size: 11px; color: var(--win-text);">
+                        Please wait while Windows connects to GitHub...
                     </div>
                 </div>
             `;
@@ -2426,10 +2549,16 @@ C:\>cd windows<span class="win-cursor"></span>
                 // Aktualizuj grupy
                 renderProgramGroups();
                 
+                // Usuń klasę kursora hourglass
+                document.body.classList.remove('win-wait-cursor');
+                
             } catch (error) {
                 console.error('Error fetching repositories:', error);
                 playSound('error');
                 showErrorWindow("Connection Error", error.message);
+                
+                // Usuń klasę kursora hourglass nawet w przypadku błędu
+                document.body.classList.remove('win-wait-cursor');
             }
         }
         
@@ -2629,8 +2758,11 @@ C:\>cd windows<span class="win-cursor"></span>
                         </div>
                     </div>
                     <div class="win-error-content">
-                        <div class="win-error-icon">×</div>
-                        <div class="win-error-message">${message}</div>
+                        <div class="win-error-icon">!</div>
+                        <div class="win-error-message">
+                            <p>${message}</p>
+                            <p style="margin-top: 10px;">Windows cannot connect to GitHub. Make sure your network connection is working properly.</p>
+                        </div>
                     </div>
                     <div class="win-error-buttons">
                         <button class="win-action-button" onclick="fetchRepositories()">Retry</button>
