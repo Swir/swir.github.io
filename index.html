@@ -2850,6 +2850,355 @@ MIT`
             ];
             
             return sampleContents[Math.floor(Math.random() * sampleContents.length)];
+        }
+        
+        // Show file manager window
+        function showFileManager() {
+            playSound('open');
+            
+            const fileManagerModal = document.getElementById('file-manager-modal');
+            const modalBg = document.getElementById('modal-background');
+            
+            if (fileManagerModal && modalBg) {
+                fileManagerModal.style.display = 'block';
+                modalBg.style.display = 'block';
+            }
+        }
+        
+        // Close all modals
+        function closeAllModals() {
+            playSound('close');
+            
+            const modals = [
+                'repo-details-modal', 
+                'about-modal', 
+                'shortcuts-modal', 
+                'help-modal', 
+                'file-manager-modal'
+            ];
+            
+            modals.forEach(function(id) {
+                const modal = document.getElementById(id);
+                if (modal) modal.style.display = 'none';
+            });
+            
+            const modalBg = document.getElementById('modal-background');
+            if (modalBg) modalBg.style.display = 'none';
+            
+            // Remove any context menus
+            document.querySelectorAll('.win-context-menu').forEach(function(menu) {
+                if (menu.style.display === 'block') {
+                    menu.style.display = 'none';
+                }
+            });
+        }
+        
+        // Show about window
+        function showAboutWindow() {
+            playSound('open');
+            
+            const aboutModal = document.getElementById('about-modal');
+            const modalBg = document.getElementById('modal-background');
+            
+            if (aboutModal && modalBg) {
+                aboutModal.style.display = 'block';
+                modalBg.style.display = 'block';
+            }
+        }
+        
+        // Show shortcuts window
+        function showShortcutsWindow() {
+            playSound('open');
+            
+            const shortcutsModal = document.getElementById('shortcuts-modal');
+            const modalBg = document.getElementById('modal-background');
+            
+            if (shortcutsModal && modalBg) {
+                shortcutsModal.style.display = 'block';
+                modalBg.style.display = 'block';
+            }
+        }
+        
+        // Show help window
+        function showHelpWindow() {
+            playSound('open');
+            
+            const helpModal = document.getElementById('help-modal');
+            const modalBg = document.getElementById('modal-background');
+            
+            if (helpModal && modalBg) {
+                helpModal.style.display = 'block';
+                modalBg.style.display = 'block';
+            }
+        }
+        
+        // Show error window
+        function showErrorWindow(title, message) {
+            playSound('error');
+            
+            const reposContainer = document.getElementById('repos-container');
+            if (!reposContainer) return;
+            
+            reposContainer.innerHTML = `
+                <div class="win-error">
+                    <div class="win-error-title">
+                        <div>${title}</div>
+                        <div class="win-buttons">
+                            <div class="win-button" onclick="location.reload()">×</div>
+                        </div>
+                    </div>
+                    <div class="win-error-content">
+                        <div class="win-error-icon">
+                            <i class="fas fa-exclamation-triangle pulse"></i>
+                        </div>
+                        <div class="win-error-message">
+                            <p>${message}</p>
+                            <p style="margin-top: 10px;">Windows cannot connect to GitHub. Make sure your network connection is working properly.</p>
+                        </div>
+                    </div>
+                    <div class="win-error-buttons">
+                        <button class="win-action-button" onclick="fetchRepositories()">Retry</button>
+                        <button class="win-action-button" onclick="location.reload()">Restart</button>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Show blue screen of death
+        function showBSOD() {
+            const bsodScreen = document.getElementById('bsod-screen');
+            if (bsodScreen) {
+                bsodScreen.style.display = 'block';
+            }
+            
+            // Play error sound
+            playSound('error');
+        }
+        
+        // Show Easter egg
+        function triggerEasterEgg() {
+            // Show flying toaster
+            const toaster = document.getElementById('flying-toaster');
+            if (toaster) {
+                toaster.style.display = 'block';
+                
+                // Hide toaster after animation completes
+                setTimeout(function() {
+                    toaster.style.display = 'none';
+                }, 15000);
+            }
+            
+            // Play startup sound
+            playSound('startup');
+            
+            // Show message
+            showTemporaryMessage('After Dark Flying Toasters Activated!');
+        }
+        
+        // Show temporary message
+        function showTemporaryMessage(message) {
+            const existingMessage = document.querySelector('.win-temp-message');
+            if (existingMessage) {
+                document.body.removeChild(existingMessage);
+            }
+            
+            const messageElement = document.createElement('div');
+            messageElement.className = 'win-temp-message';
+            messageElement.textContent = message;
+            
+            document.body.appendChild(messageElement);
+            
+            setTimeout(function() {
+                if (document.body.contains(messageElement)) {
+                    messageElement.style.opacity = '0';
+                    setTimeout(function() {
+                        if (document.body.contains(messageElement)) {
+                            document.body.removeChild(messageElement);
+                        }
+                    }, 300);
+                }
+            }, 2000);
+        }
+        
+        // Filter repositories
+        function filterRepositories() {
+            const searchTerm = document.getElementById('repo-search').value.toLowerCase();
+            
+            if (!searchTerm) {
+                if (currentGroup) {
+                    openProgramGroup(currentGroup);
+                } else {
+                    renderRepositories(allRepos);
+                }
+                return;
+            }
+            
+            const filteredRepos = allRepos.filter(function(repo) {
+                return repo.name.toLowerCase().includes(searchTerm) || 
+                    (repo.description && repo.description.toLowerCase().includes(searchTerm)) ||
+                    (repo.language && repo.language.toLowerCase().includes(searchTerm));
+            });
+            
+            renderRepositories(filteredRepos);
+            
+            showTemporaryMessage(`Found ${filteredRepos.length} repositories`);
+        }
+        
+        // Sort repositories
+        function sortRepositories(sortType, showMessage = true) {
+            if (showMessage) playSound('click');
+            currentSort = sortType;
+            
+            // Create a deep copy of repositories to avoid sorting issues
+            const reposToSort = [...allRepos];
+            
+            // Sort repositories
+            reposToSort.sort(function(a, b) {
+                switch (sortType) {
+                    case 'name':
+                        return (a.name || '').localeCompare(b.name || '');
+                    case 'updated':
+                        return new Date(b.updated_at || 0) - new Date(a.updated_at || 0);
+                    case 'stars':
+                        return (b.stargazers_count || 0) - (a.stargazers_count || 0);
+                    case 'size':
+                        return (b.size || 0) - (a.size || 0);
+                    default:
+                        return 0;
+                }
+            });
+            
+            // Update allRepos with sorted repositories
+            allRepos = reposToSort;
+            
+            // Update the sort menu check marks
+            updateSortMenuCheckmarks();
+            
+            // Re-render repositories if needed
+            if (currentGroup) {
+                openProgramGroup(currentGroup);
+            } else if (document.querySelector('.win-repo-grid')) {
+                renderRepositories(allRepos);
+            }
+            
+            if (showMessage) {
+                showTemporaryMessage(`Sorted by ${sortType}`);
+            }
+        }
+        
+        // Update the sort menu check marks
+        function updateSortMenuCheckmarks() {
+            const sortMenu = document.getElementById('sort-menu');
+            if (!sortMenu) return;
+            
+            // Remove all existing check marks
+            sortMenu.querySelectorAll('.fa-check').forEach(function(check) {
+                check.style.visibility = 'hidden';
+            });
+            
+            // Add check mark for current sort
+            const currentSortItem = document.getElementById(`sort-by-${currentSort}`);
+            if (currentSortItem) {
+                const checkIcon = currentSortItem.querySelector('.fa-check');
+                if (checkIcon) {
+                    checkIcon.style.visibility = 'visible';
+                }
+                
+                // Add selected class
+                sortMenu.querySelectorAll('.win-context-item').forEach(function(item) {
+                    item.classList.remove('win-context-item-selected');
+                });
+                currentSortItem.classList.add('win-context-item-selected');
+            }
+        }
+        
+        // Show sort menu
+        function showSortMenu(e) {
+            playSound('click');
+            
+            const sortMenu = document.getElementById('sort-menu');
+            if (!sortMenu) return;
+            
+            // Get position of sort button
+            const sortButton = document.getElementById('sort-repos');
+            if (!sortButton) return;
+            
+            const rect = sortButton.getBoundingClientRect();
+            
+            // Position menu under the button
+            sortMenu.style.display = 'block';
+            sortMenu.style.left = rect.left + 'px';
+            sortMenu.style.top = (rect.bottom + window.scrollY) + 'px';
+            
+            // Update check marks
+            updateSortMenuCheckmarks();
+            
+            // Set flag
+            sortMenuVisible = true;
+        }
+        
+        // Hide sort menu
+        function hideSortMenu() {
+            const sortMenu = document.getElementById('sort-menu');
+            if (sortMenu) {
+                sortMenu.style.display = 'none';
+            }
+            
+            sortMenuVisible = false;
+        }
+        
+        // Set view mode (large or small icons)
+        function setViewMode(mode) {
+            playSound('click');
+            currentView = mode;
+            
+            const grid = document.querySelector('.win-repo-grid');
+            if (!grid) return;
+            
+            if (mode === 'small') {
+                grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(70px, 1fr))';
+                
+                grid.querySelectorAll('.win-repo-icon').forEach(function(icon) {
+                    icon.style.width = '24px';
+                    icon.style.height = '24px';
+                    icon.style.fontSize = '12px';
+                });
+                
+                grid.querySelectorAll('.win-repo-item').forEach(function(item) {
+                    item.style.width = '60px';
+                });
+                
+                grid.querySelectorAll('.win-repo-name').forEach(function(name) {
+                    name.style.fontSize = '9px';
+                });
+            } else {
+                grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(90px, 1fr))';
+                
+                grid.querySelectorAll('.win-repo-icon').forEach(function(icon) {
+                    icon.style.width = '32px';
+                    icon.style.height = '32px';
+                    icon.style.fontSize = '16px';
+                });
+                
+                grid.querySelectorAll('.win-repo-item').forEach(function(item) {
+                    item.style.width = '80px';
+                });
+                
+                grid.querySelectorAll('.win-repo-name').forEach(function(name) {
+                    name.style.fontSize = '11px';
+                });
+            }
+        }
+        
+        // Cycle view mode
+        function cycleViewMode() {
+            if (currentView === 'large') {
+                setViewMode('small');
+                showTemporaryMessage('Small Icons selected');
+            } else {
+                setViewMode('large');
+                showTemporaryMessage('Large Icons selected');
+            }
         }() {
             playSound('click');
             
