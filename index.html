@@ -1,4 +1,43 @@
-// Zapasowy kod inicjalizujący na wypadek problemów z sekwencją startową
+// Obsługa przycisku "Pokaż sekwencję startową"
+        function showStartupSequence() {
+            playSound('click');
+            
+            // Pokaż okno dialogowe potwierdzenia
+            const confirmDialog = document.createElement('div');
+            confirmDialog.className = 'win-window';
+            confirmDialog.style.position = 'fixed';
+            confirmDialog.style.top = '50%';
+            confirmDialog.style.left = '50%';
+            confirmDialog.style.transform = 'translate(-50%, -50%)';
+            confirmDialog.style.zIndex = '2000';
+            confirmDialog.style.width = '300px';
+            
+            confirmDialog.innerHTML = `
+                <div class="win-title-bar">
+                    <div class="win-title">Program Manager</div>
+                </div>
+                <div class="win-content" style="text-align: center; padding: 20px;">
+                    <p style="margin-bottom: 20px;">Do you want to see the startup sequence?</p>
+                    <p style="margin-bottom: 20px; font-size: 10px;">This will refresh the page.</p>
+                    <div style="display: flex; justify-content: center; gap: 10px;">
+                        <button class="win-action-button" id="confirm-startup">OK</button>
+                        <button class="win-action-button" id="cancel-startup">Cancel</button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(confirmDialog);
+            
+            document.getElementById('confirm-startup').addEventListener('click', function() {
+                document.body.removeChild(confirmDialog);
+                // Ustawiamy parametr w URL, który będzie sprawdzany przy ładowaniu strony
+                window.location.href = window.location.pathname + '?showStartup=true';
+            });
+            
+            document.getElementById('cancel-startup').addEventListener('click', function() {
+                document.body.removeChild(confirmDialog);
+            });
+        }        // Zapasowy kod inicjalizujący na wypadek problemów z sekwencją startową
         // Automatyczne uruchomienie po 10 sekundach, jeśli ekran startowy jest nadal widoczny
         setTimeout(function() {
             const dosStartupScreen = document.getElementById('dos-startup');
@@ -1541,9 +1580,10 @@ C:\>cd windows<span class="win-cursor"></span>
         let memoryInterval;
         let fileTypes = [];
         
-        // Inicjalizacja
+        // Inicjalizacja - POMIJAMY SEKWENCJĘ STARTOWĄ i przechodzimy od razu do głównego interfejsu
         document.addEventListener('DOMContentLoaded', function() {
-            console.log("DOM loaded, starting initialization...");
+            console.log("DOM loaded, skipping startup sequence and initializing directly...");
+            
             // Inicjalizacja zmiennych
             fileTypes = [
                 { name: 'README.MD', icon: 'fa-file-alt' },
@@ -1562,8 +1602,40 @@ C:\>cd windows<span class="win-cursor"></span>
                 { name: 'db.json', icon: 'fa-database' }
             ];
             
-            // Symulacja startu DOS
-            simulateDOSStartup();
+            // Ukryj ekrany startowe
+            try {
+                const dosStartup = document.getElementById('dos-startup');
+                if (dosStartup) {
+                    dosStartup.style.display = 'none';
+                    dosStartup.style.visibility = 'hidden';
+                }
+                
+                const winStartup = document.getElementById('win-startup');
+                if (winStartup) {
+                    winStartup.style.display = 'none';
+                    winStartup.style.visibility = 'hidden';
+                }
+            } catch (e) {
+                console.error("Error hiding startup screens:", e);
+            }
+            
+            // Pokaż główne okno
+            try {
+                const mainWindow = document.getElementById('main-window');
+                if (mainWindow) {
+                    mainWindow.style.display = 'block';
+                }
+            } catch (e) {
+                console.error("Error showing main window:", e);
+            }
+            
+            // Zainicjalizuj aplikację bezpośrednio
+            try {
+                initializeApplication();
+            } catch (e) {
+                console.error("Error initializing application:", e);
+                alert("An error occurred while starting Windows. Please refresh the page.");
+            }
         });
         
         // Symulacja startu DOS
@@ -1640,6 +1712,9 @@ C:\>cd windows<span class="win-cursor"></span>
         function initializeApplication() {
             console.log("Initializing application...");
             try {
+                // Dodanie przycisku "Pokaż sekwencję startową" do paska menu
+                addStartupSequenceButton();
+                
                 // Wczytaj repozytoria
                 fetchRepositories();
                 
@@ -1701,6 +1776,39 @@ C:\>cd windows<span class="win-cursor"></span>
                         </div>
                     `;
                     mainWindow.style.display = 'block';
+                }
+            }
+        }
+        
+        // Dodaj przycisk sekwencji startowej do paska menu
+        function addStartupSequenceButton() {
+            const fileMenu = document.querySelector('.win-menu-item .win-submenu');
+            if (fileMenu) {
+                // Sprawdź, czy przycisk już istnieje
+                if (!document.getElementById('show-startup-button')) {
+                    const restartButton = document.createElement('div');
+                    restartButton.className = 'win-submenu-item';
+                    restartButton.id = 'show-startup-button';
+                    restartButton.textContent = 'Show Startup Sequence';
+                    
+                    // Dodaj separator przed przyciskiem
+                    const separator = document.createElement('div');
+                    separator.className = 'win-separator';
+                    
+                    // Znajdź przycisk Exit
+                    const exitButton = document.getElementById('exit-button');
+                    if (exitButton) {
+                        fileMenu.insertBefore(separator, exitButton);
+                        fileMenu.insertBefore(restartButton, exitButton);
+                        
+                        // Dodaj event listener
+                        document.getElementById('show-startup-button').addEventListener('click', showStartupSequence);
+                    } else {
+                        // Dodaj na końcu, jeśli nie znaleziono przycisku Exit
+                        fileMenu.appendChild(separator);
+                        fileMenu.appendChild(restartButton);
+                        restartButton.addEventListener('click', showStartupSequence);
+                    }
                 }
             }
         }
@@ -1970,6 +2078,28 @@ C:\>cd windows<span class="win-cursor"></span>
             document.getElementById('refresh-repos').addEventListener('click', fetchRepositories);
             document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
             document.getElementById('view-toggle').addEventListener('click', cycleViewMode);
+            
+            // Dodaj przycisk "Restart Windows" do menu
+            const fileMenu = document.querySelector('.win-submenu');
+            if (fileMenu) {
+                const restartButton = document.createElement('div');
+                restartButton.className = 'win-submenu-item';
+                restartButton.id = 'restart-windows-button';
+                restartButton.textContent = 'Restart Windows';
+                
+                // Dodaj separator przed przyciskiem Restart
+                const separator = document.createElement('div');
+                separator.className = 'win-separator';
+                
+                fileMenu.insertBefore(separator, document.getElementById('exit-button'));
+                fileMenu.insertBefore(restartButton, document.getElementById('exit-button'));
+                
+                // Dodaj event listener
+                document.getElementById('restart-windows-button').addEventListener('click', function() {
+                    playSound('click');
+                    location.reload();
+                });
+            }
             
             document.getElementById('sort-repos').addEventListener('click', (e) => {
                 const menu = document.createElement('div');
