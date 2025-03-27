@@ -1,94 +1,4 @@
-// Obsługa przycisku "Pokaż sekwencję startową"
-        function showStartupSequence() {
-            playSound('click');
-            
-            // Pokaż okno dialogowe potwierdzenia
-            const confirmDialog = document.createElement('div');
-            confirmDialog.className = 'win-window';
-            confirmDialog.style.position = 'fixed';
-            confirmDialog.style.top = '50%';
-            confirmDialog.style.left = '50%';
-            confirmDialog.style.transform = 'translate(-50%, -50%)';
-            confirmDialog.style.zIndex = '2000';
-            confirmDialog.style.width = '300px';
-            
-            confirmDialog.innerHTML = `
-                <div class="win-title-bar">
-                    <div class="win-title">Program Manager</div>
-                </div>
-                <div class="win-content" style="text-align: center; padding: 20px;">
-                    <p style="margin-bottom: 20px;">Do you want to see the startup sequence?</p>
-                    <p style="margin-bottom: 20px; font-size: 10px;">This will refresh the page.</p>
-                    <div style="display: flex; justify-content: center; gap: 10px;">
-                        <button class="win-action-button" id="confirm-startup">OK</button>
-                        <button class="win-action-button" id="cancel-startup">Cancel</button>
-                    </div>
-                </div>
-            `;
-            
-            document.body.appendChild(confirmDialog);
-            
-            document.getElementById('confirm-startup').addEventListener('click', function() {
-                document.body.removeChild(confirmDialog);
-                // Ustawiamy parametr w URL, który będzie sprawdzany przy ładowaniu strony
-                window.location.href = window.location.pathname + '?showStartup=true';
-            });
-            
-            document.getElementById('cancel-startup').addEventListener('click', function() {
-                document.body.removeChild(confirmDialog);
-            });
-        }        // Zapasowy kod inicjalizujący na wypadek problemów z sekwencją startową
-        // Automatyczne uruchomienie po 10 sekundach, jeśli ekran startowy jest nadal widoczny
-        setTimeout(function() {
-            const dosStartupScreen = document.getElementById('dos-startup');
-            const windowsStartupScreen = document.getElementById('win-startup');
-            const mainWindow = document.getElementById('main-window');
-            
-            if ((!dosStartupScreen || !dosStartupScreen.classList.contains('hidden')) ||
-                (!windowsStartupScreen || windowsStartupScreen.style.display === 'flex') ||
-                (!mainWindow || mainWindow.style.display === 'none')) {
-                
-                console.log("Detected startup hang, forcing application initialization...");
-                
-                // Ukryj ekrany startowe
-                if (dosStartupScreen) dosStartupScreen.classList.add('hidden');
-                if (windowsStartupScreen) windowsStartupScreen.style.display = 'none';
-                
-                // Pokaż główne okno
-                if (mainWindow) mainWindow.style.display = 'block';
-                
-                // Zainicjalizuj aplikację
-                initializeApplication();
-            }
-        }, 10000);            // Widok listy/szczegółów
-            document.getElementById('fm-view-list').addEventListener('click', function() {
-                playSound('click');
-                document.getElementById('file-list').classList.remove('details-view');
-                showTemporaryMessage('List view selected');
-                updateFileManager();
-            });
-            
-            document.getElementById('fm-view-details').addEventListener('click', function() {
-                playSound('click');
-                document.getElementById('file-list').classList.add('details-view');
-                showTemporaryMessage('Details view selected');
-                updateFileManager();
-            });
-            
-            // Sortowanie
-            document.getElementById('fm-sort-name').addEventListener('click', function() {
-                playSound('click');
-                sortRepositories('name');
-                showTemporaryMessage('Files sorted by name');
-                updateFileManager();
-            });
-            
-            document.getElementById('fm-sort-date').addEventListener('click', function() {
-                playSound('click');
-                sortRepositories('updated');
-                showTemporaryMessage('Files sorted by date');
-                updateFileManager();
-            });<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
@@ -123,12 +33,6 @@
             --win-dark-mode-bg: #000000;
             --win-dark-mode-window: #222222;
             --win-dark-mode-text: #cccccc;
-            
-            /* Desktop patterns */
-            --win-pattern-teal: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAEklEQVQImWNgYGD4z0AswK4SAFXuAf8EPy+xAAAAAElFTkSuQmCC');
-            --win-pattern-gray: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAEklEQVQImWNgYGD4z8DAwMDAAMYAELgCFMRqdQgAAAAASUVORK5CYII=');
-            --win-pattern-grid: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAFElEQVQYlWNgYGD4z4AGGIgTQAUAFL0Q5QkqZfAAAAAASUVORK5CYII=');
-            --win-pattern-dots: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAEklEQVQImWNgYGD4z8DAwMAAADIABVJYxTEAAAAASUVORK5CYII=');
         }
         
         /* --- Reset i podstawowe style --- */
@@ -153,7 +57,7 @@
         
         html, body {
             background-color: var(--win-bg);
-            background-image: var(--win-pattern-teal);
+            background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAEklEQVQImWNgYGD4z0AswK4SAFXuAf8EPy+xAAAAAElFTkSuQmCC');
             color: var(--win-text);
             font-size: 12px;
             line-height: 1.4;
@@ -502,11 +406,6 @@
             margin-top: 16px;
         }
         
-        /* --- Hourglass cursor dla dłuższych operacji --- */
-        .win-wait-cursor {
-            cursor: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA8AAAAQCAYAAADJViUEAAAACXBIWXMAAAsTAAALEwEAmpwYAAAApElEQVQ4jY2S0Q3DIAxEH1EH6CgdgZE6SkbqCB2hI3QDdoRu0lGqfKQyUBJITkLGPp7PBhV6ZA9gEwFwGaRpDAUzZl9lzC7Aic17AeZJtQJwE9+7CF+BhTQTnwAfgY14L5G/i/Nu/lUoJrYY+HJ8eSbPwK9gGG12+8GXh6PQtTcl1kGe3RQtB0fyuWgMrDrRb/scC/wKLKQDcFSB4u9LYdLFP81UiOEQgB47AAAAAElFTkSuQmCC'), wait;
-        }
-        
         .win-action-button {
             padding: 4px 12px;
             background-color: var(--win-button);
@@ -529,7 +428,6 @@
             border-right: 1px solid var(--win-border-light);
             border-bottom: 1px solid var(--win-border-light);
             transform: translateY(1px);
-            background-color: var(--win-dark-gray);
         }
         
         /* --- Łądowanie --- */
@@ -595,7 +493,6 @@
         .win-dos-startup.hidden {
             opacity: 0;
             visibility: hidden;
-            display: none;
         }
         
         .win-dos-text {
@@ -626,7 +523,7 @@
             width: 100%;
             height: 100%;
             background-color: var(--win-bg);
-            display: none;
+            display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
@@ -637,7 +534,6 @@
         .win-startup.hidden {
             opacity: 0;
             visibility: hidden;
-            display: none;
         }
         
         .win-logo {
@@ -804,7 +700,6 @@
             border-right: 1px solid var(--win-border-light);
             border-bottom: 1px solid var(--win-border-light);
             transform: translateY(1px);
-            background-color: var(--win-dark-gray);
         }
         
         .win-toolbar-separator {
@@ -1176,7 +1071,7 @@
     </audio>
 
     <!-- DOS Startup screen -->
-    <div class="win-dos-startup" id="dos-startup" style="display: block; opacity: 1; visibility: visible;">
+    <div class="win-dos-startup" id="dos-startup">
         <div class="win-dos-text">Starting MS-DOS...</div>
         <div class="win-dos-text">
 Microsoft(R) MS-DOS(R) Version 6.22
@@ -1578,96 +1473,26 @@ C:\>cd windows<span class="win-cursor"></span>
         let programGroups = [];
         let currentGroup = null;
         let memoryInterval;
-        let fileTypes = [];
         
-        // Inicjalizacja - POMIJAMY SEKWENCJĘ STARTOWĄ i przechodzimy od razu do głównego interfejsu
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log("DOM loaded, skipping startup sequence and initializing directly...");
-            
-            // Inicjalizacja zmiennych
-            fileTypes = [
-                { name: 'README.MD', icon: 'fa-file-alt' },
-                { name: 'index.html', icon: 'fa-html5' },
-                { name: 'style.css', icon: 'fa-css3-alt' },
-                { name: 'script.js', icon: 'fa-js-square' },
-                { name: 'package.json', icon: 'fa-file-code' },
-                { name: 'tsconfig.json', icon: 'fa-file-code' },
-                { name: '.gitignore', icon: 'fa-github' },
-                { name: 'LICENSE', icon: 'fa-file-contract' },
-                { name: 'Dockerfile', icon: 'fa-docker' },
-                { name: 'main.py', icon: 'fa-python' },
-                { name: 'index.php', icon: 'fa-php' },
-                { name: 'webpack.config.js', icon: 'fa-cogs' },
-                { name: 'server.js', icon: 'fa-server' },
-                { name: 'db.json', icon: 'fa-database' }
-            ];
-            
-            // Ukryj ekrany startowe
-            try {
-                const dosStartup = document.getElementById('dos-startup');
-                if (dosStartup) {
-                    dosStartup.style.display = 'none';
-                    dosStartup.style.visibility = 'hidden';
-                }
-                
-                const winStartup = document.getElementById('win-startup');
-                if (winStartup) {
-                    winStartup.style.display = 'none';
-                    winStartup.style.visibility = 'hidden';
-                }
-            } catch (e) {
-                console.error("Error hiding startup screens:", e);
-            }
-            
-            // Pokaż główne okno
-            try {
-                const mainWindow = document.getElementById('main-window');
-                if (mainWindow) {
-                    mainWindow.style.display = 'block';
-                }
-            } catch (e) {
-                console.error("Error showing main window:", e);
-            }
-            
-            // Zainicjalizuj aplikację bezpośrednio
-            try {
-                initializeApplication();
-            } catch (e) {
-                console.error("Error initializing application:", e);
-                alert("An error occurred while starting Windows. Please refresh the page.");
-            }
+        // Inicjalizacja
+        document.addEventListener('DOMContentLoaded', () => {
+            // Symulacja startu DOS
+            simulateDOSStartup();
         });
         
         // Symulacja startu DOS
         function simulateDOSStartup() {
-            console.log("Starting DOS simulation...");
             const dosStartupScreen = document.getElementById('dos-startup');
             const dosCommand = document.getElementById('dos-command');
             
-            if (!dosStartupScreen || !dosCommand) {
-                console.error("DOS startup elements not found, starting Windows directly");
-                simulateWindowsStartup();
-                return;
-            }
-            
-            // Upewnij się, że ekran DOS jest widoczny
-            dosStartupScreen.classList.remove('hidden');
-            dosStartupScreen.style.opacity = '1';
-            dosStartupScreen.style.visibility = 'visible';
-            
-            setTimeout(function() {
-                dosCommand.textContent = "C:\\>cd windows";
+            setTimeout(() => {
+                dosCommand.textContent = "C:\\WINDOWS>win";
                 
-                setTimeout(function() {
-                    dosCommand.textContent = "C:\\WINDOWS>win";
+                setTimeout(() => {
+                    dosCommand.textContent = "C:\\WINDOWS>win /s";
                     
-                    setTimeout(function() {
-                        dosCommand.textContent = "C:\\WINDOWS>win /s";
-                        
-                        setTimeout(function() {
-                            console.log("DOS startup complete, launching Windows...");
-                            simulateWindowsStartup();
-                        }, 1000);
+                    setTimeout(() => {
+                        simulateWindowsStartup();
                     }, 1000);
                 }, 1000);
             }, 1500);
@@ -1675,34 +1500,23 @@ C:\>cd windows<span class="win-cursor"></span>
         
         // Symulacja startu Windows
         function simulateWindowsStartup() {
-            console.log("Starting Windows simulation...");
             const dosStartupScreen = document.getElementById('dos-startup');
             const windowsStartupScreen = document.getElementById('win-startup');
-            
-            if (!dosStartupScreen || !windowsStartupScreen) {
-                console.error("Startup elements not found, initializing application directly");
-                initializeApplication();
-                return;
-            }
             
             dosStartupScreen.classList.add('hidden');
             windowsStartupScreen.style.display = 'flex';
             
             // Dźwięk startowy
             try {
-                const startupSound = document.getElementById('win-startup-sound');
-                if (startupSound) {
-                    startupSound.play().catch(function(e) {
-                        console.log('Autoplay prevented by browser', e);
-                    });
-                }
+                document.getElementById('win-startup-sound').play().catch(() => {
+                    console.log('Autoplay prevented by browser');
+                });
             } catch (e) {
-                console.log('Audio not supported', e);
+                console.log('Audio not supported');
             }
             
             // Zamknięcie ekranu startowego po załadowaniu
-            setTimeout(function() {
-                console.log("Windows startup complete, initializing application...");
+            setTimeout(() => {
                 windowsStartupScreen.classList.add('hidden');
                 initializeApplication();
             }, 3500);
@@ -1710,160 +1524,47 @@ C:\>cd windows<span class="win-cursor"></span>
         
         // Inicjalizacja aplikacji
         function initializeApplication() {
-            console.log("Initializing application...");
-            try {
-                // Dodanie przycisku "Pokaż sekwencję startową" do paska menu
-                addStartupSequenceButton();
-                
-                // Wczytaj repozytoria
-                fetchRepositories();
-                
-                // Inicjalizacja pamięci
-                updateMemoryDisplay();
-                
-                // Rozpocznij cykliczne aktualizacje pamięci
-                memoryInterval = setInterval(updateMemoryDisplay, 10000);
-                
-                // Event listenery dla przycisków okna
-                initializeWindowButtons();
-                
-                // Event listenery dla menu i toolbara
-                initializeMenuAndToolbar();
-                
-                // Event listenery dla przeciągania okien
-                initializeDragAndDrop();
-                
-                // Event listenery dla skrótów klawiszowych
-                initializeKeyboardShortcuts();
-                
-                // Event listenery dla okna pomocy
-                initializeHelpSystem();
-                
-                // Event listenery dla File Managera
-                initializeFileManager();
-                
-                // Tło modalu zamyka modalne okna
-                const modalBackground = document.getElementById('modal-background');
-                if (modalBackground) {
-                    modalBackground.addEventListener('click', closeAllModals);
-                }
-                
-                // Stwórz domyślne grupy programowe
-                createDefaultProgramGroups();
-                
-                console.log("Application initialized successfully");
-            } catch (error) {
-                console.error("Error during application initialization:", error);
-                
-                // Pokaż błąd na ekranie
-                const mainWindow = document.getElementById('main-window');
-                if (mainWindow) {
-                    mainWindow.innerHTML = `
-                        <div class="win-error">
-                            <div class="win-error-title">
-                                <div>Initialization Error</div>
-                            </div>
-                            <div class="win-error-content">
-                                <div class="win-error-icon">!</div>
-                                <div class="win-error-message">
-                                    <p>An error occurred while initializing Windows:</p>
-                                    <p>${error.message || "Unknown error"}</p>
-                                </div>
-                            </div>
-                            <div class="win-error-buttons">
-                                <button class="win-action-button" onclick="location.reload()">Restart</button>
-                            </div>
-                        </div>
-                    `;
-                    mainWindow.style.display = 'block';
-                }
-            }
-        }
-        
-        // Dodaj przycisk sekwencji startowej do paska menu
-        function addStartupSequenceButton() {
-            const fileMenu = document.querySelector('.win-menu-item .win-submenu');
-            if (fileMenu) {
-                // Sprawdź, czy przycisk już istnieje
-                if (!document.getElementById('show-startup-button')) {
-                    const restartButton = document.createElement('div');
-                    restartButton.className = 'win-submenu-item';
-                    restartButton.id = 'show-startup-button';
-                    restartButton.textContent = 'Show Startup Sequence';
-                    
-                    // Dodaj separator przed przyciskiem
-                    const separator = document.createElement('div');
-                    separator.className = 'win-separator';
-                    
-                    // Znajdź przycisk Exit
-                    const exitButton = document.getElementById('exit-button');
-                    if (exitButton) {
-                        fileMenu.insertBefore(separator, exitButton);
-                        fileMenu.insertBefore(restartButton, exitButton);
-                        
-                        // Dodaj event listener
-                        document.getElementById('show-startup-button').addEventListener('click', showStartupSequence);
-                    } else {
-                        // Dodaj na końcu, jeśli nie znaleziono przycisku Exit
-                        fileMenu.appendChild(separator);
-                        fileMenu.appendChild(restartButton);
-                        restartButton.addEventListener('click', showStartupSequence);
-                    }
-                }
-            }
+            // Wczytaj repozytoria
+            fetchRepositories();
+            
+            // Inicjalizacja pamięci
+            updateMemoryDisplay();
+            
+            // Rozpocznij cykliczne aktualizacje pamięci
+            memoryInterval = setInterval(updateMemoryDisplay, 10000);
+            
+            // Event listenery dla przycisków okna
+            initializeWindowButtons();
+            
+            // Event listenery dla menu i toolbara
+            initializeMenuAndToolbar();
+            
+            // Event listenery dla przeciągania okien
+            initializeDragAndDrop();
+            
+            // Event listenery dla skrótów klawiszowych
+            initializeKeyboardShortcuts();
+            
+            // Event listenery dla okna pomocy
+            initializeHelpSystem();
+            
+            // Event listenery dla File Managera
+            initializeFileManager();
+            
+            // Tło modalu zamyka modalne okna
+            document.getElementById('modal-background').addEventListener('click', closeAllModals);
+            
+            // Stwórz domyślne grupy programowe
+            createDefaultProgramGroups();
         }
         
         // Stwórz domyślne grupy programowe
         function createDefaultProgramGroups() {
             programGroups = [
-                { 
-                    id: 'main', 
-                    name: 'Main', 
-                    description: 'Main repositories', 
-                    icon: 'folder',
-                    color: '#000080',
-                    iconHtml: '<i class="fas fa-star"></i>'
-                },
-                { 
-                    id: 'javascript', 
-                    name: 'JavaScript', 
-                    description: 'JavaScript repositories', 
-                    icon: 'js-square',
-                    color: '#f7df1e',
-                    iconHtml: '<i class="fab fa-js-square"></i>'
-                },
-                { 
-                    id: 'web', 
-                    name: 'Web', 
-                    description: 'HTML/CSS repositories', 
-                    icon: 'html5',
-                    color: '#e34c26',
-                    iconHtml: '<i class="fab fa-html5"></i>'
-                },
-                { 
-                    id: 'other', 
-                    name: 'Other', 
-                    description: 'Other repositories', 
-                    icon: 'code',
-                    color: '#4CAF50',
-                    iconHtml: '<i class="fas fa-code"></i>'
-                },
-                { 
-                    id: 'accessories', 
-                    name: 'Accessories', 
-                    description: 'Useful GitHub tools', 
-                    icon: 'toolbox',
-                    color: '#9c27b0',
-                    iconHtml: '<i class="fas fa-toolbox"></i>'
-                },
-                { 
-                    id: 'starred', 
-                    name: 'Starred', 
-                    description: 'Starred repositories', 
-                    icon: 'star',
-                    color: '#ffc107',
-                    iconHtml: '<i class="fas fa-star"></i>'
-                }
+                { id: 'main', name: 'Main', description: 'Main repositories', icon: 'folder' },
+                { id: 'javascript', name: 'JavaScript', description: 'JavaScript repositories', icon: 'js-square' },
+                { id: 'web', name: 'Web', description: 'HTML/CSS repositories', icon: 'html5' },
+                { id: 'other', name: 'Other', description: 'Other repositories', icon: 'code' }
             ];
             
             renderProgramGroups();
@@ -1885,8 +1586,8 @@ C:\>cd windows<span class="win-cursor"></span>
                 
                 groupElement.innerHTML = `
                     <div class="win-program-icon">
-                        <div class="win-program-icon-inner" style="color: ${group.color || '#000000'}">
-                            ${group.iconHtml || `<i class="fab fa-${group.icon}"></i>`}
+                        <div class="win-program-icon-inner">
+                            <i class="fab fa-${group.icon}"></i>
                         </div>
                     </div>
                     <div class="win-group-name">${group.name}</div>
@@ -1907,18 +1608,15 @@ C:\>cd windows<span class="win-cursor"></span>
             switch(group.id) {
                 case 'main':
                     groupRepos = allRepos.filter(repo => 
-                        repo.stargazers_count > 0 || repo.size > 1000 || repo.name.toLowerCase().includes('main'));
+                        repo.stargazers_count > 0 || repo.size > 1000);
                     break;
                 case 'javascript':
                     groupRepos = allRepos.filter(repo => 
-                        repo.language === 'JavaScript' || repo.language === 'TypeScript' || 
-                        repo.name.toLowerCase().includes('js') || repo.name.toLowerCase().includes('script'));
+                        repo.language === 'JavaScript' || repo.language === 'TypeScript');
                     break;
                 case 'web':
                     groupRepos = allRepos.filter(repo => 
-                        repo.language === 'HTML' || repo.language === 'CSS' || 
-                        repo.name.toLowerCase().includes('web') || repo.name.toLowerCase().includes('site') || 
-                        repo.name.toLowerCase().includes('html') || repo.name.toLowerCase().includes('css'));
+                        repo.language === 'HTML' || repo.language === 'CSS');
                     break;
                 case 'other':
                     groupRepos = allRepos.filter(repo => 
@@ -1926,16 +1624,6 @@ C:\>cd windows<span class="win-cursor"></span>
                         repo.language !== 'TypeScript' &&
                         repo.language !== 'HTML' &&
                         repo.language !== 'CSS');
-                    break;
-                case 'accessories':
-                    groupRepos = allRepos.filter(repo => 
-                        repo.name.toLowerCase().includes('util') || 
-                        repo.name.toLowerCase().includes('tool') || 
-                        repo.description && repo.description.toLowerCase().includes('tool'));
-                    break;
-                case 'starred':
-                    groupRepos = allRepos.filter(repo => repo.stargazers_count > 0);
-                    groupRepos.sort((a, b) => b.stargazers_count - a.stargazers_count);
                     break;
                 default:
                     groupRepos = allRepos;
@@ -2009,61 +1697,19 @@ C:\>cd windows<span class="win-cursor"></span>
             document.getElementById('open-file-manager').addEventListener('click', showFileManager);
             
             // Menu Options
-            document.getElementById('view-large').addEventListener('click', function() {
-                setViewMode('large');
-                showTemporaryMessage('View: Large Icons');
-            });
-            
-            document.getElementById('view-small').addEventListener('click', function() {
-                setViewMode('small');
-                showTemporaryMessage('View: Small Icons');
-            });
-            
+            document.getElementById('view-large').addEventListener('click', () => setViewMode('large'));
+            document.getElementById('view-small').addEventListener('click', () => setViewMode('small'));
             document.getElementById('toggle-theme').addEventListener('click', toggleTheme);
-            
-            document.getElementById('auto-arrange').addEventListener('click', function() {
-                playSound('click');
-                showTemporaryMessage('Auto Arrange is now enabled');
-            });
-            
-            document.getElementById('save-settings').addEventListener('click', function() {
+            document.getElementById('auto-arrange').addEventListener('click', () => alert('Auto Arrange is now enabled'));
+            document.getElementById('save-settings').addEventListener('click', () => {
                 playSound('click');
                 showTemporaryMessage('Settings saved');
             });
             
-            // Desktop patterns
-            document.getElementById('pattern-teal').addEventListener('click', function() {
-                changePattern('teal');
-            });
-            
-            document.getElementById('pattern-gray').addEventListener('click', function() {
-                changePattern('gray');
-            });
-            
-            document.getElementById('pattern-grid').addEventListener('click', function() {
-                changePattern('grid');
-            });
-            
-            document.getElementById('pattern-dots').addEventListener('click', function() {
-                changePattern('dots');
-            });
-            
             // Menu Window
-            document.getElementById('cascade-windows').addEventListener('click', function() {
-                playSound('click');
-                showTemporaryMessage('Windows cascaded');
-            });
-            
-            document.getElementById('tile-windows').addEventListener('click', function() {
-                playSound('click');
-                showTemporaryMessage('Windows tiled');
-            });
-            
-            document.getElementById('arrange-icons').addEventListener('click', function() {
-                playSound('click');
-                showTemporaryMessage('Icons arranged');
-            });
-            
+            document.getElementById('cascade-windows').addEventListener('click', () => alert('Windows cascaded'));
+            document.getElementById('tile-windows').addEventListener('click', () => alert('Windows tiled'));
+            document.getElementById('arrange-icons').addEventListener('click', () => alert('Icons arranged'));
             document.getElementById('refresh-window').addEventListener('click', fetchRepositories);
             
             // Menu Help
@@ -2078,28 +1724,6 @@ C:\>cd windows<span class="win-cursor"></span>
             document.getElementById('refresh-repos').addEventListener('click', fetchRepositories);
             document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
             document.getElementById('view-toggle').addEventListener('click', cycleViewMode);
-            
-            // Dodaj przycisk "Restart Windows" do menu
-            const fileMenu = document.querySelector('.win-submenu');
-            if (fileMenu) {
-                const restartButton = document.createElement('div');
-                restartButton.className = 'win-submenu-item';
-                restartButton.id = 'restart-windows-button';
-                restartButton.textContent = 'Restart Windows';
-                
-                // Dodaj separator przed przyciskiem Restart
-                const separator = document.createElement('div');
-                separator.className = 'win-separator';
-                
-                fileMenu.insertBefore(separator, document.getElementById('exit-button'));
-                fileMenu.insertBefore(restartButton, document.getElementById('exit-button'));
-                
-                // Dodaj event listener
-                document.getElementById('restart-windows-button').addEventListener('click', function() {
-                    playSound('click');
-                    location.reload();
-                });
-            }
             
             document.getElementById('sort-repos').addEventListener('click', (e) => {
                 const menu = document.createElement('div');
@@ -2121,7 +1745,6 @@ C:\>cd windows<span class="win-cursor"></span>
                     item.addEventListener('click', () => {
                         const sortType = item.id.replace('sort-context-', '');
                         sortRepositories(sortType);
-                        showTemporaryMessage('Sorted by ' + item.textContent);
                         document.body.removeChild(menu);
                     });
                 });
@@ -2303,279 +1926,56 @@ C:\>cd windows<span class="win-cursor"></span>
             });
         }
         
-        // Inicjalizacja system pomocy
+        // Inicjalizacja systemu pomocy
         function initializeHelpSystem() {
-            const helpContentBase = `
-                <div class="win-help-title">Windows 3.11 GitHub Viewer Help</div>
-                
-                <div class="win-help-section">
-                    <div class="win-help-subtitle">Getting Started</div>
-                    <p>The GitHub Viewer allows you to browse repositories in a nostalgic Windows 3.11 interface. Repositories are organized into program groups for easy access.</p>
-                </div>
-                
-                <div class="win-help-section">
-                    <div class="win-help-subtitle">Using Program Manager</div>
-                    <p>Double-click on any repository icon to view its details. Right-click for additional options. Use the File menu to refresh the repository list or exit the application.</p>
-                </div>
-                
-                <div class="win-help-section">
-                    <div class="win-help-subtitle">Keyboard Shortcuts</div>
-                    <p>F5: Refresh repositories<br>
-                    Ctrl+F: Focus search box<br>
-                    Esc: Close dialogs<br>
-                    Arrow keys: Navigate repositories<br>
-                    Enter: Open selected repository<br>
-                    T: Toggle light/dark mode</p>
-                </div>
-            `;
-            
-            const indexContent = `
-                <div class="win-help-title">Help Index</div>
-                
-                <div class="win-help-section">
-                    <div class="win-help-subtitle">Topics</div>
-                    <p><a href="#" class="help-link" data-topic="program-manager">Program Manager</a></p>
-                    <p><a href="#" class="help-link" data-topic="file-manager">File Manager</a></p>
-                    <p><a href="#" class="help-link" data-topic="repositories">Working with Repositories</a></p>
-                    <p><a href="#" class="help-link" data-topic="keyboard">Keyboard Shortcuts</a></p>
-                    <p><a href="#" class="help-link" data-topic="settings">Customizing Settings</a></p>
-                </div>
-            `;
-            
-            const searchContent = `
-                <div class="win-help-title">Search Help</div>
-                
-                <div class="win-help-section">
-                    <div class="win-help-subtitle">Enter search term:</div>
-                    <input type="text" class="win-toolbar-search" id="help-search-input" style="width: 100%; margin-top: 5px;">
-                    <button class="win-action-button" id="help-search-button" style="margin-top: 10px;">Search</button>
-                    
-                    <div class="win-help-section" id="help-search-results" style="margin-top: 20px;">
-                        <p>Enter a term above to search Help topics.</p>
-                    </div>
-                </div>
-            `;
-            
             // Przełączanie zakładek pomocy
             const helpTabs = document.querySelectorAll('.win-help-tab');
-            const helpContent = document.querySelector('.win-help-content');
-            
             helpTabs.forEach(tab => {
                 tab.addEventListener('click', () => {
                     playSound('click');
                     helpTabs.forEach(t => t.classList.remove('active'));
                     tab.classList.add('active');
                     
-                    const tabName = tab.getAttribute('data-tab');
-                    switch(tabName) {
-                        case 'contents':
-                            helpContent.innerHTML = helpContentBase;
-                            break;
-                        case 'index':
-                            helpContent.innerHTML = indexContent;
-                            // Dodanie event listenerów do linków
-                            setTimeout(() => {
-                                document.querySelectorAll('.help-link').forEach(link => {
-                                    link.addEventListener('click', (e) => {
-                                        e.preventDefault();
-                                        playSound('click');
-                                        const topic = link.getAttribute('data-topic');
-                                        showHelpTopic(topic);
-                                    });
-                                });
-                            }, 0);
-                            break;
-                        case 'search':
-                            helpContent.innerHTML = searchContent;
-                            // Dodanie event listenera do przycisku wyszukiwania
-                            setTimeout(() => {
-                                document.getElementById('help-search-button').addEventListener('click', () => {
-                                    searchHelp();
-                                });
-                                document.getElementById('help-search-input').addEventListener('keypress', (e) => {
-                                    if (e.key === 'Enter') {
-                                        searchHelp();
-                                    }
-                                });
-                            }, 0);
-                            break;
-                    }
+                    // Tutaj można dodać logikę przełączania treści pomocy
                 });
             });
-            
-            // Funkcja wyszukiwania
-            function searchHelp() {
-                const searchTerm = document.getElementById('help-search-input').value.toLowerCase();
-                if (!searchTerm) {
-                    document.getElementById('help-search-results').innerHTML = '<p>Enter a term above to search Help topics.</p>';
-                    return;
-                }
-                
-                const topics = [
-                    { name: 'Program Manager', id: 'program-manager' },
-                    { name: 'File Manager', id: 'file-manager' },
-                    { name: 'Repositories', id: 'repositories' },
-                    { name: 'Keyboard Shortcuts', id: 'keyboard' },
-                    { name: 'Customizing Settings', id: 'settings' }
-                ];
-                
-                const results = topics.filter(topic => 
-                    topic.name.toLowerCase().includes(searchTerm)
-                );
-                
-                if (results.length === 0) {
-                    document.getElementById('help-search-results').innerHTML = '<p>No results found.</p>';
-                } else {
-                    let resultsHtml = '<div class="win-help-subtitle">Results:</div>';
-                    results.forEach(result => {
-                        resultsHtml += `<p><a href="#" class="help-link" data-topic="${result.id}">${result.name}</a></p>`;
-                    });
-                    document.getElementById('help-search-results').innerHTML = resultsHtml;
-                    
-                    // Dodanie event listenerów do linków wyników
-                    document.querySelectorAll('.help-link').forEach(link => {
-                        link.addEventListener('click', (e) => {
-                            e.preventDefault();
-                            playSound('click');
-                            const topic = link.getAttribute('data-topic');
-                            showHelpTopic(topic);
-                        });
-                    });
-                }
-            }
-            
-            // Wyświetlenie tematu pomocy
-            function showHelpTopic(topic) {
-                let topicContent = '';
-                
-                switch(topic) {
-                    case 'program-manager':
-                        topicContent = `
-                            <div class="win-help-title">Program Manager</div>
-                            <div class="win-help-section">
-                                <p>Program Manager is the main interface in Windows 3.11. It provides access to all applications.</p>
-                                <p>In this GitHub viewer, Program Manager organizes repositories into groups. Double-click a group to open it and view repositories in that group.</p>
-                                <p>The Program Manager menu bar provides options for managing repositories and customizing the interface.</p>
-                            </div>
-                        `;
-                        break;
-                    case 'file-manager':
-                        topicContent = `
-                            <div class="win-help-title">File Manager</div>
-                            <div class="win-help-section">
-                                <p>File Manager allows you to browse repositories in a file system view.</p>
-                                <p>The left pane shows folders, and the right pane shows files.</p>
-                                <p>Click on a repository folder to see its contents.</p>
-                            </div>
-                        `;
-                        break;
-                    case 'repositories':
-                        topicContent = `
-                            <div class="win-help-title">Working with Repositories</div>
-                            <div class="win-help-section">
-                                <p>Repositories are displayed as icons in the Program Manager.</p>
-                                <p>Double-click a repository to view its details.</p>
-                                <p>Right-click a repository for additional options:</p>
-                                <ul style="margin-left: 20px; margin-top: 5px;">
-                                    <li>Open - View repository details</li>
-                                    <li>View on GitHub - Open repository on GitHub website</li>
-                                    <li>Copy URL - Copy repository URL to clipboard</li>
-                                </ul>
-                            </div>
-                        `;
-                        break;
-                    case 'keyboard':
-                        topicContent = `
-                            <div class="win-help-title">Keyboard Shortcuts</div>
-                            <div class="win-help-section">
-                                <p>F5: Refresh repositories</p>
-                                <p>Ctrl+F: Focus search box</p>
-                                <p>Esc: Close dialogs</p>
-                                <p>Arrow keys: Navigate repositories</p>
-                                <p>Enter: Open selected repository</p>
-                                <p>T: Toggle light/dark mode</p>
-                                <p>Alt+F: Open File menu</p>
-                                <p>Alt+Tab: Switch between windows (system)</p>
-                            </div>
-                        `;
-                        break;
-                    case 'settings':
-                        topicContent = `
-                            <div class="win-help-title">Customizing Settings</div>
-                            <div class="win-help-section">
-                                <p>You can customize the GitHub viewer through the Options menu:</p>
-                                <ul style="margin-left: 20px; margin-top: 5px;">
-                                    <li>Icon size: Choose between Large Icons and Small Icons</li>
-                                    <li>Theme: Toggle between Light and Dark mode</li>
-                                    <li>Desktop pattern: Select from different background patterns</li>
-                                </ul>
-                                <p>Use the Sort menu to arrange repositories by name, update date, stars, or size.</p>
-                            </div>
-                        `;
-                        break;
-                    default:
-                        topicContent = helpContentBase;
-                }
-                
-                helpContent.innerHTML = topicContent;
-            }
         }
         
         // Inicjalizacja File Managera
         function initializeFileManager() {
-            // Event listenery dla File Managera
-            document.getElementById('fm-close').addEventListener('click', function() {
+            // Zamknij File Manager
+            document.getElementById('fm-close').addEventListener('click', () => {
                 document.getElementById('file-manager-modal').style.display = 'none';
                 document.getElementById('modal-background').style.display = 'none';
             });
             
             // Odśwież File Manager
             document.getElementById('fm-refresh').addEventListener('click', updateFileManager);
-            document.getElementById('fm-refresh-button').addEventListener('click', updateFileManager);
             
-            // Przycisk Up
-            document.getElementById('fm-up-button').addEventListener('click', function() {
+            // Widok listy/szczegółów
+            document.getElementById('fm-view-list').addEventListener('click', () => {
                 playSound('click');
-                showTemporaryMessage('Up one level');
-                // Implementacja faktycznego działania mogłaby pokazać folder nadrzędny
-            });
-            
-            // Przycisk View
-            document.getElementById('fm-view-button').addEventListener('click', function() {
-                playSound('click');
-                document.getElementById('file-list').classList.toggle('details-view');
+                document.getElementById('file-list').classList.remove('details-view');
                 updateFileManager();
             });
             
-            // Opcje menu File Manager
-            document.getElementById('fm-cascade').addEventListener('click', function() {
+            document.getElementById('fm-view-details').addEventListener('click', () => {
                 playSound('click');
-                showTemporaryMessage('Windows cascaded');
+                document.getElementById('file-list').classList.add('details-view');
+                updateFileManager();
             });
             
-            document.getElementById('fm-tile').addEventListener('click', function() {
+            // Sortowanie
+            document.getElementById('fm-sort-name').addEventListener('click', () => {
                 playSound('click');
-                showTemporaryMessage('Windows tiled');
+                sortRepositories('name');
+                updateFileManager();
             });
             
-            document.getElementById('fm-arrange-icons').addEventListener('click', function() {
+            document.getElementById('fm-sort-date').addEventListener('click', () => {
                 playSound('click');
-                showTemporaryMessage('Icons arranged');
-            });
-            
-            document.getElementById('fm-confirm-delete').addEventListener('click', function() {
-                playSound('click');
-                showTemporaryMessage('Confirm Delete enabled');
-            });
-            
-            document.getElementById('fm-show-all-files').addEventListener('click', function() {
-                playSound('click');
-                showTemporaryMessage('Show All Files enabled');
-            });
-            
-            document.getElementById('fm-font').addEventListener('click', function() {
-                playSound('click');
-                showTemporaryMessage('System font selected');
+                sortRepositories('updated');
+                updateFileManager();
             });
         }
         
@@ -2601,25 +2001,12 @@ C:\>cd windows<span class="win-cursor"></span>
             // Generuj ID grupy
             const groupId = groupName.toLowerCase().replace(/\s+/g, '-');
             
-            // Dodawane grupy
-            const groupId = groupName.toLowerCase().replace(/\s+/g, '-');
-            
-            // Sprawdź, czy grupa już istnieje
-            const existingGroup = programGroups.find(g => g.id === groupId);
-            if (existingGroup) {
-                playSound('error');
-                showTemporaryMessage('Group with this name already exists');
-                return;
-            }
-            
             // Dodaj nową grupę
             programGroups.push({
                 id: groupId,
                 name: groupName,
                 description: groupDesc || 'Custom group',
-                icon: 'folder',
-                color: '#6B8E23',
-                iconHtml: '<i class="fas fa-folder"></i>'
+                icon: 'folder'
             });
             
             // Odswiez widok
@@ -2664,23 +2051,14 @@ C:\>cd windows<span class="win-cursor"></span>
                     // Pokaż pliki dla tego repozytorium
                     fileList.innerHTML = '';
                     
-        // Setki plików dla zawartości File Managera
-        const fileTypes = [
-            { name: 'README.MD', icon: 'fa-file-alt' },
-            { name: 'index.html', icon: 'fa-html5' },
-            { name: 'style.css', icon: 'fa-css3-alt' },
-            { name: 'script.js', icon: 'fa-js-square' },
-            { name: 'package.json', icon: 'fa-file-code' },
-            { name: 'tsconfig.json', icon: 'fa-file-code' },
-            { name: '.gitignore', icon: 'fa-github' },
-            { name: 'LICENSE', icon: 'fa-file-contract' },
-            { name: 'Dockerfile', icon: 'fa-docker' },
-            { name: 'main.py', icon: 'fa-python' },
-            { name: 'index.php', icon: 'fa-php' },
-            { name: 'webpack.config.js', icon: 'fa-cogs' },
-            { name: 'server.js', icon: 'fa-server' },
-            { name: 'db.json', icon: 'fa-database' }
-        ];
+                    // Dodaj "pliki" dla repozytorium
+                    const fileTypes = [
+                        { name: 'README.MD', icon: 'fa-file-alt' },
+                        { name: 'index.html', icon: 'fa-html5' },
+                        { name: 'style.css', icon: 'fa-css3-alt' },
+                        { name: 'script.js', icon: 'fa-js-square' },
+                        { name: 'package.json', icon: 'fa-file-code' }
+                    ];
                     
                     fileTypes.forEach(file => {
                         const fileItem = document.createElement('div');
@@ -2782,7 +2160,7 @@ C:\>cd windows<span class="win-cursor"></span>
             
             document.body.appendChild(confirmDialog);
             
-            document.getElementById('confirm-exit').addEventListener('click', function() {
+            document.getElementById('confirm-exit').addEventListener('click', () => {
                 document.body.removeChild(confirmDialog);
                 
                 // Symulacja zamknięcia Windows
@@ -2796,7 +2174,7 @@ C:\>cd windows<span class="win-cursor"></span>
                 `;
             });
             
-            document.getElementById('cancel-exit').addEventListener('click', function() {
+            document.getElementById('cancel-exit').addEventListener('click', () => {
                 document.body.removeChild(confirmDialog);
             });
         }
@@ -2813,35 +2191,6 @@ C:\>cd windows<span class="win-cursor"></span>
         function toggleTheme() {
             playSound('click');
             document.body.classList.toggle('dark-mode');
-            showTemporaryMessage(document.body.classList.contains('dark-mode') ? 'Dark mode enabled' : 'Light mode enabled');
-        }
-        
-        // Zmiana wzoru tła pulpitu
-        function changePattern(type) {
-            playSound('click');
-            
-            switch(type) {
-                case 'teal':
-                    document.documentElement.style.setProperty('--win-bg', '#008080');
-                    document.body.style.backgroundImage = 'var(--win-pattern-teal)';
-                    showTemporaryMessage('Desktop pattern: Teal');
-                    break;
-                case 'gray':
-                    document.documentElement.style.setProperty('--win-bg', '#c0c0c0');
-                    document.body.style.backgroundImage = 'var(--win-pattern-gray)';
-                    showTemporaryMessage('Desktop pattern: Gray');
-                    break;
-                case 'grid':
-                    document.documentElement.style.setProperty('--win-bg', '#008080');
-                    document.body.style.backgroundImage = 'var(--win-pattern-grid)';
-                    showTemporaryMessage('Desktop pattern: Grid');
-                    break;
-                case 'dots':
-                    document.documentElement.style.setProperty('--win-bg', '#000080');
-                    document.body.style.backgroundImage = 'var(--win-pattern-dots)';
-                    showTemporaryMessage('Desktop pattern: Dots');
-                    break;
-            }
         }
         
         // Pokaż okno About
@@ -2933,26 +2282,20 @@ C:\>cd windows<span class="win-cursor"></span>
             playSound('click');
             currentSort = sortType;
             
-            // Głęboka kopia tablicy repozytoriów - zabezpieczenie przed problemami z sortowaniem
-            const reposToSort = [...allRepos];
-            
-            reposToSort.sort((a, b) => {
+            allRepos.sort((a, b) => {
                 switch (sortType) {
                     case 'name':
                         return a.name.localeCompare(b.name);
                     case 'updated':
                         return new Date(b.updated_at) - new Date(a.updated_at);
                     case 'stars':
-                        return b.stargazers_count - a.stargazers_count || 0;
+                        return b.stargazers_count - a.stargazers_count;
                     case 'size':
-                        return (b.size || 0) - (a.size || 0);
+                        return b.size - a.size;
                     default:
                         return 0;
                 }
             });
-            
-            // Aktualizacja głównej tablicy
-            allRepos = reposToSort;
             
             // Jeśli jesteśmy w grupie, renderuj tylko repozytoria z tej grupy
             if (currentGroup) {
@@ -2960,8 +2303,6 @@ C:\>cd windows<span class="win-cursor"></span>
             } else {
                 renderRepositories(allRepos);
             }
-            
-            console.log(`Repositories sorted by: ${sortType}`);
         }
         
         // Filtrowanie repozytoriów
@@ -3047,18 +2388,12 @@ C:\>cd windows<span class="win-cursor"></span>
             const username = 'Swir';
             const reposContainer = document.getElementById('repos-container');
             
-            // Dodaj klasę kursora hourglass do body
-            document.body.classList.add('win-wait-cursor');
-            
             // Symulacja działania Windows 3.11 - powolne ładowanie
             reposContainer.innerHTML = `
                 <div class="win-loading">
                     <div class="win-loading-text">Working...</div>
                     <div class="win-loading-animation">
                         <div class="win-loading-bar"></div>
-                    </div>
-                    <div style="margin-top: 15px; font-size: 11px; color: var(--win-text);">
-                        Please wait while Windows connects to GitHub...
                     </div>
                 </div>
             `;
@@ -3091,16 +2426,10 @@ C:\>cd windows<span class="win-cursor"></span>
                 // Aktualizuj grupy
                 renderProgramGroups();
                 
-                // Usuń klasę kursora hourglass
-                document.body.classList.remove('win-wait-cursor');
-                
             } catch (error) {
                 console.error('Error fetching repositories:', error);
                 playSound('error');
                 showErrorWindow("Connection Error", error.message);
-                
-                // Usuń klasę kursora hourglass nawet w przypadku błędu
-                document.body.classList.remove('win-wait-cursor');
             }
         }
         
@@ -3121,18 +2450,18 @@ C:\>cd windows<span class="win-cursor"></span>
                 repoItem.className = 'win-repo-item';
                 repoItem.tabIndex = 0; // Dla nawigacji klawiaturą
                 
-                repoItem.addEventListener('click', function(e) {
+                repoItem.addEventListener('click', (e) => {
                     playSound('click');
                     selectedRepoIndex = index;
                     highlightRepoItem(repoItem);
                 });
                 
-                repoItem.addEventListener('dblclick', function(e) {
+                repoItem.addEventListener('dblclick', (e) => {
                     playSound('click');
                     showRepoDetails(repo);
                 });
                 
-                repoItem.addEventListener('contextmenu', function(e) {
+                repoItem.addEventListener('contextmenu', (e) => {
                     e.preventDefault();
                     selectedRepo = repo;
                     selectedRepoIndex = index;
@@ -3300,11 +2629,8 @@ C:\>cd windows<span class="win-cursor"></span>
                         </div>
                     </div>
                     <div class="win-error-content">
-                        <div class="win-error-icon">!</div>
-                        <div class="win-error-message">
-                            <p>${message}</p>
-                            <p style="margin-top: 10px;">Windows cannot connect to GitHub. Make sure your network connection is working properly.</p>
-                        </div>
+                        <div class="win-error-icon">×</div>
+                        <div class="win-error-message">${message}</div>
                     </div>
                     <div class="win-error-buttons">
                         <button class="win-action-button" onclick="fetchRepositories()">Retry</button>
