@@ -2051,8 +2051,8 @@ C:\><span class="win-cursor"></span>
                     showTemporaryMessage('Using sample repositories (API connection failed)');
                 }
                 
-                // Sort repositories
-                sortRepositories(currentSort);
+                // Sort repositories - explicitly use default sort (newest first, forks at end)
+                sortRepositories('default');
                 
                 // Update repository count
                 const statusBar = document.querySelector('.win-status-bar div:first-child');
@@ -2081,6 +2081,9 @@ C:\><span class="win-cursor"></span>
                 
                 // Fallback to sample data on any error
                 allRepos = getSampleRepositories();
+                
+                // Always sort, even with sample data
+                sortRepositories('default');
                 
                 // Always render repositories directly, even in error case
                 renderRepositories(allRepos);
@@ -2565,21 +2568,17 @@ C:\><span class="win-cursor"></span>
                         }
                     }
                     
-                    // Add a fork icon if it's a forked repository
-                    let iconHtml = `<i class="${iconClass}" style="color: ${iconColor};"></i>`;
-                    if (repo.fork) {
-                        iconHtml = `
-                            <div style="position: relative;">
-                                <i class="${iconClass}" style="color: ${iconColor};"></i>
-                                <i class="fas fa-code-branch" style="position: absolute; bottom: -5px; right: -5px; font-size: 10px; color: #555;"></i>
-                            </div>
-                        `;
-                    }
-                    
-                    repoItem.innerHTML = `
-                        <div class="win-repo-icon">
-                            ${iconHtml}
+                    // Create icon HTML
+                    let iconHtml = `
+                        <div class="win-repo-icon" style="position: relative;">
+                            <i class="${iconClass}" style="color: ${iconColor};"></i>
+                            ${repo.fork ? '<div class="fork-label">FORK</div>' : ''}
                         </div>
+                    `;
+                    
+                    // Create repository item HTML
+                    repoItem.innerHTML = `
+                        ${iconHtml}
                         <div class="win-repo-name">${repo.name || 'Unnamed'}</div>
                     `;
                     
@@ -2859,7 +2858,7 @@ C:\><span class="win-cursor"></span>
             playSound('click');
             
             // If same sort type selected, don't do anything
-            if (currentSort === sortType) {
+            if (currentSort === sortType && sortType !== 'default') {
                 showTemporaryMessage(`Already sorted by ${getSortTypeName(sortType)}`);
                 return;
             }
@@ -2872,29 +2871,60 @@ C:\><span class="win-cursor"></span>
                 
                 // Sort repositories
                 reposToSort.sort(function(a, b) {
-                    // Default sort: Recent first, Forks at the end
+                    // Default sort: Recent first, Forks at the end - GUARANTEED
                     if (sortType === 'default') {
-                        // If one is a fork and the other isn't, put forks at the end
-                        if (a.fork && !b.fork) return 1;
-                        if (!a.fork && b.fork) return -1;
+                        // First, separate forks from non-forks (forks ALWAYS go to the end)
+                        if (a.fork !== b.fork) {
+                            return a.fork ? 1 : -1; // Non-forks come first
+                        }
                         
-                        // If both are forks or both are not forks, sort by creation date (newest first)
+                        // Then sort by creation date within each group (newest first)
                         return new Date(b.created_at || 0) - new Date(a.created_at || 0);
                     }
                     
                     switch (sortType) {
                         case 'name':
+                            // Sort by name, but always put forks at the end
+                            if (a.fork !== b.fork) {
+                                return a.fork ? 1 : -1;
+                            }
                             return (a.name || '').localeCompare(b.name || '');
+                            
                         case 'updated':
+                            // Sort by updated date, but always put forks at the end
+                            if (a.fork !== b.fork) {
+                                return a.fork ? 1 : -1;
+                            }
                             return new Date(b.updated_at || 0) - new Date(a.updated_at || 0);
+                            
                         case 'created':
+                            // Sort by creation date, but always put forks at the end
+                            if (a.fork !== b.fork) {
+                                return a.fork ? 1 : -1;
+                            }
                             return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+                            
                         case 'stars':
+                            // Sort by stars, but always put forks at the end
+                            if (a.fork !== b.fork) {
+                                return a.fork ? 1 : -1;
+                            }
                             return (b.stargazers_count || 0) - (a.stargazers_count || 0);
+                            
                         case 'size':
+                            // Sort by size, but always put forks at the end
+                            if (a.fork !== b.fork) {
+                                return a.fork ? 1 : -1;
+                            }
                             return (b.size || 0) - (a.size || 0);
+                            
                         case 'language':
-                            // First handle null languages
+                            // First separate forks from non-forks
+                            if (a.fork !== b.fork) {
+                                return a.fork ? 1 : -1;
+                            }
+                            
+                            // Then handle null languages
                             if (!a.language && b.language) return 1;
                             if (a.language && !b.language) return -1;
                             if (!a.language && !b.language) return 0;
@@ -2905,8 +2935,13 @@ C:\><span class="win-cursor"></span>
                             
                             // Then by name within each language group
                             return (a.name || '').localeCompare(b.name || '');
+                            
                         default:
-                            return 0;
+                            // Default fallback - sort by creation date with forks at end
+                            if (a.fork !== b.fork) {
+                                return a.fork ? 1 : -1;
+                            }
+                            return new Date(b.created_at || 0) - new Date(a.created_at || 0);
                     }
                 });
                 
