@@ -1464,14 +1464,24 @@ C:\><span class="win-cursor"></span>
                 // Start memory update interval
                 memoryInterval = setInterval(updateMemoryDisplay, 10000);
                 
-                // Create default program groups
+                // Hide program groups container completely
+                const groupsContainer = document.getElementById('program-groups');
+                if (groupsContainer) {
+                    groupsContainer.style.display = 'none';
+                }
+                
+                // Create default program groups (now empty/hidden)
                 createDefaultProgramGroups();
                 
-                // Fetch repositories
+                // Fetch repositories directly - this is now the main flow
                 fetchRepositories();
             } catch (error) {
                 console.error('Error during initialization:', error);
                 showErrorWindow('Initialization Error', 'An error occurred while initializing Windows: ' + error.message);
+                
+                // Attempt to recover by showing sample data
+                allRepos = getSampleRepositories();
+                renderRepositories(allRepos);
             }
         }
         
@@ -1833,52 +1843,23 @@ C:\><span class="win-cursor"></span>
             }
         }
         
-        // Create default program groups
+        // Create default program groups - now empty as requested
         function createDefaultProgramGroups() {
-            programGroups = [
-                { 
-                    id: 'main', 
-                    name: 'Main', 
-                    description: 'Main repositories', 
-                    icon: 'folder',
-                    color: '#000080',
-                    iconHtml: '<i class="fas fa-star"></i>'
-                },
-                { 
-                    id: 'javascript', 
-                    name: 'JavaScript', 
-                    description: 'JavaScript repositories', 
-                    icon: 'js-square',
-                    color: '#f7df1e',
-                    iconHtml: '<i class="fab fa-js-square"></i>'
-                },
-                { 
-                    id: 'web', 
-                    name: 'Web', 
-                    description: 'HTML/CSS repositories', 
-                    icon: 'html5',
-                    color: '#e34c26',
-                    iconHtml: '<i class="fab fa-html5"></i>'
-                },
-                { 
-                    id: 'other', 
-                    name: 'Other', 
-                    description: 'Other repositories', 
-                    icon: 'code',
-                    color: '#4CAF50',
-                    iconHtml: '<i class="fas fa-code"></i>'
-                },
-                { 
-                    id: 'starred', 
-                    name: 'Starred', 
-                    description: 'Starred repositories', 
-                    icon: 'star',
-                    color: '#ffc107',
-                    iconHtml: '<i class="fas fa-star"></i>'
-                }
-            ];
+            // Program groups have been removed as requested
+            programGroups = [];
             
-            renderProgramGroups();
+            // Since we're not showing program groups, directly fetch repositories
+            // We'll skip renderProgramGroups() since there are no groups to render
+            
+            // Instead, we'll immediately render all repositories
+            renderAllRepositories();
+        }
+        
+        // New function to render all repositories directly
+        function renderAllRepositories() {
+            if (allRepos && allRepos.length > 0) {
+                renderRepositories(allRepos);
+            }
         }
         
         // Render program groups
@@ -2008,27 +1989,45 @@ C:\><span class="win-cursor"></span>
                     }
                 }
                 
-                // Use sample repositories if GitHub API is unavailable due to CORS
+                let allPages = [];
+                
+                // Try to get repositories - now with 150 per page instead of 100
                 try {
-                    // Try to fetch from GitHub API first
-                    const response = await fetch(`https://api.github.com/users/${username}/repos?per_page=100`, {
+                    // Fetch first page of repositories (up to 100 per page is GitHub's limit)
+                    const firstPageResponse = await fetch(`https://api.github.com/users/${username}/repos?per_page=100&page=1`, {
                         headers: {
                             'Accept': 'application/vnd.github.v3+json'
                         }
                     });
                     
-                    if (response.ok) {
-                        allRepos = await response.json();
-                        console.log('Successfully loaded repositories from GitHub API');
-                    } else {
-                        throw new Error(`GitHub API responded with status: ${response.status}`);
+                    if (!firstPageResponse.ok) {
+                        throw new Error(`GitHub API responded with status: ${firstPageResponse.status}`);
                     }
+                    
+                    const firstPage = await firstPageResponse.json();
+                    allPages = [...firstPage];
+                    
+                    // Fetch second page to get up to 150 repositories total
+                    const secondPageResponse = await fetch(`https://api.github.com/users/${username}/repos?per_page=50&page=2`, {
+                        headers: {
+                            'Accept': 'application/vnd.github.v3+json'
+                        }
+                    });
+                    
+                    if (secondPageResponse.ok) {
+                        const secondPage = await secondPageResponse.json();
+                        allPages = [...allPages, ...secondPage];
+                    }
+                    
+                    allRepos = allPages;
+                    console.log(`Successfully loaded ${allRepos.length} repositories from GitHub API`);
+                    
                 } catch (apiError) {
                     console.warn('Falling back to sample data due to GitHub API issue:', apiError);
                     
                     // Fallback to sample data
                     allRepos = getSampleRepositories();
-                    showTemporaryMessage('Using sample repositories (CORS protection)');
+                    showTemporaryMessage('Using sample repositories (API connection failed)');
                 }
                 
                 // Sort repositories
@@ -2043,8 +2042,14 @@ C:\><span class="win-cursor"></span>
                 // Update memory display
                 updateMemoryDisplay();
                 
-                // Render program groups
-                renderProgramGroups();
+                // Directly render repositories instead of showing program groups
+                renderRepositories(allRepos);
+                
+                // Hide the program groups container completely
+                const groupsContainer = document.getElementById('program-groups');
+                if (groupsContainer) {
+                    groupsContainer.style.display = 'none';
+                }
                 
                 // Show success message
                 showTemporaryMessage(`${allRepos.length} repositories loaded successfully`);
@@ -2055,7 +2060,9 @@ C:\><span class="win-cursor"></span>
                 
                 // Fallback to sample data on any error
                 allRepos = getSampleRepositories();
-                renderProgramGroups();
+                
+                // Always render repositories directly, even in error case
+                renderRepositories(allRepos);
                 
                 showErrorWindow('Connection Error', 'Could not connect to GitHub API. Using sample data instead.');
             } finally {
@@ -2066,8 +2073,8 @@ C:\><span class="win-cursor"></span>
         
         // Get sample repositories as fallback
         function getSampleRepositories() {
-            // Return an array of sample repositories
-            return [
+            // Generate a larger set of sample repositories (25 total)
+            const baseRepos = [
                 {
                     id: 1,
                     name: "windows-3.11-github",
@@ -2209,6 +2216,223 @@ C:\><span class="win-cursor"></span>
                     size: 3100
                 }
             ];
+            
+            // Additional repositories to have more variety and reach at least 25 total
+            const additionalRepos = [
+                {
+                    id: 11,
+                    name: "win3.1-calculator",
+                    full_name: "Swir/win3.1-calculator",
+                    html_url: "https://github.com/Swir/win3.1-calculator",
+                    description: "A Windows 3.1 style calculator",
+                    created_at: "2022-07-05T08:22:14Z",
+                    updated_at: "2023-04-30T12:18:27Z",
+                    language: "JavaScript",
+                    stargazers_count: 9,
+                    watchers_count: 9,
+                    forks_count: 2,
+                    size: 1250
+                },
+                {
+                    id: 12,
+                    name: "retro-weather-app",
+                    full_name: "Swir/retro-weather-app",
+                    html_url: "https://github.com/Swir/retro-weather-app",
+                    description: "Weather application with a retro UI design",
+                    created_at: "2022-06-12T14:35:18Z",
+                    updated_at: "2023-04-25T09:42:31Z",
+                    language: "JavaScript",
+                    stargazers_count: 13,
+                    watchers_count: 13,
+                    forks_count: 3,
+                    size: 1750
+                },
+                {
+                    id: 13,
+                    name: "cli-file-manager",
+                    full_name: "Swir/cli-file-manager",
+                    html_url: "https://github.com/Swir/cli-file-manager",
+                    description: "Command-line interface file manager inspired by Norton Commander",
+                    created_at: "2022-05-20T10:15:22Z",
+                    updated_at: "2023-04-20T11:32:45Z",
+                    language: "Python",
+                    stargazers_count: 17,
+                    watchers_count: 17,
+                    forks_count: 4,
+                    size: 2200
+                },
+                {
+                    id: 14,
+                    name: "commodore64-emulator",
+                    full_name: "Swir/commodore64-emulator",
+                    html_url: "https://github.com/Swir/commodore64-emulator",
+                    description: "Web-based Commodore 64 emulator",
+                    created_at: "2022-04-15T16:28:33Z",
+                    updated_at: "2023-04-15T13:19:52Z",
+                    language: "JavaScript",
+                    stargazers_count: 28,
+                    watchers_count: 28,
+                    forks_count: 9,
+                    size: 3850
+                },
+                {
+                    id: 15,
+                    name: "bitmap-font-creator",
+                    full_name: "Swir/bitmap-font-creator",
+                    html_url: "https://github.com/Swir/bitmap-font-creator",
+                    description: "Create custom bitmap fonts for retro-style applications",
+                    created_at: "2022-03-10T09:22:47Z",
+                    updated_at: "2023-04-10T15:41:23Z",
+                    language: "JavaScript",
+                    stargazers_count: 11,
+                    watchers_count: 11,
+                    forks_count: 2,
+                    size: 1650
+                },
+                {
+                    id: 16,
+                    name: "text-mode-editor",
+                    full_name: "Swir/text-mode-editor",
+                    html_url: "https://github.com/Swir/text-mode-editor",
+                    description: "A text editor inspired by MS-DOS Edit",
+                    created_at: "2022-02-05T11:33:42Z",
+                    updated_at: "2023-04-05T10:27:38Z",
+                    language: "JavaScript",
+                    stargazers_count: 14,
+                    watchers_count: 14,
+                    forks_count: 3,
+                    size: 1950
+                },
+                {
+                    id: 17,
+                    name: "retro-chat-app",
+                    full_name: "Swir/retro-chat-app",
+                    html_url: "https://github.com/Swir/retro-chat-app",
+                    description: "Chat application with a 90s BBS aesthetic",
+                    created_at: "2022-01-15T13:45:28Z",
+                    updated_at: "2023-03-30T14:22:17Z",
+                    language: "JavaScript",
+                    stargazers_count: 19,
+                    watchers_count: 19,
+                    forks_count: 5,
+                    size: 2350
+                },
+                {
+                    id: 18,
+                    name: "windows-3.1-icons",
+                    full_name: "Swir/windows-3.1-icons",
+                    html_url: "https://github.com/Swir/windows-3.1-icons",
+                    description: "Collection of recreated Windows 3.1 icons in SVG format",
+                    created_at: "2021-12-20T09:18:33Z",
+                    updated_at: "2023-03-25T11:37:22Z",
+                    language: "HTML",
+                    stargazers_count: 23,
+                    watchers_count: 23,
+                    forks_count: 8,
+                    size: 1450
+                },
+                {
+                    id: 19,
+                    name: "ansi-art-gallery",
+                    full_name: "Swir/ansi-art-gallery",
+                    html_url: "https://github.com/Swir/ansi-art-gallery",
+                    description: "Gallery of ANSI art from the BBS era",
+                    created_at: "2021-11-10T15:22:47Z",
+                    updated_at: "2023-03-20T10:18:36Z",
+                    language: "HTML",
+                    stargazers_count: 21,
+                    watchers_count: 21,
+                    forks_count: 6,
+                    size: 2750
+                },
+                {
+                    id: 20,
+                    name: "doom-level-editor",
+                    full_name: "Swir/doom-level-editor",
+                    html_url: "https://github.com/Swir/doom-level-editor",
+                    description: "Web-based editor for creating DOOM levels",
+                    created_at: "2021-10-05T12:37:28Z",
+                    updated_at: "2023-03-15T09:42:31Z",
+                    language: "JavaScript",
+                    stargazers_count: 32,
+                    watchers_count: 32,
+                    forks_count: 11,
+                    size: 4150
+                },
+                {
+                    id: 21,
+                    name: "retro-rpg-engine",
+                    full_name: "Swir/retro-rpg-engine",
+                    html_url: "https://github.com/Swir/retro-rpg-engine",
+                    description: "A simple engine for creating retro-style RPG games",
+                    created_at: "2021-09-15T14:22:18Z",
+                    updated_at: "2023-03-10T11:33:42Z",
+                    language: "JavaScript",
+                    stargazers_count: 26,
+                    watchers_count: 26,
+                    forks_count: 7,
+                    size: 3250
+                },
+                {
+                    id: 22,
+                    name: "win31-color-palette",
+                    full_name: "Swir/win31-color-palette",
+                    html_url: "https://github.com/Swir/win31-color-palette",
+                    description: "Color palette utility based on Windows 3.1 colors",
+                    created_at: "2021-08-10T09:15:33Z",
+                    updated_at: "2023-03-05T13:27:18Z",
+                    language: "JavaScript",
+                    stargazers_count: 12,
+                    watchers_count: 12,
+                    forks_count: 2,
+                    size: 1350
+                },
+                {
+                    id: 23,
+                    name: "crt-screen-effects",
+                    full_name: "Swir/crt-screen-effects",
+                    html_url: "https://github.com/Swir/crt-screen-effects",
+                    description: "CSS and JavaScript effects to simulate CRT monitors",
+                    created_at: "2021-07-05T11:42:27Z",
+                    updated_at: "2023-02-28T10:15:36Z",
+                    language: "CSS",
+                    stargazers_count: 18,
+                    watchers_count: 18,
+                    forks_count: 5,
+                    size: 1650
+                },
+                {
+                    id: 24,
+                    name: "basic-interpreter",
+                    full_name: "Swir/basic-interpreter",
+                    html_url: "https://github.com/Swir/basic-interpreter",
+                    description: "A simple BASIC language interpreter written in JavaScript",
+                    created_at: "2021-06-15T13:28:42Z",
+                    updated_at: "2023-02-25T14:22:17Z",
+                    language: "JavaScript",
+                    stargazers_count: 24,
+                    watchers_count: 24,
+                    forks_count: 6,
+                    size: 2850
+                },
+                {
+                    id: 25,
+                    name: "win3.1-file-manager",
+                    full_name: "Swir/win3.1-file-manager",
+                    html_url: "https://github.com/Swir/win3.1-file-manager",
+                    description: "A recreation of the Windows 3.1 File Manager",
+                    created_at: "2021-05-10T10:15:33Z",
+                    updated_at: "2023-02-20T11:37:22Z",
+                    language: "JavaScript",
+                    stargazers_count: 29,
+                    watchers_count: 29,
+                    forks_count: 10,
+                    size: 3450
+                }
+            ];
+            
+            // Combine the base repositories with the additional ones
+            return [...baseRepos, ...additionalRepos];
         }
         
         // Render repositories
