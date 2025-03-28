@@ -1249,25 +1249,8 @@ C:\><span class="win-cursor"></span>
         <div class="win-context-item" id="context-properties">Properties</div>
     </div>
     
-    <!-- Menu sortowania -->
-    <div class="win-sort-menu" id="sort-menu" style="display: none;">
-        <div class="win-sort-item" data-sort="name">
-            <span>By Name</span>
-            <span class="win-sort-checkmark" id="sort-name-check"></span>
-        </div>
-        <div class="win-sort-item" data-sort="updated">
-            <span>By Last Updated</span>
-            <span class="win-sort-checkmark" id="sort-updated-check">✓</span>
-        </div>
-        <div class="win-sort-item" data-sort="stars">
-            <span>By Stars</span>
-            <span class="win-sort-checkmark" id="sort-stars-check"></span>
-        </div>
-        <div class="win-sort-item" data-sort="size">
-            <span>By Size</span>
-            <span class="win-sort-checkmark" id="sort-size-check"></span>
-        </div>
-    </div>
+    <!-- Sort Menu - Dynamically generated now -->
+    <div class="win-sort-menu" id="sort-menu" style="display: none;"></div>
     
     <div class="win-modal-background" id="modal-background"></div>
     
@@ -1694,16 +1677,60 @@ C:\><span class="win-cursor"></span>
             const sortMenu = document.getElementById('sort-menu');
             if (!sortMenu) return;
             
-            const sortItems = sortMenu.querySelectorAll('.win-sort-item');
+            // Clear the menu first
+            sortMenu.innerHTML = '';
             
-            sortItems.forEach(item => {
+            // Standard sorting options
+            const standardSortOptions = [
+                { id: 'default', name: 'Default (Recent first, Forks last)' },
+                { id: 'name', name: 'By Name' },
+                { id: 'updated', name: 'By Last Updated' },
+                { id: 'created', name: 'By Creation Date' },
+                { id: 'stars', name: 'By Stars' },
+                { id: 'size', name: 'By Size' }
+            ];
+            
+            // Add standard sort options
+            standardSortOptions.forEach(option => {
+                const item = document.createElement('div');
+                item.className = 'win-sort-item';
+                item.dataset.sort = option.id;
+                item.innerHTML = `
+                    <span>${option.name}</span>
+                    <span class="win-sort-checkmark" id="sort-${option.id}-check"></span>
+                `;
+                
                 item.addEventListener('click', function() {
                     const sortType = this.getAttribute('data-sort');
                     sortRepositories(sortType);
                     updateSortMenuCheckmarks(sortType);
                     closeMenu('sort-menu');
                 });
+                
+                sortMenu.appendChild(item);
             });
+            
+            // Add separator
+            const separator = document.createElement('div');
+            separator.className = 'win-separator';
+            sortMenu.appendChild(separator);
+            
+            // Add language-based sorting
+            const languageItem = document.createElement('div');
+            languageItem.className = 'win-sort-item';
+            languageItem.dataset.sort = 'language';
+            languageItem.innerHTML = `
+                <span>By Programming Language</span>
+                <span class="win-sort-checkmark" id="sort-language-check"></span>
+            `;
+            
+            languageItem.addEventListener('click', function() {
+                sortRepositories('language');
+                updateSortMenuCheckmarks('language');
+                closeMenu('sort-menu');
+            });
+            
+            sortMenu.appendChild(languageItem);
             
             // Initialize checkmarks based on current sort
             updateSortMenuCheckmarks(currentSort);
@@ -1711,21 +1738,15 @@ C:\><span class="win-cursor"></span>
         
         // Update checkmarks in sort menu
         function updateSortMenuCheckmarks(activeSort) {
-            const checkmarks = {
-                'name': document.getElementById('sort-name-check'),
-                'updated': document.getElementById('sort-updated-check'),
-                'stars': document.getElementById('sort-stars-check'),
-                'size': document.getElementById('sort-size-check')
-            };
-            
-            // Clear all checkmarks
-            Object.values(checkmarks).forEach(check => {
-                if (check) check.textContent = '';
+            // Remove all checkmarks first
+            document.querySelectorAll('.win-sort-checkmark').forEach(check => {
+                check.textContent = '';
             });
             
             // Set the active checkmark
-            if (checkmarks[activeSort]) {
-                checkmarks[activeSort].textContent = '✓';
+            const activeCheckmark = document.getElementById(`sort-${activeSort}-check`);
+            if (activeCheckmark) {
+                activeCheckmark.textContent = '✓';
             }
         }
         
@@ -2457,6 +2478,11 @@ C:\><span class="win-cursor"></span>
                     repoItem.className = 'win-repo-item';
                     repoItem.tabIndex = 0;
                     
+                    // Add a special class for forked repositories
+                    if (repo.fork) {
+                        repoItem.classList.add('win-repo-fork');
+                    }
+                    
                     // Click event to select repository
                     repoItem.addEventListener('click', function() {
                         playSound('click');
@@ -2539,9 +2565,20 @@ C:\><span class="win-cursor"></span>
                         }
                     }
                     
+                    // Add a fork icon if it's a forked repository
+                    let iconHtml = `<i class="${iconClass}" style="color: ${iconColor};"></i>`;
+                    if (repo.fork) {
+                        iconHtml = `
+                            <div style="position: relative;">
+                                <i class="${iconClass}" style="color: ${iconColor};"></i>
+                                <i class="fas fa-code-branch" style="position: absolute; bottom: -5px; right: -5px; font-size: 10px; color: #555;"></i>
+                            </div>
+                        `;
+                    }
+                    
                     repoItem.innerHTML = `
                         <div class="win-repo-icon">
-                            <i class="${iconClass}" style="color: ${iconColor};"></i>
+                            ${iconHtml}
                         </div>
                         <div class="win-repo-name">${repo.name || 'Unnamed'}</div>
                     `;
@@ -2596,10 +2633,38 @@ C:\><span class="win-cursor"></span>
                 return `${date.getMonth()+1}/${date.getDate()}/${date.getFullYear().toString().substr(-2)} ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
             };
             
+            // Get color for language
+            let languageColor = '#777777';
+            if (repo.language) {
+                switch (repo.language) {
+                    case 'JavaScript': languageColor = '#f7df1e'; break;
+                    case 'HTML': languageColor = '#e34c26'; break;
+                    case 'CSS': languageColor = '#264de4'; break;
+                    case 'Python': languageColor = '#3776ab'; break;
+                    case 'Java': languageColor = '#007396'; break;
+                    case 'PHP': languageColor = '#777bb4'; break;
+                    case 'Ruby': languageColor = '#cc342d'; break;
+                    case 'C#': languageColor = '#512bd4'; break;
+                    case 'TypeScript': languageColor = '#007acc'; break;
+                }
+            }
+            
+            // Create language label HTML
+            const languageLabel = repo.language ? 
+                `<span class="language-label" style="border-left: 3px solid ${languageColor};">${repo.language}</span>` : 
+                '';
+            
+            // Create fork indicator if needed
+            const forkInfo = repo.fork ? 
+                `<div class="win-repo-details-row">
+                    <div class="win-repo-details-label">Fork:</div>
+                    <div class="win-repo-details-value">Yes <i class="fas fa-code-branch"></i></div>
+                </div>` : '';
+            
             // Prepare modal content
             content.innerHTML = `
                 <div class="win-repo-description">
-                    ${repo.description || "No description available."}
+                    ${repo.description || "No description available."} ${languageLabel}
                 </div>
                 
                 <div class="win-repo-details-row">
@@ -2616,6 +2681,8 @@ C:\><span class="win-cursor"></span>
                     <div class="win-repo-details-label">Language:</div>
                     <div class="win-repo-details-value">${repo.language || "Not specified"}</div>
                 </div>
+                
+                ${forkInfo}
                 
                 <div class="win-repo-details-row">
                     <div class="win-repo-details-label">Stars:</div>
@@ -2791,7 +2858,7 @@ C:\><span class="win-cursor"></span>
         function sortRepositories(sortType) {
             playSound('click');
             
-            // Jeśli wybrany ten sam typ sortowania, nie rób nic
+            // If same sort type selected, don't do anything
             if (currentSort === sortType) {
                 showTemporaryMessage(`Already sorted by ${getSortTypeName(sortType)}`);
                 return;
@@ -2805,15 +2872,39 @@ C:\><span class="win-cursor"></span>
                 
                 // Sort repositories
                 reposToSort.sort(function(a, b) {
+                    // Default sort: Recent first, Forks at the end
+                    if (sortType === 'default') {
+                        // If one is a fork and the other isn't, put forks at the end
+                        if (a.fork && !b.fork) return 1;
+                        if (!a.fork && b.fork) return -1;
+                        
+                        // If both are forks or both are not forks, sort by creation date (newest first)
+                        return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+                    }
+                    
                     switch (sortType) {
                         case 'name':
                             return (a.name || '').localeCompare(b.name || '');
                         case 'updated':
                             return new Date(b.updated_at || 0) - new Date(a.updated_at || 0);
+                        case 'created':
+                            return new Date(b.created_at || 0) - new Date(a.created_at || 0);
                         case 'stars':
                             return (b.stargazers_count || 0) - (a.stargazers_count || 0);
                         case 'size':
                             return (b.size || 0) - (a.size || 0);
+                        case 'language':
+                            // First handle null languages
+                            if (!a.language && b.language) return 1;
+                            if (a.language && !b.language) return -1;
+                            if (!a.language && !b.language) return 0;
+                            
+                            // Sort by language first
+                            const langCompare = a.language.localeCompare(b.language);
+                            if (langCompare !== 0) return langCompare;
+                            
+                            // Then by name within each language group
+                            return (a.name || '').localeCompare(b.name || '');
                         default:
                             return 0;
                     }
@@ -2829,7 +2920,7 @@ C:\><span class="win-cursor"></span>
                     renderRepositories(allRepos);
                 }
                 
-                // Aktualizuj UI
+                // Update UI
                 updateSortMenuCheckmarks(sortType);
                 showTemporaryMessage(`Sorted by ${getSortTypeName(sortType)}`);
             } catch (error) {
@@ -2841,10 +2932,13 @@ C:\><span class="win-cursor"></span>
         // Get human-readable sort type name
         function getSortTypeName(sortType) {
             switch (sortType) {
+                case 'default': return 'Default (Recent first, Forks last)';
                 case 'name': return 'Name';
                 case 'updated': return 'Last Updated';
+                case 'created': return 'Creation Date';
                 case 'stars': return 'Stars';
                 case 'size': return 'Size';
+                case 'language': return 'Programming Language';
                 default: return sortType;
             }
         }
