@@ -3505,7 +3505,7 @@ MIT`
             }
         }
         
-        // Close window
+        // Close window - POPRAWIONA FUNKCJA
         function closeWindow() {
             playSound('click');
             
@@ -3541,15 +3541,27 @@ MIT`
                 // Play close sound
                 playSound('close');
                 
-                // Show shutdown screen
-                document.body.innerHTML = `
-                    <div class="win-dos-startup" style="display: block; opacity: 1; visibility: visible;">
-                        <div class="win-dos-text">C:\\WINDOWS>exit</div>
-                        <div class="win-dos-text" style="margin-top: 20px;">
-                            It is now safe to turn off your computer.
-                        </div>
+                // Show shutdown screen - BEZPIECZNE UTWORZENIE EKRANU ZAMKNIĘCIA
+                const shutdownScreen = document.createElement('div');
+                shutdownScreen.className = 'win-dos-startup';
+                shutdownScreen.style.display = 'block';
+                shutdownScreen.style.opacity = '1';
+                shutdownScreen.style.visibility = 'visible';
+                
+                shutdownScreen.innerHTML = `
+                    <div class="win-dos-text">C:\\WINDOWS>exit</div>
+                    <div class="win-dos-text" style="margin-top: 20px;">
+                        It is now safe to turn off your computer.
                     </div>
                 `;
+                
+                // Usuń wszystkie elementy z body
+                while (document.body.firstChild) {
+                    document.body.removeChild(document.body.firstChild);
+                }
+                
+                // Dodaj ekran zamknięcia
+                document.body.appendChild(shutdownScreen);
             });
             
             document.getElementById('cancel-exit').addEventListener('click', function() {
