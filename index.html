@@ -781,6 +781,43 @@
             background-color: var(--win-blue);
             color: var(--win-title-text);
         }
+
+        /* --- Sort Menu --- */
+        .win-sort-menu {
+            position: absolute;
+            background-color: var(--win-gray);
+            border-top: 1px solid var(--win-border-light);
+            border-left: 1px solid var(--win-border-light);
+            border-right: 1px solid var(--win-border-shadow);
+            border-bottom: 1px solid var(--win-border-shadow);
+            box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            z-index: 1001;
+            width: 150px;
+        }
+        
+        .win-sort-item {
+            padding: 4px 10px;
+            color: var(--win-text);
+            cursor: pointer;
+            white-space: nowrap;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .win-sort-item:hover {
+            background-color: var(--win-blue);
+            color: var(--win-title-text);
+        }
+        
+        .win-sort-item.active {
+            font-weight: bold;
+        }
+        
+        .win-sort-checkmark {
+            margin-left: 5px;
+        }
         
         /* --- Dark Mode --- */
         body.dark-mode {
@@ -832,6 +869,23 @@
         body.dark-mode .win-loading-text {
             color: var(--win-dark-mode-text);
         }
+
+        body.dark-mode .win-sort-menu {
+            background-color: var(--win-dark-mode-window);
+            color: var(--win-dark-mode-text);
+        }
+
+        body.dark-mode .win-sort-item {
+            color: var(--win-dark-mode-text);
+        }
+
+        body.dark-mode .win-context-menu {
+            background-color: var(--win-dark-mode-window);
+        }
+        
+        body.dark-mode .win-context-item {
+            color: var(--win-dark-mode-text);
+        }
         
         /* --- About Dialog --- */
         .win-about {
@@ -873,6 +927,30 @@
             display: none !important;
         }
         
+        /* --- Temp Message --- */
+        .win-temp-message {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--win-window-bg);
+            color: var(--win-text);
+            padding: 5px 15px;
+            border-top: 1px solid var(--win-border-light);
+            border-left: 1px solid var(--win-border-light);
+            border-right: 1px solid var(--win-border-shadow);
+            border-bottom: 1px solid var(--win-border-shadow);
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+            z-index: 3000;
+            font-size: 12px;
+            animation: messageSlideUp 0.3s;
+        }
+        
+        @keyframes messageSlideUp {
+            from { transform: translate(-50%, 100%); opacity: 0; }
+            to { transform: translate(-50%, 0); opacity: 1; }
+        }
+        
         /* --- Responsywność --- */
         @media (max-width: 768px) {
             .win-repo-grid {
@@ -907,7 +985,6 @@
     </style>
 </head>
 <body>
-    <body>
     <!-- Dźwięki -->
     <audio id="win-startup-sound" preload="auto">
         <source src="https://archive.org/download/WindowsStartupSounds/Windows%203.1.mp3" type="audio/mpeg">
@@ -1095,7 +1172,7 @@ C:\><span class="win-cursor"></span>
             
             <div class="win-content win-about">
                 <div class="win-about-logo">Windows 3.11 GitHub Viewer</div>
-                <div class="win-about-version">Version 2.0</div>
+                <div class="win-about-version">Version 2.1</div>
                 
                 <div class="win-about-box">
                     <p>Microsoft® Windows™ 3.11<br>
@@ -1172,7 +1249,28 @@ C:\><span class="win-cursor"></span>
         <div class="win-context-item" id="context-properties">Properties</div>
     </div>
     
+    <!-- Menu sortowania -->
+    <div class="win-sort-menu" id="sort-menu" style="display: none;">
+        <div class="win-sort-item" data-sort="name">
+            <span>By Name</span>
+            <span class="win-sort-checkmark" id="sort-name-check"></span>
+        </div>
+        <div class="win-sort-item" data-sort="updated">
+            <span>By Last Updated</span>
+            <span class="win-sort-checkmark" id="sort-updated-check">✓</span>
+        </div>
+        <div class="win-sort-item" data-sort="stars">
+            <span>By Stars</span>
+            <span class="win-sort-checkmark" id="sort-stars-check"></span>
+        </div>
+        <div class="win-sort-item" data-sort="size">
+            <span>By Size</span>
+            <span class="win-sort-checkmark" id="sort-size-check"></span>
+        </div>
+    </div>
+    
     <div class="win-modal-background" id="modal-background"></div>
+    
     <script>
         // Zmienne globalne
         let allRepos = [];
@@ -1189,6 +1287,7 @@ C:\><span class="win-cursor"></span>
         let memoryInterval;
         let audioEnabled = true;
         let startupComplete = false;
+        let sortMenuVisible = false;
         
         // Tablice z danymi
         const fileTypes = [
@@ -1350,6 +1449,7 @@ C:\><span class="win-cursor"></span>
                 skipToMainWindow();
             }
         }, 8000);
+        
         // Initialize the application
         function initializeApplication() {
             console.log('Initializing application');
@@ -1470,7 +1570,17 @@ C:\><span class="win-cursor"></span>
             
             if (repoSearch) repoSearch.addEventListener('input', filterRepositories);
             if (refreshRepos) refreshRepos.addEventListener('click', fetchRepositories);
-            if (sortRepos) sortRepos.addEventListener('click', showSortMenu);
+            
+            // Poprawiony event listener dla przycisku sortowania
+            if (sortRepos) {
+                sortRepos.addEventListener('click', function(e) {
+                    // Zatrzymaj propagację zdarzenia, aby nie zamknęło się menu po kliknięciu w przycisk
+                    e.stopPropagation();
+                    // Pokaż menu sortowania
+                    showSortMenu(e);
+                });
+            }
+            
             if (viewToggle) viewToggle.addEventListener('click', cycleViewMode);
             if (themeToggle) themeToggle.addEventListener('click', toggleDarkMode);
             if (helpButton) helpButton.addEventListener('click', showHelpWindow);
@@ -1522,6 +1632,9 @@ C:\><span class="win-cursor"></span>
                 }
             });
             
+            // Sort menu items
+            initializeSortMenu();
+            
             // Keyboard shortcuts
             document.addEventListener('keydown', function(e) {
                 // F5 - refresh
@@ -1540,6 +1653,7 @@ C:\><span class="win-cursor"></span>
                 // Esc - close modals
                 if (e.key === 'Escape') {
                     closeAllModals();
+                    closeMenu('sort-menu');
                 }
                 
                 // T - toggle theme
@@ -1548,8 +1662,74 @@ C:\><span class="win-cursor"></span>
                 }
             });
             
+            // Close sort menu when clicking elsewhere
+            document.addEventListener('click', function(e) {
+                const sortMenu = document.getElementById('sort-menu');
+                const sortButton = document.getElementById('sort-repos');
+                
+                // Jeśli kliknięcie nie było na menu ani na przycisku sort, zamknij menu
+                if (sortMenu && sortMenu.style.display === 'block' && 
+                    !sortMenu.contains(e.target) && 
+                    (!sortButton || !sortButton.contains(e.target))) {
+                    closeMenu('sort-menu');
+                }
+            });
+            
             // Initialize drag and drop for windows
             initializeWindowDrag();
+        }
+        
+        // Initialize sort menu
+        function initializeSortMenu() {
+            const sortMenu = document.getElementById('sort-menu');
+            if (!sortMenu) return;
+            
+            const sortItems = sortMenu.querySelectorAll('.win-sort-item');
+            
+            sortItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    const sortType = this.getAttribute('data-sort');
+                    sortRepositories(sortType);
+                    updateSortMenuCheckmarks(sortType);
+                    closeMenu('sort-menu');
+                });
+            });
+            
+            // Initialize checkmarks based on current sort
+            updateSortMenuCheckmarks(currentSort);
+        }
+        
+        // Update checkmarks in sort menu
+        function updateSortMenuCheckmarks(activeSort) {
+            const checkmarks = {
+                'name': document.getElementById('sort-name-check'),
+                'updated': document.getElementById('sort-updated-check'),
+                'stars': document.getElementById('sort-stars-check'),
+                'size': document.getElementById('sort-size-check')
+            };
+            
+            // Clear all checkmarks
+            Object.values(checkmarks).forEach(check => {
+                if (check) check.textContent = '';
+            });
+            
+            // Set the active checkmark
+            if (checkmarks[activeSort]) {
+                checkmarks[activeSort].textContent = '✓';
+            }
+        }
+        
+        // Close a specific menu by ID
+        function closeMenu(menuId) {
+            const menu = document.getElementById(menuId);
+            if (menu) {
+                menu.style.display = 'none';
+                
+                // For sort menu, update flag
+                if (menuId === 'sort-menu') {
+                    sortMenuVisible = false;
+                }
+            }
         }
         
         // Initialize window dragging
@@ -1717,14 +1897,20 @@ C:\><span class="win-cursor"></span>
                     openProgramGroup(group);
                 });
                 
-                groupElement.innerHTML = `
-                    <div class="win-program-icon">
-                        <div class="win-program-icon-inner" style="color: ${group.color || '#000000'}">
-                            ${group.iconHtml || `<i class="fab fa-${group.icon}"></i>`}
-                        </div>
-                    </div>
-                    <div class="win-group-name">${group.name}</div>
-                `;
+                // Tworzenie elementu ikony grupy
+                const iconElement = document.createElement('div');
+                iconElement.className = 'win-group-icon';
+                iconElement.innerHTML = group.iconHtml || `<i class="fab fa-${group.icon}"></i>`;
+                iconElement.style.color = group.color || '#000000';
+                
+                // Tworzenie elementu nazwy grupy
+                const nameElement = document.createElement('div');
+                nameElement.className = 'win-group-name';
+                nameElement.textContent = group.name;
+                
+                // Dodawanie elementów do grupy
+                groupElement.appendChild(iconElement);
+                groupElement.appendChild(nameElement);
                 
                 groupsContainer.appendChild(groupElement);
             });
@@ -1858,6 +2044,7 @@ C:\><span class="win-cursor"></span>
                 document.body.classList.remove('win-wait-cursor');
             }
         }
+        
         // Render repositories
         function renderRepositories(repos) {
             const reposContainer = document.getElementById('repos-container');
@@ -1980,6 +2167,9 @@ C:\><span class="win-cursor"></span>
             
             // Apply current view mode
             setViewMode(currentView);
+            
+            // Update sort menu checkmarks
+            updateSortMenuCheckmarks(currentSort);
         }
         
         // Highlight a repository item
@@ -2089,12 +2279,16 @@ C:\><span class="win-cursor"></span>
             const modalBg = document.getElementById('modal-background');
             if (modalBg) modalBg.style.display = 'none';
             
-            // Remove any context menus
-            document.querySelectorAll('.win-context-menu').forEach(function(menu) {
-                if (menu.style.display === 'block') {
-                    menu.style.display = 'none';
-                }
-            });
+            // Hide context menu
+            const contextMenu = document.getElementById('repo-context-menu');
+            if (contextMenu) contextMenu.style.display = 'none';
+            
+            // Hide sort menu
+            const sortMenu = document.getElementById('sort-menu');
+            if (sortMenu) {
+                sortMenu.style.display = 'none';
+                sortMenuVisible = false;
+            }
         }
         
         // Show about window
@@ -2168,20 +2362,6 @@ C:\><span class="win-cursor"></span>
             
             const messageElement = document.createElement('div');
             messageElement.className = 'win-temp-message';
-            messageElement.style.position = 'fixed';
-            messageElement.style.bottom = '20px';
-            messageElement.style.left = '50%';
-            messageElement.style.transform = 'translateX(-50%)';
-            messageElement.style.backgroundColor = 'var(--win-window-bg)';
-            messageElement.style.color = 'var(--win-text)';
-            messageElement.style.padding = '5px 15px';
-            messageElement.style.borderTop = '1px solid var(--win-border-light)';
-            messageElement.style.borderLeft = '1px solid var(--win-border-light)';
-            messageElement.style.borderRight = '1px solid var(--win-border-shadow)';
-            messageElement.style.borderBottom = '1px solid var(--win-border-shadow)';
-            messageElement.style.boxShadow = '2px 2px 5px rgba(0, 0, 0, 0.3)';
-            messageElement.style.zIndex = '3000';
-            messageElement.style.fontSize = '12px';
             messageElement.textContent = message;
             
             document.body.appendChild(messageElement);
@@ -2220,90 +2400,100 @@ C:\><span class="win-cursor"></span>
         // Sort repositories
         function sortRepositories(sortType) {
             playSound('click');
-            currentSort = sortType;
             
-            // Create a deep copy of repositories to avoid sorting issues
-            const reposToSort = [...allRepos];
-            
-            // Sort repositories
-            reposToSort.sort(function(a, b) {
-                switch (sortType) {
-                    case 'name':
-                        return (a.name || '').localeCompare(b.name || '');
-                    case 'updated':
-                        return new Date(b.updated_at || 0) - new Date(a.updated_at || 0);
-                    case 'stars':
-                        return (b.stargazers_count || 0) - (a.stargazers_count || 0);
-                    case 'size':
-                        return (b.size || 0) - (a.size || 0);
-                    default:
-                        return 0;
-                }
-            });
-            
-            // Update allRepos with sorted repositories
-            allRepos = reposToSort;
-            
-            // Re-render repositories
-            if (currentGroup) {
-                openProgramGroup(currentGroup);
-            } else {
-                renderRepositories(allRepos);
+            // Jeśli wybrany ten sam typ sortowania, nie rób nic
+            if (currentSort === sortType) {
+                showTemporaryMessage(`Already sorted by ${getSortTypeName(sortType)}`);
+                return;
             }
             
-            showTemporaryMessage(`Sorted by ${sortType}`);
+            currentSort = sortType;
+            
+            try {
+                // Create a deep copy of repositories to avoid sorting issues
+                const reposToSort = [...allRepos];
+                
+                // Sort repositories
+                reposToSort.sort(function(a, b) {
+                    switch (sortType) {
+                        case 'name':
+                            return (a.name || '').localeCompare(b.name || '');
+                        case 'updated':
+                            return new Date(b.updated_at || 0) - new Date(a.updated_at || 0);
+                        case 'stars':
+                            return (b.stargazers_count || 0) - (a.stargazers_count || 0);
+                        case 'size':
+                            return (b.size || 0) - (a.size || 0);
+                        default:
+                            return 0;
+                    }
+                });
+                
+                // Update allRepos with sorted repositories
+                allRepos = reposToSort;
+                
+                // Re-render repositories
+                if (currentGroup) {
+                    openProgramGroup(currentGroup);
+                } else {
+                    renderRepositories(allRepos);
+                }
+                
+                // Aktualizuj UI
+                updateSortMenuCheckmarks(sortType);
+                showTemporaryMessage(`Sorted by ${getSortTypeName(sortType)}`);
+            } catch (error) {
+                console.error('Error sorting repositories:', error);
+                showTemporaryMessage('Error sorting repositories');
+            }
+        }
+        
+        // Get human-readable sort type name
+        function getSortTypeName(sortType) {
+            switch (sortType) {
+                case 'name': return 'Name';
+                case 'updated': return 'Last Updated';
+                case 'stars': return 'Stars';
+                case 'size': return 'Size';
+                default: return sortType;
+            }
         }
         
         // Show sort menu
         function showSortMenu(e) {
             playSound('click');
             
-            const sortMenu = document.createElement('div');
-            sortMenu.className = 'win-context-menu';
+            // Używamy istniejącego menu zamiast tworzenia nowego
+            const sortMenu = document.getElementById('sort-menu');
+            if (!sortMenu) return;
+            
+            // Aktualizujemy checkmarki
+            updateSortMenuCheckmarks(currentSort);
+            
+            // Jeśli menu jest już widoczne, zamykamy je
+            if (sortMenuVisible) {
+                sortMenu.style.display = 'none';
+                sortMenuVisible = false;
+                return;
+            }
+            
+            // Pozycjonujemy menu pod przyciskiem
+            const button = document.getElementById('sort-repos');
+            if (button) {
+                const rect = button.getBoundingClientRect();
+                sortMenu.style.left = rect.left + 'px';
+                sortMenu.style.top = (rect.bottom + 2) + 'px';
+            } else {
+                // Fallback - pozycjonujemy przy kliknięciu
+                sortMenu.style.left = e.pageX + 'px';
+                sortMenu.style.top = e.pageY + 'px';
+            }
+            
+            // Pokazujemy menu
             sortMenu.style.display = 'block';
-            sortMenu.style.left = e.pageX + 'px';
-            sortMenu.style.top = e.pageY + 'px';
-            sortMenu.style.zIndex = '1500';
+            sortMenuVisible = true;
             
-            sortMenu.innerHTML = `
-                <div class="win-context-item" id="sort-by-name">By Name</div>
-                <div class="win-context-item" id="sort-by-updated">By Last Updated</div>
-                <div class="win-context-item" id="sort-by-stars">By Stars</div>
-                <div class="win-context-item" id="sort-by-size">By Size</div>
-            `;
-            
-            document.body.appendChild(sortMenu);
-            
-            // Add event listeners for sort options
-            document.getElementById('sort-by-name').addEventListener('click', function() {
-                sortRepositories('name');
-                document.body.removeChild(sortMenu);
-            });
-            
-            document.getElementById('sort-by-updated').addEventListener('click', function() {
-                sortRepositories('updated');
-                document.body.removeChild(sortMenu);
-            });
-            
-            document.getElementById('sort-by-stars').addEventListener('click', function() {
-                sortRepositories('stars');
-                document.body.removeChild(sortMenu);
-            });
-            
-            document.getElementById('sort-by-size').addEventListener('click', function() {
-                sortRepositories('size');
-                document.body.removeChild(sortMenu);
-            });
-            
-            // Close menu when clicking outside
-            document.addEventListener('click', function hideMenu(event) {
-                if (!sortMenu.contains(event.target)) {
-                    if (document.body.contains(sortMenu)) {
-                        document.body.removeChild(sortMenu);
-                    }
-                    document.removeEventListener('click', hideMenu);
-                }
-            });
+            e.stopPropagation(); // Zapobiegamy natychmiastowemu zamknięciu
         }
         
         // Set view mode (large or small icons)
