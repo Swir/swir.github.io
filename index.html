@@ -249,7 +249,7 @@
             align-items: center;
         }
         
-        .win-group-icon {
+        .win-program-icon {
             width: 32px;
             height: 32px;
             background-color: var(--win-gray);
@@ -261,6 +261,15 @@
             align-items: center;
             justify-content: center;
             margin-bottom: 4px;
+        }
+        
+        .win-program-icon-inner {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            font-size: 16px;
         }
         
         .win-group-name {
@@ -437,7 +446,7 @@
             background-color: var(--win-dark-gray);
         }
         
-        /* --- Łądowanie --- */
+        /* --- Ładowanie --- */
         .win-loading {
             display: flex;
             flex-direction: column;
@@ -781,43 +790,6 @@
             background-color: var(--win-blue);
             color: var(--win-title-text);
         }
-
-        /* --- Sort Menu --- */
-        .win-sort-menu {
-            position: absolute;
-            background-color: var(--win-gray);
-            border-top: 1px solid var(--win-border-light);
-            border-left: 1px solid var(--win-border-light);
-            border-right: 1px solid var(--win-border-shadow);
-            border-bottom: 1px solid var(--win-border-shadow);
-            box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-            z-index: 1001;
-            width: 150px;
-        }
-        
-        .win-sort-item {
-            padding: 4px 10px;
-            color: var(--win-text);
-            cursor: pointer;
-            white-space: nowrap;
-            font-size: 11px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        
-        .win-sort-item:hover {
-            background-color: var(--win-blue);
-            color: var(--win-title-text);
-        }
-        
-        .win-sort-item.active {
-            font-weight: bold;
-        }
-        
-        .win-sort-checkmark {
-            margin-left: 5px;
-        }
         
         /* --- Dark Mode --- */
         body.dark-mode {
@@ -867,23 +839,6 @@
         
         body.dark-mode .win-group-name,
         body.dark-mode .win-loading-text {
-            color: var(--win-dark-mode-text);
-        }
-
-        body.dark-mode .win-sort-menu {
-            background-color: var(--win-dark-mode-window);
-            color: var(--win-dark-mode-text);
-        }
-
-        body.dark-mode .win-sort-item {
-            color: var(--win-dark-mode-text);
-        }
-
-        body.dark-mode .win-context-menu {
-            background-color: var(--win-dark-mode-window);
-        }
-        
-        body.dark-mode .win-context-item {
             color: var(--win-dark-mode-text);
         }
         
@@ -943,12 +898,12 @@
             box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
             z-index: 3000;
             font-size: 12px;
-            animation: messageSlideUp 0.3s;
+            animation: messageAppear 0.3s;
         }
         
-        @keyframes messageSlideUp {
-            from { transform: translate(-50%, 100%); opacity: 0; }
-            to { transform: translate(-50%, 0); opacity: 1; }
+        @keyframes messageAppear {
+            from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
         }
         
         /* --- Responsywność --- */
@@ -1249,11 +1204,8 @@ C:\><span class="win-cursor"></span>
         <div class="win-context-item" id="context-properties">Properties</div>
     </div>
     
-    <!-- Sort Menu - Dynamically generated now -->
-    <div class="win-sort-menu" id="sort-menu" style="display: none;"></div>
-    
     <div class="win-modal-background" id="modal-background"></div>
-    
+
     <script>
         // Zmienne globalne
         let allRepos = [];
@@ -1270,7 +1222,7 @@ C:\><span class="win-cursor"></span>
         let memoryInterval;
         let audioEnabled = true;
         let startupComplete = false;
-        let sortMenuVisible = false;
+        let reposLoaded = false;
         
         // Tablice z danymi
         const fileTypes = [
@@ -1301,13 +1253,18 @@ C:\><span class="win-cursor"></span>
         
         // Preload all audio files
         function preloadAudio() {
-            const startupSound = document.getElementById('win-startup-sound');
-            const errorSound = document.getElementById('win-error-sound');
-            const clickSound = document.getElementById('win-click-sound');
-            
-            if (startupSound) startupSound.load();
-            if (errorSound) errorSound.load();
-            if (clickSound) clickSound.load();
+            try {
+                const startupSound = document.getElementById('win-startup-sound');
+                const errorSound = document.getElementById('win-error-sound');
+                const clickSound = document.getElementById('win-click-sound');
+                
+                if (startupSound) startupSound.load();
+                if (errorSound) errorSound.load();
+                if (clickSound) clickSound.load();
+            } catch (error) {
+                console.warn('Audio preload failed:', error);
+                audioEnabled = false;
+            }
         }
         
         // Start the DOS startup sequence
@@ -1447,24 +1404,14 @@ C:\><span class="win-cursor"></span>
                 // Start memory update interval
                 memoryInterval = setInterval(updateMemoryDisplay, 10000);
                 
-                // Hide program groups container completely
-                const groupsContainer = document.getElementById('program-groups');
-                if (groupsContainer) {
-                    groupsContainer.style.display = 'none';
-                }
-                
-                // Create default program groups (now empty/hidden)
+                // Create default program groups
                 createDefaultProgramGroups();
                 
-                // Fetch repositories directly - this is now the main flow
+                // Fetch repositories
                 fetchRepositories();
             } catch (error) {
                 console.error('Error during initialization:', error);
                 showErrorWindow('Initialization Error', 'An error occurred while initializing Windows: ' + error.message);
-                
-                // Attempt to recover by showing sample data
-                allRepos = getSampleRepositories();
-                renderRepositories(allRepos);
             }
         }
         
@@ -1563,17 +1510,7 @@ C:\><span class="win-cursor"></span>
             
             if (repoSearch) repoSearch.addEventListener('input', filterRepositories);
             if (refreshRepos) refreshRepos.addEventListener('click', fetchRepositories);
-            
-            // Poprawiony event listener dla przycisku sortowania
-            if (sortRepos) {
-                sortRepos.addEventListener('click', function(e) {
-                    // Zatrzymaj propagację zdarzenia, aby nie zamknęło się menu po kliknięciu w przycisk
-                    e.stopPropagation();
-                    // Pokaż menu sortowania
-                    showSortMenu(e);
-                });
-            }
-            
+            if (sortRepos) sortRepos.addEventListener('click', showSortMenu);
             if (viewToggle) viewToggle.addEventListener('click', cycleViewMode);
             if (themeToggle) themeToggle.addEventListener('click', toggleDarkMode);
             if (helpButton) helpButton.addEventListener('click', showHelpWindow);
@@ -1601,12 +1538,14 @@ C:\><span class="win-cursor"></span>
                 if (selectedRepo) {
                     showRepoDetails(selectedRepo);
                 }
+                hideContextMenu();
             });
             
             if (contextViewGithub) contextViewGithub.addEventListener('click', function() {
                 if (selectedRepo) {
                     window.open(selectedRepo.html_url, '_blank');
                 }
+                hideContextMenu();
             });
             
             if (contextCopyUrl) contextCopyUrl.addEventListener('click', function() {
@@ -1617,16 +1556,15 @@ C:\><span class="win-cursor"></span>
                         console.error('Could not copy text: ', err);
                     });
                 }
+                hideContextMenu();
             });
             
             if (contextProperties) contextProperties.addEventListener('click', function() {
                 if (selectedRepo) {
                     showRepoDetails(selectedRepo);
                 }
+                hideContextMenu();
             });
-            
-            // Sort menu items
-            initializeSortMenu();
             
             // Keyboard shortcuts
             document.addEventListener('keydown', function(e) {
@@ -1646,25 +1584,34 @@ C:\><span class="win-cursor"></span>
                 // Esc - close modals
                 if (e.key === 'Escape') {
                     closeAllModals();
-                    closeMenu('sort-menu');
+                    hideContextMenu();
                 }
                 
                 // T - toggle theme
                 if (e.key === 't' || e.key === 'T') {
                     toggleDarkMode();
                 }
+                
+                // Arrow keys for navigation
+                if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || 
+                    e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                    navigateWithKeys(e.key);
+                }
+                
+                // Enter to open selected repo
+                if (e.key === 'Enter' && selectedRepo) {
+                    showRepoDetails(selectedRepo);
+                }
             });
             
-            // Close sort menu when clicking elsewhere
+            // Hide context menu when clicking elsewhere
             document.addEventListener('click', function(e) {
-                const sortMenu = document.getElementById('sort-menu');
-                const sortButton = document.getElementById('sort-repos');
-                
-                // Jeśli kliknięcie nie było na menu ani na przycisku sort, zamknij menu
-                if (sortMenu && sortMenu.style.display === 'block' && 
-                    !sortMenu.contains(e.target) && 
-                    (!sortButton || !sortButton.contains(e.target))) {
-                    closeMenu('sort-menu');
+                const contextMenu = document.getElementById('repo-context-menu');
+                if (contextMenu && contextMenu.style.display === 'block') {
+                    // Check if click is outside context menu
+                    if (!contextMenu.contains(e.target)) {
+                        hideContextMenu();
+                    }
                 }
             });
             
@@ -1672,94 +1619,65 @@ C:\><span class="win-cursor"></span>
             initializeWindowDrag();
         }
         
-        // Initialize sort menu
-        function initializeSortMenu() {
-            const sortMenu = document.getElementById('sort-menu');
-            if (!sortMenu) return;
+        // Navigate repositories with keyboard
+        function navigateWithKeys(key) {
+            if (!reposLoaded || allRepos.length === 0) return;
             
-            // Clear the menu first
-            sortMenu.innerHTML = '';
+            const repoItems = document.querySelectorAll('.win-repo-item');
+            if (repoItems.length === 0) return;
             
-            // Standard sorting options
-            const standardSortOptions = [
-                { id: 'default', name: 'Default (Recent first, Forks last)' },
-                { id: 'name', name: 'By Name' },
-                { id: 'updated', name: 'By Last Updated' },
-                { id: 'created', name: 'By Creation Date' },
-                { id: 'stars', name: 'By Stars' },
-                { id: 'size', name: 'By Size' }
-            ];
-            
-            // Add standard sort options
-            standardSortOptions.forEach(option => {
-                const item = document.createElement('div');
-                item.className = 'win-sort-item';
-                item.dataset.sort = option.id;
-                item.innerHTML = `
-                    <span>${option.name}</span>
-                    <span class="win-sort-checkmark" id="sort-${option.id}-check"></span>
-                `;
+            // Default to first item if none selected
+            if (selectedRepoIndex === -1) {
+                selectedRepoIndex = 0;
+            } else {
+                // Calculate grid dimensions
+                const itemsPerRow = Math.floor(repoItems[0].parentElement.offsetWidth / repoItems[0].offsetWidth);
+                const rows = Math.ceil(repoItems.length / itemsPerRow);
                 
-                item.addEventListener('click', function() {
-                    const sortType = this.getAttribute('data-sort');
-                    sortRepositories(sortType);
-                    updateSortMenuCheckmarks(sortType);
-                    closeMenu('sort-menu');
-                });
+                // Current position
+                const currentRow = Math.floor(selectedRepoIndex / itemsPerRow);
+                const currentCol = selectedRepoIndex % itemsPerRow;
                 
-                sortMenu.appendChild(item);
-            });
+                // Calculate new index based on arrow key
+                switch(key) {
+                    case 'ArrowUp':
+                        if (currentRow > 0) {
+                            selectedRepoIndex -= itemsPerRow;
+                        }
+                        break;
+                    case 'ArrowDown':
+                        if (currentRow < rows - 1 && selectedRepoIndex + itemsPerRow < repoItems.length) {
+                            selectedRepoIndex += itemsPerRow;
+                        }
+                        break;
+                    case 'ArrowLeft':
+                        if (currentCol > 0) {
+                            selectedRepoIndex--;
+                        }
+                        break;
+                    case 'ArrowRight':
+                        if (currentCol < itemsPerRow - 1 && selectedRepoIndex < repoItems.length - 1) {
+                            selectedRepoIndex++;
+                        }
+                        break;
+                }
+            }
             
-            // Add separator
-            const separator = document.createElement('div');
-            separator.className = 'win-separator';
-            sortMenu.appendChild(separator);
+            // Ensure index is within bounds
+            selectedRepoIndex = Math.max(0, Math.min(repoItems.length - 1, selectedRepoIndex));
             
-            // Add language-based sorting
-            const languageItem = document.createElement('div');
-            languageItem.className = 'win-sort-item';
-            languageItem.dataset.sort = 'language';
-            languageItem.innerHTML = `
-                <span>By Programming Language</span>
-                <span class="win-sort-checkmark" id="sort-language-check"></span>
-            `;
-            
-            languageItem.addEventListener('click', function() {
-                sortRepositories('language');
-                updateSortMenuCheckmarks('language');
-                closeMenu('sort-menu');
-            });
-            
-            sortMenu.appendChild(languageItem);
-            
-            // Initialize checkmarks based on current sort
-            updateSortMenuCheckmarks(currentSort);
-        }
-        
-        // Update checkmarks in sort menu
-        function updateSortMenuCheckmarks(activeSort) {
-            // Remove all checkmarks first
-            document.querySelectorAll('.win-sort-checkmark').forEach(check => {
-                check.textContent = '';
-            });
-            
-            // Set the active checkmark
-            const activeCheckmark = document.getElementById(`sort-${activeSort}-check`);
-            if (activeCheckmark) {
-                activeCheckmark.textContent = '✓';
+            // Update selected repo
+            if (allRepos[selectedRepoIndex]) {
+                selectedRepo = allRepos[selectedRepoIndex];
+                highlightRepoItem(repoItems[selectedRepoIndex]);
             }
         }
         
-        // Close a specific menu by ID
-        function closeMenu(menuId) {
-            const menu = document.getElementById(menuId);
-            if (menu) {
-                menu.style.display = 'none';
-                
-                // For sort menu, update flag
-                if (menuId === 'sort-menu') {
-                    sortMenuVisible = false;
-                }
+        // Hide context menu
+        function hideContextMenu() {
+            const contextMenu = document.getElementById('repo-context-menu');
+            if (contextMenu) {
+                contextMenu.style.display = 'none';
             }
         }
         
@@ -1864,23 +1782,52 @@ C:\><span class="win-cursor"></span>
             }
         }
         
-        // Create default program groups - now empty as requested
+        // Create default program groups
         function createDefaultProgramGroups() {
-            // Program groups have been removed as requested
-            programGroups = [];
+            programGroups = [
+                { 
+                    id: 'main', 
+                    name: 'Main', 
+                    description: 'Main repositories', 
+                    icon: 'folder',
+                    color: '#000080',
+                    iconHtml: '<i class="fas fa-star"></i>'
+                },
+                { 
+                    id: 'javascript', 
+                    name: 'JavaScript', 
+                    description: 'JavaScript repositories', 
+                    icon: 'js-square',
+                    color: '#f7df1e',
+                    iconHtml: '<i class="fab fa-js-square"></i>'
+                },
+                { 
+                    id: 'web', 
+                    name: 'Web', 
+                    description: 'HTML/CSS repositories', 
+                    icon: 'html5',
+                    color: '#e34c26',
+                    iconHtml: '<i class="fab fa-html5"></i>'
+                },
+                { 
+                    id: 'other', 
+                    name: 'Other', 
+                    description: 'Other repositories', 
+                    icon: 'code',
+                    color: '#4CAF50',
+                    iconHtml: '<i class="fas fa-code"></i>'
+                },
+                { 
+                    id: 'starred', 
+                    name: 'Starred', 
+                    description: 'Starred repositories', 
+                    icon: 'star',
+                    color: '#ffc107',
+                    iconHtml: '<i class="fas fa-star"></i>'
+                }
+            ];
             
-            // Since we're not showing program groups, directly fetch repositories
-            // We'll skip renderProgramGroups() since there are no groups to render
-            
-            // Instead, we'll immediately render all repositories
-            renderAllRepositories();
-        }
-        
-        // New function to render all repositories directly
-        function renderAllRepositories() {
-            if (allRepos && allRepos.length > 0) {
-                renderRepositories(allRepos);
-            }
+            renderProgramGroups();
         }
         
         // Render program groups
@@ -1899,20 +1846,14 @@ C:\><span class="win-cursor"></span>
                     openProgramGroup(group);
                 });
                 
-                // Tworzenie elementu ikony grupy
-                const iconElement = document.createElement('div');
-                iconElement.className = 'win-group-icon';
-                iconElement.innerHTML = group.iconHtml || `<i class="fab fa-${group.icon}"></i>`;
-                iconElement.style.color = group.color || '#000000';
-                
-                // Tworzenie elementu nazwy grupy
-                const nameElement = document.createElement('div');
-                nameElement.className = 'win-group-name';
-                nameElement.textContent = group.name;
-                
-                // Dodawanie elementów do grupy
-                groupElement.appendChild(iconElement);
-                groupElement.appendChild(nameElement);
+                groupElement.innerHTML = `
+                    <div class="win-group-icon">
+                        <div class="win-group-icon-inner" style="color: ${group.color || '#000000'}">
+                            ${group.iconHtml || `<i class="fab fa-${group.icon}"></i>`}
+                        </div>
+                    </div>
+                    <div class="win-group-name">${group.name}</div>
+                `;
                 
                 groupsContainer.appendChild(groupElement);
             });
@@ -1971,6 +1912,35 @@ C:\><span class="win-cursor"></span>
             
             // Render repositories
             renderRepositories(groupRepos);
+            
+            showTemporaryMessage(`${group.name} Group opened with ${groupRepos.length} items`);
+        }
+        
+        // Go back to main program groups view
+        function backToMainView() {
+            currentGroup = null;
+            
+            // Show program groups
+            const groupsContainer = document.getElementById('program-groups');
+            if (groupsContainer) {
+                groupsContainer.style.display = 'flex';
+            }
+            
+            // Clear repositories
+            const reposContainer = document.getElementById('repos-container');
+            if (reposContainer) {
+                reposContainer.innerHTML = '';
+            }
+            
+            // Update window title
+            const titleElement = document.querySelector('#main-window .win-title');
+            if (titleElement) {
+                titleElement.textContent = 'Program Manager - Swir GitHub';
+            }
+            
+            // Reset selected repo
+            selectedRepo = null;
+            selectedRepoIndex = -1;
         }
         
         // Fetch repositories from GitHub
@@ -1983,6 +1953,22 @@ C:\><span class="win-cursor"></span>
             try {
                 // Show loading indicator
                 document.body.classList.add('win-wait-cursor');
+                
+                // Reset current group
+                currentGroup = null;
+                
+                // Reset program groups view
+                const programGroups = document.getElementById('program-groups');
+                if (programGroups) {
+                    programGroups.style.display = 'flex';
+                }
+                
+                const titleElement = document.querySelector('#main-window .win-title');
+                if (titleElement) {
+                    titleElement.textContent = 'Program Manager - Swir GitHub';
+                }
+                
+                // Show loading indicator
                 reposContainer.innerHTML = `
                     <div class="win-loading">
                         <div class="win-loading-text">Working...</div>
@@ -1995,64 +1981,17 @@ C:\><span class="win-cursor"></span>
                     </div>
                 `;
                 
-                // Reset current group if active
-                if (currentGroup) {
-                    const programGroups = document.getElementById('program-groups');
-                    if (programGroups) {
-                        programGroups.style.display = 'flex';
-                    }
-                    
-                    currentGroup = null;
-                    
-                    const titleElement = document.querySelector('#main-window .win-title');
-                    if (titleElement) {
-                        titleElement.textContent = 'Program Manager - Swir GitHub';
-                    }
+                // Fetch repositories from GitHub API
+                const response = await fetch(`https://api.github.com/users/${username}/repos?per_page=100`);
+                
+                if (!response.ok) {
+                    throw new Error(`GitHub API responded with status: ${response.status}`);
                 }
                 
-                let allPages = [];
+                allRepos = await response.json();
                 
-                // Try to get repositories - now with 150 per page instead of 100
-                try {
-                    // Fetch first page of repositories (up to 100 per page is GitHub's limit)
-                    const firstPageResponse = await fetch(`https://api.github.com/users/${username}/repos?per_page=100&page=1`, {
-                        headers: {
-                            'Accept': 'application/vnd.github.v3+json'
-                        }
-                    });
-                    
-                    if (!firstPageResponse.ok) {
-                        throw new Error(`GitHub API responded with status: ${firstPageResponse.status}`);
-                    }
-                    
-                    const firstPage = await firstPageResponse.json();
-                    allPages = [...firstPage];
-                    
-                    // Fetch second page to get up to 150 repositories total
-                    const secondPageResponse = await fetch(`https://api.github.com/users/${username}/repos?per_page=50&page=2`, {
-                        headers: {
-                            'Accept': 'application/vnd.github.v3+json'
-                        }
-                    });
-                    
-                    if (secondPageResponse.ok) {
-                        const secondPage = await secondPageResponse.json();
-                        allPages = [...allPages, ...secondPage];
-                    }
-                    
-                    allRepos = allPages;
-                    console.log(`Successfully loaded ${allRepos.length} repositories from GitHub API`);
-                    
-                } catch (apiError) {
-                    console.warn('Falling back to sample data due to GitHub API issue:', apiError);
-                    
-                    // Fallback to sample data
-                    allRepos = getSampleRepositories();
-                    showTemporaryMessage('Using sample repositories (API connection failed)');
-                }
-                
-                // Sort repositories - explicitly use default sort (newest first, forks at end)
-                sortRepositories('default');
+                // Sort repositories
+                sortRepositories(currentSort, false);
                 
                 // Update repository count
                 const statusBar = document.querySelector('.win-status-bar div:first-child');
@@ -2063,14 +2002,8 @@ C:\><span class="win-cursor"></span>
                 // Update memory display
                 updateMemoryDisplay();
                 
-                // Directly render repositories instead of showing program groups
-                renderRepositories(allRepos);
-                
-                // Hide the program groups container completely
-                const groupsContainer = document.getElementById('program-groups');
-                if (groupsContainer) {
-                    groupsContainer.style.display = 'none';
-                }
+                // Mark repos as loaded
+                reposLoaded = true;
                 
                 // Show success message
                 showTemporaryMessage(`${allRepos.length} repositories loaded successfully`);
@@ -2078,385 +2011,11 @@ C:\><span class="win-cursor"></span>
             } catch (error) {
                 console.error('Error fetching repositories:', error);
                 playSound('error');
-                
-                // Fallback to sample data on any error
-                allRepos = getSampleRepositories();
-                
-                // Always sort, even with sample data
-                sortRepositories('default');
-                
-                // Always render repositories directly, even in error case
-                renderRepositories(allRepos);
-                
-                showErrorWindow('Connection Error', 'Could not connect to GitHub API. Using sample data instead.');
+                showErrorWindow('Connection Error', error.message);
             } finally {
                 // Remove loading cursor
                 document.body.classList.remove('win-wait-cursor');
             }
-        }
-        
-        // Get sample repositories as fallback
-        function getSampleRepositories() {
-            // Generate a larger set of sample repositories (25 total)
-            const baseRepos = [
-                {
-                    id: 1,
-                    name: "windows-3.11-github",
-                    full_name: "Swir/windows-3.11-github",
-                    html_url: "https://github.com/Swir/windows-3.11-github",
-                    description: "A Windows 3.11 style GitHub repository viewer",
-                    created_at: "2023-05-15T10:20:30Z",
-                    updated_at: "2023-06-20T14:25:36Z",
-                    language: "JavaScript",
-                    stargazers_count: 12,
-                    watchers_count: 12,
-                    forks_count: 3,
-                    size: 2450
-                },
-                {
-                    id: 2,
-                    name: "retro-ui-components",
-                    full_name: "Swir/retro-ui-components",
-                    html_url: "https://github.com/Swir/retro-ui-components",
-                    description: "Retro-styled UI components for web applications",
-                    created_at: "2023-04-10T08:15:22Z",
-                    updated_at: "2023-06-15T11:32:41Z",
-                    language: "CSS",
-                    stargazers_count: 8,
-                    watchers_count: 8,
-                    forks_count: 2,
-                    size: 1820
-                },
-                {
-                    id: 3,
-                    name: "dos-terminal",
-                    full_name: "Swir/dos-terminal",
-                    html_url: "https://github.com/Swir/dos-terminal",
-                    description: "A DOS-style terminal emulator for the web",
-                    created_at: "2023-03-05T15:40:12Z",
-                    updated_at: "2023-06-10T09:18:27Z",
-                    language: "JavaScript",
-                    stargazers_count: 15,
-                    watchers_count: 15,
-                    forks_count: 4,
-                    size: 1650
-                },
-                {
-                    id: 4,
-                    name: "win95-portfolio",
-                    full_name: "Swir/win95-portfolio",
-                    html_url: "https://github.com/Swir/win95-portfolio",
-                    description: "A Windows 95 themed portfolio website",
-                    created_at: "2023-02-20T12:30:45Z",
-                    updated_at: "2023-06-05T16:42:18Z",
-                    language: "HTML",
-                    stargazers_count: 20,
-                    watchers_count: 20,
-                    forks_count: 6,
-                    size: 3200
-                },
-                {
-                    id: 5,
-                    name: "pixel-art-editor",
-                    full_name: "Swir/pixel-art-editor",
-                    html_url: "https://github.com/Swir/pixel-art-editor",
-                    description: "A simple retro pixel art editor",
-                    created_at: "2023-01-15T09:25:33Z",
-                    updated_at: "2023-05-30T13:22:59Z",
-                    language: "JavaScript",
-                    stargazers_count: 11,
-                    watchers_count: 11,
-                    forks_count: 2,
-                    size: 2100
-                },
-                {
-                    id: 6,
-                    name: "retro-games-collection",
-                    full_name: "Swir/retro-games-collection",
-                    html_url: "https://github.com/Swir/retro-games-collection",
-                    description: "Collection of classic retro games reimplemented for the web",
-                    created_at: "2022-12-10T14:22:18Z",
-                    updated_at: "2023-05-25T10:15:47Z",
-                    language: "JavaScript",
-                    stargazers_count: 25,
-                    watchers_count: 25,
-                    forks_count: 8,
-                    size: 4500
-                },
-                {
-                    id: 7,
-                    name: "vaporwave-css",
-                    full_name: "Swir/vaporwave-css",
-                    html_url: "https://github.com/Swir/vaporwave-css",
-                    description: "A vaporwave CSS framework",
-                    created_at: "2022-11-05T11:18:36Z",
-                    updated_at: "2023-05-20T08:45:31Z",
-                    language: "CSS",
-                    stargazers_count: 14,
-                    watchers_count: 14,
-                    forks_count: 3,
-                    size: 1850
-                },
-                {
-                    id: 8,
-                    name: "ascii-art-generator",
-                    full_name: "Swir/ascii-art-generator",
-                    html_url: "https://github.com/Swir/ascii-art-generator",
-                    description: "Generate ASCII art from images",
-                    created_at: "2022-10-01T16:33:27Z",
-                    updated_at: "2023-05-15T14:12:58Z",
-                    language: "Python",
-                    stargazers_count: 18,
-                    watchers_count: 18,
-                    forks_count: 5,
-                    size: 2300
-                },
-                {
-                    id: 9,
-                    name: "old-school-screen-savers",
-                    full_name: "Swir/old-school-screen-savers",
-                    html_url: "https://github.com/Swir/old-school-screen-savers",
-                    description: "Recreation of classic screen savers from the 90s",
-                    created_at: "2022-09-15T10:42:19Z",
-                    updated_at: "2023-05-10T09:33:44Z",
-                    language: "JavaScript",
-                    stargazers_count: 22,
-                    watchers_count: 22,
-                    forks_count: 7,
-                    size: 2850
-                },
-                {
-                    id: 10,
-                    name: "ms-paint-clone",
-                    full_name: "Swir/ms-paint-clone",
-                    html_url: "https://github.com/Swir/ms-paint-clone",
-                    description: "A clone of the classic MS Paint program",
-                    created_at: "2022-08-10T12:55:41Z",
-                    updated_at: "2023-05-05T15:28:32Z",
-                    language: "JavaScript",
-                    stargazers_count: 16,
-                    watchers_count: 16,
-                    forks_count: 4,
-                    size: 3100
-                }
-            ];
-            
-            // Additional repositories to have more variety and reach at least 25 total
-            const additionalRepos = [
-                {
-                    id: 11,
-                    name: "win3.1-calculator",
-                    full_name: "Swir/win3.1-calculator",
-                    html_url: "https://github.com/Swir/win3.1-calculator",
-                    description: "A Windows 3.1 style calculator",
-                    created_at: "2022-07-05T08:22:14Z",
-                    updated_at: "2023-04-30T12:18:27Z",
-                    language: "JavaScript",
-                    stargazers_count: 9,
-                    watchers_count: 9,
-                    forks_count: 2,
-                    size: 1250
-                },
-                {
-                    id: 12,
-                    name: "retro-weather-app",
-                    full_name: "Swir/retro-weather-app",
-                    html_url: "https://github.com/Swir/retro-weather-app",
-                    description: "Weather application with a retro UI design",
-                    created_at: "2022-06-12T14:35:18Z",
-                    updated_at: "2023-04-25T09:42:31Z",
-                    language: "JavaScript",
-                    stargazers_count: 13,
-                    watchers_count: 13,
-                    forks_count: 3,
-                    size: 1750
-                },
-                {
-                    id: 13,
-                    name: "cli-file-manager",
-                    full_name: "Swir/cli-file-manager",
-                    html_url: "https://github.com/Swir/cli-file-manager",
-                    description: "Command-line interface file manager inspired by Norton Commander",
-                    created_at: "2022-05-20T10:15:22Z",
-                    updated_at: "2023-04-20T11:32:45Z",
-                    language: "Python",
-                    stargazers_count: 17,
-                    watchers_count: 17,
-                    forks_count: 4,
-                    size: 2200
-                },
-                {
-                    id: 14,
-                    name: "commodore64-emulator",
-                    full_name: "Swir/commodore64-emulator",
-                    html_url: "https://github.com/Swir/commodore64-emulator",
-                    description: "Web-based Commodore 64 emulator",
-                    created_at: "2022-04-15T16:28:33Z",
-                    updated_at: "2023-04-15T13:19:52Z",
-                    language: "JavaScript",
-                    stargazers_count: 28,
-                    watchers_count: 28,
-                    forks_count: 9,
-                    size: 3850
-                },
-                {
-                    id: 15,
-                    name: "bitmap-font-creator",
-                    full_name: "Swir/bitmap-font-creator",
-                    html_url: "https://github.com/Swir/bitmap-font-creator",
-                    description: "Create custom bitmap fonts for retro-style applications",
-                    created_at: "2022-03-10T09:22:47Z",
-                    updated_at: "2023-04-10T15:41:23Z",
-                    language: "JavaScript",
-                    stargazers_count: 11,
-                    watchers_count: 11,
-                    forks_count: 2,
-                    size: 1650
-                },
-                {
-                    id: 16,
-                    name: "text-mode-editor",
-                    full_name: "Swir/text-mode-editor",
-                    html_url: "https://github.com/Swir/text-mode-editor",
-                    description: "A text editor inspired by MS-DOS Edit",
-                    created_at: "2022-02-05T11:33:42Z",
-                    updated_at: "2023-04-05T10:27:38Z",
-                    language: "JavaScript",
-                    stargazers_count: 14,
-                    watchers_count: 14,
-                    forks_count: 3,
-                    size: 1950
-                },
-                {
-                    id: 17,
-                    name: "retro-chat-app",
-                    full_name: "Swir/retro-chat-app",
-                    html_url: "https://github.com/Swir/retro-chat-app",
-                    description: "Chat application with a 90s BBS aesthetic",
-                    created_at: "2022-01-15T13:45:28Z",
-                    updated_at: "2023-03-30T14:22:17Z",
-                    language: "JavaScript",
-                    stargazers_count: 19,
-                    watchers_count: 19,
-                    forks_count: 5,
-                    size: 2350
-                },
-                {
-                    id: 18,
-                    name: "windows-3.1-icons",
-                    full_name: "Swir/windows-3.1-icons",
-                    html_url: "https://github.com/Swir/windows-3.1-icons",
-                    description: "Collection of recreated Windows 3.1 icons in SVG format",
-                    created_at: "2021-12-20T09:18:33Z",
-                    updated_at: "2023-03-25T11:37:22Z",
-                    language: "HTML",
-                    stargazers_count: 23,
-                    watchers_count: 23,
-                    forks_count: 8,
-                    size: 1450
-                },
-                {
-                    id: 19,
-                    name: "ansi-art-gallery",
-                    full_name: "Swir/ansi-art-gallery",
-                    html_url: "https://github.com/Swir/ansi-art-gallery",
-                    description: "Gallery of ANSI art from the BBS era",
-                    created_at: "2021-11-10T15:22:47Z",
-                    updated_at: "2023-03-20T10:18:36Z",
-                    language: "HTML",
-                    stargazers_count: 21,
-                    watchers_count: 21,
-                    forks_count: 6,
-                    size: 2750
-                },
-                {
-                    id: 20,
-                    name: "doom-level-editor",
-                    full_name: "Swir/doom-level-editor",
-                    html_url: "https://github.com/Swir/doom-level-editor",
-                    description: "Web-based editor for creating DOOM levels",
-                    created_at: "2021-10-05T12:37:28Z",
-                    updated_at: "2023-03-15T09:42:31Z",
-                    language: "JavaScript",
-                    stargazers_count: 32,
-                    watchers_count: 32,
-                    forks_count: 11,
-                    size: 4150
-                },
-                {
-                    id: 21,
-                    name: "retro-rpg-engine",
-                    full_name: "Swir/retro-rpg-engine",
-                    html_url: "https://github.com/Swir/retro-rpg-engine",
-                    description: "A simple engine for creating retro-style RPG games",
-                    created_at: "2021-09-15T14:22:18Z",
-                    updated_at: "2023-03-10T11:33:42Z",
-                    language: "JavaScript",
-                    stargazers_count: 26,
-                    watchers_count: 26,
-                    forks_count: 7,
-                    size: 3250
-                },
-                {
-                    id: 22,
-                    name: "win31-color-palette",
-                    full_name: "Swir/win31-color-palette",
-                    html_url: "https://github.com/Swir/win31-color-palette",
-                    description: "Color palette utility based on Windows 3.1 colors",
-                    created_at: "2021-08-10T09:15:33Z",
-                    updated_at: "2023-03-05T13:27:18Z",
-                    language: "JavaScript",
-                    stargazers_count: 12,
-                    watchers_count: 12,
-                    forks_count: 2,
-                    size: 1350
-                },
-                {
-                    id: 23,
-                    name: "crt-screen-effects",
-                    full_name: "Swir/crt-screen-effects",
-                    html_url: "https://github.com/Swir/crt-screen-effects",
-                    description: "CSS and JavaScript effects to simulate CRT monitors",
-                    created_at: "2021-07-05T11:42:27Z",
-                    updated_at: "2023-02-28T10:15:36Z",
-                    language: "CSS",
-                    stargazers_count: 18,
-                    watchers_count: 18,
-                    forks_count: 5,
-                    size: 1650
-                },
-                {
-                    id: 24,
-                    name: "basic-interpreter",
-                    full_name: "Swir/basic-interpreter",
-                    html_url: "https://github.com/Swir/basic-interpreter",
-                    description: "A simple BASIC language interpreter written in JavaScript",
-                    created_at: "2021-06-15T13:28:42Z",
-                    updated_at: "2023-02-25T14:22:17Z",
-                    language: "JavaScript",
-                    stargazers_count: 24,
-                    watchers_count: 24,
-                    forks_count: 6,
-                    size: 2850
-                },
-                {
-                    id: 25,
-                    name: "win3.1-file-manager",
-                    full_name: "Swir/win3.1-file-manager",
-                    html_url: "https://github.com/Swir/win3.1-file-manager",
-                    description: "A recreation of the Windows 3.1 File Manager",
-                    created_at: "2021-05-10T10:15:33Z",
-                    updated_at: "2023-02-20T11:37:22Z",
-                    language: "JavaScript",
-                    stargazers_count: 29,
-                    watchers_count: 29,
-                    forks_count: 10,
-                    size: 3450
-                }
-            ];
-            
-            // Combine the base repositories with the additional ones
-            return [...baseRepos, ...additionalRepos];
         }
         
         // Render repositories
@@ -2470,6 +2029,9 @@ C:\><span class="win-cursor"></span>
                 statusBar.textContent = `${repos.length} object(s)`;
             }
             
+            // Clear previous content
+            reposContainer.innerHTML = '';
+            
             // Create repository grid
             const repoGrid = document.createElement('div');
             repoGrid.className = 'win-repo-grid';
@@ -2481,13 +2043,9 @@ C:\><span class="win-cursor"></span>
                     repoItem.className = 'win-repo-item';
                     repoItem.tabIndex = 0;
                     
-                    // Add a special class for forked repositories
-                    if (repo.fork) {
-                        repoItem.classList.add('win-repo-fork');
-                    }
-                    
                     // Click event to select repository
-                    repoItem.addEventListener('click', function() {
+                    repoItem.addEventListener('click', function(e) {
+                        e.stopPropagation();
                         playSound('click');
                         selectedRepoIndex = index;
                         selectedRepo = repo;
@@ -2495,7 +2053,8 @@ C:\><span class="win-cursor"></span>
                     });
                     
                     // Double-click event to open repository details
-                    repoItem.addEventListener('dblclick', function() {
+                    repoItem.addEventListener('dblclick', function(e) {
+                        e.stopPropagation();
                         playSound('click');
                         showRepoDetails(repo);
                     });
@@ -2503,6 +2062,7 @@ C:\><span class="win-cursor"></span>
                     // Right-click for context menu
                     repoItem.addEventListener('contextmenu', function(e) {
                         e.preventDefault();
+                        e.stopPropagation();
                         playSound('click');
                         
                         selectedRepo = repo;
@@ -2512,15 +2072,27 @@ C:\><span class="win-cursor"></span>
                         const contextMenu = document.getElementById('repo-context-menu');
                         if (!contextMenu) return;
                         
-                        contextMenu.style.display = 'block';
-                        contextMenu.style.left = e.pageX + 'px';
-                        contextMenu.style.top = e.pageY + 'px';
+                        // Position the context menu properly
+                        const menuWidth = 150; // Approximate menu width
+                        const menuHeight = 150; // Approximate menu height
                         
-                        // Hide context menu on click outside
-                        document.addEventListener('click', function hideMenu() {
-                            contextMenu.style.display = 'none';
-                            document.removeEventListener('click', hideMenu);
-                        });
+                        // Adjust to ensure menu stays within viewport
+                        let left = e.pageX;
+                        let top = e.pageY;
+                        
+                        // Adjust horizontal position if close to right edge
+                        if (left + menuWidth > window.innerWidth) {
+                            left = window.innerWidth - menuWidth - 10;
+                        }
+                        
+                        // Adjust vertical position if close to bottom edge
+                        if (top + menuHeight > window.innerHeight) {
+                            top = window.innerHeight - menuHeight - 10;
+                        }
+                        
+                        contextMenu.style.display = 'block';
+                        contextMenu.style.left = left + 'px';
+                        contextMenu.style.top = top + 'px';
                     });
                     
                     // Set appropriate icon based on repository language
@@ -2568,17 +2140,10 @@ C:\><span class="win-cursor"></span>
                         }
                     }
                     
-                    // Create icon HTML
-                    let iconHtml = `
-                        <div class="win-repo-icon" style="position: relative;">
-                            <i class="${iconClass}" style="color: ${iconColor};"></i>
-                            ${repo.fork ? '<div class="fork-badge"><i class="fas fa-code-branch"></i></div>' : ''}
-                        </div>
-                    `;
-                    
-                    // Create repository item HTML
                     repoItem.innerHTML = `
-                        ${iconHtml}
+                        <div class="win-repo-icon">
+                            <i class="${iconClass}" style="color: ${iconColor};"></i>
+                        </div>
                         <div class="win-repo-name">${repo.name || 'Unnamed'}</div>
                     `;
                     
@@ -2588,14 +2153,32 @@ C:\><span class="win-cursor"></span>
                 }
             });
             
-            reposContainer.innerHTML = '';
             reposContainer.appendChild(repoGrid);
             
             // Apply current view mode
             setViewMode(currentView);
             
-            // Update sort menu checkmarks
-            updateSortMenuCheckmarks(currentSort);
+            // If no repositories, show message
+            if (repos.length === 0) {
+                reposContainer.innerHTML = `
+                    <div style="text-align: center; padding: 20px; color: var(--win-text);">
+                        <p>No repositories found.</p>
+                        <button class="win-action-button" onclick="fetchRepositories()">Refresh</button>
+                    </div>
+                `;
+            }
+            
+            // Add click event to deselect all when clicking on empty space
+            repoGrid.addEventListener('click', function(e) {
+                if (e.target === repoGrid) {
+                    document.querySelectorAll('.win-repo-item').forEach(function(el) {
+                        el.style.borderColor = 'transparent';
+                        el.style.backgroundColor = '';
+                    });
+                    selectedRepo = null;
+                    selectedRepoIndex = -1;
+                }
+            });
         }
         
         // Highlight a repository item
@@ -2607,9 +2190,13 @@ C:\><span class="win-cursor"></span>
             });
             
             // Highlight selected item
-            item.style.borderColor = 'var(--win-highlight)';
-            item.style.backgroundColor = 'rgba(0, 0, 255, 0.1)';
-            item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            if (item) {
+                item.style.borderColor = 'var(--win-highlight)';
+                item.style.backgroundColor = 'rgba(0, 0, 255, 0.1)';
+                
+                // Make sure the item is visible
+                item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
         }
         
         // Show repository details
@@ -2629,41 +2216,13 @@ C:\><span class="win-cursor"></span>
             const updatedDate = new Date(repo.updated_at);
             
             const formatDate = function(date) {
-                return `${date.getMonth()+1}/${date.getDate()}/${date.getFullYear().toString().substr(-2)} ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
+                return `${String(date.getMonth()+1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')}/${date.getFullYear().toString().substr(-2)} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
             };
-            
-            // Get color for language
-            let languageColor = '#777777';
-            if (repo.language) {
-                switch (repo.language) {
-                    case 'JavaScript': languageColor = '#f7df1e'; break;
-                    case 'HTML': languageColor = '#e34c26'; break;
-                    case 'CSS': languageColor = '#264de4'; break;
-                    case 'Python': languageColor = '#3776ab'; break;
-                    case 'Java': languageColor = '#007396'; break;
-                    case 'PHP': languageColor = '#777bb4'; break;
-                    case 'Ruby': languageColor = '#cc342d'; break;
-                    case 'C#': languageColor = '#512bd4'; break;
-                    case 'TypeScript': languageColor = '#007acc'; break;
-                }
-            }
-            
-            // Create language label HTML
-            const languageLabel = repo.language ? 
-                `<span class="language-label" style="border-left: 3px solid ${languageColor};">${repo.language}</span>` : 
-                '';
-            
-            // Create fork indicator if needed
-            const forkInfo = repo.fork ? 
-                `<div class="win-repo-details-row">
-                    <div class="win-repo-details-label">Fork:</div>
-                    <div class="win-repo-details-value">Yes <i class="fas fa-code-branch"></i></div>
-                </div>` : '';
             
             // Prepare modal content
             content.innerHTML = `
                 <div class="win-repo-description">
-                    ${repo.description || "No description available."} ${languageLabel}
+                    ${repo.description || "No description available."}
                 </div>
                 
                 <div class="win-repo-details-row">
@@ -2680,8 +2239,6 @@ C:\><span class="win-cursor"></span>
                     <div class="win-repo-details-label">Language:</div>
                     <div class="win-repo-details-value">${repo.language || "Not specified"}</div>
                 </div>
-                
-                ${forkInfo}
                 
                 <div class="win-repo-details-row">
                     <div class="win-repo-details-label">Stars:</div>
@@ -2734,17 +2291,6 @@ C:\><span class="win-cursor"></span>
             
             const modalBg = document.getElementById('modal-background');
             if (modalBg) modalBg.style.display = 'none';
-            
-            // Hide context menu
-            const contextMenu = document.getElementById('repo-context-menu');
-            if (contextMenu) contextMenu.style.display = 'none';
-            
-            // Hide sort menu
-            const sortMenu = document.getElementById('sort-menu');
-            if (sortMenu) {
-                sortMenu.style.display = 'none';
-                sortMenuVisible = false;
-            }
         }
         
         // Show about window
@@ -2776,7 +2322,7 @@ C:\><span class="win-cursor"></span>
         // Show help window
         function showHelpWindow() {
             playSound('click');
-            showTemporaryMessage('Help functionality is not implemented yet');
+            showTemporaryMessage('Funkcja pomocy nie jest jeszcze zaimplementowana');
         }
         
         // Show error window
@@ -2798,11 +2344,11 @@ C:\><span class="win-cursor"></span>
                         <div class="win-error-icon">!</div>
                         <div class="win-error-message">
                             <p>${message}</p>
-                            <p style="margin-top: 10px;">Windows cannot connect to GitHub. Make sure your network connection is working properly.</p>
+                            <p style="margin-top: 10px;">Windows nie może połączyć się z GitHub. Sprawdź czy połączenie internetowe działa poprawnie.</p>
                         </div>
                     </div>
                     <div class="win-error-buttons">
-                        <button class="win-action-button" onclick="fetchRepositories()">Retry</button>
+                        <button class="win-action-button" onclick="fetchRepositories()">Ponów</button>
                         <button class="win-action-button" onclick="location.reload()">Restart</button>
                     </div>
                 </div>
@@ -2831,7 +2377,7 @@ C:\><span class="win-cursor"></span>
         
         // Filter repositories
         function filterRepositories() {
-            const searchTerm = document.getElementById('repo-search').value.toLowerCase();
+            const searchTerm = document.getElementById('repo-search').value.toLowerCase().trim();
             
             if (!searchTerm) {
                 if (currentGroup) {
@@ -2850,131 +2396,43 @@ C:\><span class="win-cursor"></span>
             
             renderRepositories(filteredRepos);
             
-            showTemporaryMessage(`Found ${filteredRepos.length} repositories`);
+            showTemporaryMessage(`Znaleziono ${filteredRepos.length} repozytoriów`);
         }
         
         // Sort repositories
-        function sortRepositories(sortType) {
-            playSound('click');
-            
-            // If same sort type selected, don't do anything
-            if (currentSort === sortType && sortType !== 'default') {
-                showTemporaryMessage(`Already sorted by ${getSortTypeName(sortType)}`);
-                return;
-            }
-            
+        function sortRepositories(sortType, showMessage = true) {
             currentSort = sortType;
             
-            try {
-                // Create a deep copy of repositories to avoid sorting issues
-                const reposToSort = [...allRepos];
-                
-                // Sort repositories
-                reposToSort.sort(function(a, b) {
-                    // Default sort: Recent first, Forks at the end - GUARANTEED
-                    if (sortType === 'default') {
-                        // First, separate forks from non-forks (forks ALWAYS go to the end)
-                        if (a.fork !== b.fork) {
-                            return a.fork ? 1 : -1; // Non-forks come first
-                        }
-                        
-                        // Then sort by creation date within each group (newest first)
-                        return new Date(b.created_at || 0) - new Date(a.created_at || 0);
-                    }
-                    
-                    switch (sortType) {
-                        case 'name':
-                            // Sort by name, but always put forks at the end
-                            if (a.fork !== b.fork) {
-                                return a.fork ? 1 : -1;
-                            }
-                            return (a.name || '').localeCompare(b.name || '');
-                            
-                        case 'updated':
-                            // Sort by updated date, but always put forks at the end
-                            if (a.fork !== b.fork) {
-                                return a.fork ? 1 : -1;
-                            }
-                            return new Date(b.updated_at || 0) - new Date(a.updated_at || 0);
-                            
-                        case 'created':
-                            // Sort by creation date, but always put forks at the end
-                            if (a.fork !== b.fork) {
-                                return a.fork ? 1 : -1;
-                            }
-                            return new Date(b.created_at || 0) - new Date(a.created_at || 0);
-                            
-                        case 'stars':
-                            // Sort by stars, but always put forks at the end
-                            if (a.fork !== b.fork) {
-                                return a.fork ? 1 : -1;
-                            }
-                            return (b.stargazers_count || 0) - (a.stargazers_count || 0);
-                            
-                        case 'size':
-                            // Sort by size, but always put forks at the end
-                            if (a.fork !== b.fork) {
-                                return a.fork ? 1 : -1;
-                            }
-                            return (b.size || 0) - (a.size || 0);
-                            
-                        case 'language':
-                            // First separate forks from non-forks
-                            if (a.fork !== b.fork) {
-                                return a.fork ? 1 : -1;
-                            }
-                            
-                            // Then handle null languages
-                            if (!a.language && b.language) return 1;
-                            if (a.language && !b.language) return -1;
-                            if (!a.language && !b.language) return 0;
-                            
-                            // Sort by language first
-                            const langCompare = a.language.localeCompare(b.language);
-                            if (langCompare !== 0) return langCompare;
-                            
-                            // Then by name within each language group
-                            return (a.name || '').localeCompare(b.name || '');
-                            
-                        default:
-                            // Default fallback - sort by creation date with forks at end
-                            if (a.fork !== b.fork) {
-                                return a.fork ? 1 : -1;
-                            }
-                            return new Date(b.created_at || 0) - new Date(a.created_at || 0);
-                    }
-                });
-                
-                // Update allRepos with sorted repositories
-                allRepos = reposToSort;
-                
-                // Re-render repositories
-                if (currentGroup) {
-                    openProgramGroup(currentGroup);
-                } else {
-                    renderRepositories(allRepos);
+            // Create a deep copy of repositories to avoid sorting issues
+            const reposToSort = [...allRepos];
+            
+            // Sort repositories
+            reposToSort.sort(function(a, b) {
+                switch (sortType) {
+                    case 'name':
+                        return (a.name || '').localeCompare(b.name || '');
+                    case 'updated':
+                        return new Date(b.updated_at || 0) - new Date(a.updated_at || 0);
+                    case 'stars':
+                        return (b.stargazers_count || 0) - (a.stargazers_count || 0);
+                    case 'size':
+                        return (b.size || 0) - (a.size || 0);
+                    default:
+                        return 0;
                 }
-                
-                // Update UI
-                updateSortMenuCheckmarks(sortType);
-                showTemporaryMessage(`Sorted by ${getSortTypeName(sortType)}`);
-            } catch (error) {
-                console.error('Error sorting repositories:', error);
-                showTemporaryMessage('Error sorting repositories');
+            });
+            
+            // Update allRepos with sorted repositories
+            allRepos = reposToSort;
+            
+            // Re-render repositories if in a group
+            if (currentGroup) {
+                openProgramGroup(currentGroup);
             }
-        }
-        
-        // Get human-readable sort type name
-        function getSortTypeName(sortType) {
-            switch (sortType) {
-                case 'default': return 'Default (Recent first, Forks last)';
-                case 'name': return 'Name';
-                case 'updated': return 'Last Updated';
-                case 'created': return 'Creation Date';
-                case 'stars': return 'Stars';
-                case 'size': return 'Size';
-                case 'language': return 'Programming Language';
-                default: return sortType;
+            
+            if (showMessage) {
+                playSound('click');
+                showTemporaryMessage(`Sortowanie według: ${sortType}`);
             }
         }
         
@@ -2982,42 +2440,56 @@ C:\><span class="win-cursor"></span>
         function showSortMenu(e) {
             playSound('click');
             
-            // Używamy istniejącego menu zamiast tworzenia nowego
-            const sortMenu = document.getElementById('sort-menu');
-            if (!sortMenu) return;
-            
-            // Aktualizujemy checkmarki
-            updateSortMenuCheckmarks(currentSort);
-            
-            // Jeśli menu jest już widoczne, zamykamy je
-            if (sortMenuVisible) {
-                sortMenu.style.display = 'none';
-                sortMenuVisible = false;
-                return;
-            }
-            
-            // Pozycjonujemy menu pod przyciskiem
-            const button = document.getElementById('sort-repos');
-            if (button) {
-                const rect = button.getBoundingClientRect();
-                sortMenu.style.left = rect.left + 'px';
-                sortMenu.style.top = (rect.bottom + 2) + 'px';
-            } else {
-                // Fallback - pozycjonujemy przy kliknięciu
-                sortMenu.style.left = e.pageX + 'px';
-                sortMenu.style.top = e.pageY + 'px';
-            }
-            
-            // Pokazujemy menu
+            const sortMenu = document.createElement('div');
+            sortMenu.className = 'win-context-menu';
             sortMenu.style.display = 'block';
-            sortMenuVisible = true;
+            sortMenu.style.left = e.pageX + 'px';
+            sortMenu.style.top = e.pageY + 'px';
+            sortMenu.style.zIndex = '1500';
             
-            e.stopPropagation(); // Zapobiegamy natychmiastowemu zamknięciu
+            sortMenu.innerHTML = `
+                <div class="win-context-item" id="sort-by-name">Według nazwy</div>
+                <div class="win-context-item" id="sort-by-updated">Według daty aktualizacji</div>
+                <div class="win-context-item" id="sort-by-stars">Według gwiazdek</div>
+                <div class="win-context-item" id="sort-by-size">Według rozmiaru</div>
+            `;
+            
+            document.body.appendChild(sortMenu);
+            
+            // Add event listeners for sort options
+            document.getElementById('sort-by-name').addEventListener('click', function() {
+                sortRepositories('name');
+                document.body.removeChild(sortMenu);
+            });
+            
+            document.getElementById('sort-by-updated').addEventListener('click', function() {
+                sortRepositories('updated');
+                document.body.removeChild(sortMenu);
+            });
+            
+            document.getElementById('sort-by-stars').addEventListener('click', function() {
+                sortRepositories('stars');
+                document.body.removeChild(sortMenu);
+            });
+            
+            document.getElementById('sort-by-size').addEventListener('click', function() {
+                sortRepositories('size');
+                document.body.removeChild(sortMenu);
+            });
+            
+            // Close menu when clicking outside
+            document.addEventListener('click', function hideMenu(event) {
+                if (!sortMenu.contains(event.target)) {
+                    if (document.body.contains(sortMenu)) {
+                        document.body.removeChild(sortMenu);
+                    }
+                    document.removeEventListener('click', hideMenu);
+                }
+            });
         }
         
         // Set view mode (large or small icons)
         function setViewMode(mode) {
-            playSound('click');
             currentView = mode;
             
             const grid = document.querySelector('.win-repo-grid');
@@ -3062,10 +2534,12 @@ C:\><span class="win-cursor"></span>
         function cycleViewMode() {
             if (currentView === 'large') {
                 setViewMode('small');
-                showTemporaryMessage('Small Icons selected');
+                playSound('click');
+                showTemporaryMessage('Wybrano małe ikony');
             } else {
                 setViewMode('large');
-                showTemporaryMessage('Large Icons selected');
+                playSound('click');
+                showTemporaryMessage('Wybrano duże ikony');
             }
         }
         
@@ -3075,7 +2549,7 @@ C:\><span class="win-cursor"></span>
             document.body.classList.toggle('dark-mode');
             
             const message = document.body.classList.contains('dark-mode') ? 
-                'Dark mode enabled' : 'Light mode enabled';
+                'Tryb ciemny włączony' : 'Tryb jasny włączony';
             
             showTemporaryMessage(message);
         }
@@ -3088,22 +2562,22 @@ C:\><span class="win-cursor"></span>
                 case 'teal':
                     document.documentElement.style.setProperty('--win-bg', '#008080');
                     document.body.style.backgroundImage = 'var(--win-pattern-teal)';
-                    showTemporaryMessage('Desktop pattern: Teal');
+                    showTemporaryMessage('Wzór pulpitu: Morski');
                     break;
                 case 'gray':
                     document.documentElement.style.setProperty('--win-bg', '#c0c0c0');
                     document.body.style.backgroundImage = 'var(--win-pattern-gray)';
-                    showTemporaryMessage('Desktop pattern: Gray');
+                    showTemporaryMessage('Wzór pulpitu: Szary');
                     break;
                 case 'grid':
                     document.documentElement.style.setProperty('--win-bg', '#008080');
                     document.body.style.backgroundImage = 'var(--win-pattern-grid)';
-                    showTemporaryMessage('Desktop pattern: Grid');
+                    showTemporaryMessage('Wzór pulpitu: Siatka');
                     break;
                 case 'dots':
                     document.documentElement.style.setProperty('--win-bg', '#000080');
                     document.body.style.backgroundImage = 'var(--win-pattern-dots)';
-                    showTemporaryMessage('Desktop pattern: Dots');
+                    showTemporaryMessage('Wzór pulpitu: Kropki');
                     break;
             }
         }
@@ -3118,7 +2592,7 @@ C:\><span class="win-cursor"></span>
             const usedMemory = Math.floor(Math.random() * 100) + 100; // between 100-200KB
             const freeMemory = initialMemory - usedMemory;
             
-            memoryDisplay.textContent = `${freeMemory}KB free of ${initialMemory}KB`;
+            memoryDisplay.textContent = `${freeMemory}KB wolnych z ${initialMemory}KB`;
         }
         
         // Minimize window
@@ -3151,7 +2625,7 @@ C:\><span class="win-cursor"></span>
                 mainWindow.style.height = '';
                 mainWindow.style.margin = '';
                 
-                showTemporaryMessage('Window restored');
+                showTemporaryMessage('Okno przywrócone');
             } else {
                 // Maximize window
                 mainWindow.style.position = 'fixed';
@@ -3161,7 +2635,7 @@ C:\><span class="win-cursor"></span>
                 mainWindow.style.height = '100%';
                 mainWindow.style.margin = '0';
                 
-                showTemporaryMessage('Window maximized');
+                showTemporaryMessage('Okno zmaksymalizowane');
             }
         }
         
@@ -3198,10 +2672,10 @@ C:\><span class="win-cursor"></span>
                     <div class="win-title">Program Manager</div>
                 </div>
                 <div class="win-content" style="text-align: center; padding: 20px;">
-                    <p style="margin-bottom: 20px;">Are you sure you want to exit Windows?</p>
+                    <p style="margin-bottom: 20px;">Czy na pewno chcesz wyjść z Windows?</p>
                     <div style="display: flex; justify-content: center; gap: 10px;">
                         <button class="win-action-button" id="confirm-exit">OK</button>
-                        <button class="win-action-button" id="cancel-exit">Cancel</button>
+                        <button class="win-action-button" id="cancel-exit">Anuluj</button>
                     </div>
                 </div>
             `;
@@ -3217,7 +2691,7 @@ C:\><span class="win-cursor"></span>
                     <div class="win-dos-startup" style="display: block; opacity: 1; visibility: visible;">
                         <div class="win-dos-text">C:\\WINDOWS>exit</div>
                         <div class="win-dos-text" style="margin-top: 20px;">
-                            It is now safe to turn off your computer.
+                            Teraz możesz bezpiecznie wyłączyć komputer.
                         </div>
                     </div>
                 `;
