@@ -873,30 +873,6 @@
             display: none !important;
         }
         
-        /* --- Temp Message --- */
-        .win-temp-message {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: var(--win-window-bg);
-            color: var(--win-text);
-            padding: 5px 15px;
-            border-top: 1px solid var(--win-border-light);
-            border-left: 1px solid var(--win-border-light);
-            border-right: 1px solid var(--win-border-shadow);
-            border-bottom: 1px solid var(--win-border-shadow);
-            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
-            z-index: 3000;
-            font-size: 12px;
-            animation: messageAppear 0.3s;
-        }
-        
-        @keyframes messageAppear {
-            from { opacity: 0; transform: translateX(-50%) translateY(10px); }
-            to { opacity: 1; transform: translateX(-50%) translateY(0); }
-        }
-        
         /* --- Responsywność --- */
         @media (max-width: 768px) {
             .win-repo-grid {
@@ -931,6 +907,7 @@
     </style>
 </head>
 <body>
+    <body>
     <!-- Dźwięki -->
     <audio id="win-startup-sound" preload="auto">
         <source src="https://archive.org/download/WindowsStartupSounds/Windows%203.1.mp3" type="audio/mpeg">
@@ -1118,7 +1095,7 @@ C:\><span class="win-cursor"></span>
             
             <div class="win-content win-about">
                 <div class="win-about-logo">Windows 3.11 GitHub Viewer</div>
-                <div class="win-about-version">Version 2.1</div>
+                <div class="win-about-version">Version 2.0</div>
                 
                 <div class="win-about-box">
                     <p>Microsoft® Windows™ 3.11<br>
@@ -1196,53 +1173,62 @@ C:\><span class="win-cursor"></span>
     </div>
     
     <div class="win-modal-background" id="modal-background"></div>
-
     <script>
-        // Główne zmienne
-        let allRepos = [];               // Wszystkie repozytoria
-        let selectedRepo = null;         // Aktualnie wybrane repozytorium
-        let currentSort = 'updated';     // Aktualny sposób sortowania
-        let currentView = 'large';       // Aktualny widok ikon
-        let isMinimized = false;         // Czy okno jest zminimalizowane
-        let selectedRepoIndex = -1;      // Indeks wybranego repozytorium
-        let programGroups = [];          // Grupy programów
-        let currentGroup = null;         // Aktualna grupa
-        let startupComplete = false;     // Czy uruchamianie zakończone
-        let audioEnabled = true;         // Czy dźwięki są włączone
-        
-        // Zmienne dla efektów przeciągania
+        // Zmienne globalne
+        let allRepos = [];
+        let selectedRepo = null;
+        let currentSort = 'updated';
         let isDragging = false;
         let dragOffsetX = 0;
         let dragOffsetY = 0;
+        let currentView = 'large';
+        let isMinimized = false;
+        let selectedRepoIndex = -1;
+        let programGroups = [];
+        let currentGroup = null;
+        let memoryInterval;
+        let audioEnabled = true;
+        let startupComplete = false;
         
-        // Po załadowaniu dokumentu
+        // Tablice z danymi
+        const fileTypes = [
+            { name: 'README.MD', icon: 'fa-file-alt' },
+            { name: 'index.html', icon: 'fa-html5' },
+            { name: 'style.css', icon: 'fa-css3-alt' },
+            { name: 'script.js', icon: 'fa-js-square' },
+            { name: 'package.json', icon: 'fa-file-code' },
+            { name: 'tsconfig.json', icon: 'fa-file-code' },
+            { name: '.gitignore', icon: 'fa-github' },
+            { name: 'LICENSE', icon: 'fa-file-contract' },
+            { name: 'Dockerfile', icon: 'fa-docker' },
+            { name: 'main.py', icon: 'fa-python' },
+            { name: 'index.php', icon: 'fa-php' },
+            { name: 'webpack.config.js', icon: 'fa-cogs' }
+        ];
+        
+        // Nasłuchiwanie na załadowanie dokumentu
         document.addEventListener('DOMContentLoaded', function() {
             console.log('Document loaded');
             
-            // Preload audio
+            // Preload all audio elements
             preloadAudio();
             
-            // Start DOS startup sequence
+            // Start the DOS startup sequence
             startDOSSequence();
         });
         
-        // Preload dźwięków
+        // Preload all audio files
         function preloadAudio() {
-            try {
-                const startupSound = document.getElementById('win-startup-sound');
-                const errorSound = document.getElementById('win-error-sound');
-                const clickSound = document.getElementById('win-click-sound');
-                
-                if (startupSound) startupSound.load();
-                if (errorSound) errorSound.load();
-                if (clickSound) clickSound.load();
-            } catch (error) {
-                console.warn('Audio preload failed:', error);
-                audioEnabled = false;
-            }
+            const startupSound = document.getElementById('win-startup-sound');
+            const errorSound = document.getElementById('win-error-sound');
+            const clickSound = document.getElementById('win-click-sound');
+            
+            if (startupSound) startupSound.load();
+            if (errorSound) errorSound.load();
+            if (clickSound) clickSound.load();
         }
         
-        // Start DOS startup sequence
+        // Start the DOS startup sequence
         function startDOSSequence() {
             console.log('Starting DOS sequence');
             const dosStartup = document.getElementById('dos-startup');
@@ -1271,7 +1257,7 @@ C:\><span class="win-cursor"></span>
             }, 1000);
         }
         
-        // Start Windows startup sequence
+        // Start the Windows startup sequence
         function startWindowsSequence() {
             console.log('Starting Windows sequence');
             const dosStartup = document.getElementById('dos-startup');
@@ -1298,7 +1284,7 @@ C:\><span class="win-cursor"></span>
             }, 3000);
         }
         
-        // Zakończenie uruchamiania
+        // Complete the startup process
         function completeStartup() {
             console.log('Completing startup');
             const winStartup = document.getElementById('win-startup');
@@ -1322,7 +1308,7 @@ C:\><span class="win-cursor"></span>
             initializeApplication();
         }
         
-        // Pominięcie do Windows startup (funkcja awaryjna)
+        // Skip to Windows startup (emergency function)
         function skipToWindows() {
             console.log('Skipping to Windows startup');
             const dosStartup = document.getElementById('dos-startup');
@@ -1334,7 +1320,7 @@ C:\><span class="win-cursor"></span>
             startWindowsSequence();
         }
         
-        // Pominięcie do okna głównego (funkcja awaryjna)
+        // Skip to main window (emergency function)
         function skipToMainWindow() {
             console.log('Skipping to main window');
             const dosStartup = document.getElementById('dos-startup');
@@ -1357,32 +1343,31 @@ C:\><span class="win-cursor"></span>
             initializeApplication();
         }
         
-        // Timer awaryjny, jeśli coś się zawiesi
+        // Emergency timeout to ensure the application loads even if something fails
         setTimeout(function() {
             if (!startupComplete) {
                 console.warn('Emergency timeout triggered - startup appears to be stuck');
                 skipToMainWindow();
             }
         }, 8000);
-        
-        // Inicjalizacja aplikacji
+        // Initialize the application
         function initializeApplication() {
             console.log('Initializing application');
             
             try {
-                // Inicjalizacja listenera zdarzeń
+                // Initialize event listeners
                 initializeEventListeners();
                 
-                // Inicjalizacja wyświetlania pamięci
+                // Initialize memory display
                 updateMemoryDisplay();
                 
-                // Aktualizowanie pamięci co 10 sekund
-                setInterval(updateMemoryDisplay, 10000);
+                // Start memory update interval
+                memoryInterval = setInterval(updateMemoryDisplay, 10000);
                 
-                // Utwórz domyślne grupy programów
+                // Create default program groups
                 createDefaultProgramGroups();
                 
-                // Pobierz repozytoria
+                // Fetch repositories
                 fetchRepositories();
             } catch (error) {
                 console.error('Error during initialization:', error);
@@ -1390,310 +1375,193 @@ C:\><span class="win-cursor"></span>
             }
         }
         
-        // Inicjalizacja listenerów zdarzeń
+        // Initialize all event listeners
         function initializeEventListeners() {
-            // Przyciski okna
-            addClickEvent('minimize-button', minimizeWindow);
-            addClickEvent('maximize-button', maximizeWindow);
-            addClickEvent('close-button', closeWindow);
-            addClickEvent('minimized-window', restoreWindow);
+            // Window buttons
+            const minimizeButton = document.getElementById('minimize-button');
+            const maximizeButton = document.getElementById('maximize-button');
+            const closeButton = document.getElementById('close-button');
+            const minimizedWindow = document.getElementById('minimized-window');
             
-            // Przyciski menu
-            addClickEvent('refresh-button', fetchRepositories);
-            addClickEvent('exit-button', closeWindow);
-            addClickEvent('restart-button', function() { location.reload(); });
+            if (minimizeButton) minimizeButton.addEventListener('click', minimizeWindow);
+            if (maximizeButton) maximizeButton.addEventListener('click', maximizeWindow);
+            if (closeButton) closeButton.addEventListener('click', closeWindow);
+            if (minimizedWindow) minimizedWindow.addEventListener('click', restoreWindow);
             
-            addClickEvent('view-large', function() { 
+            // Menu buttons
+            const refreshButton = document.getElementById('refresh-button');
+            const exitButton = document.getElementById('exit-button');
+            const restartButton = document.getElementById('restart-button');
+            const viewLarge = document.getElementById('view-large');
+            const viewSmall = document.getElementById('view-small');
+            const toggleTheme = document.getElementById('toggle-theme');
+            const autoArrange = document.getElementById('auto-arrange');
+            const saveSettings = document.getElementById('save-settings');
+            const patternTeal = document.getElementById('pattern-teal');
+            const patternGray = document.getElementById('pattern-gray');
+            const patternGrid = document.getElementById('pattern-grid');
+            const patternDots = document.getElementById('pattern-dots');
+            
+            if (refreshButton) refreshButton.addEventListener('click', fetchRepositories);
+            if (exitButton) exitButton.addEventListener('click', closeWindow);
+            if (restartButton) restartButton.addEventListener('click', function() { location.reload(); });
+            if (viewLarge) viewLarge.addEventListener('click', function() { 
                 setViewMode('large');
-                showTemporaryMessage('Duże ikony');
+                showTemporaryMessage('Large Icons selected');
             });
-            
-            addClickEvent('view-small', function() { 
+            if (viewSmall) viewSmall.addEventListener('click', function() { 
                 setViewMode('small');
-                showTemporaryMessage('Małe ikony');
+                showTemporaryMessage('Small Icons selected');
             });
-            
-            addClickEvent('toggle-theme', toggleDarkMode);
-            
-            addClickEvent('auto-arrange', function() {
+            if (toggleTheme) toggleTheme.addEventListener('click', toggleDarkMode);
+            if (autoArrange) autoArrange.addEventListener('click', function() {
                 playSound('click');
-                showTemporaryMessage('Auto-układanie włączone');
+                showTemporaryMessage('Auto Arrange enabled');
             });
-            
-            addClickEvent('save-settings', function() {
+            if (saveSettings) saveSettings.addEventListener('click', function() {
                 playSound('click');
-                showTemporaryMessage('Ustawienia zapisane');
+                showTemporaryMessage('Settings saved');
             });
             
-            // Wzory pulpitu
-            addClickEvent('pattern-teal', function() { changePattern('teal'); });
-            addClickEvent('pattern-gray', function() { changePattern('gray'); });
-            addClickEvent('pattern-grid', function() { changePattern('grid'); });
-            addClickEvent('pattern-dots', function() { changePattern('dots'); });
+            // Pattern buttons
+            if (patternTeal) patternTeal.addEventListener('click', function() { changePattern('teal'); });
+            if (patternGray) patternGray.addEventListener('click', function() { changePattern('gray'); });
+            if (patternGrid) patternGrid.addEventListener('click', function() { changePattern('grid'); });
+            if (patternDots) patternDots.addEventListener('click', function() { changePattern('dots'); });
             
-            // Menu Window
-            addClickEvent('cascade-windows', function() {
+            // Window menu
+            const cascadeWindows = document.getElementById('cascade-windows');
+            const tileWindows = document.getElementById('tile-windows');
+            const arrangeIcons = document.getElementById('arrange-icons');
+            const refreshWindow = document.getElementById('refresh-window');
+            
+            if (cascadeWindows) cascadeWindows.addEventListener('click', function() {
                 playSound('click');
-                showTemporaryMessage('Okna kaskadowo');
+                showTemporaryMessage('Windows cascaded');
             });
-            
-            addClickEvent('tile-windows', function() {
+            if (tileWindows) tileWindows.addEventListener('click', function() {
                 playSound('click');
-                showTemporaryMessage('Okna sąsiadująco');
+                showTemporaryMessage('Windows tiled');
             });
-            
-            addClickEvent('arrange-icons', function() {
+            if (arrangeIcons) arrangeIcons.addEventListener('click', function() {
                 playSound('click');
-                showTemporaryMessage('Ikony uporządkowane');
+                showTemporaryMessage('Icons arranged');
             });
+            if (refreshWindow) refreshWindow.addEventListener('click', fetchRepositories);
             
-            addClickEvent('refresh-window', fetchRepositories);
+            // Help menu
+            const helpIndex = document.getElementById('help-index');
+            const keyboardShortcuts = document.getElementById('keyboard-shortcuts');
+            const usingHelp = document.getElementById('using-help');
+            const aboutButton = document.getElementById('about-button');
             
-            // Menu Help
-            addClickEvent('help-index', showHelpWindow);
-            addClickEvent('keyboard-shortcuts', showShortcutsWindow);
-            addClickEvent('using-help', showHelpWindow);
-            addClickEvent('about-button', showAboutWindow);
+            if (helpIndex) helpIndex.addEventListener('click', showHelpWindow);
+            if (keyboardShortcuts) keyboardShortcuts.addEventListener('click', showShortcutsWindow);
+            if (usingHelp) usingHelp.addEventListener('click', showHelpWindow);
+            if (aboutButton) aboutButton.addEventListener('click', showAboutWindow);
             
-            // Przyciski paska narzędzi
+            // Toolbar buttons
             const repoSearch = document.getElementById('repo-search');
-            if (repoSearch) {
-                repoSearch.addEventListener('input', filterRepositories);
-            }
+            const refreshRepos = document.getElementById('refresh-repos');
+            const sortRepos = document.getElementById('sort-repos');
+            const viewToggle = document.getElementById('view-toggle');
+            const themeToggle = document.getElementById('theme-toggle');
+            const helpButton = document.getElementById('help-button');
             
-            addClickEvent('refresh-repos', fetchRepositories);
-            addClickEvent('sort-repos', showSortMenu);
-            addClickEvent('view-toggle', cycleViewMode);
-            addClickEvent('theme-toggle', toggleDarkMode);
-            addClickEvent('help-button', showHelpWindow);
+            if (repoSearch) repoSearch.addEventListener('input', filterRepositories);
+            if (refreshRepos) refreshRepos.addEventListener('click', fetchRepositories);
+            if (sortRepos) sortRepos.addEventListener('click', showSortMenu);
+            if (viewToggle) viewToggle.addEventListener('click', cycleViewMode);
+            if (themeToggle) themeToggle.addEventListener('click', toggleDarkMode);
+            if (helpButton) helpButton.addEventListener('click', showHelpWindow);
             
-            // Przyciski modali
-            addClickEvent('close-repo-modal', closeAllModals);
-            addClickEvent('close-about', closeAllModals);
-            addClickEvent('close-about-button', closeAllModals);
-            addClickEvent('close-shortcuts', closeAllModals);
-            addClickEvent('modal-background', closeAllModals);
+            // Modal buttons
+            const closeRepoModal = document.getElementById('close-repo-modal');
+            const closeAbout = document.getElementById('close-about');
+            const closeAboutButton = document.getElementById('close-about-button');
+            const closeShortcuts = document.getElementById('close-shortcuts');
+            const modalBackground = document.getElementById('modal-background');
             
-            // Elementy menu kontekstowego
-            addClickEvent('context-open', function() {
+            if (closeRepoModal) closeRepoModal.addEventListener('click', closeAllModals);
+            if (closeAbout) closeAbout.addEventListener('click', closeAllModals);
+            if (closeAboutButton) closeAboutButton.addEventListener('click', closeAllModals);
+            if (closeShortcuts) closeShortcuts.addEventListener('click', closeAllModals);
+            if (modalBackground) modalBackground.addEventListener('click', closeAllModals);
+            
+            // Context menu items
+            const contextOpen = document.getElementById('context-open');
+            const contextViewGithub = document.getElementById('context-view-github');
+            const contextCopyUrl = document.getElementById('context-copy-url');
+            const contextProperties = document.getElementById('context-properties');
+            
+            if (contextOpen) contextOpen.addEventListener('click', function() {
                 if (selectedRepo) {
                     showRepoDetails(selectedRepo);
                 }
-                hideContextMenu();
             });
             
-            addClickEvent('context-view-github', function() {
+            if (contextViewGithub) contextViewGithub.addEventListener('click', function() {
                 if (selectedRepo) {
                     window.open(selectedRepo.html_url, '_blank');
                 }
-                hideContextMenu();
             });
             
-            addClickEvent('context-copy-url', function() {
+            if (contextCopyUrl) contextCopyUrl.addEventListener('click', function() {
                 if (selectedRepo) {
                     navigator.clipboard.writeText(selectedRepo.html_url).then(function() {
-                        showTemporaryMessage('URL skopiowany do schowka');
+                        showTemporaryMessage('URL copied to clipboard');
                     }).catch(function(err) {
                         console.error('Could not copy text: ', err);
                     });
                 }
-                hideContextMenu();
             });
             
-            addClickEvent('context-properties', function() {
+            if (contextProperties) contextProperties.addEventListener('click', function() {
                 if (selectedRepo) {
                     showRepoDetails(selectedRepo);
                 }
-                hideContextMenu();
             });
             
-            // Skróty klawiszowe
+            // Keyboard shortcuts
             document.addEventListener('keydown', function(e) {
-                // F5 - odśwież
+                // F5 - refresh
                 if (e.key === 'F5') {
                     e.preventDefault();
                     fetchRepositories();
                 }
                 
-                // Ctrl+F - szukaj
+                // Ctrl+F - search
                 if (e.key === 'f' && e.ctrlKey) {
                     e.preventDefault();
                     const searchBox = document.getElementById('repo-search');
                     if (searchBox) searchBox.focus();
                 }
                 
-                // Esc - zamknij modali
+                // Esc - close modals
                 if (e.key === 'Escape') {
                     closeAllModals();
-                    hideContextMenu();
                 }
                 
-                // T - przełącz motyw
+                // T - toggle theme
                 if (e.key === 't' || e.key === 'T') {
                     toggleDarkMode();
                 }
-                
-                // Klawisze strzałek do nawigacji
-                if (e.key.startsWith('Arrow')) {
-                    navigateWithKeys(e.key);
-                }
-                
-                // Enter aby otworzyć wybrane repozytorium
-                if (e.key === 'Enter' && selectedRepo) {
-                    showRepoDetails(selectedRepo);
-                }
             });
             
-            // Ukryj menu kontekstowe przy kliknięciu gdzie indziej
-            document.addEventListener('click', function(e) {
-                const contextMenu = document.getElementById('repo-context-menu');
-                if (contextMenu && contextMenu.style.display === 'block') {
-                    // Sprawdź czy kliknięcie jest poza menu kontekstowym
-                    if (!contextMenu.contains(e.target)) {
-                        hideContextMenu();
-                    }
-                }
-            });
-            
-            // Inicjalizacja przeciągania okien
+            // Initialize drag and drop for windows
             initializeWindowDrag();
         }
         
-        // Dodaj zdarzenie kliknięcia do elementu
-        function addClickEvent(id, callback) {
-            const element = document.getElementById(id);
-            if (element) {
-                element.addEventListener('click', function(e) {
-                    playSound('click');
-                    callback(e);
-                });
-            }
-        }
-        
-        // Nawigacja strzałkami
-        function navigateWithKeys(key) {
-            if (!allRepos || allRepos.length === 0) return;
-            
-            const repoItems = document.querySelectorAll('.win-repo-item');
-            if (repoItems.length === 0) return;
-            
-            // Domyślnie wybierz pierwszy element, jeśli nic nie jest wybrane
-            if (selectedRepoIndex === -1) {
-                selectedRepoIndex = 0;
-            } else {
-                // Oblicz wymiary siatki
-                const itemsPerRow = Math.floor(document.querySelector('.win-repo-grid').offsetWidth / 100);
-                const rows = Math.ceil(repoItems.length / itemsPerRow);
-                
-                // Aktualna pozycja
-                const currentRow = Math.floor(selectedRepoIndex / itemsPerRow);
-                const currentCol = selectedRepoIndex % itemsPerRow;
-                
-                // Oblicz nowy indeks na podstawie wciśniętego klawisza
-                switch(key) {
-                    case 'ArrowUp':
-                        if (currentRow > 0) {
-                            selectedRepoIndex -= itemsPerRow;
-                        }
-                        break;
-                    case 'ArrowDown':
-                        if (currentRow < rows - 1 && selectedRepoIndex + itemsPerRow < repoItems.length) {
-                            selectedRepoIndex += itemsPerRow;
-                        }
-                        break;
-                    case 'ArrowLeft':
-                        if (currentCol > 0) {
-                            selectedRepoIndex--;
-                        }
-                        break;
-                    case 'ArrowRight':
-                        if (currentCol < itemsPerRow - 1 && selectedRepoIndex < repoItems.length - 1) {
-                            selectedRepoIndex++;
-                        }
-                        break;
-                }
-            }
-            
-            // Upewnij się, że indeks mieści się w granicach
-            selectedRepoIndex = Math.max(0, Math.min(repoItems.length - 1, selectedRepoIndex));
-            
-            // Aktualizuj wybrane repozytorium
-            const displayedRepos = getDisplayedRepositories();
-            if (displayedRepos[selectedRepoIndex]) {
-                selectedRepo = displayedRepos[selectedRepoIndex];
-                highlightRepoItem(repoItems[selectedRepoIndex]);
-            }
-        }
-        
-        // Pobierz aktualnie wyświetlane repozytoria
-        function getDisplayedRepositories() {
-            // Jeśli jest aktywne wyszukiwanie, zwróć przefiltrowane repozytoria
-            const searchBox = document.getElementById('repo-search');
-            if (searchBox && searchBox.value.trim() !== '') {
-                const searchTerm = searchBox.value.toLowerCase().trim();
-                return allRepos.filter(repo => 
-                    repo.name.toLowerCase().includes(searchTerm) || 
-                    (repo.description && repo.description.toLowerCase().includes(searchTerm)) ||
-                    (repo.language && repo.language.toLowerCase().includes(searchTerm))
-                );
-            }
-            
-            // Jeśli jest aktywna grupa, zwróć repozytoria dla tej grupy
-            if (currentGroup) {
-                switch(currentGroup.id) {
-                    case 'main':
-                        return allRepos.filter(repo => 
-                            repo.stargazers_count > 0 || repo.size > 1000 || 
-                            repo.name.toLowerCase().includes('main'));
-                    case 'javascript':
-                        return allRepos.filter(repo => 
-                            repo.language === 'JavaScript' || repo.language === 'TypeScript' || 
-                            repo.name.toLowerCase().includes('js') || 
-                            repo.name.toLowerCase().includes('script'));
-                    case 'web':
-                        return allRepos.filter(repo => 
-                            repo.language === 'HTML' || repo.language === 'CSS' || 
-                            repo.name.toLowerCase().includes('web') || 
-                            repo.name.toLowerCase().includes('site') || 
-                            repo.name.toLowerCase().includes('html') || 
-                            repo.name.toLowerCase().includes('css'));
-                    case 'other':
-                        return allRepos.filter(repo => 
-                            repo.language !== 'JavaScript' && 
-                            repo.language !== 'TypeScript' &&
-                            repo.language !== 'HTML' &&
-                            repo.language !== 'CSS');
-                    case 'starred':
-                        return allRepos.filter(repo => repo.stargazers_count > 0)
-                            .sort((a, b) => b.stargazers_count - a.stargazers_count);
-                    default:
-                        return allRepos;
-                }
-            }
-            
-            // W przeciwnym razie zwróć wszystkie repozytoria
-            return allRepos;
-        }
-        
-        // Ukryj menu kontekstowe
-        function hideContextMenu() {
-            const contextMenu = document.getElementById('repo-context-menu');
-            if (contextMenu) {
-                contextMenu.style.display = 'none';
-            }
-        }
-        
-        // Inicjalizacja przeciągania okien
+        // Initialize window dragging
         function initializeWindowDrag() {
             const mainTitleBar = document.getElementById('main-window-title');
             const mainWindow = document.getElementById('main-window');
             const repoModalTitle = document.getElementById('repo-modal-title');
             const repoModal = document.querySelector('#repo-details-modal .win-window');
             
-            // Przeciąganie głównego okna
+            // Main window dragging
             if (mainTitleBar && mainWindow) {
                 mainTitleBar.addEventListener('mousedown', function(e) {
-                    // Ignoruj przyciski
                     if (e.target.classList.contains('win-button')) return;
                     
                     isDragging = true;
@@ -1705,10 +1573,9 @@ C:\><span class="win-cursor"></span>
                 });
             }
             
-            // Przeciąganie modalu repozytorium
+            // Repo modal dragging
             if (repoModalTitle && repoModal) {
                 repoModalTitle.addEventListener('mousedown', function(e) {
-                    // Ignoruj przyciski
                     if (e.target.classList.contains('win-button')) return;
                     
                     isDragging = true;
@@ -1720,48 +1587,40 @@ C:\><span class="win-cursor"></span>
                 });
             }
             
-            // Obsługa przeciągania - ruch myszy
+            // Mouse move and up events for dragging
             document.addEventListener('mousemove', function(e) {
-                if (!isDragging) return;
-                
-                let targetWindow = null;
-                
-                // Określ, które okno jest przeciągane
-                if (mainWindow && mainWindow.style.opacity === '0.8') {
-                    targetWindow = mainWindow;
-                } else if (repoModal && repoModal.style.opacity === '0.8') {
-                    targetWindow = repoModal;
-                }
-                
-                if (targetWindow) {
-                    targetWindow.style.position = 'absolute';
-                    targetWindow.style.left = (e.clientX - dragOffsetX) + 'px';
-                    targetWindow.style.top = (e.clientY - dragOffsetY) + 'px';
+                if (isDragging) {
+                    const targetWindow = mainWindow.style.opacity === '0.8' ? mainWindow : repoModal;
+                    
+                    if (targetWindow) {
+                        targetWindow.style.position = 'absolute';
+                        targetWindow.style.left = (e.clientX - dragOffsetX) + 'px';
+                        targetWindow.style.top = (e.clientY - dragOffsetY) + 'px';
+                    }
                 }
             });
             
-            // Zakończenie przeciągania
             document.addEventListener('mouseup', function() {
-                if (!isDragging) return;
-                
-                isDragging = false;
-                
-                if (mainWindow && mainWindow.style.opacity === '0.8') {
-                    mainWindow.style.opacity = '1';
-                }
-                
-                if (repoModal && repoModal.style.opacity === '0.8') {
-                    repoModal.style.opacity = '1';
+                if (isDragging) {
+                    isDragging = false;
+                    
+                    if (mainWindow.style.opacity === '0.8') {
+                        mainWindow.style.opacity = '1';
+                    }
+                    
+                    if (repoModal && repoModal.style.opacity === '0.8') {
+                        repoModal.style.opacity = '1';
+                    }
                 }
             });
         }
         
-        // Odtwarzanie dźwięku
+        // Play a sound
         function playSound(type) {
             if (!audioEnabled) return;
             
             try {
-                let sound = null;
+                let sound;
                 
                 switch (type) {
                     case 'startup':
@@ -1772,8 +1631,10 @@ C:\><span class="win-cursor"></span>
                         break;
                     case 'click':
                         sound = document.getElementById('win-click-sound');
-                        if (sound) sound.currentTime = 0; // Restart dla krótkiego dźwięku
+                        if (sound) sound.currentTime = 0;
                         break;
+                    default:
+                        return;
                 }
                 
                 if (sound) {
@@ -1782,7 +1643,7 @@ C:\><span class="win-cursor"></span>
                     if (playPromise !== undefined) {
                         playPromise.catch(function(error) {
                             console.warn('Audio playback prevented by browser:', error);
-                            audioEnabled = false; // Wyłącz dźwięk, jeśli przeglądarka blokuje
+                            audioEnabled = false;
                         });
                     }
                 }
@@ -1792,13 +1653,13 @@ C:\><span class="win-cursor"></span>
             }
         }
         
-        // Tworzenie domyślnych grup programów
+        // Create default program groups
         function createDefaultProgramGroups() {
             programGroups = [
                 { 
                     id: 'main', 
-                    name: 'Główne', 
-                    description: 'Główne repozytoria', 
+                    name: 'Main', 
+                    description: 'Main repositories', 
                     icon: 'folder',
                     color: '#000080',
                     iconHtml: '<i class="fas fa-star"></i>'
@@ -1806,7 +1667,7 @@ C:\><span class="win-cursor"></span>
                 { 
                     id: 'javascript', 
                     name: 'JavaScript', 
-                    description: 'Repozytoria JavaScript', 
+                    description: 'JavaScript repositories', 
                     icon: 'js-square',
                     color: '#f7df1e',
                     iconHtml: '<i class="fab fa-js-square"></i>'
@@ -1814,23 +1675,23 @@ C:\><span class="win-cursor"></span>
                 { 
                     id: 'web', 
                     name: 'Web', 
-                    description: 'Repozytoria HTML/CSS', 
+                    description: 'HTML/CSS repositories', 
                     icon: 'html5',
                     color: '#e34c26',
                     iconHtml: '<i class="fab fa-html5"></i>'
                 },
                 { 
                     id: 'other', 
-                    name: 'Inne', 
-                    description: 'Inne repozytoria', 
+                    name: 'Other', 
+                    description: 'Other repositories', 
                     icon: 'code',
                     color: '#4CAF50',
                     iconHtml: '<i class="fas fa-code"></i>'
                 },
                 { 
                     id: 'starred', 
-                    name: 'Oznaczone', 
-                    description: 'Oznaczone repozytoria', 
+                    name: 'Starred', 
+                    description: 'Starred repositories', 
                     icon: 'star',
                     color: '#ffc107',
                     iconHtml: '<i class="fas fa-star"></i>'
@@ -1840,28 +1701,24 @@ C:\><span class="win-cursor"></span>
             renderProgramGroups();
         }
         
-        // Renderowanie grup programów
+        // Render program groups
         function renderProgramGroups() {
             const groupsContainer = document.getElementById('program-groups');
             if (!groupsContainer) return;
             
-            // Wyczyść kontener
             groupsContainer.innerHTML = '';
             
-            // Dodaj każdą grupę
             programGroups.forEach(function(group) {
                 const groupElement = document.createElement('div');
                 groupElement.className = 'win-program-group';
                 groupElement.dataset.groupId = group.id;
                 
-                // Obsługa podwójnego kliknięcia
                 groupElement.addEventListener('dblclick', function() {
                     openProgramGroup(group);
                 });
                 
-                // Zawartość HTML grupy
                 groupElement.innerHTML = `
-                    <div class="win-group-icon">
+                    <div class="win-program-icon">
                         <div class="win-program-icon-inner" style="color: ${group.color || '#000000'}">
                             ${group.iconHtml || `<i class="fab fa-${group.icon}"></i>`}
                         </div>
@@ -1873,62 +1730,62 @@ C:\><span class="win-cursor"></span>
             });
         }
         
-        // Otwieranie grupy programów
+        // Open a program group
         function openProgramGroup(group) {
             playSound('click');
             currentGroup = group;
             
-            // Filtrowanie repozytoriów dla grupy
-            const groupRepos = getDisplayedRepositories();
+            // Filter repositories based on group
+            let groupRepos = [];
             
-            // Aktualizacja tytułu okna
-            const titleElement = document.querySelector('#main-window .win-title');
-            if (titleElement) {
-                titleElement.textContent = `Program Manager - ${group.name}`;
+            switch(group.id) {
+                case 'main':
+                    groupRepos = allRepos.filter(repo => 
+                        repo.stargazers_count > 0 || repo.size > 1000 || repo.name.toLowerCase().includes('main'));
+                    break;
+                case 'javascript':
+                    groupRepos = allRepos.filter(repo => 
+                        repo.language === 'JavaScript' || repo.language === 'TypeScript' || 
+                        repo.name.toLowerCase().includes('js') || repo.name.toLowerCase().includes('script'));
+                    break;
+                case 'web':
+                    groupRepos = allRepos.filter(repo => 
+                        repo.language === 'HTML' || repo.language === 'CSS' || 
+                        repo.name.toLowerCase().includes('web') || repo.name.toLowerCase().includes('site') || 
+                        repo.name.toLowerCase().includes('html') || repo.name.toLowerCase().includes('css'));
+                    break;
+                case 'other':
+                    groupRepos = allRepos.filter(repo => 
+                        repo.language !== 'JavaScript' && 
+                        repo.language !== 'TypeScript' &&
+                        repo.language !== 'HTML' &&
+                        repo.language !== 'CSS');
+                    break;
+                case 'starred':
+                    groupRepos = allRepos.filter(repo => repo.stargazers_count > 0);
+                    groupRepos.sort((a, b) => b.stargazers_count - a.stargazers_count);
+                    break;
+                default:
+                    groupRepos = allRepos;
             }
             
-            // Ukryj kontener grup programów
+            // Update window title
+            const titleElement = document.querySelector('#main-window .win-title');
+            if (titleElement) {
+                titleElement.textContent = `Program Manager - ${group.name} Group`;
+            }
+            
+            // Hide program groups container
             const groupsContainer = document.getElementById('program-groups');
             if (groupsContainer) {
                 groupsContainer.style.display = 'none';
             }
             
-            // Renderuj repozytoria
+            // Render repositories
             renderRepositories(groupRepos);
-            
-            // Pokaż komunikat
-            showTemporaryMessage(`Grupa ${group.name} otwarta (${groupRepos.length} elementów)`);
         }
         
-        // Powrót do widoku głównego
-        function backToMainView() {
-            // Resetuj grupę
-            currentGroup = null;
-            
-            // Pokaż grupy programów
-            const groupsContainer = document.getElementById('program-groups');
-            if (groupsContainer) {
-                groupsContainer.style.display = 'flex';
-            }
-            
-            // Wyczyść kontener repozytoriów
-            const reposContainer = document.getElementById('repos-container');
-            if (reposContainer) {
-                reposContainer.innerHTML = '';
-            }
-            
-            // Aktualizuj tytuł okna
-            const titleElement = document.querySelector('#main-window .win-title');
-            if (titleElement) {
-                titleElement.textContent = 'Program Manager - Swir GitHub';
-            }
-            
-            // Resetuj wybrane repozytorium
-            selectedRepo = null;
-            selectedRepoIndex = -1;
-        }
-        
-        // Pobieranie repozytoriów z GitHub
+        // Fetch repositories from GitHub
         async function fetchRepositories() {
             const username = 'Swir';
             const reposContainer = document.getElementById('repos-container');
@@ -1936,114 +1793,111 @@ C:\><span class="win-cursor"></span>
             if (!reposContainer) return;
             
             try {
-                // Pokaż wskaźnik ładowania
+                // Show loading indicator
                 document.body.classList.add('win-wait-cursor');
-                
-                // Resetuj stan aplikacji
-                backToMainView();
-                
-                // Pokaż wskaźnik ładowania
                 reposContainer.innerHTML = `
                     <div class="win-loading">
-                        <div class="win-loading-text">Pracuję...</div>
+                        <div class="win-loading-text">Working...</div>
                         <div class="win-loading-animation">
                             <div class="win-loading-bar"></div>
                         </div>
                         <div style="margin-top: 15px; font-size: 11px; color: var(--win-text);">
-                            Proszę czekać, Windows łączy się z GitHub...
+                            Please wait while Windows connects to GitHub...
                         </div>
                     </div>
                 `;
                 
-                // Pobierz repozytoria z GitHub API
+                // Reset current group if active
+                if (currentGroup) {
+                    const programGroups = document.getElementById('program-groups');
+                    if (programGroups) {
+                        programGroups.style.display = 'flex';
+                    }
+                    
+                    currentGroup = null;
+                    
+                    const titleElement = document.querySelector('#main-window .win-title');
+                    if (titleElement) {
+                        titleElement.textContent = 'Program Manager - Swir GitHub';
+                    }
+                }
+                
+                // Fetch repositories from GitHub API
                 const response = await fetch(`https://api.github.com/users/${username}/repos?per_page=100`);
                 
                 if (!response.ok) {
-                    throw new Error(`GitHub API odpowiedziało statusem: ${response.status}`);
+                    throw new Error(`GitHub API responded with status: ${response.status}`);
                 }
                 
-                // Przetwórz odpowiedź JSON
                 allRepos = await response.json();
                 
-                // Sortuj repozytoria
-                sortRepositories(currentSort, false);
+                // Sort repositories
+                sortRepositories(currentSort);
                 
-                // Aktualizuj licznik repozytoriów
+                // Update repository count
                 const statusBar = document.querySelector('.win-status-bar div:first-child');
                 if (statusBar) {
-                    statusBar.textContent = `${allRepos.length} obiekt(ów)`;
+                    statusBar.textContent = `${allRepos.length} object(s)`;
                 }
                 
-                // Aktualizuj wyświetlanie pamięci
+                // Update memory display
                 updateMemoryDisplay();
                 
-                // Pokaż sukces
-                showTemporaryMessage(`Załadowano ${allRepos.length} repozytoriów`);
+                // Render program groups
+                renderProgramGroups();
+                
+                // Show success message
+                showTemporaryMessage(`${allRepos.length} repositories loaded successfully`);
                 
             } catch (error) {
                 console.error('Error fetching repositories:', error);
                 playSound('error');
-                showErrorWindow('Błąd połączenia', error.message);
+                showErrorWindow('Connection Error', error.message);
             } finally {
-                // Usuń kursor ładowania
+                // Remove loading cursor
                 document.body.classList.remove('win-wait-cursor');
             }
         }
-        
-        // Renderowanie repozytoriów
+        // Render repositories
         function renderRepositories(repos) {
             const reposContainer = document.getElementById('repos-container');
             if (!reposContainer) return;
             
-            // Aktualizuj licznik repozytoriów
+            // Update repository count
             const statusBar = document.querySelector('.win-status-bar div:first-child');
             if (statusBar) {
-                statusBar.textContent = `${repos.length} obiekt(ów)`;
+                statusBar.textContent = `${repos.length} object(s)`;
             }
             
-            // Wyczyść poprzednią zawartość - WAŻNE: to naprawia problem z duplikacją
-            reposContainer.innerHTML = '';
-            
-            // Jeśli nie ma repozytoriów, pokaż komunikat
-            if (repos.length === 0) {
-                reposContainer.innerHTML = `
-                    <div style="text-align: center; padding: 20px; color: var(--win-text);">
-                        <p>Nie znaleziono repozytoriów.</p>
-                        <button class="win-action-button" onclick="fetchRepositories()">Odśwież</button>
-                    </div>
-                `;
-                return;
-            }
-            
-            // Utwórz siatkę repozytoriów
+            // Create repository grid
             const repoGrid = document.createElement('div');
             repoGrid.className = 'win-repo-grid';
             
-            // Dodaj każde repozytorium
+            // Add each repository
             repos.forEach(function(repo, index) {
                 try {
                     const repoItem = document.createElement('div');
                     repoItem.className = 'win-repo-item';
                     repoItem.tabIndex = 0;
                     
-                    // Kliknięcie, aby wybrać repozytorium
-                    repoItem.addEventListener('click', function(e) {
-                        e.stopPropagation();
+                    // Click event to select repository
+                    repoItem.addEventListener('click', function() {
+                        playSound('click');
                         selectedRepoIndex = index;
                         selectedRepo = repo;
                         highlightRepoItem(repoItem);
                     });
                     
-                    // Podwójne kliknięcie, aby otworzyć szczegóły
-                    repoItem.addEventListener('dblclick', function(e) {
-                        e.stopPropagation();
+                    // Double-click event to open repository details
+                    repoItem.addEventListener('dblclick', function() {
+                        playSound('click');
                         showRepoDetails(repo);
                     });
                     
-                    // Prawy przycisk myszy dla menu kontekstowego
+                    // Right-click for context menu
                     repoItem.addEventListener('contextmenu', function(e) {
                         e.preventDefault();
-                        e.stopPropagation();
+                        playSound('click');
                         
                         selectedRepo = repo;
                         selectedRepoIndex = index;
@@ -2052,30 +1906,18 @@ C:\><span class="win-cursor"></span>
                         const contextMenu = document.getElementById('repo-context-menu');
                         if (!contextMenu) return;
                         
-                        // Pozycjonowanie menu kontekstowego
-                        const menuWidth = 150; // Przybliżona szerokość menu
-                        const menuHeight = 150; // Przybliżona wysokość menu
-                        
-                        // Dostosuj, aby menu było widoczne w oknie
-                        let left = e.pageX;
-                        let top = e.pageY;
-                        
-                        // Dostosuj pozycję poziomą, jeśli blisko prawej krawędzi
-                        if (left + menuWidth > window.innerWidth) {
-                            left = window.innerWidth - menuWidth - 10;
-                        }
-                        
-                        // Dostosuj pozycję pionową, jeśli blisko dolnej krawędzi
-                        if (top + menuHeight > window.innerHeight) {
-                            top = window.innerHeight - menuHeight - 10;
-                        }
-                        
                         contextMenu.style.display = 'block';
-                        contextMenu.style.left = left + 'px';
-                        contextMenu.style.top = top + 'px';
+                        contextMenu.style.left = e.pageX + 'px';
+                        contextMenu.style.top = e.pageY + 'px';
+                        
+                        // Hide context menu on click outside
+                        document.addEventListener('click', function hideMenu() {
+                            contextMenu.style.display = 'none';
+                            document.removeEventListener('click', hideMenu);
+                        });
                     });
                     
-                    // Ustaw odpowiednią ikonę na podstawie języka repozytorium
+                    // Set appropriate icon based on repository language
                     let iconClass = 'fas fa-file-code';
                     let iconColor = '#000000';
                     
@@ -2120,12 +1962,11 @@ C:\><span class="win-cursor"></span>
                         }
                     }
                     
-                    // Ustaw zawartość HTML elementu
                     repoItem.innerHTML = `
                         <div class="win-repo-icon">
                             <i class="${iconClass}" style="color: ${iconColor};"></i>
                         </div>
-                        <div class="win-repo-name">${repo.name || 'Bez nazwy'}</div>
+                        <div class="win-repo-name">${repo.name || 'Unnamed'}</div>
                     `;
                     
                     repoGrid.appendChild(repoItem);
@@ -2134,59 +1975,28 @@ C:\><span class="win-cursor"></span>
                 }
             });
             
-            // Dodaj siatkę do kontenera
+            reposContainer.innerHTML = '';
             reposContainer.appendChild(repoGrid);
             
-            // Zastosuj bieżący tryb widoku
+            // Apply current view mode
             setViewMode(currentView);
-            
-            // Dodaj zdarzenie kliknięcia, aby usunąć zaznaczenie po kliknięciu w puste miejsce
-            repoGrid.addEventListener('click', function(e) {
-                if (e.target === repoGrid) {
-                    document.querySelectorAll('.win-repo-item').forEach(function(el) {
-                        el.style.borderColor = 'transparent';
-                        el.style.backgroundColor = '';
-                    });
-                    selectedRepo = null;
-                    selectedRepoIndex = -1;
-                }
-            });
-            
-            // Dodaj przycisk powrotu, jeśli jest aktywna grupa
-            if (currentGroup) {
-                const backButton = document.createElement('button');
-                backButton.className = 'win-action-button';
-                backButton.style.position = 'fixed';
-                backButton.style.top = '80px';
-                backButton.style.left = '20px';
-                backButton.textContent = '← Powrót';
-                backButton.addEventListener('click', function() {
-                    playSound('click');
-                    backToMainView();
-                });
-                reposContainer.appendChild(backButton);
-            }
         }
         
-        // Podświetlenie elementu repozytorium
+        // Highlight a repository item
         function highlightRepoItem(item) {
-            // Usuń poprzednie podświetlenia
+            // Clear previous highlights
             document.querySelectorAll('.win-repo-item').forEach(function(el) {
                 el.style.borderColor = 'transparent';
                 el.style.backgroundColor = '';
             });
             
-            // Podświetl wybrany element
-            if (item) {
-                item.style.borderColor = 'var(--win-highlight)';
-                item.style.backgroundColor = 'rgba(0, 0, 255, 0.1)';
-                
-                // Upewnij się, że element jest widoczny
-                item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            }
+            // Highlight selected item
+            item.style.borderColor = 'var(--win-highlight)';
+            item.style.backgroundColor = 'rgba(0, 0, 255, 0.1)';
+            item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
         
-        // Pokaż szczegóły repozytorium
+        // Show repository details
         function showRepoDetails(repo) {
             const modal = document.getElementById('repo-details-modal');
             const modalBg = document.getElementById('modal-background');
@@ -2195,78 +2005,78 @@ C:\><span class="win-cursor"></span>
             
             if (!modal || !modalBg || !content || !modalTitle) return;
             
-            // Ustaw tytuł modalu
+            // Set modal title
             modalTitle.textContent = repo.name;
             
-            // Formatuj daty
+            // Format dates
             const createdDate = new Date(repo.created_at);
             const updatedDate = new Date(repo.updated_at);
             
             const formatDate = function(date) {
-                return `${String(date.getDate()).padStart(2, '0')}.${String(date.getMonth()+1).padStart(2, '0')}.${date.getFullYear()} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+                return `${date.getMonth()+1}/${date.getDate()}/${date.getFullYear().toString().substr(-2)} ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
             };
             
-            // Przygotuj zawartość modalu
+            // Prepare modal content
             content.innerHTML = `
                 <div class="win-repo-description">
-                    ${repo.description || "Brak opisu."}
+                    ${repo.description || "No description available."}
                 </div>
                 
                 <div class="win-repo-details-row">
-                    <div class="win-repo-details-label">Utworzono:</div>
+                    <div class="win-repo-details-label">Created:</div>
                     <div class="win-repo-details-value">${formatDate(createdDate)}</div>
                 </div>
                 
                 <div class="win-repo-details-row">
-                    <div class="win-repo-details-label">Ostatnia aktualizacja:</div>
+                    <div class="win-repo-details-label">Last Updated:</div>
                     <div class="win-repo-details-value">${formatDate(updatedDate)}</div>
                 </div>
                 
                 <div class="win-repo-details-row">
-                    <div class="win-repo-details-label">Język:</div>
-                    <div class="win-repo-details-value">${repo.language || "Nie określony"}</div>
+                    <div class="win-repo-details-label">Language:</div>
+                    <div class="win-repo-details-value">${repo.language || "Not specified"}</div>
                 </div>
                 
                 <div class="win-repo-details-row">
-                    <div class="win-repo-details-label">Gwiazdki:</div>
+                    <div class="win-repo-details-label">Stars:</div>
                     <div class="win-repo-details-value">${repo.stargazers_count}</div>
                 </div>
                 
                 <div class="win-repo-details-row">
-                    <div class="win-repo-details-label">Forki:</div>
+                    <div class="win-repo-details-label">Forks:</div>
                     <div class="win-repo-details-value">${repo.forks_count}</div>
                 </div>
                 
                 <div class="win-repo-details-row">
-                    <div class="win-repo-details-label">Obserwujący:</div>
+                    <div class="win-repo-details-label">Watchers:</div>
                     <div class="win-repo-details-value">${repo.watchers_count}</div>
                 </div>
                 
                 <div class="win-repo-details-row">
-                    <div class="win-repo-details-label">Rozmiar:</div>
+                    <div class="win-repo-details-label">Size:</div>
                     <div class="win-repo-details-value">${repo.size} KB</div>
                 </div>
                 
                 <div class="win-button-row">
-                    <a href="${repo.html_url}" target="_blank" class="win-action-button">Otwórz w GitHub</a>
-                    <button class="win-action-button" id="close-repo-details">Zamknij</button>
+                    <a href="${repo.html_url}" target="_blank" class="win-action-button">Open in GitHub</a>
+                    <button class="win-action-button" id="close-repo-details">Close</button>
                 </div>
             `;
             
-            // Dodaj nasłuchiwacz zdarzeń do przycisku zamykania
+            // Add event listener to close button
             const closeButton = document.getElementById('close-repo-details');
             if (closeButton) {
                 closeButton.addEventListener('click', closeAllModals);
             }
             
-            // Pokaż modal
+            // Show modal
             modal.style.display = 'block';
             modalBg.style.display = 'block';
             
             playSound('click');
         }
         
-        // Zamknij wszystkie modalne okna
+        // Close all modals
         function closeAllModals() {
             playSound('click');
             
@@ -2278,9 +2088,16 @@ C:\><span class="win-cursor"></span>
             
             const modalBg = document.getElementById('modal-background');
             if (modalBg) modalBg.style.display = 'none';
+            
+            // Remove any context menus
+            document.querySelectorAll('.win-context-menu').forEach(function(menu) {
+                if (menu.style.display === 'block') {
+                    menu.style.display = 'none';
+                }
+            });
         }
         
-        // Pokaż okno About
+        // Show about window
         function showAboutWindow() {
             playSound('click');
             
@@ -2293,7 +2110,7 @@ C:\><span class="win-cursor"></span>
             }
         }
         
-        // Pokaż okno skrótów klawiszowych
+        // Show shortcuts window
         function showShortcutsWindow() {
             playSound('click');
             
@@ -2306,13 +2123,13 @@ C:\><span class="win-cursor"></span>
             }
         }
         
-        // Pokaż okno pomocy
+        // Show help window
         function showHelpWindow() {
             playSound('click');
-            showTemporaryMessage('Funkcja pomocy nie jest jeszcze zaimplementowana');
+            showTemporaryMessage('Help functionality is not implemented yet');
         }
         
-        // Pokaż okno błędu
+        // Show error window
         function showErrorWindow(title, message) {
             playSound('error');
             
@@ -2331,34 +2148,44 @@ C:\><span class="win-cursor"></span>
                         <div class="win-error-icon">!</div>
                         <div class="win-error-message">
                             <p>${message}</p>
-                            <p style="margin-top: 10px;">Windows nie może połączyć się z GitHub. Sprawdź czy połączenie internetowe działa poprawnie.</p>
+                            <p style="margin-top: 10px;">Windows cannot connect to GitHub. Make sure your network connection is working properly.</p>
                         </div>
                     </div>
                     <div class="win-error-buttons">
-                        <button class="win-action-button" onclick="fetchRepositories()">Ponów</button>
+                        <button class="win-action-button" onclick="fetchRepositories()">Retry</button>
                         <button class="win-action-button" onclick="location.reload()">Restart</button>
                     </div>
                 </div>
             `;
         }
         
-        // Pokaż tymczasowy komunikat
+        // Show temporary message
         function showTemporaryMessage(message) {
-            // Usuń istniejące komunikaty
             const existingMessage = document.querySelector('.win-temp-message');
             if (existingMessage) {
                 document.body.removeChild(existingMessage);
             }
             
-            // Utwórz nowy komunikat
             const messageElement = document.createElement('div');
             messageElement.className = 'win-temp-message';
+            messageElement.style.position = 'fixed';
+            messageElement.style.bottom = '20px';
+            messageElement.style.left = '50%';
+            messageElement.style.transform = 'translateX(-50%)';
+            messageElement.style.backgroundColor = 'var(--win-window-bg)';
+            messageElement.style.color = 'var(--win-text)';
+            messageElement.style.padding = '5px 15px';
+            messageElement.style.borderTop = '1px solid var(--win-border-light)';
+            messageElement.style.borderLeft = '1px solid var(--win-border-light)';
+            messageElement.style.borderRight = '1px solid var(--win-border-shadow)';
+            messageElement.style.borderBottom = '1px solid var(--win-border-shadow)';
+            messageElement.style.boxShadow = '2px 2px 5px rgba(0, 0, 0, 0.3)';
+            messageElement.style.zIndex = '3000';
+            messageElement.style.fontSize = '12px';
             messageElement.textContent = message;
             
-            // Dodaj do body
             document.body.appendChild(messageElement);
             
-            // Usuń po czasie
             setTimeout(function() {
                 if (document.body.contains(messageElement)) {
                     document.body.removeChild(messageElement);
@@ -2366,11 +2193,10 @@ C:\><span class="win-cursor"></span>
             }, 2000);
         }
         
-        // Filtrowanie repozytoriów
+        // Filter repositories
         function filterRepositories() {
-            const searchTerm = document.getElementById('repo-search').value.toLowerCase().trim();
+            const searchTerm = document.getElementById('repo-search').value.toLowerCase();
             
-            // Jeśli pusty termin wyszukiwania, przywróć domyślny widok
             if (!searchTerm) {
                 if (currentGroup) {
                     openProgramGroup(currentGroup);
@@ -2380,28 +2206,26 @@ C:\><span class="win-cursor"></span>
                 return;
             }
             
-            // Filtruj repozytoria według wyszukiwanego terminu
             const filteredRepos = allRepos.filter(function(repo) {
                 return repo.name.toLowerCase().includes(searchTerm) || 
                     (repo.description && repo.description.toLowerCase().includes(searchTerm)) ||
                     (repo.language && repo.language.toLowerCase().includes(searchTerm));
             });
             
-            // Renderuj przefiltrowane repozytoria
             renderRepositories(filteredRepos);
             
-            // Pokaż komunikat
-            showTemporaryMessage(`Znaleziono ${filteredRepos.length} repozytoriów`);
+            showTemporaryMessage(`Found ${filteredRepos.length} repositories`);
         }
         
-        // Sortowanie repozytoriów
-        function sortRepositories(sortType, showMessage = true) {
+        // Sort repositories
+        function sortRepositories(sortType) {
+            playSound('click');
             currentSort = sortType;
             
-            // Utwórz głęboką kopię, aby uniknąć problemów z sortowaniem
+            // Create a deep copy of repositories to avoid sorting issues
             const reposToSort = [...allRepos];
             
-            // Sortuj repozytoria
+            // Sort repositories
             reposToSort.sort(function(a, b) {
                 switch (sortType) {
                     case 'name':
@@ -2417,33 +2241,20 @@ C:\><span class="win-cursor"></span>
                 }
             });
             
-            // Aktualizuj tablicę repozytoriów
+            // Update allRepos with sorted repositories
             allRepos = reposToSort;
             
-            // Ponownie renderuj repozytoria, jeśli w grupie
+            // Re-render repositories
             if (currentGroup) {
                 openProgramGroup(currentGroup);
-            } else if (showMessage) {
+            } else {
                 renderRepositories(allRepos);
             }
             
-            // Pokaż komunikat, jeśli potrzeba
-            if (showMessage) {
-                playSound('click');
-                
-                let sortMessage = '';
-                switch(sortType) {
-                    case 'name': sortMessage = 'nazwie'; break;
-                    case 'updated': sortMessage = 'dacie aktualizacji'; break;
-                    case 'stars': sortMessage = 'gwiazdkach'; break;
-                    case 'size': sortMessage = 'rozmiarze'; break;
-                }
-                
-                showTemporaryMessage(`Sortowanie według: ${sortMessage}`);
-            }
+            showTemporaryMessage(`Sorted by ${sortType}`);
         }
         
-        // Pokaż menu sortowania
+        // Show sort menu
         function showSortMenu(e) {
             playSound('click');
             
@@ -2455,15 +2266,15 @@ C:\><span class="win-cursor"></span>
             sortMenu.style.zIndex = '1500';
             
             sortMenu.innerHTML = `
-                <div class="win-context-item" id="sort-by-name">Według nazwy</div>
-                <div class="win-context-item" id="sort-by-updated">Według daty aktualizacji</div>
-                <div class="win-context-item" id="sort-by-stars">Według gwiazdek</div>
-                <div class="win-context-item" id="sort-by-size">Według rozmiaru</div>
+                <div class="win-context-item" id="sort-by-name">By Name</div>
+                <div class="win-context-item" id="sort-by-updated">By Last Updated</div>
+                <div class="win-context-item" id="sort-by-stars">By Stars</div>
+                <div class="win-context-item" id="sort-by-size">By Size</div>
             `;
             
             document.body.appendChild(sortMenu);
             
-            // Dodaj nasłuchiwacze zdarzeń dla opcji sortowania
+            // Add event listeners for sort options
             document.getElementById('sort-by-name').addEventListener('click', function() {
                 sortRepositories('name');
                 document.body.removeChild(sortMenu);
@@ -2484,9 +2295,9 @@ C:\><span class="win-cursor"></span>
                 document.body.removeChild(sortMenu);
             });
             
-            // Zamknij menu po kliknięciu gdzie indziej
+            // Close menu when clicking outside
             document.addEventListener('click', function hideMenu(event) {
-                if (!sortMenu.contains(event.target) && event.target !== document.getElementById('sort-repos')) {
+                if (!sortMenu.contains(event.target)) {
                     if (document.body.contains(sortMenu)) {
                         document.body.removeChild(sortMenu);
                     }
@@ -2495,8 +2306,9 @@ C:\><span class="win-cursor"></span>
             });
         }
         
-        // Ustaw tryb widoku (duże lub małe ikony)
+        // Set view mode (large or small icons)
         function setViewMode(mode) {
+            playSound('click');
             currentView = mode;
             
             const grid = document.querySelector('.win-repo-grid');
@@ -2537,31 +2349,29 @@ C:\><span class="win-cursor"></span>
             }
         }
         
-        // Cykliczna zmiana trybu widoku
+        // Cycle view mode
         function cycleViewMode() {
             if (currentView === 'large') {
                 setViewMode('small');
-                playSound('click');
-                showTemporaryMessage('Małe ikony wybrane');
+                showTemporaryMessage('Small Icons selected');
             } else {
                 setViewMode('large');
-                playSound('click');
-                showTemporaryMessage('Duże ikony wybrane');
+                showTemporaryMessage('Large Icons selected');
             }
         }
         
-        // Przełącz tryb ciemny
+        // Toggle dark mode
         function toggleDarkMode() {
             playSound('click');
             document.body.classList.toggle('dark-mode');
             
             const message = document.body.classList.contains('dark-mode') ? 
-                'Tryb ciemny włączony' : 'Tryb jasny włączony';
+                'Dark mode enabled' : 'Light mode enabled';
             
             showTemporaryMessage(message);
         }
         
-        // Zmień wzór pulpitu
+        // Change desktop pattern
         function changePattern(type) {
             playSound('click');
             
@@ -2569,40 +2379,40 @@ C:\><span class="win-cursor"></span>
                 case 'teal':
                     document.documentElement.style.setProperty('--win-bg', '#008080');
                     document.body.style.backgroundImage = 'var(--win-pattern-teal)';
-                    showTemporaryMessage('Wzór pulpitu: Turkusowy');
+                    showTemporaryMessage('Desktop pattern: Teal');
                     break;
                 case 'gray':
                     document.documentElement.style.setProperty('--win-bg', '#c0c0c0');
                     document.body.style.backgroundImage = 'var(--win-pattern-gray)';
-                    showTemporaryMessage('Wzór pulpitu: Szary');
+                    showTemporaryMessage('Desktop pattern: Gray');
                     break;
                 case 'grid':
                     document.documentElement.style.setProperty('--win-bg', '#008080');
                     document.body.style.backgroundImage = 'var(--win-pattern-grid)';
-                    showTemporaryMessage('Wzór pulpitu: Siatka');
+                    showTemporaryMessage('Desktop pattern: Grid');
                     break;
                 case 'dots':
                     document.documentElement.style.setProperty('--win-bg', '#000080');
                     document.body.style.backgroundImage = 'var(--win-pattern-dots)';
-                    showTemporaryMessage('Wzór pulpitu: Kropki');
+                    showTemporaryMessage('Desktop pattern: Dots');
                     break;
             }
         }
         
-        // Aktualizuj wyświetlanie pamięci
+        // Update memory display
         function updateMemoryDisplay() {
             const memoryDisplay = document.getElementById('memory-display');
             if (!memoryDisplay) return;
             
-            // Generuj losową ilość wolnej pamięci dla autentyczności
+            // Generate a random amount of free memory for authenticity
             const initialMemory = 640;
-            const usedMemory = Math.floor(Math.random() * 100) + 100; // pomiędzy 100-200KB
+            const usedMemory = Math.floor(Math.random() * 100) + 100; // between 100-200KB
             const freeMemory = initialMemory - usedMemory;
             
-            memoryDisplay.textContent = `${freeMemory}KB z ${initialMemory}KB wolne`;
+            memoryDisplay.textContent = `${freeMemory}KB free of ${initialMemory}KB`;
         }
         
-        // Minimalizuj okno
+        // Minimize window
         function minimizeWindow() {
             playSound('click');
             
@@ -2616,7 +2426,7 @@ C:\><span class="win-cursor"></span>
             }
         }
         
-        // Maksymalizuj okno
+        // Maximize window
         function maximizeWindow() {
             playSound('click');
             
@@ -2624,7 +2434,7 @@ C:\><span class="win-cursor"></span>
             if (!mainWindow) return;
             
             if (mainWindow.style.position === 'fixed') {
-                // Przywróć okno
+                // Restore window
                 mainWindow.style.position = 'relative';
                 mainWindow.style.top = '';
                 mainWindow.style.left = '';
@@ -2632,9 +2442,9 @@ C:\><span class="win-cursor"></span>
                 mainWindow.style.height = '';
                 mainWindow.style.margin = '';
                 
-                showTemporaryMessage('Okno przywrócone');
+                showTemporaryMessage('Window restored');
             } else {
-                // Maksymalizuj okno
+                // Maximize window
                 mainWindow.style.position = 'fixed';
                 mainWindow.style.top = '0';
                 mainWindow.style.left = '0';
@@ -2642,11 +2452,11 @@ C:\><span class="win-cursor"></span>
                 mainWindow.style.height = '100%';
                 mainWindow.style.margin = '0';
                 
-                showTemporaryMessage('Okno zmaksymalizowane');
+                showTemporaryMessage('Window maximized');
             }
         }
         
-        // Przywróć okno
+        // Restore window
         function restoreWindow() {
             playSound('click');
             
@@ -2660,11 +2470,11 @@ C:\><span class="win-cursor"></span>
             }
         }
         
-        // Zamknij okno
+        // Close window
         function closeWindow() {
             playSound('click');
             
-            // Utwórz potwierdzenie
+            // Create confirmation dialog
             const confirmDialog = document.createElement('div');
             confirmDialog.className = 'win-window';
             confirmDialog.style.position = 'fixed';
@@ -2679,26 +2489,26 @@ C:\><span class="win-cursor"></span>
                     <div class="win-title">Program Manager</div>
                 </div>
                 <div class="win-content" style="text-align: center; padding: 20px;">
-                    <p style="margin-bottom: 20px;">Czy na pewno chcesz wyjść z Windows?</p>
+                    <p style="margin-bottom: 20px;">Are you sure you want to exit Windows?</p>
                     <div style="display: flex; justify-content: center; gap: 10px;">
                         <button class="win-action-button" id="confirm-exit">OK</button>
-                        <button class="win-action-button" id="cancel-exit">Anuluj</button>
+                        <button class="win-action-button" id="cancel-exit">Cancel</button>
                     </div>
                 </div>
             `;
             
             document.body.appendChild(confirmDialog);
             
-            // Dodaj nasłuchiwacze zdarzeń do przycisków
+            // Add event listeners for buttons
             document.getElementById('confirm-exit').addEventListener('click', function() {
                 document.body.removeChild(confirmDialog);
                 
-                // Pokaż ekran wyłączania
+                // Show shutdown screen
                 document.body.innerHTML = `
                     <div class="win-dos-startup" style="display: block; opacity: 1; visibility: visible;">
                         <div class="win-dos-text">C:\\WINDOWS>exit</div>
                         <div class="win-dos-text" style="margin-top: 20px;">
-                            Teraz możesz bezpiecznie wyłączyć komputer.
+                            It is now safe to turn off your computer.
                         </div>
                     </div>
                 `;
