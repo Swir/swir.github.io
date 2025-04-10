@@ -1,31 +1,54 @@
 <!DOCTYPE html>
-<html lang="pl">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Swir GitHub - Commodore 64</title>
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- C64 Font -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/webfont/1.6.28/webfontloader.js">
     <style>
-        /* --- Zmienne CSS --- */
+        /* --- C64 CSS Variables --- */
         :root {
-            /* Paleta kolorów Commodore 64 */
-            --c64-bg: #0000AA;
-            --c64-text: #AAFFFF;
-            --c64-highlight: #FFFFFF;
-            --c64-border: #AAFFFF;
-            --c64-secondary: #AAAAFF;
-            --c64-dark: #000088;
-            --c64-accent1: #FFFF55; /* Yellow */
-            --c64-accent2: #FF0000; /* Red */
-            --c64-button: #AAFFFF;
-            --c64-button-text: #0000AA;
-            --c64-selected: #FFFFFF;
+            /* Authentic Commodore 64 color palette */
+            --c64-black: #000000;
+            --c64-white: #FFFFFF;
+            --c64-red: #68372B;
+            --c64-cyan: #70A4B2;
+            --c64-purple: #6F3D86;
+            --c64-green: #588D43;
+            --c64-blue: #352879;
+            --c64-yellow: #B8C76F;
+            --c64-orange: #6F4F25;
+            --c64-brown: #433900;
+            --c64-light-red: #9A6759;
+            --c64-dark-grey: #444444;
+            --c64-grey: #6C6C6C;
+            --c64-light-green: #9AD284;
+            --c64-light-blue: #6C5EB5;
+            --c64-light-grey: #959595;
+            
+            /* Interface colors */
+            --c64-bg: var(--c64-blue);
+            --c64-text: var(--c64-cyan);
+            --c64-highlight: var(--c64-white);
+            --c64-border: var(--c64-cyan);
+            --c64-secondary: var(--c64-light-blue);
+            --c64-dark: #1D1653;
+            --c64-accent1: var(--c64-yellow);
+            --c64-accent2: var(--c64-light-red);
+            --c64-button: var(--c64-cyan);
+            --c64-button-text: var(--c64-blue);
+            --c64-selected: var(--c64-white);
+            
+            /* Text display properties */
+            --c64-char-width: 8px;
+            --c64-char-height: 8px;
+            --c64-screen-cols: 40;
+            --c64-screen-rows: 25;
+            --c64-cursor-blink-rate: 500ms;
         }
         
-        /* --- Reset i podstawowe style --- */
+        /* --- Reset and basic styles --- */
         * {
             margin: 0;
             padding: 0;
@@ -35,9 +58,11 @@
             text-transform: uppercase;
         }
         
+        /* C64 Font */
         @font-face {
             font-family: 'C64';
             src: url('https://cdn.jsdelivr.net/gh/nicolasduerl/C64-font/build/web/c64.woff2') format('woff2');
+            font-display: swap;
         }
         
         html, body {
@@ -59,13 +84,14 @@
             image-rendering: pixelated;
         }
 
-        /* --- Styl Commodore 64 --- */
+        /* --- Commodore 64 Window Style --- */
         .c64-window {
             border: 4px solid var(--c64-border);
             background-color: var(--c64-bg);
             margin-bottom: 20px;
             position: relative;
             transition: all 0.2s;
+            box-shadow: 8px 8px 0px rgba(0, 0, 0, 0.3);
         }
         
         .c64-title-bar {
@@ -126,7 +152,7 @@
             justify-content: space-between;
         }
         
-        /* --- Menu w stylu Commodore 64 --- */
+        /* --- Commodore 64 Style Menu --- */
         .c64-menu-bar {
             background-color: var(--c64-text);
             color: var(--c64-bg);
@@ -180,7 +206,7 @@
             margin: 4px 0;
         }
         
-        /* --- Siatka ikon/repozytoriów --- */
+        /* --- Repository Icons/Grid --- */
         .c64-repo-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -198,7 +224,7 @@
             transition: all 0.2s;
         }
         
-        .c64-repo-item:hover {
+        .c64-repo-item:hover, .c64-repo-item.selected {
             border-color: var(--c64-accent1);
             background-color: var(--c64-dark);
         }
@@ -229,7 +255,7 @@
             color: var(--c64-text);
         }
         
-        /* --- Modal okno szczegółów repozytorium --- */
+        /* --- Repository Details Modal Window --- */
         .c64-modal {
             position: fixed;
             top: 50%;
@@ -317,7 +343,7 @@
             transform: translateY(2px);
         }
         
-        /* --- Łądowanie --- */
+        /* --- Loading Animation --- */
         .c64-loading {
             display: flex;
             flex-direction: column;
@@ -378,11 +404,13 @@
         }
         
         .c64-logo {
-            font-size: 48px;
+            font-size: 24px;
             color: var(--c64-text);
             font-weight: bold;
             margin-bottom: 30px;
             text-align: center;
+            white-space: pre;
+            line-height: 1.2;
         }
         
         .c64-startup-loading {
@@ -403,7 +431,15 @@
         
         @keyframes c64-startup-loading {
             0% { width: 0; }
-            70% { width: 70%; }
+            10% { width: 5%; }
+            20% { width: 15%; }
+            30% { width: 25%; }
+            40% { width: 30%; }
+            50% { width: 45%; }
+            60% { width: 60%; }
+            70% { width: 75%; }
+            80% { width: 80%; }
+            90% { width: 90%; }
             100% { width: 100%; }
         }
         
@@ -547,13 +583,40 @@
             color: var(--c64-bg);
         }
         
+        /* --- PETSCII Graphics --- */
+        .petscii {
+            font-family: 'C64', monospace;
+            white-space: pre;
+            line-height: 1;
+        }
+        
+        /* Enhanced PETSCII Characters */
+        .petscii-border {
+            position: relative;
+            padding: 8px;
+        }
+        
+        .petscii-border::before {
+            content: "┌";
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        
+        .petscii-border::after {
+            content: "┐";
+            position: absolute;
+            top: 0;
+            right: 0;
+        }
+        
         /* --- Cursor --- */
         .c64-cursor {
             display: inline-block;
             width: 12px;
             height: 16px;
             background-color: var(--c64-text);
-            animation: blink 1s infinite;
+            animation: blink 1s steps(1) infinite;
             vertical-align: middle;
             margin-left: 4px;
         }
@@ -562,15 +625,237 @@
             0%, 49% { opacity: 1; }
             50%, 100% { opacity: 0; }
         }
-
-        /* --- PETSCII Graphics --- */
-        .petscii {
+        
+        /* --- Command Line --- */
+        .c64-command-line {
+            background-color: var(--c64-bg);
+            border: 2px solid var(--c64-text);
+            padding: 8px;
             font-family: 'C64', monospace;
-            white-space: pre;
-            line-height: 1;
+            margin-top: 10px;
+            display: none;
         }
         
-        /* --- Responsywność --- */
+        .c64-command-prompt {
+            color: var(--c64-text);
+            display: flex;
+            align-items: center;
+        }
+        
+        .c64-command-input {
+            background: transparent;
+            border: none;
+            color: var(--c64-text);
+            font-family: 'C64', monospace;
+            font-size: 16px;
+            margin-left: 8px;
+            flex-grow: 1;
+            text-transform: uppercase;
+        }
+        
+        .c64-command-input:focus {
+            outline: none;
+        }
+        
+        .c64-command-history {
+            margin-top: 8px;
+            color: var(--c64-text);
+            font-family: 'C64', monospace;
+        }
+        
+        /* --- Disk Drive Animation --- */
+        .c64-disk-activity {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            width: 60px;
+            height: 30px;
+            background-color: var(--c64-dark-grey);
+            border: 2px solid var(--c64-grey);
+            padding: 4px;
+            display: none;
+            z-index: 1000;
+        }
+        
+        .c64-disk-light {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 8px;
+            height: 8px;
+            background-color: var(--c64-accent2);
+            border-radius: 50%;
+        }
+        
+        .c64-disk-light.active {
+            animation: diskLight 0.5s alternate infinite;
+        }
+        
+        @keyframes diskLight {
+            from { background-color: var(--c64-accent2); }
+            to { background-color: var(--c64-red); }
+        }
+        
+        /* --- SID Music Player --- */
+        .c64-sid-player {
+            background-color: var(--c64-dark);
+            border: 2px solid var(--c64-border);
+            padding: 8px;
+            margin-top: 10px;
+            display: none;
+        }
+        
+        .c64-sid-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .c64-sid-button {
+            background-color: var(--c64-text);
+            color: var(--c64-bg);
+            border: 1px solid var(--c64-border);
+            padding: 4px 8px;
+            cursor: pointer;
+        }
+        
+        .c64-sid-title {
+            color: var(--c64-accent1);
+            margin-left: 10px;
+        }
+
+        /* Custom color cycle animation */
+        .c64-color-cycle {
+            animation: colorCycle 10s infinite;
+        }
+        
+        @keyframes colorCycle {
+            0% { color: var(--c64-text); }
+            20% { color: var(--c64-accent1); }
+            40% { color: var(--c64-accent2); }
+            60% { color: var(--c64-light-green); }
+            80% { color: var(--c64-white); }
+            100% { color: var(--c64-text); }
+        }
+        
+        /* Enhanced Text Input */
+        input.c64-text-input, textarea.c64-text-input {
+            background-color: var(--c64-dark);
+            color: var(--c64-text);
+            border: 2px solid var(--c64-border);
+            padding: 8px;
+            font-family: 'C64', monospace;
+            text-transform: uppercase;
+        }
+        
+        input.c64-text-input:focus, textarea.c64-text-input:focus {
+            outline: none;
+            border-color: var(--c64-accent1);
+        }
+        
+        /* --- New BASIC Program Editor --- */
+        .c64-program-editor {
+            display: none;
+            background-color: var(--c64-bg);
+            border: 2px solid var(--c64-border);
+            padding: 10px;
+            margin-top: 10px;
+        }
+        
+        .c64-program-lines {
+            font-family: 'C64', monospace;
+            color: var(--c64-text);
+            white-space: pre;
+        }
+        
+        .c64-line-number {
+            color: var(--c64-accent1);
+            margin-right: 5px;
+        }
+        
+        .c64-basic-keyword {
+            color: var(--c64-accent2);
+        }
+        
+        /* --- Tape Deck --- */
+        .c64-tape-deck {
+            position: fixed;
+            bottom: 50px;
+            right: 10px;
+            background-color: var(--c64-dark-grey);
+            border: 2px solid var(--c64-grey);
+            width: 100px;
+            height: 40px;
+            display: none;
+            z-index: 1000;
+        }
+        
+        .c64-tape-counter {
+            position: absolute;
+            top: 5px;
+            left: 10px;
+            color: var(--c64-text);
+            font-size: 12px;
+        }
+        
+        .c64-tape-progress {
+            position: absolute;
+            bottom: 5px;
+            left: 5px;
+            right: 5px;
+            height: 6px;
+            background-color: var(--c64-dark);
+        }
+        
+        .c64-tape-progress-bar {
+            height: 100%;
+            width: 0;
+            background-color: var(--c64-accent1);
+            transition: width 0.3s;
+        }
+        
+        /* --- File Manager --- */
+        .c64-file-manager {
+            display: none;
+        }
+        
+        .c64-file-list {
+            border: 2px solid var(--c64-border);
+            background-color: var(--c64-dark);
+            padding: 5px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .c64-file-item {
+            display: flex;
+            padding: 2px 5px;
+            cursor: pointer;
+        }
+        
+        .c64-file-item:hover {
+            background-color: var(--c64-bg);
+        }
+        
+        .c64-file-size {
+            color: var(--c64-accent1);
+            margin-left: auto;
+            padding-left: 10px;
+        }
+        
+        /* --- Sprites --- */
+        .c64-sprite {
+            position: absolute;
+            width: 24px;
+            height: 21px;
+            background-color: var(--c64-accent1);
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+            transition: all 0.5s ease;
+            z-index: 100;
+            display: none;
+        }
+        
+        /* --- Responsive Design --- */
         @media (max-width: 768px) {
             .c64-repo-grid {
                 grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
@@ -581,7 +866,7 @@
             }
             
             .c64-logo {
-                font-size: 36px;
+                font-size: 18px;
             }
         }
 
@@ -602,14 +887,49 @@
             }
         }
 
-        /* --- System dźwięku --- */
+        /* --- Audio System --- */
         .c64-audio {
             display: none;
+        }
+        
+        /* --- Scanline effect --- */
+        body::after {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                transparent 0px,
+                rgba(0, 0, 0, 0.03) 1px,
+                rgba(0, 0, 0, 0.03) 2px,
+                transparent 3px
+            );
+            pointer-events: none;
+            z-index: 9999;
+        }
+        
+        /* --- CRT Effect --- */
+        .crt-effect {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9998;
+            background: radial-gradient(
+                circle at center,
+                transparent 0%,
+                rgba(0, 0, 0, 0.2) 90%,
+                rgba(0, 0, 0, 0.4) 100%
+            );
         }
     </style>
 </head>
 <body>
-    <!-- Dźwięki -->
+    <!-- Audio Effects -->
     <audio id="c64-startup-sound" class="c64-audio">
         <source src="https://archive.org/download/Commodore64SoundEffects/Start-Up.mp3" type="audio/mpeg">
     </audio>
@@ -619,21 +939,70 @@
     <audio id="c64-click-sound" class="c64-audio">
         <source src="https://archive.org/download/Commodore64SoundEffects/Click.mp3" type="audio/mpeg">
     </audio>
+    <audio id="c64-load-sound" class="c64-audio">
+        <source src="https://archive.org/download/Commodore64SoundEffects/Disk-Drive.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="c64-sid-music" class="c64-audio" loop>
+        <source src="https://ia800504.us.archive.org/24/items/C64Music/Flimbo%27s%20Quest%20-%20Title%20%28Rob%20Hubbard%29.mp3" type="audio/mpeg">
+    </audio>
 
-    <!-- Ekran startowy Commodore 64 -->
+    <!-- CRT Effects -->
+    <div class="crt-effect"></div>
+
+    <!-- C64 Startup Screen -->
     <div class="c64-startup">
         <div class="c64-logo">
-            **** COMMODORE 64 BASIC V2 ****<br>
-            64K RAM SYSTEM 38911 BASIC BYTES FREE<br><br>
-            READY.
+            <span class="petscii">
+       **** COMMODORE 64 BASIC V2 ****       
+    64K RAM SYSTEM  38911 BASIC BYTES FREE
+
+READY.
+LOAD "$",8
+SEARCHING FOR $
+LOADING
+READY.
+
+$ 00 "SWIR'S GITHUB"        PRG
+  15  "BROWSER"             PRG
+  01  "README"              SEQ
+  02  "LICENSE"             SEQ
+
+LOAD "BROWSER",8
+SEARCHING FOR BROWSER
+LOADING
+READY.
+
+RUN
+            </span>
+        </div>
+        <div class="c64-startup-loading">
+            <div class="c64-startup-bar"></div>
         </div>
         <div class="c64-startup-text">LOADING GITHUB BROWSER... <span class="c64-cursor"></span></div>
     </div>
 
-    <!-- Główne okno aplikacji -->
+    <!-- Disk Drive Activity Indicator -->
+    <div class="c64-disk-activity">
+        <div class="c64-disk-light"></div>
+        <div style="font-size: 10px; color: var(--c64-text);">DRIVE 8</div>
+    </div>
+
+    <!-- Tape Deck -->
+    <div class="c64-tape-deck">
+        <div class="c64-tape-counter">000</div>
+        <div class="c64-tape-progress">
+            <div class="c64-tape-progress-bar"></div>
+        </div>
+    </div>
+
+    <!-- Sprites -->
+    <div class="c64-sprite" id="sprite1"></div>
+    <div class="c64-sprite" id="sprite2"></div>
+
+    <!-- Main Application Window -->
     <div class="c64-window" id="main-window">
         <div class="c64-title-bar" id="main-window-title">
-            <div class="c64-title">SWIR GITHUB BROWSER</div>
+            <div class="c64-title">SWIR GITHUB BROWSER V2.0</div>
             <div class="c64-buttons">
                 <div class="c64-button" id="minimize-button" title="Minimize">_</div>
                 <div class="c64-button" id="maximize-button" title="Maximize">[]</div>
@@ -645,7 +1014,11 @@
             <div class="c64-menu-item">
                 F1:FILE
                 <div class="c64-submenu">
+                    <div class="c64-submenu-item" id="new-search">NEW SEARCH</div>
                     <div class="c64-submenu-item" id="refresh-button">REFRESH REPOS</div>
+                    <div class="c64-separator"></div>
+                    <div class="c64-submenu-item" id="toggle-command">COMMAND LINE</div>
+                    <div class="c64-submenu-item" id="toggle-basic">BASIC EDITOR</div>
                     <div class="c64-separator"></div>
                     <div class="c64-submenu-item" id="exit-button">EXIT</div>
                 </div>
@@ -655,6 +1028,9 @@
                 <div class="c64-submenu">
                     <div class="c64-submenu-item" id="view-large">LARGE ICONS</div>
                     <div class="c64-submenu-item" id="view-small">SMALL ICONS</div>
+                    <div class="c64-separator"></div>
+                    <div class="c64-submenu-item" id="toggle-crt">TOGGLE CRT EFFECT</div>
+                    <div class="c64-submenu-item" id="toggle-sprites">TOGGLE SPRITES</div>
                 </div>
             </div>
             <div class="c64-menu-item">
@@ -667,9 +1043,17 @@
                 </div>
             </div>
             <div class="c64-menu-item">
-                F7:HELP
+                F7:MEDIA
+                <div class="c64-submenu">
+                    <div class="c64-submenu-item" id="toggle-music">SID MUSIC</div>
+                    <div class="c64-submenu-item" id="toggle-sound">SOUND FX</div>
+                </div>
+            </div>
+            <div class="c64-menu-item">
+                F9:HELP
                 <div class="c64-submenu">
                     <div class="c64-submenu-item" id="keyboard-shortcuts">KEYS</div>
+                    <div class="c64-submenu-item" id="petscii-chart">PETSCII CHART</div>
                     <div class="c64-submenu-item" id="about-button">ABOUT</div>
                 </div>
             </div>
@@ -687,16 +1071,56 @@
             <div class="c64-toolbar-button" id="view-toggle">
                 <i class="fas fa-th-large"></i> VIEW
             </div>
+            <div class="c64-toolbar-button" id="toggle-command-btn">
+                <i class="fas fa-terminal"></i> BASIC
+            </div>
         </div>
         
         <div class="c64-content">
             <div id="repos-container">
-                <!-- Tutaj będą wczytywane repozytoria -->
+                <!-- Repositories will be loaded here -->
                 <div class="c64-loading">
                     <div class="c64-loading-text">LOADING REPOSITORIES...</div>
                     <div class="c64-loading-animation">
                         <div class="c64-loading-bar"></div>
                     </div>
+                </div>
+            </div>
+            
+            <!-- BASIC Command Line -->
+            <div class="c64-command-line" id="command-line">
+                <div class="c64-command-history" id="command-history"></div>
+                <div class="c64-command-prompt">
+                    READY.<span class="c64-cursor"></span>
+                    <input type="text" class="c64-command-input" id="command-input" autocomplete="off" spellcheck="false">
+                </div>
+            </div>
+            
+            <!-- BASIC Program Editor -->
+            <div class="c64-program-editor" id="program-editor">
+                <div class="c64-program-title">*** BASIC PROGRAM EDITOR ***</div>
+                <div class="c64-program-lines" id="program-lines">
+                    <div><span class="c64-line-number">10</span><span class="c64-basic-keyword">PRINT</span> "GITHUB BROWSER"</div>
+                    <div><span class="c64-line-number">20</span><span class="c64-basic-keyword">PRINT</span> "BY SWIR"</div>
+                    <div><span class="c64-line-number">30</span><span class="c64-basic-keyword">FOR</span> I=1 <span class="c64-basic-keyword">TO</span> 10</div>
+                    <div><span class="c64-line-number">40</span>  <span class="c64-basic-keyword">PRINT</span> "LOADING... "; I</div>
+                    <div><span class="c64-line-number">50</span><span class="c64-basic-keyword">NEXT</span> I</div>
+                    <div><span class="c64-line-number">60</span><span class="c64-basic-keyword">PRINT</span> "SYSTEM READY"</div>
+                    <div><span class="c64-line-number">70</span><span class="c64-basic-keyword">END</span></div>
+                </div>
+                <div class="c64-program-input">
+                    <span class="c64-cursor"></span>
+                    <input type="text" class="c64-text-input" id="program-input" style="width: 100%;" placeholder="TYPE YOUR BASIC PROGRAM LINE">
+                </div>
+            </div>
+            
+            <!-- SID Music Player -->
+            <div class="c64-sid-player" id="sid-player">
+                <div class="c64-sid-controls">
+                    <div class="c64-sid-button" id="sid-play">PLAY</div>
+                    <div class="c64-sid-button" id="sid-stop">STOP</div>
+                    <div class="c64-sid-button" id="sid-next">NEXT</div>
+                    <div class="c64-sid-title" id="sid-title">FLIMBO'S QUEST - TITLE</div>
                 </div>
             </div>
         </div>
@@ -707,12 +1131,12 @@
         </div>
     </div>
     
-    <!-- Zminimalizowane okno -->
+    <!-- Minimized Window -->
     <div class="c64-minimized" id="minimized-window">
         GITHUB BROWSER
     </div>
     
-    <!-- Modal okno ze szczegółami repozytorium -->
+    <!-- Repository Details Modal -->
     <div class="c64-modal" id="repo-details-modal">
         <div class="c64-window">
             <div class="c64-title-bar" id="repo-modal-title">
@@ -723,7 +1147,7 @@
             </div>
             
             <div class="c64-content c64-repo-details" id="repo-details-content">
-                <!-- Tu zostanie wstawiona zawartość modalu -->
+                <!-- Modal content will be inserted here -->
             </div>
             
             <div class="c64-status-bar">
@@ -732,7 +1156,7 @@
         </div>
     </div>
     
-    <!-- Modal z informacjami o aplikacji -->
+    <!-- About Modal -->
     <div class="c64-modal" id="about-modal">
         <div class="c64-window">
             <div class="c64-title-bar">
@@ -744,11 +1168,11 @@
             
             <div class="c64-content">
                 <div style="text-align: center; padding: 20px;">
-                    <div style="font-size: 24px; color: var(--c64-accent1); margin-bottom: 10px;">
+                    <div style="font-size: 24px; color: var(--c64-accent1); margin-bottom: 10px;" class="c64-color-cycle">
                         COMMODORE 64 GITHUB BROWSER
                     </div>
                     <div style="font-size: 14px; color: var(--c64-text); margin-bottom: 20px;">
-                        VERSION 1.0
+                        VERSION 2.0
                     </div>
                     <p>A NOSTALGIC C64 STYLE INTERFACE FOR BROWSING GITHUB REPOSITORIES.</p>
                     <p>(C) 2025 SWIR</p>
@@ -762,6 +1186,12 @@
 │                          │
 └──────────────────────────┘
                     </div>
+                    
+                    <div style="margin-top: 20px; font-size: 12px; color: var(--c64-secondary);">
+                        MEMORY MAP: $0801-$9FFF<br>
+                        I/O AREA: $D000-$DFFF<br>
+                        KERNAL ROM: $E000-$FFFF
+                    </div>
                 </div>
             </div>
             
@@ -771,7 +1201,7 @@
         </div>
     </div>
     
-    <!-- Modal z skrótami klawiszowymi -->
+    <!-- Keyboard Shortcuts Modal -->
     <div class="c64-modal" id="shortcuts-modal">
         <div class="c64-window">
             <div class="c64-title-bar">
@@ -797,11 +1227,23 @@
                     </div>
                     <div class="c64-repo-details-row">
                         <div class="c64-repo-details-label">F7</div>
+                        <div class="c64-repo-details-value">MEDIA MENU</div>
+                    </div>
+                    <div class="c64-repo-details-row">
+                        <div class="c64-repo-details-label">F9</div>
                         <div class="c64-repo-details-value">HELP MENU</div>
                     </div>
                     <div class="c64-repo-details-row">
                         <div class="c64-repo-details-label">R</div>
                         <div class="c64-repo-details-value">REFRESH REPOS</div>
+                    </div>
+                    <div class="c64-repo-details-row">
+                        <div class="c64-repo-details-label">B</div>
+                        <div class="c64-repo-details-value">TOGGLE BASIC</div>
+                    </div>
+                    <div class="c64-repo-details-row">
+                        <div class="c64-repo-details-label">CRSR ↑↓←→</div>
+                        <div class="c64-repo-details-value">NAVIGATE ITEMS</div>
                     </div>
                     <div class="c64-repo-details-row">
                         <div class="c64-repo-details-label">RETURN</div>
@@ -810,6 +1252,26 @@
                     <div class="c64-repo-details-row">
                         <div class="c64-repo-details-label">RUN/STOP</div>
                         <div class="c64-repo-details-value">EXIT</div>
+                    </div>
+                    <div class="c64-repo-details-row">
+                        <div class="c64-repo-details-label">INST/DEL</div>
+                        <div class="c64-repo-details-value">DELETE CHAR</div>
+                    </div>
+                    <div class="c64-repo-details-row">
+                        <div class="c64-repo-details-label">HOME</div>
+                        <div class="c64-repo-details-value">CLEAR SCREEN</div>
+                    </div>
+                    <div class="c64-repo-details-row">
+                        <div class="c64-repo-details-label">CTRL+1-8</div>
+                        <div class="c64-repo-details-value">CHANGE COLORS</div>
+                    </div>
+                    <div class="c64-repo-details-row">
+                        <div class="c64-repo-details-label">CBM+S</div>
+                        <div class="c64-repo-details-value">SAVE</div>
+                    </div>
+                    <div class="c64-repo-details-row">
+                        <div class="c64-repo-details-label">CBM+L</div>
+                        <div class="c64-repo-details-value">LOAD</div>
                     </div>
                 </div>
             </div>
@@ -820,18 +1282,87 @@
         </div>
     </div>
     
-    <!-- Menu kontekstowe -->
+    <!-- PETSCII Chart Modal -->
+    <div class="c64-modal" id="petscii-modal">
+        <div class="c64-window">
+            <div class="c64-title-bar">
+                <div class="c64-title">PETSCII CHART</div>
+                <div class="c64-buttons">
+                    <div class="c64-button" id="close-petscii">X</div>
+                </div>
+            </div>
+            
+            <div class="c64-content">
+                <div class="petscii" style="text-align: center; color: var(--c64-text);">
+┌───────────────────────────────────┐
+│ PETSCII CHARACTER SET COMMODORE64 │
+└───────────────────────────────────┘
+
+   0 1 2 3 4 5 6 7 8 9 A B C D E F
+0  @ A B C D E F G H I J K L M N O
+1  P Q R S T U V W X Y Z [ £ ] ↑ ←
+2    ! " # $ % & ' ( ) * + , - . /
+3  0 1 2 3 4 5 6 7 8 9 : ; < = > ?
+4  █ ▌▄ ▔ ▁ ▏┌ ┐└ ┘├ ┤┬ ┴ ┼ ▕ ▎
+5  ○ ◘ ● ♥ ♦ ♣ ♠ • ◙ ♪ ♫ ☼ ◦ ◊ ⌂ ⌦
+6  ▒ ▓ │ ∩ ∙ ◄ ► ▲ ▼ § ◊ ╳ ♦ ‼ ¶ ↶
+7  ↻ ➝ ↓ π ♣ ╭ ╮ ╰ ╯ ≅ ≈ ≡ ∿ ∴ ⌐ ⌠
+
+COMMODORE 64 BASIC V2
+38911 BASIC BYTES FREE
+                </div>
+            </div>
+            
+            <div class="c64-status-bar">
+                <div>PRESS ANY KEY TO CONTINUE</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- File Manager Modal -->
+    <div class="c64-modal" id="file-manager-modal">
+        <div class="c64-window">
+            <div class="c64-title-bar">
+                <div class="c64-title">FILE MANAGER - DRIVE 8</div>
+                <div class="c64-buttons">
+                    <div class="c64-button" id="close-file-manager">X</div>
+                </div>
+            </div>
+            
+            <div class="c64-content">
+                <div class="c64-file-manager">
+                    <div class="c64-file-list" id="file-list">
+                        <!-- File list will be generated here -->
+                    </div>
+                    <div style="padding: 10px;">
+                        <div class="c64-disk-info">164 BLOCKS FREE.</div>
+                        <div class="c64-command-prompt" style="margin-top: 10px;">
+                            READY.<span class="c64-cursor"></span>
+                            <input type="text" class="c64-text-input" id="file-command" style="width: 100%;" placeholder="ENTER DISK COMMAND">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="c64-status-bar">
+                <div>DISK OPERATIONS</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Context Menu -->
     <div class="c64-context-menu" id="repo-context-menu">
         <div class="c64-context-item" id="context-open">OPEN</div>
         <div class="c64-context-item" id="context-view-github">VIEW ON GITHUB</div>
         <div class="c64-separator"></div>
         <div class="c64-context-item" id="context-copy-url">COPY URL</div>
+        <div class="c64-context-item" id="context-basic-view">VIEW IN BASIC</div>
     </div>
     
     <div class="c64-modal-background" id="modal-background"></div>
 
     <script>
-        // Zmienne globalne
+        // Global variables
         let allRepos = [];
         let selectedRepo = null;
         let currentSort = 'updated';
@@ -841,113 +1372,199 @@
         let currentView = 'large';
         let isMinimized = false;
         let selectedRepoIndex = -1;
+        let commandHistory = [];
+        let commandIndex = -1;
+        let basicProgram = [];
+        let diskActivity = false;
+        let soundEnabled = true;
+        let musicEnabled = false;
+        let crtEffectEnabled = true;
+        let spritesEnabled = false;
+        let spritePositions = [
+            { x: 50, y: 50 },
+            { x: 100, y: 150 }
+        ];
         
-        // Inicjalizacja
+        // SID music tracks
+        const sidTracks = [
+            { 
+                title: "FLIMBO'S QUEST - TITLE", 
+                url: "https://ia800504.us.archive.org/24/items/C64Music/Flimbo%27s%20Quest%20-%20Title%20%28Rob%20Hubbard%29.mp3" 
+            },
+            { 
+                title: "LAST NINJA 2 - CENTRAL PARK", 
+                url: "https://ia800504.us.archive.org/24/items/C64Music/Last%20Ninja%202%20-%20Central%20Park%20%28Matt%20Gray%29.mp3" 
+            },
+            { 
+                title: "COMMANDO - MAIN THEME", 
+                url: "https://ia800504.us.archive.org/24/items/C64Music/Commando%20%28Rob%20Hubbard%29.mp3" 
+            }
+        ];
+        let currentTrack = 0;
+        
+        // Easter egg sequence keys
+        const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+        let konamiIndex = 0;
+        
+        // File system simulation
+        const diskFiles = [
+            { name: "BROWSER", type: "PRG", size: 42 },
+            { name: "README", type: "SEQ", size: 5 },
+            { name: "LICENSE", type: "SEQ", size: 10 },
+            { name: "DATA", type: "REL", size: 15 },
+            { name: "CONFIG", type: "USR", size: 3 },
+            { name: "SPRITES", type: "PRG", size: 8 },
+            { name: "SID-MUSIC", type: "PRG", size: 20 },
+            { name: "PETSCII-ART", type: "SEQ", size: 12 }
+        ];
+        
+        // Initialization
         document.addEventListener('DOMContentLoaded', () => {
-            // Zmień klasę z win-* na c64-*
-            document.querySelectorAll('[class^="win-"]').forEach(element => {
-                const classes = element.className.split(' ');
-                const newClasses = classes.map(cls => {
-                    if (cls.startsWith('win-')) {
-                        return cls.replace('win-', 'c64-');
-                    }
-                    return cls;
-                });
-                element.className = newClasses.join(' ');
-            });
+            // Start with the startup screen
+            document.querySelector('.c64-startup').classList.remove('hidden');
             
-            // Identyfikatory
-            document.querySelectorAll('[id^="win-"]').forEach(element => {
-                const id = element.id;
-                if (id.startsWith('win-')) {
-                    element.id = id.replace('win-', 'c64-');
-                }
-            });
-            
-            // Dźwięk startowy
+            // Startup sound
             try {
-                document.getElementById('c64-startup-sound').play().catch(() => {
-                    console.log('Autoplay prevented by browser');
-                });
+                if (soundEnabled) {
+                    document.getElementById('c64-startup-sound').play().catch(() => {
+                        console.log('Autoplay prevented by browser');
+                    });
+                }
             } catch (e) {
                 console.log('Audio not supported');
             }
             
-            // Zamknięcie ekranu startowego po załadowaniu
+            // Simulate disk activity
+            simulateDiskActivity(true);
+            
+            // Close startup screen after loading
             setTimeout(() => {
                 document.querySelector('.c64-startup').classList.add('hidden');
+                simulateDiskActivity(false);
                 
-                // Wczytaj repozytoria
+                // Load repositories
                 fetchRepositories();
                 
-                // Inicjalizacja pamięci
+                // Initialize memory display
                 updateMemoryDisplay();
-            }, 3000);
+                
+                // Move sprites randomly if enabled
+                if (spritesEnabled) {
+                    moveSpritesRandomly();
+                }
+            }, 5000);
             
-            // Event listenery dla przycisków okna
+            // Window button event listeners
             initializeWindowButtons();
             
-            // Event listenery dla menu i toolbara
+            // Menu and toolbar event listeners
             initializeMenuAndToolbar();
             
-            // Event listenery dla przeciągania okien
+            // Drag and drop event listeners
             initializeDragAndDrop();
             
-            // Event listenery dla skrótów klawiszowych
+            // Keyboard shortcut event listeners
             initializeKeyboardShortcuts();
             
-            // Tło modalu zamyka modalne okna
+            // Command line initialization
+            initializeCommandLine();
+            
+            // SID music player initialization
+            initializeSIDPlayer();
+            
+            // File manager initialization
+            initializeFileManager();
+            
+            // Close all modals when clicking modal background
             document.getElementById('modal-background').addEventListener('click', closeAllModals);
+            
+            // Initialize CRT effect
+            toggleCRTEffect(crtEffectEnabled);
+            
+            // Initialize sprites
+            initializeSprites();
         });
         
-        // Inicjalizacja przycisków okna
+        // Initialize window buttons
         function initializeWindowButtons() {
-            // Główne okno
+            // Main window
             document.getElementById('minimize-button').addEventListener('click', minimizeWindow);
             document.getElementById('maximize-button').addEventListener('click', maximizeWindow);
             document.getElementById('close-button').addEventListener('click', closeWindow);
             
-            // Zminimalizowane okno
+            // Minimized window
             document.getElementById('minimized-window').addEventListener('click', restoreWindow);
             
-            // Zamknięcie okien modalnych
+            // Close modal windows
             document.getElementById('close-about').addEventListener('click', () => {
+                playSound('click');
                 document.getElementById('about-modal').style.display = 'none';
                 document.getElementById('modal-background').style.display = 'none';
             });
             
             document.getElementById('close-shortcuts').addEventListener('click', () => {
+                playSound('click');
                 document.getElementById('shortcuts-modal').style.display = 'none';
+                document.getElementById('modal-background').style.display = 'none';
+            });
+            
+            document.getElementById('close-petscii').addEventListener('click', () => {
+                playSound('click');
+                document.getElementById('petscii-modal').style.display = 'none';
+                document.getElementById('modal-background').style.display = 'none';
+            });
+            
+            document.getElementById('close-file-manager').addEventListener('click', () => {
+                playSound('click');
+                document.getElementById('file-manager-modal').style.display = 'none';
                 document.getElementById('modal-background').style.display = 'none';
             });
         }
         
-        // Inicjalizacja menu i toolbara
+        // Initialize menu and toolbar
         function initializeMenuAndToolbar() {
-            // Menu File
+            // File Menu
+            document.getElementById('new-search').addEventListener('click', () => {
+                playSound('click');
+                document.getElementById('repo-search').value = '';
+                document.getElementById('repo-search').focus();
+                filterRepositories();
+            });
+            
             document.getElementById('refresh-button').addEventListener('click', fetchRepositories);
             document.getElementById('exit-button').addEventListener('click', closeWindow);
+            document.getElementById('toggle-command').addEventListener('click', toggleCommandLine);
+            document.getElementById('toggle-basic').addEventListener('click', toggleBasicEditor);
             
-            // Menu View
+            // View Menu
             document.getElementById('view-large').addEventListener('click', () => setViewMode('large'));
             document.getElementById('view-small').addEventListener('click', () => setViewMode('small'));
+            document.getElementById('toggle-crt').addEventListener('click', () => toggleCRTEffect(!crtEffectEnabled));
+            document.getElementById('toggle-sprites').addEventListener('click', toggleSprites);
             
-            // Menu Sort
+            // Sort Menu
             document.getElementById('sort-name').addEventListener('click', () => sortRepositories('name'));
             document.getElementById('sort-updated').addEventListener('click', () => sortRepositories('updated'));
             document.getElementById('sort-stars').addEventListener('click', () => sortRepositories('stars'));
             document.getElementById('sort-size').addEventListener('click', () => sortRepositories('size'));
             
-            // Menu Help
-            document.getElementById('about-button').addEventListener('click', showAboutModal);
+            // Media Menu
+            document.getElementById('toggle-music').addEventListener('click', toggleMusic);
+            document.getElementById('toggle-sound').addEventListener('click', toggleSound);
+            
+            // Help Menu
             document.getElementById('keyboard-shortcuts').addEventListener('click', showShortcutsModal);
+            document.getElementById('petscii-chart').addEventListener('click', showPetsciiModal);
+            document.getElementById('about-button').addEventListener('click', showAboutModal);
             
             // Toolbar
             document.getElementById('repo-search').addEventListener('input', filterRepositories);
             document.getElementById('refresh-repos').addEventListener('click', fetchRepositories);
             document.getElementById('view-toggle').addEventListener('click', cycleViewMode);
+            document.getElementById('toggle-command-btn').addEventListener('click', toggleCommandLine);
             
             document.getElementById('sort-repos').addEventListener('click', (e) => {
+                playSound('click');
                 const menu = document.createElement('div');
                 menu.className = 'c64-context-menu';
                 menu.style.display = 'block';
@@ -979,7 +1596,7 @@
                 });
             });
             
-            // Menu kontekstowe dla repozytoriów
+            // Repository context menu
             document.getElementById('context-open').addEventListener('click', () => {
                 if (selectedRepo) {
                     showRepoDetails(selectedRepo);
@@ -1001,9 +1618,49 @@
                     });
                 }
             });
+            
+            document.getElementById('context-basic-view').addEventListener('click', () => {
+                if (selectedRepo) {
+                    toggleBasicEditor();
+                    
+                    // Create a simple BASIC program that displays repo info
+                    const basicContent = [
+                        { lineNumber: 10, code: 'REM GITHUB REPOSITORY INFO' },
+                        { lineNumber: 20, code: 'PRINT CHR$(147)' },
+                        { lineNumber: 30, code: 'PRINT "REPOSITORY: ' + selectedRepo.name.toUpperCase() + '"' },
+                        { lineNumber: 40, code: 'PRINT "OWNER: ' + selectedRepo.owner.login.toUpperCase() + '"' },
+                        { lineNumber: 50, code: 'PRINT "STARS: ' + selectedRepo.stargazers_count + '"' },
+                        { lineNumber: 60, code: 'PRINT "LANGUAGE: ' + (selectedRepo.language ? selectedRepo.language.toUpperCase() : "UNKNOWN") + '"' },
+                        { lineNumber: 70, code: 'PRINT "UPDATED: ' + new Date(selectedRepo.updated_at).toLocaleDateString() + '"' },
+                        { lineNumber: 80, code: 'PRINT' },
+                        { lineNumber: 90, code: 'PRINT "DESCRIPTION:"' },
+                        { lineNumber: 100, code: 'PRINT "' + (selectedRepo.description ? selectedRepo.description.substring(0, 38).toUpperCase() : "NO DESCRIPTION") + '"' }
+                    ];
+                    
+                    // Update the program editor
+                    const programLines = document.getElementById('program-lines');
+                    programLines.innerHTML = '';
+                    
+                    basicContent.forEach(line => {
+                        const lineElement = document.createElement('div');
+                        
+                        // Format BASIC keywords
+                        let formattedCode = line.code;
+                        const keywords = ['PRINT', 'INPUT', 'FOR', 'NEXT', 'IF', 'THEN', 'GOTO', 'GOSUB', 'RETURN', 'REM', 'END', 'DATA', 'READ', 'LET', 'DIM', 'POKE', 'PEEK', 'CHR$'];
+                        
+                        keywords.forEach(keyword => {
+                            const regex = new RegExp(`\\b${keyword}\\b`, 'g');
+                            formattedCode = formattedCode.replace(regex, `<span class="c64-basic-keyword">${keyword}</span>`);
+                        });
+                        
+                        lineElement.innerHTML = `<span class="c64-line-number">${line.lineNumber}</span>${formattedCode}`;
+                        programLines.appendChild(lineElement);
+                    });
+                }
+            });
         }
         
-        // Inicjalizacja przeciągania okien
+        // Initialize drag and drop functionality
         function initializeDragAndDrop() {
             const mainTitleBar = document.getElementById('main-window-title');
             const mainWindow = document.getElementById('main-window');
@@ -1034,7 +1691,7 @@
                 }
             });
             
-            // Również dla okna modalnego
+            // Also for modal window
             const modalTitleBar = document.getElementById('repo-modal-title');
             const modalWindow = document.getElementById('repo-details-modal').querySelector('.c64-window');
             
@@ -1050,33 +1707,59 @@
             });
         }
         
-        // Inicjalizacja skrótów klawiszowych
+        // Initialize keyboard shortcuts
         function initializeKeyboardShortcuts() {
             document.addEventListener('keydown', (e) => {
-                // F1, F3, F5, F7 dla menu
+                // Check for Konami code sequence
+                if (konamiCode[konamiIndex] === e.key.toLowerCase()) {
+                    konamiIndex++;
+                    if (konamiIndex === konamiCode.length) {
+                        activateEasterEgg();
+                        konamiIndex = 0;
+                    }
+                } else {
+                    konamiIndex = 0;
+                }
+                
+                // Function keys for menu
                 if (e.key === 'F1') {
                     e.preventDefault();
+                    playSound('click');
                     document.querySelector('.c64-menu-item:nth-child(1)').click();
                 } else if (e.key === 'F3') {
                     e.preventDefault();
+                    playSound('click');
                     document.querySelector('.c64-menu-item:nth-child(2)').click();
                 } else if (e.key === 'F5') {
                     e.preventDefault();
+                    playSound('click');
                     document.querySelector('.c64-menu-item:nth-child(3)').click();
                 } else if (e.key === 'F7') {
                     e.preventDefault();
+                    playSound('click');
                     document.querySelector('.c64-menu-item:nth-child(4)').click();
+                } else if (e.key === 'F9') {
+                    e.preventDefault();
+                    playSound('click');
+                    document.querySelector('.c64-menu-item:nth-child(5)').click();
                 }
                 
-                // R - odświeżenie
+                // R - refresh
                 if (e.key === 'r' || e.key === 'R') {
                     fetchRepositories();
                 }
                 
-                // Esc (RUN/STOP) - zamknięcie modali lub wyjście
+                // B - toggle BASIC
+                if (e.key === 'b' || e.key === 'B') {
+                    toggleBasicEditor();
+                }
+                
+                // Esc (RUN/STOP) - close modals or exit
                 if (e.key === 'Escape') {
                     if (document.getElementById('about-modal').style.display === 'block' ||
                         document.getElementById('shortcuts-modal').style.display === 'block' ||
+                        document.getElementById('petscii-modal').style.display === 'block' ||
+                        document.getElementById('file-manager-modal').style.display === 'block' ||
                         document.getElementById('repo-details-modal').style.display === 'block') {
                         closeAllModals();
                     } else {
@@ -1084,7 +1767,14 @@
                     }
                 }
                 
-                // Strzałki do nawigacji po repozytoriach
+                // Home - clear BASIC screen
+                if (e.key === 'Home') {
+                    if (document.getElementById('command-line').style.display === 'block') {
+                        document.getElementById('command-history').innerHTML = '';
+                    }
+                }
+                
+                // Arrow keys for repository navigation
                 if (e.key.startsWith('Arrow')) {
                     const grid = document.querySelector('.c64-repo-grid');
                     if (!grid) return;
@@ -1092,7 +1782,7 @@
                     const items = Array.from(grid.querySelectorAll('.c64-repo-item'));
                     if (items.length === 0) return;
                     
-                    // Jeśli nic nie jest zaznaczone, zaznacz pierwszy element
+                    // If nothing is selected, select first item
                     if (selectedRepoIndex === -1) {
                         selectedRepoIndex = 0;
                         highlightRepoItem(items[selectedRepoIndex]);
@@ -1118,7 +1808,7 @@
                     }
                 }
                 
-                // Enter - otwórz zaznaczone repozytorium
+                // Enter - open selected repository
                 if (e.key === 'Enter') {
                     const grid = document.querySelector('.c64-repo-grid');
                     if (!grid) return;
@@ -1128,26 +1818,283 @@
                     
                     items[selectedRepoIndex].click();
                 }
+                
+                // CTRL + color keys (1-8) to change colors
+                if (e.ctrlKey && /^[1-8]$/.test(e.key)) {
+                    e.preventDefault();
+                    changeColors(parseInt(e.key));
+                }
+                
+                // Command-line history navigation with up/down arrows
+                if (document.getElementById('command-line').style.display === 'block' && 
+                    document.activeElement === document.getElementById('command-input')) {
+                    
+                    if (e.key === 'ArrowUp' && commandHistory.length > 0) {
+                        e.preventDefault();
+                        if (commandIndex < commandHistory.length - 1) {
+                            commandIndex++;
+                            document.getElementById('command-input').value = commandHistory[commandHistory.length - 1 - commandIndex];
+                        }
+                    } else if (e.key === 'ArrowDown' && commandIndex >= 0) {
+                        e.preventDefault();
+                        commandIndex--;
+                        if (commandIndex >= 0) {
+                            document.getElementById('command-input').value = commandHistory[commandHistory.length - 1 - commandIndex];
+                        } else {
+                            document.getElementById('command-input').value = '';
+                        }
+                    }
+                }
             });
         }
         
-        // Podświetl element repozytorium
-        function highlightRepoItem(item) {
-            document.querySelectorAll('.c64-repo-item').forEach(el => {
-                el.style.borderColor = 'transparent';
-                el.style.backgroundColor = '';
+        // Initialize command line
+        function initializeCommandLine() {
+            const commandInput = document.getElementById('command-input');
+            
+            commandInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const command = commandInput.value.trim().toUpperCase();
+                    if (command) {
+                        processCommand(command);
+                        commandHistory.push(command);
+                        commandIndex = -1;
+                        commandInput.value = '';
+                    }
+                }
+            });
+        }
+        
+        // Initialize SID music player
+        function initializeSIDPlayer() {
+            const sidMusic = document.getElementById('c64-sid-music');
+            const sidPlay = document.getElementById('sid-play');
+            const sidStop = document.getElementById('sid-stop');
+            const sidNext = document.getElementById('sid-next');
+            
+            sidPlay.addEventListener('click', () => {
+                playSound('click');
+                try {
+                    sidMusic.src = sidTracks[currentTrack].url;
+                    sidMusic.load();
+                    sidMusic.play().catch(err => console.log('Music autoplay prevented:', err));
+                    document.getElementById('sid-title').textContent = sidTracks[currentTrack].title;
+                } catch (e) {
+                    console.log('Music playback error:', e);
+                }
             });
             
-            item.style.borderColor = 'var(--c64-accent1)';
-            item.style.backgroundColor = 'var(--c64-dark)';
+            sidStop.addEventListener('click', () => {
+                playSound('click');
+                try {
+                    sidMusic.pause();
+                } catch (e) {
+                    console.log('Music stop error:', e);
+                }
+            });
+            
+            sidNext.addEventListener('click', () => {
+                playSound('click');
+                currentTrack = (currentTrack + 1) % sidTracks.length;
+                document.getElementById('sid-title').textContent = sidTracks[currentTrack].title;
+                
+                try {
+                    sidMusic.src = sidTracks[currentTrack].url;
+                    sidMusic.load();
+                    sidMusic.play().catch(err => console.log('Music autoplay prevented:', err));
+                } catch (e) {
+                    console.log('Music next track error:', e);
+                }
+            });
+        }
+        
+        // Initialize file manager
+        function initializeFileManager() {
+            const fileList = document.getElementById('file-list');
+            const fileCommand = document.getElementById('file-command');
+            
+            // Populate file list
+            populateFileList();
+            
+            // Handle file commands
+            fileCommand.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const command = fileCommand.value.trim().toUpperCase();
+                    processFileCommand(command);
+                    fileCommand.value = '';
+                }
+            });
+        }
+        
+        // Populate file list
+        function populateFileList() {
+            const fileList = document.getElementById('file-list');
+            fileList.innerHTML = '';
+            
+            diskFiles.forEach(file => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'c64-file-item';
+                fileItem.innerHTML = `
+                    <div class="c64-file-name">${file.name}</div>
+                    <div class="c64-file-type">${file.type}</div>
+                    <div class="c64-file-size">${file.size} BLOCKS</div>
+                `;
+                
+                fileItem.addEventListener('click', () => {
+                    playSound('click');
+                    // Highlight selected file
+                    fileList.querySelectorAll('.c64-file-item').forEach(item => {
+                        item.style.backgroundColor = '';
+                    });
+                    fileItem.style.backgroundColor = 'var(--c64-bg)';
+                });
+                
+                fileItem.addEventListener('dblclick', () => {
+                    playSound('click');
+                    simulateDiskActivity(true);
+                    setTimeout(() => {
+                        simulateDiskActivity(false);
+                        if (file.type === 'PRG') {
+                            showTemporaryMessage(`LOADING ${file.name}...`);
+                            if (file.name === 'BROWSER') {
+                                // Reload the app
+                                setTimeout(() => location.reload(), 1000);
+                            } else if (file.name === 'SPRITES') {
+                                toggleSprites();
+                            } else if (file.name === 'SID-MUSIC') {
+                                toggleMusic();
+                            }
+                        } else if (file.type === 'SEQ') {
+                            if (file.name === 'README') {
+                                showAboutModal();
+                            } else if (file.name === 'PETSCII-ART') {
+                                showPetsciiModal();
+                            }
+                        }
+                    }, 1500);
+                });
+                
+                fileList.appendChild(fileItem);
+            });
+        }
+        
+        // Process file command
+        function processFileCommand(command) {
+            playSound('click');
+            simulateDiskActivity(true);
+            
+            setTimeout(() => {
+                simulateDiskActivity(false);
+                
+                const commandParts = command.split(' ');
+                const cmd = commandParts[0];
+                
+                if (cmd === 'LOAD') {
+                    const fileName = commandParts[1]?.replace(/"/g, '');
+                    const device = commandParts[2] || '8';
+                    
+                    if (!fileName) {
+                        showTemporaryMessage('?SYNTAX ERROR');
+                        return;
+                    }
+                    
+                    const file = diskFiles.find(f => f.name === fileName);
+                    if (file) {
+                        showTemporaryMessage(`LOADING ${fileName}...`);
+                        if (file.name === 'BROWSER') {
+                            setTimeout(() => location.reload(), 1000);
+                        } else if (file.name === 'SPRITES') {
+                            toggleSprites();
+                        } else if (file.name === 'SID-MUSIC') {
+                            toggleMusic();
+                        } else if (file.name === 'README') {
+                            showAboutModal();
+                        } else if (file.name === 'PETSCII-ART') {
+                            showPetsciiModal();
+                        }
+                    } else {
+                        showTemporaryMessage('?FILE NOT FOUND ERROR');
+                    }
+                } else if (cmd === 'DIR' || cmd === 'CATALOG') {
+                    showFileManager();
+                } else if (cmd === 'SAVE') {
+                    showTemporaryMessage('SAVING...');
+                    setTimeout(() => showTemporaryMessage('SAVE COMPLETE'), 1000);
+                } else if (cmd === 'SCRATCH') {
+                    const fileName = commandParts[1]?.replace(/"/g, '');
+                    if (!fileName) {
+                        showTemporaryMessage('?SYNTAX ERROR');
+                        return;
+                    }
+                    
+                    const fileIndex = diskFiles.findIndex(f => f.name === fileName);
+                    if (fileIndex !== -1) {
+                        diskFiles.splice(fileIndex, 1);
+                        populateFileList();
+                        showTemporaryMessage(`${fileName} SCRATCHED`);
+                    } else {
+                        showTemporaryMessage('?FILE NOT FOUND ERROR');
+                    }
+                } else {
+                    showTemporaryMessage('?SYNTAX ERROR');
+                }
+            }, 1000);
+        }
+        
+        // Initialize sprites
+        function initializeSprites() {
+            const sprites = document.querySelectorAll('.c64-sprite');
+            
+            sprites.forEach((sprite, index) => {
+                sprite.style.backgroundColor = index === 0 ? 'var(--c64-accent1)' : 'var(--c64-accent2)';
+                sprite.style.left = `${spritePositions[index].x}px`;
+                sprite.style.top = `${spritePositions[index].y}px`;
+                
+                if (spritesEnabled) {
+                    sprite.style.display = 'block';
+                } else {
+                    sprite.style.display = 'none';
+                }
+            });
+        }
+        
+        // Move sprites randomly
+        function moveSpritesRandomly() {
+            if (!spritesEnabled) return;
+            
+            const sprites = document.querySelectorAll('.c64-sprite');
+            const viewportWidth = window.innerWidth - 50;
+            const viewportHeight = window.innerHeight - 50;
+            
+            sprites.forEach((sprite, index) => {
+                const newX = Math.floor(Math.random() * viewportWidth);
+                const newY = Math.floor(Math.random() * viewportHeight);
+                
+                sprite.style.left = `${newX}px`;
+                sprite.style.top = `${newY}px`;
+                spritePositions[index] = { x: newX, y: newY };
+            });
+            
+            setTimeout(moveSpritesRandomly, 3000);
+        }
+        
+        // Highlight repository item
+        function highlightRepoItem(item) {
+            document.querySelectorAll('.c64-repo-item').forEach(el => {
+                el.classList.remove('selected');
+            });
+            
+            item.classList.add('selected');
             item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             
-            // Znajdź odpowiednie repozytorium
+            // Find corresponding repository
             const repoName = item.querySelector('.c64-repo-name').textContent;
             selectedRepo = allRepos.find(repo => repo.name === repoName);
         }
         
-        // Minimalizacja okna
+        // Minimize window
         function minimizeWindow() {
             playSound('click');
             document.getElementById('main-window').style.display = 'none';
@@ -1155,20 +2102,20 @@
             isMinimized = true;
         }
         
-        // Maksymalizacja okna
+        // Maximize window
         function maximizeWindow() {
             playSound('click');
             const mainWindow = document.getElementById('main-window');
             
             if (mainWindow.style.position === 'fixed') {
-                // Przywróć normalny rozmiar
+                // Restore normal size
                 mainWindow.style.position = 'relative';
                 mainWindow.style.top = '';
                 mainWindow.style.left = '';
                 mainWindow.style.width = '';
                 mainWindow.style.height = '';
             } else {
-                // Maksymalizuj
+                // Maximize
                 mainWindow.style.position = 'fixed';
                 mainWindow.style.top = '0';
                 mainWindow.style.left = '0';
@@ -1178,25 +2125,62 @@
             }
         }
         
-        // Zamknięcie okna
+        // Close window
         function closeWindow() {
             playSound('click');
-            if (confirm('ARE YOU SURE YOU WANT TO EXIT?')) {
-                window.close();
-                // Jako alternatywa, jeśli window.close() nie zadziała
-                document.body.innerHTML = `
-                    <div class="c64-startup" style="opacity: 1; visibility: visible;">
-                        <div class="c64-logo">
-                            **** COMMODORE 64 BASIC V2 ****<br><br>
-                            READY.<br>
-                            SYSTEM HALTED
+            
+            showTemporaryMessage('REALLY EXIT? (Y/N)');
+            
+            const confirmHandler = function(e) {
+                if (e.key.toLowerCase() === 'y') {
+                    document.removeEventListener('keydown', confirmHandler);
+                    simulateDiskActivity(true);
+                    
+                    // Display shutdown screen
+                    document.body.innerHTML = `
+                        <div class="c64-startup" style="opacity: 1; visibility: visible;">
+                            <div class="c64-logo">
+                                <span class="petscii">
+READY.
+
+CLOSE APPLICATION
+ARE YOU SURE? Y
+
+SAVING SETTINGS...
+DONE.
+
+READY.
+</span>
+<span class="c64-cursor"></span>
+                            </div>
                         </div>
-                    </div>
-                `;
-            }
+                    `;
+                    
+                    setTimeout(() => {
+                        // Real close or show basic screen
+                        document.body.innerHTML = `
+                            <div class="c64-startup" style="opacity: 1; visibility: visible;">
+                                <div class="c64-logo">
+                                    <span class="petscii">
+       **** COMMODORE 64 BASIC V2 ****       
+    64K RAM SYSTEM  38911 BASIC BYTES FREE
+
+READY.
+<span class="c64-cursor"></span>
+                                    </span>
+                                </div>
+                            </div>
+                        `;
+                    }, 2000);
+                } else if (e.key.toLowerCase() === 'n') {
+                    document.removeEventListener('keydown', confirmHandler);
+                }
+            };
+            
+            document.addEventListener('keydown', confirmHandler);
         }
         
-        // Przywrócenie okna
+        // Restore window
         function restoreWindow() {
             playSound('click');
             document.getElementById('main-window').style.display = 'block';
@@ -1204,26 +2188,45 @@
             isMinimized = false;
         }
         
-        // Pokaż okno About
+        // Show about modal
         function showAboutModal() {
             playSound('click');
             document.getElementById('about-modal').style.display = 'block';
             document.getElementById('modal-background').style.display = 'block';
         }
         
-        // Pokaż okno skrótów klawiszowych
+        // Show shortcuts modal
         function showShortcutsModal() {
             playSound('click');
             document.getElementById('shortcuts-modal').style.display = 'block';
             document.getElementById('modal-background').style.display = 'block';
         }
         
-        // Zamknij wszystkie modalne okna
+        // Show PETSCII chart modal
+        function showPetsciiModal() {
+            playSound('click');
+            document.getElementById('petscii-modal').style.display = 'block';
+            document.getElementById('modal-background').style.display = 'block';
+        }
+        
+        // Show file manager modal
+        function showFileManager() {
+            playSound('click');
+            document.getElementById('file-manager-modal').style.display = 'block';
+            document.getElementById('modal-background').style.display = 'block';
+            populateFileList();
+        }
+        
+        // Close all modals
         function closeAllModals() {
+            playSound('click');
             document.getElementById('repo-details-modal').style.display = 'none';
             document.getElementById('about-modal').style.display = 'none';
             document.getElementById('shortcuts-modal').style.display = 'none';
+            document.getElementById('petscii-modal').style.display = 'none';
+            document.getElementById('file-manager-modal').style.display = 'none';
             document.getElementById('modal-background').style.display = 'none';
+            
             document.querySelectorAll('.c64-context-menu').forEach(menu => {
                 if (document.body.contains(menu)) {
                     document.body.removeChild(menu);
@@ -1231,7 +2234,7 @@
             });
         }
         
-        // Ustawienie trybu widoku ikon
+        // Set view mode
         function setViewMode(mode) {
             playSound('click');
             currentView = mode;
@@ -1256,7 +2259,7 @@
             }
         }
         
-        // Cykliczne przełączanie trybu widoku
+        // Cycle view modes
         function cycleViewMode() {
             playSound('click');
             if (currentView === 'large') {
@@ -1266,7 +2269,125 @@
             }
         }
         
-        // Sortowanie repozytoriów
+        // Toggle command line
+        function toggleCommandLine() {
+            playSound('click');
+            const commandLine = document.getElementById('command-line');
+            const programEditor = document.getElementById('program-editor');
+            const sidPlayer = document.getElementById('sid-player');
+            
+            if (commandLine.style.display === 'block') {
+                commandLine.style.display = 'none';
+            } else {
+                commandLine.style.display = 'block';
+                programEditor.style.display = 'none';
+                sidPlayer.style.display = 'none';
+                
+                // Focus the input
+                setTimeout(() => {
+                    document.getElementById('command-input').focus();
+                }, 100);
+            }
+        }
+        
+        // Toggle BASIC editor
+        function toggleBasicEditor() {
+            playSound('click');
+            const commandLine = document.getElementById('command-line');
+            const programEditor = document.getElementById('program-editor');
+            const sidPlayer = document.getElementById('sid-player');
+            
+            if (programEditor.style.display === 'block') {
+                programEditor.style.display = 'none';
+            } else {
+                programEditor.style.display = 'block';
+                commandLine.style.display = 'none';
+                sidPlayer.style.display = 'none';
+                
+                // Focus the input
+                setTimeout(() => {
+                    document.getElementById('program-input').focus();
+                }, 100);
+            }
+        }
+        
+        // Toggle music player
+        function toggleMusic() {
+            playSound('click');
+            musicEnabled = !musicEnabled;
+            
+            const sidPlayer = document.getElementById('sid-player');
+            const sidMusic = document.getElementById('c64-sid-music');
+            
+            if (musicEnabled) {
+                sidPlayer.style.display = 'block';
+                try {
+                    sidMusic.src = sidTracks[currentTrack].url;
+                    sidMusic.load();
+                    sidMusic.play().catch(err => console.log('Music autoplay prevented:', err));
+                    document.getElementById('sid-title').textContent = sidTracks[currentTrack].title;
+                    showTemporaryMessage('SID MUSIC ENABLED');
+                } catch (e) {
+                    console.log('Music playback error:', e);
+                }
+            } else {
+                sidPlayer.style.display = 'none';
+                try {
+                    sidMusic.pause();
+                    showTemporaryMessage('SID MUSIC DISABLED');
+                } catch (e) {
+                    console.log('Music stop error:', e);
+                }
+            }
+        }
+        
+        // Toggle sound effects
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            showTemporaryMessage(soundEnabled ? 'SOUND EFFECTS ENABLED' : 'SOUND EFFECTS DISABLED');
+        }
+        
+        // Toggle CRT effect
+        function toggleCRTEffect(enabled) {
+            crtEffectEnabled = enabled;
+            const crtEffect = document.querySelector('.crt-effect');
+            
+            if (crtEffectEnabled) {
+                if (!crtEffect) {
+                    const effect = document.createElement('div');
+                    effect.className = 'crt-effect';
+                    document.body.appendChild(effect);
+                } else {
+                    crtEffect.style.display = 'block';
+                }
+                document.body.classList.add('scanlines');
+            } else {
+                if (crtEffect) {
+                    crtEffect.style.display = 'none';
+                }
+                document.body.classList.remove('scanlines');
+            }
+            
+            showTemporaryMessage(crtEffectEnabled ? 'CRT EFFECT ENABLED' : 'CRT EFFECT DISABLED');
+        }
+        
+        // Toggle sprites
+        function toggleSprites() {
+            spritesEnabled = !spritesEnabled;
+            const sprites = document.querySelectorAll('.c64-sprite');
+            
+            sprites.forEach(sprite => {
+                sprite.style.display = spritesEnabled ? 'block' : 'none';
+            });
+            
+            if (spritesEnabled) {
+                moveSpritesRandomly();
+            }
+            
+            showTemporaryMessage(spritesEnabled ? 'SPRITES ENABLED' : 'SPRITES DISABLED');
+        }
+        
+        // Sort repositories
         function sortRepositories(sortType) {
             playSound('click');
             currentSort = sortType;
@@ -1287,9 +2408,13 @@
             });
             
             renderRepositories(allRepos);
+            
+            // Update status bar with sort type
+            document.querySelector('.c64-status-bar div:first-child').textContent = 
+                `${allRepos.length} OBJECTS - SORTED BY ${sortType.toUpperCase()}`;
         }
         
-        // Filtrowanie repozytoriów
+        // Filter repositories
         function filterRepositories() {
             const searchTerm = document.getElementById('repo-search').value.toLowerCase();
             
@@ -1305,17 +2430,26 @@
             );
             
             renderRepositories(filteredRepos);
+            
+            // Update status bar with filter info
+            document.querySelector('.c64-status-bar div:first-child').textContent = 
+                `${filteredRepos.length} / ${allRepos.length} OBJECTS - FILTER: "${searchTerm.toUpperCase()}"`;
         }
         
-        // Aktualizacja wyświetlania pamięci
+        // Update memory display
         function updateMemoryDisplay() {
             const memoryDisplay = document.getElementById('memory-display');
             const memory = Math.floor(Math.random() * 10000) + 30000;
             memoryDisplay.textContent = `${memory} BYTES FREE`;
+            
+            // Update periodically to simulate memory usage
+            setTimeout(updateMemoryDisplay, 10000);
         }
         
-        // Odtwarzanie dźwięków
+        // Play sound effect
         function playSound(type) {
+            if (!soundEnabled) return;
+            
             try {
                 switch (type) {
                     case 'startup':
@@ -1328,13 +2462,39 @@
                         document.getElementById('c64-click-sound').currentTime = 0;
                         document.getElementById('c64-click-sound').play().catch(() => {});
                         break;
+                    case 'load':
+                        document.getElementById('c64-load-sound').currentTime = 0;
+                        document.getElementById('c64-load-sound').play().catch(() => {});
+                        break;
                 }
             } catch (e) {
                 console.log('Audio not supported');
             }
         }
         
-        // Pokazywanie tymczasowego komunikatu
+        // Simulate disk activity
+        function simulateDiskActivity(active) {
+            diskActivity = active;
+            const diskDrive = document.querySelector('.c64-disk-activity');
+            const diskLight = document.querySelector('.c64-disk-light');
+            
+            if (active) {
+                diskDrive.style.display = 'block';
+                diskLight.classList.add('active');
+                if (soundEnabled) {
+                    playSound('load');
+                }
+            } else {
+                diskLight.classList.remove('active');
+                setTimeout(() => {
+                    if (!diskActivity) {
+                        diskDrive.style.display = 'none';
+                    }
+                }, 1000);
+            }
+        }
+        
+        // Show temporary message
         function showTemporaryMessage(message) {
             const messageElement = document.createElement('div');
             messageElement.style.position = 'fixed';
@@ -1355,12 +2515,280 @@
             }, 2000);
         }
         
-        // Pobieranie listy repozytoriów
+        // Process BASIC command
+        function processCommand(command) {
+            playSound('click');
+            const history = document.getElementById('command-history');
+            const commandLine = document.createElement('div');
+            commandLine.textContent = command;
+            history.appendChild(commandLine);
+            
+            // Handle built-in commands
+            if (command === 'CLS' || command === 'CLEAR') {
+                history.innerHTML = '';
+                return;
+            } else if (command === 'HELP') {
+                const helpText = document.createElement('div');
+                helpText.innerHTML = `
+                    AVAILABLE COMMANDS:<br>
+                    CLS, CLEAR - CLEAR SCREEN<br>
+                    DIR, CATALOG - SHOW FILES<br>
+                    LOAD "FILENAME" - LOAD FILE<br>
+                    RUN - RUN PROGRAM<br>
+                    LIST - LIST PROGRAM<br>
+                    HELP - SHOW HELP<br>
+                    SOUND ON/OFF - TOGGLE SOUND<br>
+                    MUSIC ON/OFF - TOGGLE MUSIC<br>
+                    SYS 64738 - RESET SYSTEM<br>
+                    VERSION - SHOW VERSION<br>
+                `;
+                history.appendChild(helpText);
+                return;
+            } else if (command === 'DIR' || command === 'CATALOG') {
+                showFileManager();
+                return;
+            } else if (command.startsWith('LOAD')) {
+                const parts = command.split(' ');
+                if (parts.length < 2) {
+                    const errorLine = document.createElement('div');
+                    errorLine.style.color = 'var(--c64-accent2)';
+                    errorLine.textContent = '?SYNTAX ERROR';
+                    history.appendChild(errorLine);
+                    return;
+                }
+                
+                const filename = parts[1].replace(/"/g, '');
+                simulateDiskActivity(true);
+                
+                const loadingLine = document.createElement('div');
+                loadingLine.textContent = `SEARCHING FOR ${filename}`;
+                history.appendChild(loadingLine);
+                
+                setTimeout(() => {
+                    simulateDiskActivity(false);
+                    const resultLine = document.createElement('div');
+                    
+                    if (filename === 'GITHUB' || filename === 'BROWSER') {
+                        resultLine.textContent = 'LOADING';
+                        history.appendChild(resultLine);
+                        setTimeout(() => {
+                            const readyLine = document.createElement('div');
+                            readyLine.textContent = 'READY.';
+                            history.appendChild(readyLine);
+                            // Refresh repositories
+                            fetchRepositories();
+                        }, 1000);
+                    } else if (filename === 'SPRITES') {
+                        resultLine.textContent = 'LOADING';
+                        history.appendChild(resultLine);
+                        setTimeout(() => {
+                            const readyLine = document.createElement('div');
+                            readyLine.textContent = 'READY.';
+                            history.appendChild(readyLine);
+                            toggleSprites();
+                        }, 1000);
+                    } else if (filename === 'MUSIC' || filename === 'SID') {
+                        resultLine.textContent = 'LOADING';
+                        history.appendChild(resultLine);
+                        setTimeout(() => {
+                            const readyLine = document.createElement('div');
+                            readyLine.textContent = 'READY.';
+                            history.appendChild(readyLine);
+                            toggleMusic();
+                        }, 1000);
+                    } else {
+                        resultLine.style.color = 'var(--c64-accent2)';
+                        resultLine.textContent = '?FILE NOT FOUND ERROR';
+                        history.appendChild(resultLine);
+                    }
+                }, 1500);
+                
+                return;
+            } else if (command === 'RUN') {
+                const runLine = document.createElement('div');
+                runLine.textContent = 'RUNNING PROGRAM...';
+                history.appendChild(runLine);
+                
+                // Simulate program execution
+                setTimeout(() => {
+                    const programOutput = document.createElement('div');
+                    programOutput.innerHTML = `
+                        GITHUB BROWSER<br>
+                        BY SWIR<br>
+                        LOADING... 1<br>
+                        LOADING... 2<br>
+                        LOADING... 3<br>
+                        LOADING... 4<br>
+                        LOADING... 5<br>
+                        LOADING... 6<br>
+                        LOADING... 7<br>
+                        LOADING... 8<br>
+                        LOADING... 9<br>
+                        LOADING... 10<br>
+                        SYSTEM READY
+                    `;
+                    history.appendChild(programOutput);
+                    
+                    // Fetch repositories after program runs
+                    fetchRepositories();
+                }, 1000);
+                return;
+            } else if (command === 'LIST') {
+                const listOutput = document.createElement('div');
+                listOutput.innerHTML = `
+                    10 PRINT "GITHUB BROWSER"<br>
+                    20 PRINT "BY SWIR"<br>
+                    30 FOR I=1 TO 10<br>
+                    40 PRINT "LOADING... "; I<br>
+                    50 NEXT I<br>
+                    60 PRINT "SYSTEM READY"<br>
+                    70 END
+                `;
+                history.appendChild(listOutput);
+                return;
+            } else if (command === 'SOUND ON') {
+                soundEnabled = true;
+                showTemporaryMessage('SOUND EFFECTS ENABLED');
+                return;
+            } else if (command === 'SOUND OFF') {
+                soundEnabled = false;
+                showTemporaryMessage('SOUND EFFECTS DISABLED');
+                return;
+            } else if (command === 'MUSIC ON') {
+                toggleMusic();
+                return;
+            } else if (command === 'MUSIC OFF') {
+                if (musicEnabled) toggleMusic();
+                return;
+            } else if (command === 'VERSION') {
+                const versionLine = document.createElement('div');
+                versionLine.textContent = 'GITHUB BROWSER V2.0 - (C) 2025 SWIR';
+                history.appendChild(versionLine);
+                return;
+            } else if (command === 'SYS 64738') {
+                // Reset the system
+                history.textContent = 'RESETTING SYSTEM...';
+                simulateDiskActivity(true);
+                
+                setTimeout(() => {
+                    location.reload();
+                }, 2000);
+                return;
+            }
+            
+            // Default response for unknown commands
+            const responseLine = document.createElement('div');
+            if (command.startsWith('PRINT ')) {
+                responseLine.textContent = command.substring(6).replace(/"/g, '');
+            } else if (command.startsWith('?')) {
+                responseLine.textContent = command.substring(1);
+            } else {
+                responseLine.style.color = 'var(--c64-accent2)';
+                responseLine.textContent = '?SYNTAX ERROR';
+            }
+            history.appendChild(responseLine);
+            
+            // Auto-scroll to the bottom
+            history.scrollTop = history.scrollHeight;
+        }
+        
+        // Change color scheme
+        function changeColors(colorScheme) {
+            const root = document.documentElement;
+            
+            switch (colorScheme) {
+                case 1: // Blue (default)
+                    root.style.setProperty('--c64-bg', 'var(--c64-blue)');
+                    root.style.setProperty('--c64-text', 'var(--c64-cyan)');
+                    root.style.setProperty('--c64-dark', '#1D1653');
+                    break;
+                case 2: // Green
+                    root.style.setProperty('--c64-bg', 'var(--c64-green)');
+                    root.style.setProperty('--c64-text', 'var(--c64-light-green)');
+                    root.style.setProperty('--c64-dark', '#2D4422');
+                    break;
+                case 3: // Purple
+                    root.style.setProperty('--c64-bg', 'var(--c64-purple)');
+                    root.style.setProperty('--c64-text', 'var(--c64-light-blue)');
+                    root.style.setProperty('--c64-dark', '#3D2046');
+                    break;
+                case 4: // Red
+                    root.style.setProperty('--c64-bg', 'var(--c64-red)');
+                    root.style.setProperty('--c64-text', 'var(--c64-light-red)');
+                    root.style.setProperty('--c64-dark', '#431F14');
+                    break;
+                case 5: // Black
+                    root.style.setProperty('--c64-bg', 'var(--c64-black)');
+                    root.style.setProperty('--c64-text', 'var(--c64-light-grey)');
+                    root.style.setProperty('--c64-dark', '#222222');
+                    break;
+                case 6: // Grey
+                    root.style.setProperty('--c64-bg', 'var(--c64-dark-grey)');
+                    root.style.setProperty('--c64-text', 'var(--c64-white)');
+                    root.style.setProperty('--c64-dark', '#333333');
+                    break;
+                case 7: // Brown
+                    root.style.setProperty('--c64-bg', 'var(--c64-brown)');
+                    root.style.setProperty('--c64-text', 'var(--c64-yellow)');
+                    root.style.setProperty('--c64-dark', '#302800');
+                    break;
+                case 8: // Orange
+                    root.style.setProperty('--c64-bg', 'var(--c64-orange)');
+                    root.style.setProperty('--c64-text', 'var(--c64-white)');
+                    root.style.setProperty('--c64-dark', '#432F15');
+                    break;
+            }
+            
+            showTemporaryMessage(`COLOR SCHEME ${colorScheme} ACTIVATED`);
+        }
+        
+        // Activate easter egg
+        function activateEasterEgg() {
+            playSound('click');
+            showTemporaryMessage('KONAMI CODE ACTIVATED!');
+            
+            // Rainbow color cycling for all text
+            document.querySelectorAll('.c64-title, .c64-menu-item, .c64-repo-name, .c64-status-bar div').forEach(element => {
+                element.classList.add('c64-color-cycle');
+            });
+            
+            // Enable sprites if not already enabled
+            if (!spritesEnabled) {
+                toggleSprites();
+            }
+            
+            // Start music if not already playing
+            if (!musicEnabled) {
+                toggleMusic();
+            }
+            
+            // Create some special PETSCII art in the background
+            const petsciiArt = document.createElement('div');
+            petsciiArt.className = 'petscii';
+            petsciiArt.style.position = 'fixed';
+            petsciiArt.style.bottom = '10px';
+            petsciiArt.style.right = '10px';
+            petsciiArt.style.color = 'var(--c64-accent1)';
+            petsciiArt.style.zIndex = '10';
+            petsciiArt.style.opacity = '0.5';
+            petsciiArt.style.pointerEvents = 'none';
+            petsciiArt.innerHTML = `
+                ┌────────────────┐
+                │ ♥ C64 FOREVER ♥│
+                │ ♦ KONAMI CODE ♦│
+                │ ACTIVATED !!! │
+                └────────────────┘
+            `;
+            
+            document.body.appendChild(petsciiArt);
+        }
+        
+        // Fetch repositories
         async function fetchRepositories() {
-            const username = 'Swir';
+            const username = 'Swir'; // Default username to fetch
             const reposContainer = document.getElementById('repos-container');
             
-            // Zmień zawartość kontenera na ekran ładowania
+            // Show loading screen
             reposContainer.innerHTML = `
                 <div class="c64-loading">
                     <div class="c64-loading-text">LOADING REPOSITORIES...</div>
@@ -1370,7 +2798,13 @@
                 </div>
             `;
             
+            simulateDiskActivity(true);
+            
             try {
+                // Simulate disk loading delay
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                // Fetch from GitHub API
                 const response = await fetch(`https://api.github.com/users/${username}/repos?per_page=100`);
                 
                 if (!response.ok) {
@@ -1379,38 +2813,138 @@
                 
                 allRepos = await response.json();
                 
-                // Sortowanie repozytoriów
+                // If no repositories found, use mock data for demo
+                if (allRepos.length === 0) {
+                    allRepos = createMockRepositories();
+                }
+                
+                // Sort repositories
                 sortRepositories(currentSort);
                 
-                // Aktualizuj licznik repozytoriów
+                // Update status bar
                 document.querySelector('.c64-status-bar div:first-child').textContent = `${allRepos.length} OBJECTS`;
                 
-                // Aktualizuj wyświetlanie pamięci
+                // Update memory display
                 updateMemoryDisplay();
+                
+                simulateDiskActivity(false);
                 
             } catch (error) {
                 console.error('Error fetching repositories:', error);
+                simulateDiskActivity(false);
                 playSound('error');
+                
+                // Show error message and use mock data
                 showErrorWindow("CONNECTION ERROR", error.message);
+                
+                // Use mock repositories as fallback
+                setTimeout(() => {
+                    allRepos = createMockRepositories();
+                    renderRepositories(allRepos);
+                }, 3000);
             }
         }
         
-        // Renderowanie repozytoriów
+        // Create mock repositories for testing/demo
+        function createMockRepositories() {
+            return [
+                {
+                    name: "C64-BROWSER",
+                    description: "Commodore 64 style GitHub browser interface",
+                    language: "JavaScript",
+                    html_url: "#",
+                    created_at: "2025-01-01T00:00:00Z",
+                    updated_at: "2025-04-01T00:00:00Z",
+                    stargazers_count: 64,
+                    forks_count: 8,
+                    watchers_count: 16,
+                    size: 1541,
+                    owner: { login: "Swir" }
+                },
+                {
+                    name: "RETRO-UI",
+                    description: "Retro computer UI components collection",
+                    language: "CSS",
+                    html_url: "#",
+                    created_at: "2024-10-15T00:00:00Z",
+                    updated_at: "2025-03-20T00:00:00Z",
+                    stargazers_count: 32,
+                    forks_count: 4,
+                    watchers_count: 8,
+                    size: 1024,
+                    owner: { login: "Swir" }
+                },
+                {
+                    name: "PETSCII-ART",
+                    description: "PETSCII art generator and editor",
+                    language: "JavaScript",
+                    html_url: "#",
+                    created_at: "2024-08-30T00:00:00Z",
+                    updated_at: "2025-02-15T00:00:00Z",
+                    stargazers_count: 16,
+                    forks_count: 2,
+                    watchers_count: 4,
+                    size: 512,
+                    owner: { login: "Swir" }
+                },
+                {
+                    name: "SID-EMULATOR",
+                    description: "SID chip sound emulator for web browsers",
+                    language: "JavaScript",
+                    html_url: "#",
+                    created_at: "2024-06-20T00:00:00Z",
+                    updated_at: "2025-01-10T00:00:00Z",
+                    stargazers_count: 48,
+                    forks_count: 6,
+                    watchers_count: 12,
+                    size: 768,
+                    owner: { login: "Swir" }
+                },
+                {
+                    name: "BASIC-INTERPRETER",
+                    description: "Commodore BASIC interpreter in JavaScript",
+                    language: "JavaScript",
+                    html_url: "#",
+                    created_at: "2024-04-10T00:00:00Z",
+                    updated_at: "2024-12-05T00:00:00Z",
+                    stargazers_count: 24,
+                    forks_count: 3,
+                    watchers_count: 6,
+                    size: 896,
+                    owner: { login: "Swir" }
+                },
+                {
+                    name: "6502-ASSEMBLER",
+                    description: "Online 6502 assembler and disassembler",
+                    language: "JavaScript",
+                    html_url: "#",
+                    created_at: "2024-02-01T00:00:00Z",
+                    updated_at: "2024-11-20T00:00:00Z",
+                    stargazers_count: 56,
+                    forks_count: 7,
+                    watchers_count: 14,
+                    size: 640,
+                    owner: { login: "Swir" }
+                }
+            ];
+        }
+        
+        // Render repositories
         function renderRepositories(repos) {
             const reposContainer = document.getElementById('repos-container');
             
-            // Aktualizuj licznik repozytoriów
+            // Update status bar
             document.querySelector('.c64-status-bar div:first-child').textContent = `${repos.length} OBJECTS`;
             
-            // Utwórz siatkę repozytoriów
+            // Create repository grid
             const repoGrid = document.createElement('div');
             repoGrid.className = 'c64-repo-grid';
             
-            // Dodaj każde repozytorium jako ikonę
+            // Add each repository as an icon
             repos.forEach((repo, index) => {
                 const repoItem = document.createElement('div');
                 repoItem.className = 'c64-repo-item';
-                repoItem.tabIndex = 0; // Dla nawigacji klawiaturą
+                repoItem.tabIndex = 0; // For keyboard navigation
                 
                 repoItem.addEventListener('click', () => {
                     playSound('click');
@@ -1421,6 +2955,7 @@
                 
                 repoItem.addEventListener('contextmenu', (e) => {
                     e.preventDefault();
+                    playSound('click');
                     selectedRepo = repo;
                     selectedRepoIndex = index;
                     highlightRepoItem(repoItem);
@@ -1436,23 +2971,52 @@
                     });
                 });
                 
-                // Utwórz odpowiednią ikonę dla języka
+                // Create appropriate icon for language
                 let iconClass = 'fas fa-file-code';
+                let iconColor = 'var(--c64-text)';
+                
                 if (repo.language) {
-                    if (repo.language === 'JavaScript') iconClass = 'fab fa-js-square';
-                    else if (repo.language === 'HTML') iconClass = 'fab fa-html5';
-                    else if (repo.language === 'CSS') iconClass = 'fab fa-css3-alt';
-                    else if (repo.language === 'Python') iconClass = 'fab fa-python';
-                    else if (repo.language === 'Java') iconClass = 'fab fa-java';
-                    else if (repo.language === 'PHP') iconClass = 'fab fa-php';
-                    else if (repo.language === 'Ruby') iconClass = 'fas fa-gem';
-                    else if (repo.language === 'C#') iconClass = 'fab fa-microsoft';
-                    else if (repo.language === 'TypeScript') iconClass = 'fab fa-js-square';
+                    if (repo.language === 'JavaScript') {
+                        iconClass = 'fab fa-js-square';
+                        iconColor = 'var(--c64-accent1)';
+                    } 
+                    else if (repo.language === 'HTML') {
+                        iconClass = 'fab fa-html5';
+                        iconColor = 'var(--c64-accent2)';
+                    }
+                    else if (repo.language === 'CSS') {
+                        iconClass = 'fab fa-css3-alt';
+                        iconColor = 'var(--c64-light-blue)';
+                    }
+                    else if (repo.language === 'Python') {
+                        iconClass = 'fab fa-python';
+                        iconColor = 'var(--c64-light-green)';
+                    }
+                    else if (repo.language === 'Java') {
+                        iconClass = 'fab fa-java';
+                        iconColor = 'var(--c64-orange)';
+                    }
+                    else if (repo.language === 'PHP') {
+                        iconClass = 'fab fa-php';
+                        iconColor = 'var(--c64-purple)';
+                    }
+                    else if (repo.language === 'Ruby') {
+                        iconClass = 'fas fa-gem';
+                        iconColor = 'var(--c64-accent2)';
+                    }
+                    else if (repo.language === 'C#') {
+                        iconClass = 'fab fa-microsoft';
+                        iconColor = 'var(--c64-light-green)';
+                    }
+                    else if (repo.language === 'TypeScript') {
+                        iconClass = 'fab fa-js-square';
+                        iconColor = 'var(--c64-light-blue)';
+                    }
                 }
                 
                 repoItem.innerHTML = `
                     <div class="c64-repo-icon">
-                        <i class="${iconClass}"></i>
+                        <i class="${iconClass}" style="color: ${iconColor};"></i>
                     </div>
                     <div class="c64-repo-name">${repo.name.toUpperCase()}</div>
                 `;
@@ -1463,28 +3027,33 @@
             reposContainer.innerHTML = '';
             reposContainer.appendChild(repoGrid);
             
-            // Zastosuj bieżący tryb widoku
+            // Apply current view mode
             setViewMode(currentView);
         }
         
-        // Wyświetla szczegóły repozytorium w oknie modalnym
+        // Show repository details in modal
         function showRepoDetails(repo) {
             const modal = document.getElementById('repo-details-modal');
             const modalBg = document.getElementById('modal-background');
             const content = document.getElementById('repo-details-content');
             const modalTitle = document.getElementById('modal-repo-name');
             
-            // Ustaw tytuł
+            // Set title
             modalTitle.textContent = repo.name.toUpperCase();
             
-            // Formatuj datę
+            // Format dates
             const createdDate = new Date(repo.created_at).toLocaleDateString();
             const updatedDate = new Date(repo.updated_at).toLocaleDateString();
             
-            // Przygotuj zawartość
+            // Prepare content
             content.innerHTML = `
                 <div class="c64-repo-description">
                     ${repo.description ? repo.description.toUpperCase() : "NO DESCRIPTION AVAILABLE."}
+                </div>
+                
+                <div class="c64-repo-details-row">
+                    <div class="c64-repo-details-label">OWNER:</div>
+                    <div class="c64-repo-details-value">${repo.owner.login.toUpperCase()}</div>
                 </div>
                 
                 <div class="c64-repo-details-row">
@@ -1522,25 +3091,33 @@
                     <div class="c64-repo-details-value">${repo.size} BYTES</div>
                 </div>
                 
+                <div class="petscii" style="margin: 15px 0; text-align: center; color: var(--c64-accent1);">
+┌──────────────────────────┐
+│                          │
+│   **** ${repo.language ? repo.language.padEnd(12, ' ').toUpperCase() : 'UNKNOWN'.padEnd(12, ' ')} ****   │
+│                          │
+└──────────────────────────┘
+                </div>
+                
                 <div class="c64-button-row">
                     <a href="${repo.html_url}" target="_blank" class="c64-action-button">OPEN REPO</a>
                     <button class="c64-action-button" onclick="closeRepoModal()">CLOSE</button>
                 </div>
             `;
             
-            // Pokaż modal
+            // Show modal
             modal.style.display = 'block';
             modalBg.style.display = 'block';
         }
         
-        // Zamyka modal
+        // Close repository modal
         function closeRepoModal() {
             playSound('click');
             document.getElementById('repo-details-modal').style.display = 'none';
             document.getElementById('modal-background').style.display = 'none';
         }
         
-        // Pokaż okno błędu
+        // Show error window
         function showErrorWindow(title, message) {
             playSound('error');
             const reposContainer = document.getElementById('repos-container');
@@ -1550,7 +3127,7 @@
                     <div class="c64-error-title">
                         <div>${title}</div>
                         <div class="c64-buttons">
-                            <div class="c64-button" onclick="location.reload()">X</div>
+                            <div class="c64-button" onclick="fetchRepositories()">X</div>
                         </div>
                     </div>
                     <div class="c64-error-content">
@@ -1558,7 +3135,8 @@
                         <div class="c64-error-message">${message.toUpperCase()}</div>
                     </div>
                     <div class="c64-error-buttons">
-                        <button class="c64-action-button" onclick="location.reload()">RETRY</button>
+                        <button class="c64-action-button" onclick="fetchRepositories()">RETRY</button>
+                        <button class="c64-action-button" onclick="allRepos = createMockRepositories(); renderRepositories(allRepos);">DEMO MODE</button>
                     </div>
                 </div>
             `;
