@@ -1,72 +1,108 @@
 <!DOCTYPE html>
-<html lang="pl">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Swir GitHub - Atari ST GEM</title>
-    <!-- Font Awesome -->
+    <title>Atari ST GEM GitHub Browser</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* --- Zmienne CSS --- */
+        /* --- GEM Color Variables --- */
         :root {
-            /* Atari ST GEM kolorystyka */
+            /* Classic Atari ST GEM monochrome palette */
             --gem-white: #FFFFFF;
             --gem-black: #000000;
-            --gem-grey: #AAAAAA;
-            --gem-light-grey: #DDDDDD;
-            --gem-dark-grey: #444444;
-            --gem-blue: #0000AA;
-            --gem-dark-blue: #000088;
-            --gem-green: #008800;
-            --gem-light-green: #00FF00;
-            --gem-red: #FF0000;
-            --gem-yellow: #FFFF00;
+            --gem-light-grey: #CCCCCC;
+            --gem-mid-grey: #999999;
+            --gem-dark-grey: #666666;
+            
+            /* Atari ST window colors */
+            --gem-window-edge: #000000;
+            --gem-window-drag: #000000;
+            --gem-window-bg: #FFFFFF;
+            --gem-window-outline: #FFFFFF;
+            
+            /* System specific elements */
+            --gem-menu-bg: #FFFFFF;
+            --gem-desktop-bg: #CCCCCC;
+            --gem-desktop-pattern: #AAAAAA;
+            
+            /* Text colors */
+            --gem-text: #000000;
+            --gem-text-inverse: #FFFFFF;
+            
+            /* Highlights */
+            --gem-selected-bg: #000000;
+            --gem-selected-text: #FFFFFF;
+            
+            /* System metrics */
+            --gem-border-width: 1px;
+            --gem-menu-height: 20px;
+            --gem-title-height: 19px;
+            --gem-button-height: 18px;
         }
         
-        /* --- Reset i podstawowe style --- */
+        /* --- Base reset --- */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
         
+        /* --- Font definitions --- */
         @font-face {
             font-family: 'AtariST';
             src: url('https://cdn.jsdelivr.net/gh/ParaWestGames/system-fonts/TTF/AtariST8x16SystemFont.ttf') format('truetype');
+            font-display: swap;
         }
         
+        /* --- Document structure --- */
         html, body {
-            background-color: var(--gem-light-grey);
-            color: var(--gem-black);
-            font-family: 'AtariST', 'Courier New', monospace;
-            font-size: 14px;
-            line-height: 1.3;
-            overflow-x: hidden;
+            font-family: 'AtariST', monospace;
+            font-size: 8px;
+            line-height: 1.5;
+            overflow: hidden;
             height: 100%;
-            margin: 0;
-            padding: 0;
+            color: var(--gem-text);
+            background-color: var(--gem-white);
+            -webkit-font-smoothing: none;
+            image-rendering: pixelated;
         }
         
-        body {
-            padding: 0;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
+        /* Force pixelation for crisp rendering */
+        canvas, img {
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
         }
-
+        
+        /* --- Desktop --- */
+        .gem-desktop {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--gem-desktop-bg);
+            background-image: url("data:image/svg+xml,%3Csvg width='4' height='4' viewBox='0 0 4 4' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 3h1v1H1V3zm2-2h1v1H3V1z' fill='%23888888' fill-opacity='0.4' fill-rule='evenodd'/%3E%3C/svg%3E");
+            overflow: hidden;
+            user-select: none;
+            z-index: 1;
+        }
+        
         /* --- Menu Bar --- */
         .gem-menu-bar {
-            background-color: var(--gem-white);
-            border-bottom: 2px solid var(--gem-black);
-            display: flex;
-            align-items: center;
-            height: 24px;
-            padding: 0;
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
-            z-index: 9999;
+            height: var(--gem-menu-height);
+            background-color: var(--gem-menu-bg);
+            border-bottom: var(--gem-border-width) solid var(--gem-black);
+            display: flex;
+            align-items: center;
+            z-index: 1000;
+            font-size: 9px;
+            padding: 0;
         }
         
         .gem-menu-items {
@@ -76,39 +112,35 @@
         
         .gem-menu-item {
             position: relative;
-            padding: 2px 15px;
-            font-family: 'AtariST', 'Courier New', monospace;
-            font-size: 14px;
-            cursor: pointer;
+            height: 100%;
+            padding: 0 8px;
             display: flex;
             align-items: center;
-            height: 100%;
-            border-right: 2px solid var(--gem-black);
-            font-weight: bold;
-            color: var(--gem-black); /* Explicitly setting text color */
-            background-color: var(--gem-light-grey); /* Light grey background for better contrast */
+            border-right: var(--gem-border-width) solid var(--gem-black);
+            cursor: pointer;
+            white-space: nowrap;
         }
         
         .gem-menu-item:first-child {
-            border-left: 2px solid var(--gem-black);
+            border-left: var(--gem-border-width) solid var(--gem-black);
         }
         
         .gem-menu-item:hover {
-            background-color: var(--gem-blue);
-            color: var(--gem-white);
+            background-color: var(--gem-selected-bg);
+            color: var(--gem-selected-text);
         }
         
         .gem-submenu {
             position: absolute;
-            display: none;
-            top: 24px;
+            top: var(--gem-menu-height);
             left: 0;
-            background-color: var(--gem-white);
-            border: 2px solid var(--gem-black);
+            min-width: 150px;
+            background-color: var(--gem-menu-bg);
+            border: var(--gem-border-width) solid var(--gem-black);
             border-top: none;
-            min-width: 180px;
-            z-index: 10000;
-            box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.3);
+            display: none;
+            z-index: 1001;
+            box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5);
         }
         
         .gem-menu-item:hover .gem-submenu {
@@ -116,249 +148,150 @@
         }
         
         .gem-submenu-item {
-            padding: 5px 15px;
-            font-family: 'AtariST', 'Courier New', monospace;
-            font-size: 14px;
+            padding: 3px 8px;
             cursor: pointer;
             white-space: nowrap;
-            font-weight: bold;
-            color: var(--gem-black); /* Explicitly setting text color */
+            font-size: 9px;
         }
         
         .gem-submenu-item:hover {
-            background-color: var(--gem-blue);
-            color: var(--gem-white);
+            background-color: var(--gem-selected-bg);
+            color: var(--gem-selected-text);
         }
         
         .gem-separator {
-            height: 2px;
+            height: 1px;
             background-color: var(--gem-black);
-            margin: 3px 0;
+            margin: 2px 0;
         }
-
-        /* --- Desktop Area --- */
-        .gem-desktop {
-            background-color: var(--gem-grey);
-            background-image: linear-gradient(45deg, var(--gem-light-grey) 25%, transparent 25%), 
-                             linear-gradient(-45deg, var(--gem-light-grey) 25%, transparent 25%),
-                             linear-gradient(45deg, transparent 75%, var(--gem-light-grey) 75%),
-                             linear-gradient(-45deg, transparent 75%, var(--gem-light-grey) 75%);
-            background-size: 20px 20px;
-            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
-            flex: 1;
-            margin-top: 24px;
-            padding: 20px;
-            position: relative;
-        }
-
-        /* --- Window Style --- */
+        
+        /* --- Window --- */
         .gem-window {
-            background-color: var(--gem-white);
-            border: 2px solid var(--gem-black);
-            outline: 2px solid var(--gem-white);
-            outline-offset: -6px;
+            position: absolute;
+            min-width: 200px;
+            min-height: 150px;
+            background-color: var(--gem-window-bg);
+            border: var(--gem-border-width) solid var(--gem-window-edge);
+            box-shadow: 1px 1px 0 var(--gem-dark-grey);
+        }
+        
+        .gem-content-area {
             position: relative;
-            margin: 0 auto;
-            max-width: 900px;
-            max-height: calc(100vh - 60px);
+            width: 100%;
+            height: calc(100% - var(--gem-title-height));
+            border-top: var(--gem-border-width) solid var(--gem-window-edge);
             overflow: hidden;
-            box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.3);
         }
         
         .gem-title-bar {
-            background-color: var(--gem-blue);
-            height: 28px;
-            position: relative;
+            height: var(--gem-title-height);
+            background-color: var(--gem-window-bg);
+            border-bottom: var(--gem-border-width) solid var(--gem-window-edge);
             display: flex;
             align-items: center;
             justify-content: space-between;
             cursor: move;
-            padding: 0 10px;
-            color: var(--gem-white);
+            padding: 0 4px;
         }
         
-        .gem-title {
-            font-family: 'AtariST', 'Courier New', monospace;
-            font-size: 16px;
-            text-align: center;
+        .gem-title-text {
             flex-grow: 1;
-            font-weight: bold;
+            text-align: center;
+            font-size: 9px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            padding: 0 4px;
         }
         
         .gem-window-controls {
             display: flex;
-            gap: 6px;
+            gap: 4px;
         }
         
         .gem-window-button {
-            width: 20px;
-            height: 20px;
-            border: 2px solid var(--gem-black);
+            width: 16px;
+            height: 16px;
+            border: var(--gem-border-width) solid var(--gem-black);
             background-color: var(--gem-white);
-            cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 14px;
+            cursor: pointer;
+            font-size: 9px;
             font-weight: bold;
-            color: var(--gem-black);
         }
         
-        .gem-window-body {
-            padding: 2px;
-            overflow: hidden;
-            height: calc(100% - 28px);
-            max-height: calc(100vh - 88px);
-            position: relative;
-            border-top: 2px solid var(--gem-black);
+        .gem-window-button:active {
+            background-color: var(--gem-light-grey);
+        }
+        
+        .gem-close-button::after {
+            content: "×";
+        }
+        
+        .gem-full-button::after {
+            content: "□";
         }
         
         /* --- Content Area --- */
         .gem-content {
-            padding: 10px;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: calc(100% - 16px); /* Adjust for scrollbar */
             height: 100%;
             overflow: auto;
+            padding: 8px;
+            font-size: 9px;
         }
         
-        /* --- Icons Grid --- */
-        .gem-icon-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-            gap: 20px;
-            padding: 10px;
-        }
-        
-        .gem-icon {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            cursor: pointer;
-            padding: 3px;
-        }
-        
-        .gem-icon.selected {
-            background-color: var(--gem-blue);
-        }
-        
-        .gem-icon.selected .gem-icon-label {
-            color: var(--gem-white);
-        }
-        
-        .gem-icon-box {
-            width: 40px;
-            height: 40px;
-            border: 2px solid var(--gem-black);
-            background-color: var(--gem-white);
-            margin-bottom: 5px;
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .gem-icon-label {
-            text-align: center;
-            max-width: 90px;
-            font-size: 14px;
-            word-wrap: break-word;
-            font-weight: bold;
-        }
-
-        /* --- Toolbar --- */
-        .gem-toolbar {
-            background-color: var(--gem-light-grey);
-            border-bottom: 2px solid var(--gem-black);
-            padding: 6px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        
-        .gem-button {
-            border: 2px solid var(--gem-black);
-            background-color: var(--gem-white);
-            padding: 3px 10px;
-            cursor: pointer;
-            font-family: 'AtariST', 'Courier New', monospace;
-            font-size: 14px;
-            min-width: 80px;
-            text-align: center;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 28px;
-            font-weight: bold;
-            color: var(--gem-black); /* Ensuring text color */
-        }
-        
-        .gem-button:active {
-            background-color: var(--gem-grey);
-        }
-        
-        .gem-search {
-            border: 2px solid var(--gem-black);
-            background-color: var(--gem-white);
-            padding: 3px 6px;
-            margin-left: auto;
-            width: 180px;
-            height: 28px;
-            font-size: 14px;
-            font-family: 'AtariST', 'Courier New', monospace;
-            color: var(--gem-black); /* Ensuring text color */
-        }
-        
-        .gem-search:focus {
-            outline: none;
-        }
-
         /* --- Scrollbar --- */
         .gem-scrollbar {
-            width: 20px;
-            height: 100%;
             position: absolute;
-            right: 0;
             top: 0;
-            border-left: 2px solid var(--gem-black);
+            right: 0;
+            width: 16px;
+            height: 100%;
             background-color: var(--gem-light-grey);
+            border-left: var(--gem-border-width) solid var(--gem-black);
         }
         
         .gem-scrollbar-thumb {
-            width: 16px;
-            background-color: var(--gem-white);
-            border: 2px solid var(--gem-black);
             position: absolute;
             left: 0;
+            width: 16px;
+            height: 40px;
+            background-color: var(--gem-white);
+            border: var(--gem-border-width) solid var(--gem-black);
             cursor: pointer;
         }
         
-        .gem-scrollbar-buttons {
-            width: 16px;
-            height: 36px;
+        .gem-scrollbar-up,
+        .gem-scrollbar-down {
             position: absolute;
-            bottom: 0;
             left: 0;
-        }
-        
-        .gem-scrollbar-button {
             width: 16px;
             height: 16px;
-            border: 2px solid var(--gem-black);
             background-color: var(--gem-white);
-            position: relative;
+            border: var(--gem-border-width) solid var(--gem-black);
             cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
-        .gem-scrollbar-button:first-child {
-            margin-bottom: -1px;
+        .gem-scrollbar-up {
+            top: 0;
+        }
+        
+        .gem-scrollbar-down {
+            bottom: 0;
         }
         
         .gem-scrollbar-up::after,
         .gem-scrollbar-down::after {
-            content: '';
-            position: absolute;
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
+            content: "";
             width: 0;
             height: 0;
             border-left: 4px solid transparent;
@@ -367,167 +300,189 @@
         
         .gem-scrollbar-up::after {
             border-bottom: 4px solid var(--gem-black);
-            border-top: none;
         }
         
         .gem-scrollbar-down::after {
             border-top: 4px solid var(--gem-black);
-            border-bottom: none;
         }
-
-        /* --- Modal Styles --- */
-        .gem-modal {
+        
+        /* --- Toolbar --- */
+        .gem-toolbar {
+            height: 28px;
+            background-color: var(--gem-light-grey);
+            border-bottom: var(--gem-border-width) solid var(--gem-black);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 0 6px;
+        }
+        
+        .gem-button {
+            height: var(--gem-button-height);
+            padding: 0 8px;
+            background-color: var(--gem-white);
+            border: var(--gem-border-width) solid var(--gem-black);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 9px;
+            white-space: nowrap;
+        }
+        
+        .gem-button:active {
+            background-color: var(--gem-light-grey);
+        }
+        
+        .gem-search {
+            height: var(--gem-button-height);
+            padding: 0 4px;
+            margin-left: auto;
+            background-color: var(--gem-white);
+            border: var(--gem-border-width) solid var(--gem-black);
+            font-family: 'AtariST', monospace;
+            font-size: 9px;
+            min-width: 120px;
+        }
+        
+        /* --- Icon View --- */
+        .gem-icon-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 16px;
+            padding: 8px;
+        }
+        
+        .gem-icon {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            padding: 4px;
+        }
+        
+        .gem-icon.selected {
+            background-color: var(--gem-selected-bg);
+            color: var(--gem-selected-text);
+        }
+        
+        .gem-icon-graphic {
+            width: 32px;
+            height: 32px;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .gem-icon-label {
+            text-align: center;
+            font-size: 9px;
+            word-break: break-word;
+            max-width: 70px;
+        }
+        
+        /* --- List View --- */
+        .gem-list-view {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 9px;
+        }
+        
+        .gem-list-view th {
+            background-color: var(--gem-light-grey);
+            border-bottom: var(--gem-border-width) solid var(--gem-black);
+            text-align: left;
+            padding: 2px 4px;
+            position: sticky;
+            top: 0;
+        }
+        
+        .gem-list-view td {
+            padding: 2px 4px;
+            border-bottom: var(--gem-border-width) dotted var(--gem-dark-grey);
+        }
+        
+        .gem-list-view tr.selected {
+            background-color: var(--gem-selected-bg);
+            color: var(--gem-selected-text);
+        }
+        
+        /* --- Dialog --- */
+        .gem-dialog {
             position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            z-index: 10001;
-            display: none;
-            width: 90%;
-            max-width: 500px;
-        }
-        
-        .gem-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(0, 0, 0, 0.3);
-            z-index: 10000;
-            display: none;
-        }
-        
-        /* --- Detail View --- */
-        .gem-detail-window {
-            max-width: 500px;
-        }
-        
-        .gem-detail-content {
-            padding: 15px;
-        }
-        
-        .gem-detail-header {
-            font-family: 'AtariST', 'Courier New', monospace;
-            font-size: 16px;
-            margin-bottom: 15px;
-            border-bottom: 2px solid var(--gem-black);
-            padding-bottom: 8px;
-            font-weight: bold;
-        }
-        
-        .gem-detail-row {
-            display: flex;
-            margin-bottom: 10px;
-            font-size: 14px;
-        }
-        
-        .gem-detail-label {
-            width: 120px;
-            font-weight: bold;
-        }
-        
-        .gem-detail-value {
-            flex: 1;
-        }
-        
-        .gem-detail-description {
-            margin: 15px 0;
-            padding: 8px;
-            border: 2px solid var(--gem-black);
             background-color: var(--gem-white);
-            font-size: 14px;
-        }
-        
-        .gem-button-row {
-            display: flex;
-            justify-content: center;
-            gap: 30px;
-            margin-top: 20px;
-        }
-
-        /* --- Context Menu --- */
-        .gem-context-menu {
-            position: absolute;
-            background-color: var(--gem-white);
-            border: 2px solid var(--gem-black);
-            z-index: 10002;
-            display: none;
-            box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.3);
-        }
-        
-        .gem-context-item {
-            padding: 5px 15px;
-            font-family: 'AtariST', 'Courier New', monospace;
-            font-size: 14px;
-            cursor: pointer;
-            white-space: nowrap;
-            font-weight: bold;
-            color: var(--gem-black); /* Ensuring text color */
-        }
-        
-        .gem-context-item:hover {
-            background-color: var(--gem-blue);
-            color: var(--gem-white);
-        }
-
-        /* --- Dialog Boxes --- */
-        .gem-dialog {
-            width: 350px;
-            position: fixed;
-            top: 40%;
-            left: 50%;
-            transform: translateX(-50%);
-            border: 2px solid var(--gem-black);
-            background-color: var(--gem-white);
-            outline: 2px solid var(--gem-white);
-            outline-offset: -6px;
-            z-index: 10002;
-            display: none;
-            box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.3);
+            border: var(--gem-border-width) solid var(--gem-black);
+            z-index: 1100;
+            min-width: 250px;
+            box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5);
         }
         
         .gem-dialog-content {
-            padding: 25px;
+            padding: 16px;
             text-align: center;
-        }
-        
-        .gem-dialog-icon {
-            font-size: 30px;
-            margin-bottom: 15px;
+            font-size: 9px;
         }
         
         .gem-dialog-message {
-            margin-bottom: 25px;
-            font-size: 16px;
-            font-weight: bold;
+            margin-bottom: 16px;
         }
         
         .gem-dialog-buttons {
             display: flex;
             justify-content: center;
-            gap: 30px;
-            padding-bottom: 25px;
+            gap: 16px;
         }
         
-        .gem-dialog-button {
-            min-width: 100px;
-            border: 2px solid var(--gem-black);
+        /* --- Context Menu --- */
+        .gem-context-menu {
+            position: absolute;
             background-color: var(--gem-white);
-            cursor: pointer;
-            text-align: center;
-            font-family: 'AtariST', 'Courier New', monospace;
-            font-size: 14px;
-            padding: 5px 15px;
-            font-weight: bold;
-            color: var(--gem-black); /* Ensuring text color */
+            border: var(--gem-border-width) solid var(--gem-black);
+            z-index: 1001;
+            min-width: 120px;
+            box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5);
         }
         
-        .gem-dialog-button.default {
-            outline: 2px dotted var(--gem-black);
-            outline-offset: -5px;
+        /* --- Detail Window --- */
+        .gem-detail-content {
+            padding: 8px;
+            font-size: 9px;
         }
-
+        
+        .gem-detail-header {
+            margin-bottom: 8px;
+            padding-bottom: 4px;
+            border-bottom: var(--gem-border-width) solid var(--gem-black);
+            font-size: 10px;
+        }
+        
+        .gem-detail-row {
+            display: flex;
+            margin-bottom: 4px;
+        }
+        
+        .gem-detail-label {
+            width: 80px;
+        }
+        
+        .gem-detail-description {
+            margin: 8px 0;
+            padding: 4px;
+            border: var(--gem-border-width) solid var(--gem-black);
+            background-color: var(--gem-white);
+        }
+        
+        .gem-button-row {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-top: 16px;
+        }
+        
         /* --- Startup Screen --- */
         .gem-startup {
             position: fixed;
@@ -540,232 +495,202 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            z-index: 20000;
-            transition: opacity 0.5s;
+            z-index: 2000;
         }
         
         .gem-startup.hidden {
-            opacity: 0;
-            pointer-events: none;
+            display: none;
         }
         
         .gem-logo {
-            width: 150px;
-            height: 150px;
-            margin-bottom: 30px;
-            position: relative;
-            background-color: var(--gem-light-grey);
-            border: 3px solid var(--gem-black);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .gem-logo::after {
-            content: "ATARI ST";
-            font-family: 'AtariST', 'Courier New', monospace;
-            font-size: 24px;
-            font-weight: bold;
-            color: var(--gem-blue);
+            width: 128px;
+            height: 128px;
+            margin-bottom: 24px;
+            background-image: url("data:image/svg+xml,%3Csvg width='128' height='128' viewBox='0 0 128 128' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='128' height='128' fill='white'/%3E%3Cpath d='M20 20H108V108H20V20Z' fill='black'/%3E%3Cpath d='M24 24H104V104H24V24Z' fill='white'/%3E%3Cpath d='M40 44H88V68H40V44Z' fill='black'/%3E%3Cpath d='M40 72H64V84H40V72Z' fill='black'/%3E%3Cpath d='M68 72H88V84H68V72Z' fill='black'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: center;
         }
         
         .gem-startup-text {
-            font-family: 'AtariST', 'Courier New', monospace;
+            font-size: 12px;
+            margin-bottom: 8px;
             text-align: center;
-            font-size: 18px;
-            margin-bottom: 15px;
-            font-weight: bold;
-            color: var(--gem-black); /* Ensuring text color */
         }
         
-        .gem-startup-version {
-            font-family: 'AtariST', 'Courier New', monospace;
-            text-align: center;
-            font-size: 16px;
-            color: var(--gem-dark-grey);
-            font-weight: bold;
+        /* --- File Icons --- */
+        .icon-generic {
+            width: 32px;
+            height: 32px;
+            background-image: url("data:image/svg+xml,%3Csvg width='32' height='32' viewBox='0 0 32 32' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M8 2V30H24V10L16 2H8Z' fill='white' stroke='black'/%3E%3Cpath d='M16 2V10H24' stroke='black'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: center;
         }
-
+        
+        .icon-js {
+            width: 32px;
+            height: 32px;
+            background-image: url("data:image/svg+xml,%3Csvg width='32' height='32' viewBox='0 0 32 32' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M8 2V30H24V10L16 2H8Z' fill='white' stroke='black'/%3E%3Cpath d='M16 2V10H24' stroke='black'/%3E%3Cpath d='M12 20C12 18 13 17 14 17C15 17 16 18 16 20M16 20H18C18 18 17 16 14 16C11 16 10 18 10 20V24C10 26 11 28 14 28C17 28 18 26 18 24H16C16 26 15 27 14 27C13 27 12 26 12 24V20Z' stroke='black'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+        
+        .icon-html {
+            width: 32px;
+            height: 32px;
+            background-image: url("data:image/svg+xml,%3Csvg width='32' height='32' viewBox='0 0 32 32' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M8 2V30H24V10L16 2H8Z' fill='white' stroke='black'/%3E%3Cpath d='M16 2V10H24' stroke='black'/%3E%3Cpath d='M10 16L16 22L22 16M12 19H20' stroke='black'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+        
+        .icon-css {
+            width: 32px;
+            height: 32px;
+            background-image: url("data:image/svg+xml,%3Csvg width='32' height='32' viewBox='0 0 32 32' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M8 2V30H24V10L16 2H8Z' fill='white' stroke='black'/%3E%3Cpath d='M16 2V10H24' stroke='black'/%3E%3Cpath d='M10 15H22M10 19H22M10 23H22' stroke='black'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+        
+        .icon-py {
+            width: 32px;
+            height: 32px;
+            background-image: url("data:image/svg+xml,%3Csvg width='32' height='32' viewBox='0 0 32 32' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M8 2V30H24V10L16 2H8Z' fill='white' stroke='black'/%3E%3Cpath d='M16 2V10H24' stroke='black'/%3E%3Cpath d='M14 12C14 10 15 9 16 9C17 9 18 10 18 12V16C18 18 17 19 16 19H12V23C12 25 13 26 14 26C15 26 16 25 16 23M14 16C14 18 15 19 16 19C17 19 18 18 18 16' stroke='black'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+        
         /* --- Loading Indicator --- */
         .gem-loading {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 40px;
+            padding: 32px;
         }
         
         .gem-loading-text {
-            font-family: 'AtariST', 'Courier New', monospace;
-            margin-bottom: 25px;
-            font-size: 16px;
-            font-weight: bold;
-            color: var(--gem-black); /* Ensuring text color */
+            margin-bottom: 16px;
+            font-size: 9px;
         }
         
-        .gem-loading-animation {
-            width: 250px;
-            height: 20px;
-            border: 2px solid var(--gem-black);
+        .gem-loading-bar {
+            width: 200px;
+            height: 8px;
+            border: var(--gem-border-width) solid var(--gem-black);
             background-color: var(--gem-white);
             position: relative;
             overflow: hidden;
         }
         
-        .gem-loading-bar {
-            height: 100%;
-            width: 30%;
-            background-color: var(--gem-blue);
+        .gem-loading-progress {
             position: absolute;
-            left: -30%;
-            animation: gem-loading 2s infinite linear;
+            height: 100%;
+            width: 40px;
+            background-color: var(--gem-black);
+            animation: gem-loading 1.5s infinite;
         }
         
         @keyframes gem-loading {
-            0% { left: -30%; }
-            100% { left: 100%; }
+            0% { left: -40px; }
+            100% { left: 200px; }
         }
-
-        /* --- List View --- */
-        .gem-list-view {
+        
+        /* --- Modal Overlay --- */
+        .gem-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 100%;
-            border-collapse: collapse;
-            font-size: 14px;
-            border: 2px solid var(--gem-black);
-            color: var(--gem-black); /* Ensuring text color */
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.2);
+            z-index: 1000;
         }
         
-        .gem-list-view th {
-            text-align: left;
-            padding: 6px 10px;
-            border-bottom: 2px solid var(--gem-black);
-            font-weight: bold;
-            background-color: var(--gem-light-grey);
-        }
-        
-        .gem-list-view td {
-            padding: 6px 10px;
-            border-bottom: 1px solid var(--gem-dark-grey);
-        }
-        
-        .gem-list-view tr.selected {
-            background-color: var(--gem-blue);
-            color: var(--gem-white);
-        }
-        
-        /* --- Responsive Styles --- */
-        @media (max-width: 768px) {
-            .gem-icon-grid {
-                grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-            }
-            
-            .gem-search {
-                width: 140px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .gem-icon-grid {
-                grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
-            }
-            
-            .gem-toolbar {
-                flex-wrap: wrap;
-            }
-            
-            .gem-search {
-                width: 100%;
-                margin-top: 5px;
-                order: 10;
-            }
-        }
-        
-        /* Ikony dla typów plików */
-        .icon-file {
-            width: 32px;
-            height: 32px;
-            display: block;
-            margin: auto;
-            background-color: var(--gem-black);
-            mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M6,2V30H26V8L20,2H6z"/><path d="M20,2V8H26"/></svg>');
-            mask-repeat: no-repeat;
-            mask-position: center;
-            -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M6,2V30H26V8L20,2H6z"/><path d="M20,2V8H26"/></svg>');
-            -webkit-mask-repeat: no-repeat;
-            -webkit-mask-position: center;
-        }
-        
-        .icon-js {
-            width: 32px;
-            height: 32px;
-            background-color: var(--gem-black);
-            mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M6,2V30H26V8L20,2H6z"/><path d="M20,2V8H26"/><path d="M12,22v-4c0-1,0-2,2-2s2,1,2,2h2c0-2-1-4-4-4s-4,2-4,4v4c0,1,0,2,2,2s2-1,2-2h-2"/><path d="M22,16c0-2-1-4-4-4v2c1,0,2,1,2,2v4c0,1-1,2-2,2v2c3,0,4-2,4-4v-4"/></svg>');
-            mask-repeat: no-repeat;
-            mask-position: center;
-            -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M6,2V30H26V8L20,2H6z"/><path d="M20,2V8H26"/><path d="M12,22v-4c0-1,0-2,2-2s2,1,2,2h2c0-2-1-4-4-4s-4,2-4,4v4c0,1,0,2,2,2s2-1,2-2h-2"/><path d="M22,16c0-2-1-4-4-4v2c1,0,2,1,2,2v4c0,1-1,2-2,2v2c3,0,4-2,4-4v-4"/></svg>');
-            -webkit-mask-repeat: no-repeat;
-            -webkit-mask-position: center;
-            display: block;
-            margin: auto;
-        }
-        
-        .icon-html {
-            width: 32px;
-            height: 32px;
-            background-color: var(--gem-black);
-            mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M6,2V30H26V8L20,2H6z"/><path d="M20,2V8H26"/><path d="M10,12L16,20L22,12"/><path d="M12,16H20"/></svg>');
-            mask-repeat: no-repeat;
-            mask-position: center;
-            -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M6,2V30H26V8L20,2H6z"/><path d="M20,2V8H26"/><path d="M10,12L16,20L22,12"/><path d="M12,16H20"/></svg>');
-            -webkit-mask-repeat: no-repeat;
-            -webkit-mask-position: center;
-            display: block;
-            margin: auto;
-        }
-        
-        .icon-css {
-            width: 32px;
-            height: 32px;
-            background-color: var(--gem-black);
-            mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M6,2V30H26V8L20,2H6z"/><path d="M20,2V8H26"/><path d="M10,12H22V14H10z"/><path d="M10,16H22V18H10z"/><path d="M10,20H22V22H10z"/></svg>');
-            mask-repeat: no-repeat;
-            mask-position: center;
-            -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M6,2V30H26V8L20,2H6z"/><path d="M20,2V8H26"/><path d="M10,12H22V14H10z"/><path d="M10,16H22V18H10z"/><path d="M10,20H22V22H10z"/></svg>');
-            -webkit-mask-repeat: no-repeat;
-            -webkit-mask-position: center;
-            display: block;
-            margin: auto;
-        }
-        
-        .icon-py {
-            width: 32px;
-            height: 32px;
-            background-color: var(--gem-black);
-            mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M6,2V30H26V8L20,2H6z"/><path d="M20,2V8H26"/><path d="M14,10c0-1,1-2,2-2s2,1,2,2v4c0,1-1,2-2,2h-4v4c0,1,1,2,2,2s2-1,2-2"/><path d="M14,14c0,1,1,2,2,2s2-1,2-2"/></svg>');
-            mask-repeat: no-repeat;
-            mask-position: center;
-            -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M6,2V30H26V8L20,2H6z"/><path d="M20,2V8H26"/><path d="M14,10c0-1,1-2,2-2s2,1,2,2v4c0,1-1,2-2,2h-4v4c0,1,1,2,2,2s2-1,2-2"/><path d="M14,14c0,1,1,2,2,2s2-1,2-2"/></svg>');
-            -webkit-mask-repeat: no-repeat;
-            -webkit-mask-position: center;
-            display: block;
-            margin: auto;
-        }
-
-        /* Menu Label Highlight */
-        .gem-menu-label {
-            display: inline-block;
+        /* --- Menu Label Accelerator --- */
+        .gem-menu-accelerator {
             text-decoration: underline;
-            padding: 0 1px;
-            margin-right: 3px;
+        }
+        
+        /* --- Selected State --- */
+        .selected .icon-generic,
+        .selected .icon-js,
+        .selected .icon-html,
+        .selected .icon-css,
+        .selected .icon-py {
+            filter: invert(1);
+        }
+        
+        /* --- Authentic Rendering --- */
+        .pixel-perfect {
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+        
+        /* --- Cursor --- */
+        .gem-desktop, .gem-window {
+            cursor: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 16 16' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M3 1V14L5 12L7 16L9 15L7 11H10L3 1Z' fill='black'/%3E%3C/svg%3E"), auto;
+        }
+        
+        /* --- Resize Handle --- */
+        .gem-resize-handle {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 16px;
+            height: 16px;
+            cursor: nwse-resize;
+            background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 16 16' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M15 7V15H7M15 11V15H11' stroke='black'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            z-index: 10;
+        }
+        
+        /* --- Double Border Effect --- */
+        .gem-window::after {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            right: 3px;
+            bottom: 3px;
+            border: var(--gem-border-width) solid var(--gem-black);
+            pointer-events: none;
+        }
+        
+        /* --- CRT Effect (Optional) --- */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 9999;
+            background-image: linear-gradient(rgba(0, 0, 0, 0.1) 1px, transparent 1px);
+            background-size: 100% 2px;
+        }
+        
+        /* --- Special Dialog Button --- */
+        .gem-dialog-button.default {
+            outline: 1px dotted var(--gem-black);
+            outline-offset: -3px;
+        }
+        
+        /* --- Hide Scrollbar for More Authenticity --- */
+        .gem-content::-webkit-scrollbar {
+            display: none;
         }
     </style>
 </head>
 <body>
+    <!-- Desktop -->
+    <div class="gem-desktop pixel-perfect"></div>
+    
     <!-- Menu Bar -->
-    <div class="gem-menu-bar">
+    <div class="gem-menu-bar pixel-perfect">
         <div class="gem-menu-items">
             <div class="gem-menu-item">
-                <span class="gem-menu-label">D</span>esk
+                <span class="gem-menu-accelerator">D</span>esk
                 <div class="gem-submenu">
                     <div class="gem-submenu-item" id="about-button">About GitHub Browser...</div>
                     <div class="gem-separator"></div>
@@ -773,7 +698,7 @@
                 </div>
             </div>
             <div class="gem-menu-item">
-                <span class="gem-menu-label">F</span>ile
+                <span class="gem-menu-accelerator">F</span>ile
                 <div class="gem-submenu">
                     <div class="gem-submenu-item" id="open-window">Open</div>
                     <div class="gem-submenu-item" id="close-window">Close</div>
@@ -782,7 +707,7 @@
                 </div>
             </div>
             <div class="gem-menu-item">
-                <span class="gem-menu-label">V</span>iew
+                <span class="gem-menu-accelerator">V</span>iew
                 <div class="gem-submenu">
                     <div class="gem-submenu-item" id="view-icon">Show as Icons</div>
                     <div class="gem-submenu-item" id="view-list">Show as Text</div>
@@ -793,7 +718,7 @@
                 </div>
             </div>
             <div class="gem-menu-item">
-                <span class="gem-menu-label">O</span>ptions
+                <span class="gem-menu-accelerator">O</span>ptions
                 <div class="gem-submenu">
                     <div class="gem-submenu-item" id="keyboard-shortcuts">Keyboard Shortcuts</div>
                     <div class="gem-submenu-item" id="preferences">Preferences</div>
@@ -801,106 +726,109 @@
             </div>
         </div>
     </div>
-
-    <!-- Desktop Area -->
-    <div class="gem-desktop">
-        <!-- Main Window -->
-        <div class="gem-window" id="main-window">
-            <div class="gem-title-bar" id="main-title-bar">
-                <div class="gem-title">GitHub Browser</div>
-                <div class="gem-window-controls">
-                    <div class="gem-window-button" id="window-full">↕</div>
-                    <div class="gem-window-button" id="window-close">×</div>
+    
+    <!-- Main Window -->
+    <div class="gem-window pixel-perfect" id="main-window" style="width: 640px; height: 400px; top: 50px; left: 50%; transform: translateX(-50%);">
+        <div class="gem-title-bar" id="main-title-bar">
+            <div class="gem-title-text">GitHub Browser</div>
+            <div class="gem-window-controls">
+                <div class="gem-window-button gem-full-button" id="window-full"></div>
+                <div class="gem-window-button gem-close-button" id="window-close"></div>
+            </div>
+        </div>
+        
+        <div class="gem-content-area">
+            <div class="gem-toolbar">
+                <div class="gem-button" id="refresh-repos">Refresh</div>
+                <div class="gem-button" id="view-toggle">View</div>
+                <div class="gem-button" id="sort-button">Sort</div>
+                <input type="text" class="gem-search" id="repo-search" placeholder="Search...">
+            </div>
+            
+            <div class="gem-content" id="repos-container">
+                <!-- Loading Indicator -->
+                <div class="gem-loading">
+                    <div class="gem-loading-text">Loading Repositories...</div>
+                    <div class="gem-loading-bar">
+                        <div class="gem-loading-progress"></div>
+                    </div>
                 </div>
             </div>
             
-            <div class="gem-window-body">
-                <div class="gem-toolbar">
-                    <div class="gem-button" id="refresh-repos">Refresh</div>
-                    <div class="gem-button" id="view-toggle">View</div>
-                    <div class="gem-button" id="sort-button">Sort</div>
-                    <input type="text" class="gem-search" id="repo-search" placeholder="Search...">
-                </div>
-                
-                <div class="gem-content" id="repos-container">
-                    <!-- Loading Indicator -->
-                    <div class="gem-loading">
-                        <div class="gem-loading-text">Loading Repositories...</div>
-                        <div class="gem-loading-animation">
-                            <div class="gem-loading-bar"></div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Atari ST GEM Scrollbar -->
-                <div class="gem-scrollbar">
-                    <div class="gem-scrollbar-thumb"></div>
-                    <div class="gem-scrollbar-buttons">
-                        <div class="gem-scrollbar-button gem-scrollbar-up"></div>
-                        <div class="gem-scrollbar-button gem-scrollbar-down"></div>
-                    </div>
-                </div>
+            <!-- Scrollbar -->
+            <div class="gem-scrollbar">
+                <div class="gem-scrollbar-up"></div>
+                <div class="gem-scrollbar-thumb" style="top: 16px;"></div>
+                <div class="gem-scrollbar-down"></div>
             </div>
+            
+            <!-- Resize Handle -->
+            <div class="gem-resize-handle" id="resize-handle"></div>
         </div>
     </div>
-
+    
     <!-- Repository Detail Modal -->
-    <div class="gem-modal" id="repo-detail-modal">
-        <div class="gem-window gem-detail-window">
+    <div id="repo-detail-modal" style="display: none;">
+        <div class="gem-overlay"></div>
+        <div class="gem-window pixel-perfect" style="width: 400px; height: 300px; z-index: 1001;">
             <div class="gem-title-bar" id="detail-title-bar">
-                <div class="gem-title" id="repo-detail-title">Repository Info</div>
+                <div class="gem-title-text" id="repo-detail-title">Repository Info</div>
                 <div class="gem-window-controls">
-                    <div class="gem-window-button" onclick="closeModal('repo-detail-modal')">×</div>
+                    <div class="gem-window-button gem-close-button" onclick="closeModal('repo-detail-modal')"></div>
                 </div>
             </div>
             
-            <div class="gem-window-body">
-                <div class="gem-detail-content" id="repo-detail-content">
-                    <!-- Content will be filled dynamically -->
+            <div class="gem-content-area">
+                <div class="gem-content">
+                    <div class="gem-detail-content" id="repo-detail-content">
+                        <!-- Content will be filled dynamically -->
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-
+    
     <!-- About Modal -->
-    <div class="gem-modal" id="about-modal">
-        <div class="gem-window">
+    <div id="about-modal" style="display: none;">
+        <div class="gem-overlay"></div>
+        <div class="gem-window pixel-perfect" style="width: 300px; height: 250px; z-index: 1001;">
             <div class="gem-title-bar">
-                <div class="gem-title">About GitHub Browser</div>
+                <div class="gem-title-text">About GitHub Browser</div>
                 <div class="gem-window-controls">
-                    <div class="gem-window-button" onclick="closeModal('about-modal')">×</div>
+                    <div class="gem-window-button gem-close-button" onclick="closeModal('about-modal')"></div>
                 </div>
             </div>
             
-            <div class="gem-window-body">
-                <div class="gem-content" style="text-align: center; padding: 20px;">
-                    <div class="gem-logo" style="margin: 0 auto 30px; width: 120px; height: 120px;"></div>
-                    <div style="font-family: 'AtariST', 'Courier New', monospace; font-size: 20px; margin-bottom: 10px; font-weight: bold;">
+            <div class="gem-content-area">
+                <div class="gem-content" style="text-align: center; padding: 16px;">
+                    <div class="gem-logo" style="width: 64px; height: 64px; margin: 0 auto 16px;"></div>
+                    <div style="font-size: 12px; margin-bottom: 8px;">
                         GitHub Browser
                     </div>
-                    <div style="font-size: 16px; margin-bottom: 20px; color: var(--gem-dark-grey); font-weight: bold;">
+                    <div style="font-size: 9px; margin-bottom: 16px; color: #666;">
                         Version 1.0
                     </div>
-                    <p style="margin-bottom: 15px; font-size: 14px; font-weight: bold;">
+                    <p style="margin-bottom: 8px; font-size: 9px;">
                         An Atari ST GEM style interface for browsing GitHub repositories.
                     </p>
-                    <p style="font-size: 14px; color: var(--gem-dark-grey); font-weight: bold;">© 2025 Swir</p>
+                    <p style="font-size: 9px; color: #666;">© 2025 Swir</p>
                 </div>
             </div>
         </div>
     </div>
-
+    
     <!-- Keyboard Shortcuts Modal -->
-    <div class="gem-modal" id="shortcuts-modal">
-        <div class="gem-window">
+    <div id="shortcuts-modal" style="display: none;">
+        <div class="gem-overlay"></div>
+        <div class="gem-window pixel-perfect" style="width: 300px; height: 200px; z-index: 1001;">
             <div class="gem-title-bar">
-                <div class="gem-title">Keyboard Shortcuts</div>
+                <div class="gem-title-text">Keyboard Shortcuts</div>
                 <div class="gem-window-controls">
-                    <div class="gem-window-button" onclick="closeModal('shortcuts-modal')">×</div>
+                    <div class="gem-window-button gem-close-button" onclick="closeModal('shortcuts-modal')"></div>
                 </div>
             </div>
             
-            <div class="gem-window-body">
+            <div class="gem-content-area">
                 <div class="gem-content">
                     <div class="gem-detail-row">
                         <div class="gem-detail-label">F5</div>
@@ -915,7 +843,7 @@
                         <div class="gem-detail-value">Quit Application</div>
                     </div>
                     <div class="gem-detail-row">
-                        <div class="gem-detail-label">Arrows</div>
+                        <div class="gem-detail-label">Arrow Keys</div>
                         <div class="gem-detail-value">Navigate Repositories</div>
                     </div>
                     <div class="gem-detail-row">
@@ -930,48 +858,49 @@
             </div>
         </div>
     </div>
-
+    
     <!-- Context Menu -->
-    <div class="gem-context-menu" id="repo-context-menu">
-        <div class="gem-context-item" id="context-open">Open</div>
-        <div class="gem-context-item" id="context-view-github">View on GitHub</div>
+    <div class="gem-context-menu pixel-perfect" id="repo-context-menu" style="display: none;">
+        <div class="gem-submenu-item" id="context-open">Open</div>
+        <div class="gem-submenu-item" id="context-view-github">View on GitHub</div>
         <div class="gem-separator"></div>
-        <div class="gem-context-item" id="context-copy-url">Copy URL</div>
+        <div class="gem-submenu-item" id="context-copy-url">Copy URL</div>
     </div>
-
-    <!-- Modal Overlay -->
-    <div class="gem-overlay" id="modal-overlay"></div>
-
+    
     <!-- Alert Dialog -->
-    <div class="gem-dialog" id="alert-dialog" style="display: none;">
-        <div class="gem-dialog-content">
-            <div class="gem-dialog-icon">⚠</div>
-            <div class="gem-dialog-message" id="alert-message"></div>
-            <div class="gem-dialog-buttons">
-                <button class="gem-dialog-button default" id="alert-ok">OK</button>
+    <div id="alert-dialog" style="display: none;">
+        <div class="gem-overlay"></div>
+        <div class="gem-dialog pixel-perfect">
+            <div class="gem-dialog-content">
+                <div class="gem-dialog-message" id="alert-message"></div>
+                <div class="gem-dialog-buttons">
+                    <button class="gem-button default" id="alert-ok">OK</button>
+                </div>
             </div>
         </div>
     </div>
-
+    
     <!-- Confirm Dialog -->
-    <div class="gem-dialog" id="confirm-dialog" style="display: none;">
-        <div class="gem-dialog-content">
-            <div class="gem-dialog-icon">?</div>
-            <div class="gem-dialog-message" id="confirm-message"></div>
-            <div class="gem-dialog-buttons">
-                <button class="gem-dialog-button" id="confirm-cancel">Cancel</button>
-                <button class="gem-dialog-button default" id="confirm-ok">OK</button>
+    <div id="confirm-dialog" style="display: none;">
+        <div class="gem-overlay"></div>
+        <div class="gem-dialog pixel-perfect">
+            <div class="gem-dialog-content">
+                <div class="gem-dialog-message" id="confirm-message"></div>
+                <div class="gem-dialog-buttons">
+                    <button class="gem-button" id="confirm-cancel">Cancel</button>
+                    <button class="gem-button default" id="confirm-ok">OK</button>
+                </div>
             </div>
         </div>
     </div>
-
+    
     <!-- Startup Screen -->
-    <div class="gem-startup" id="startup-screen">
+    <div class="gem-startup pixel-perfect" id="startup-screen">
         <div class="gem-logo"></div>
         <div class="gem-startup-text">Atari ST GEM Desktop</div>
-        <div class="gem-startup-version">Version 1.0</div>
+        <div class="gem-startup-text" style="color: #666;">Version 1.0</div>
     </div>
-
+    
     <script>
         // Global Variables
         let allRepos = [];
@@ -982,28 +911,43 @@
         let dragOffsetX = 0;
         let dragOffsetY = 0;
         let selectedRepoIndex = -1;
-
+        let isResizing = false;
+        let originalWidth = 0;
+        let originalHeight = 0;
+        let originalX = 0;
+        let originalY = 0;
+        
         // Initialize App
         document.addEventListener('DOMContentLoaded', () => {
-            // Hide startup screen after delay
+            // Authentic Atari ST boot delay
             setTimeout(() => {
                 document.getElementById('startup-screen').classList.add('hidden');
+                // Reposition window for authentic desktop feel
+                const mainWindow = document.getElementById('main-window');
+                const windowWidth = mainWindow.offsetWidth;
+                const windowHeight = mainWindow.offsetHeight;
+                mainWindow.style.top = `${Math.max(24, Math.floor(window.innerHeight * 0.1))}px`;
+                mainWindow.style.left = `${Math.max(0, Math.floor((window.innerWidth - windowWidth) / 2))}px`;
+                mainWindow.style.transform = 'none';
+                
                 // Load repositories
                 fetchRepositories();
             }, 2000);
-
-            // Initialize event listeners
+            
+            // Initialize all event listeners
             initializeWindowControls();
             initializeMenuItems();
             initializeToolbar();
-            initializeDragAndDrop();
+            initializeWindowManagement();
             initializeKeyboardShortcuts();
-            initializeScrollbar();
-
-            // Modal overlay closes modals
-            document.getElementById('modal-overlay').addEventListener('click', closeAllModals);
+            initializeCustomScrollbar();
+            
+            // Context menu handling
+            document.addEventListener('click', () => {
+                document.getElementById('repo-context-menu').style.display = 'none';
+            });
         });
-
+        
         // Initialize Window Controls
         function initializeWindowControls() {
             document.getElementById('window-close').addEventListener('click', confirmQuit);
@@ -1012,70 +956,78 @@
             // Alert dialog
             document.getElementById('alert-ok').addEventListener('click', () => {
                 document.getElementById('alert-dialog').style.display = 'none';
-                document.getElementById('modal-overlay').style.display = 'none';
             });
-
+            
             // Confirm dialog
             document.getElementById('confirm-cancel').addEventListener('click', () => {
                 document.getElementById('confirm-dialog').style.display = 'none';
-                document.getElementById('modal-overlay').style.display = 'none';
             });
-
+            
             document.getElementById('confirm-ok').addEventListener('click', () => {
                 document.getElementById('confirm-dialog').style.display = 'none';
-                document.getElementById('modal-overlay').style.display = 'none';
                 quitApplication();
             });
         }
-
+        
         // Initialize Menu Items
         function initializeMenuItems() {
             // Desk menu
-            document.getElementById('about-button').addEventListener('click', () => showModal('about-modal'));
+            document.getElementById('about-button').addEventListener('click', () => {
+                document.getElementById('about-modal').style.display = 'block';
+            });
+            
             document.getElementById('quit-button').addEventListener('click', confirmQuit);
             
             // File menu
             document.getElementById('open-window').addEventListener('click', () => {
                 window.open(window.location.href, '_blank');
             });
+            
             document.getElementById('close-window').addEventListener('click', confirmQuit);
             document.getElementById('refresh-button').addEventListener('click', fetchRepositories);
-
+            
             // View menu
             document.getElementById('view-icon').addEventListener('click', () => setViewMode('icon'));
             document.getElementById('view-list').addEventListener('click', () => setViewMode('list'));
             document.getElementById('sort-name').addEventListener('click', () => sortRepositories('name'));
             document.getElementById('sort-date').addEventListener('click', () => sortRepositories('updated'));
             document.getElementById('sort-stars').addEventListener('click', () => sortRepositories('stars'));
-
+            
             // Options menu
-            document.getElementById('keyboard-shortcuts').addEventListener('click', () => showModal('shortcuts-modal'));
-            document.getElementById('preferences').addEventListener('click', () => showAlert('Preferences are not available in this version.'));
-
+            document.getElementById('keyboard-shortcuts').addEventListener('click', () => {
+                document.getElementById('shortcuts-modal').style.display = 'block';
+            });
+            
+            document.getElementById('preferences').addEventListener('click', () => {
+                showAlert('Preferences not available');
+            });
+            
             // Context menu
             document.getElementById('context-open').addEventListener('click', () => {
                 if (selectedRepo) {
                     showRepoDetails(selectedRepo);
                 }
             });
-
+            
             document.getElementById('context-view-github').addEventListener('click', () => {
                 if (selectedRepo) {
                     window.open(selectedRepo.html_url, '_blank');
                 }
             });
-
+            
             document.getElementById('context-copy-url').addEventListener('click', () => {
                 if (selectedRepo) {
-                    navigator.clipboard.writeText(selectedRepo.html_url).then(() => {
-                        showAlert('URL copied to clipboard');
-                    }).catch(err => {
-                        console.error('Could not copy text: ', err);
-                    });
+                    navigator.clipboard.writeText(selectedRepo.html_url)
+                        .then(() => {
+                            showAlert('URL copied to clipboard');
+                        })
+                        .catch(err => {
+                            console.error('Could not copy text: ', err);
+                        });
                 }
             });
         }
-
+        
         // Initialize Toolbar
         function initializeToolbar() {
             document.getElementById('refresh-repos').addEventListener('click', fetchRepositories);
@@ -1083,81 +1035,121 @@
             document.getElementById('repo-search').addEventListener('input', filterRepositories);
             
             document.getElementById('sort-button').addEventListener('click', (e) => {
-                const menu = document.createElement('div');
-                menu.className = 'gem-context-menu';
-                menu.style.display = 'block';
-                menu.style.left = e.target.offsetLeft + 'px';
-                menu.style.top = (e.target.offsetTop + e.target.offsetHeight) + 'px';
-                
-                menu.innerHTML = `
-                    <div class="gem-context-item" id="sort-menu-name">By Name</div>
-                    <div class="gem-context-item" id="sort-menu-date">By Date</div>
-                    <div class="gem-context-item" id="sort-menu-stars">By Stars</div>
+                const sortMenu = document.getElementById('repo-context-menu');
+                // Replace with sort-specific items
+                sortMenu.innerHTML = `
+                    <div class="gem-submenu-item" id="sort-menu-name">By Name</div>
+                    <div class="gem-submenu-item" id="sort-menu-date">By Date</div>
+                    <div class="gem-submenu-item" id="sort-menu-stars">By Stars</div>
                 `;
                 
-                document.body.appendChild(menu);
+                sortMenu.style.display = 'block';
+                sortMenu.style.top = `${e.target.getBoundingClientRect().bottom}px`;
+                sortMenu.style.left = `${e.target.getBoundingClientRect().left}px`;
                 
-                menu.querySelectorAll('.gem-context-item').forEach(item => {
-                    item.addEventListener('click', () => {
-                        const sortType = item.id.replace('sort-menu-', '');
-                        if (sortType === 'name') sortRepositories('name');
-                        else if (sortType === 'date') sortRepositories('updated');
-                        else if (sortType === 'stars') sortRepositories('stars');
-                        document.body.removeChild(menu);
-                    });
+                document.getElementById('sort-menu-name').addEventListener('click', () => {
+                    sortRepositories('name');
+                    sortMenu.style.display = 'none';
                 });
                 
-                document.addEventListener('click', function hideMenu(event) {
-                    if (!menu.contains(event.target) && event.target !== e.target) {
-                        if (document.body.contains(menu)) {
-                            document.body.removeChild(menu);
-                        }
-                        document.removeEventListener('click', hideMenu);
-                    }
+                document.getElementById('sort-menu-date').addEventListener('click', () => {
+                    sortRepositories('updated');
+                    sortMenu.style.display = 'none';
                 });
+                
+                document.getElementById('sort-menu-stars').addEventListener('click', () => {
+                    sortRepositories('stars');
+                    sortMenu.style.display = 'none';
+                });
+                
+                e.stopPropagation();
             });
         }
-
-        // Initialize Drag and Drop
-        function initializeDragAndDrop() {
-            const mainTitleBar = document.getElementById('main-title-bar');
-            const mainWindow = document.getElementById('main-window');
+        
+        // Initialize Window Management (Drag, Resize)
+        function initializeWindowManagement() {
+            // Window dragging
+            const windows = document.querySelectorAll('.gem-window');
             
-            mainTitleBar.addEventListener('mousedown', (e) => {
-                if (e.target.classList.contains('gem-window-button')) return;
+            windows.forEach(window => {
+                const titleBar = window.querySelector('.gem-title-bar');
                 
-                isDragging = true;
-                const rect = mainWindow.getBoundingClientRect();
-                dragOffsetX = e.clientX - rect.left;
-                dragOffsetY = e.clientY - rect.top;
+                titleBar.addEventListener('mousedown', (e) => {
+                    if (e.target.classList.contains('gem-window-button')) return;
+                    
+                    // Bring window to front by adjusting z-index
+                    windows.forEach(w => {
+                        if (w !== window) {
+                            w.style.zIndex = '1001';
+                        }
+                    });
+                    window.style.zIndex = '1002';
+                    
+                    isDragging = true;
+                    const rect = window.getBoundingClientRect();
+                    dragOffsetX = e.clientX - rect.left;
+                    dragOffsetY = e.clientY - rect.top;
+                    
+                    // Change cursor to indicate dragging
+                    titleBar.style.cursor = 'move';
+                });
             });
             
             document.addEventListener('mousemove', (e) => {
                 if (isDragging) {
-                    mainWindow.style.position = 'absolute';
-                    mainWindow.style.left = (e.clientX - dragOffsetX) + 'px';
-                    mainWindow.style.top = (e.clientY - dragOffsetY) + 'px';
+                    const activeWindow = document.querySelector('.gem-window[style*="z-index: 1002"]');
+                    if (activeWindow) {
+                        // Constrain to desktop area
+                        let newLeft = e.clientX - dragOffsetX;
+                        let newTop = e.clientY - dragOffsetY;
+                        
+                        // Ensure window remains visible on screen
+                        newLeft = Math.max(0, Math.min(window.innerWidth - 100, newLeft));
+                        newTop = Math.max(20, Math.min(window.innerHeight - 50, newTop));
+                        
+                        activeWindow.style.left = `${newLeft}px`;
+                        activeWindow.style.top = `${newTop}px`;
+                    }
+                }
+                
+                if (isResizing) {
+                    const activeWindow = document.querySelector('.gem-window[style*="z-index: 1002"]');
+                    if (activeWindow) {
+                        const newWidth = Math.max(200, originalWidth + (e.clientX - originalX));
+                        const newHeight = Math.max(150, originalHeight + (e.clientY - originalY));
+                        
+                        activeWindow.style.width = `${newWidth}px`;
+                        activeWindow.style.height = `${newHeight}px`;
+                        
+                        // Update scrollbar
+                        updateScrollbarThumb();
+                    }
                 }
             });
             
             document.addEventListener('mouseup', () => {
+                if (isDragging) {
+                    document.querySelectorAll('.gem-title-bar').forEach(bar => {
+                        bar.style.cursor = '';
+                    });
+                }
                 isDragging = false;
+                isResizing = false;
             });
             
-            // Detail window dragging
-            const detailTitleBar = document.getElementById('detail-title-bar');
-            const detailWindow = document.querySelector('#repo-detail-modal .gem-window');
-            
-            detailTitleBar.addEventListener('mousedown', (e) => {
-                if (e.target.classList.contains('gem-window-button')) return;
-                
-                isDragging = true;
-                const rect = detailWindow.getBoundingClientRect();
-                dragOffsetX = e.clientX - rect.left;
-                dragOffsetY = e.clientY - rect.top;
+            // Window resize
+            const resizeHandle = document.getElementById('resize-handle');
+            resizeHandle.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                isResizing = true;
+                const mainWindow = document.getElementById('main-window');
+                originalWidth = mainWindow.offsetWidth;
+                originalHeight = mainWindow.offsetHeight;
+                originalX = e.clientX;
+                originalY = e.clientY;
             });
         }
-
+        
         // Initialize Keyboard Shortcuts
         function initializeKeyboardShortcuts() {
             document.addEventListener('keydown', (e) => {
@@ -1167,7 +1159,7 @@
                     fetchRepositories();
                 }
                 
-                // Ctrl+F - Focus on search
+                // Ctrl+F - Focus search
                 if (e.key === 'f' && e.ctrlKey) {
                     e.preventDefault();
                     document.getElementById('repo-search').focus();
@@ -1210,114 +1202,42 @@
                 
                 // Arrow keys for navigation
                 if (e.key.startsWith('Arrow')) {
-                    if (currentView === 'icon') {
-                        const itemsContainer = document.querySelector('.gem-icon-grid');
-                        if (!itemsContainer) return;
-                        
-                        const items = Array.from(itemsContainer.querySelectorAll('.gem-icon'));
-                        if (items.length === 0) return;
-                        
-                        // If nothing is selected, select the first item
-                        if (selectedRepoIndex === -1) {
-                            selectedRepoIndex = 0;
-                            selectRepoItem(items[selectedRepoIndex]);
-                            return;
-                        }
-                        
-                        let newIndex = selectedRepoIndex;
-                        const columns = Math.floor(itemsContainer.clientWidth / 100); // Approximate column count
-                        
-                        if (e.key === 'ArrowRight') {
-                            newIndex = Math.min(items.length - 1, selectedRepoIndex + 1);
-                        } else if (e.key === 'ArrowLeft') {
-                            newIndex = Math.max(0, selectedRepoIndex - 1);
-                        } else if (e.key === 'ArrowDown') {
-                            newIndex = Math.min(items.length - 1, selectedRepoIndex + columns);
-                        } else if (e.key === 'ArrowUp') {
-                            newIndex = Math.max(0, selectedRepoIndex - columns);
-                        }
-                        
-                        if (newIndex !== selectedRepoIndex) {
-                            selectedRepoIndex = newIndex;
-                            selectRepoItem(items[selectedRepoIndex]);
-                        }
-                    } else {
-                        // List view navigation
-                        const listView = document.querySelector('.gem-list-view');
-                        if (!listView) return;
-                        
-                        const rows = Array.from(listView.querySelectorAll('tr')).slice(1); // Skip header
-                        if (rows.length === 0) return;
-                        
-                        // If nothing is selected, select the first item
-                        if (selectedRepoIndex === -1) {
-                            selectedRepoIndex = 0;
-                            selectListItem(rows[selectedRepoIndex]);
-                            return;
-                        }
-                        
-                        let newIndex = selectedRepoIndex;
-                        
-                        if (e.key === 'ArrowDown') {
-                            newIndex = Math.min(rows.length - 1, selectedRepoIndex + 1);
-                        } else if (e.key === 'ArrowUp') {
-                            newIndex = Math.max(0, selectedRepoIndex - 1);
-                        }
-                        
-                        if (newIndex !== selectedRepoIndex) {
-                            selectedRepoIndex = newIndex;
-                            selectListItem(rows[selectedRepoIndex]);
-                        }
-                    }
+                    navigateWithKeys(e.key);
                 }
                 
                 // Enter - Open selected repository
                 if (e.key === 'Enter') {
-                    if (currentView === 'icon') {
-                        const itemsContainer = document.querySelector('.gem-icon-grid');
-                        if (!itemsContainer) return;
-                        
-                        const items = Array.from(itemsContainer.querySelectorAll('.gem-icon'));
-                        if (items.length === 0 || selectedRepoIndex === -1) return;
-                        
-                        showRepoDetails(selectedRepo);
-                    } else {
-                        const listView = document.querySelector('.gem-list-view');
-                        if (!listView) return;
-                        
-                        const rows = Array.from(listView.querySelectorAll('tr')).slice(1); // Skip header
-                        if (rows.length === 0 || selectedRepoIndex === -1) return;
-                        
+                    if (selectedRepo) {
                         showRepoDetails(selectedRepo);
                     }
                 }
             });
         }
-
-        // Initialize Scrollbar
-        function initializeScrollbar() {
+        
+        // Initialize Custom Scrollbar
+        function initializeCustomScrollbar() {
+            const content = document.querySelector('.gem-content');
             const scrollbarThumb = document.querySelector('.gem-scrollbar-thumb');
             const scrollbarUp = document.querySelector('.gem-scrollbar-up');
             const scrollbarDown = document.querySelector('.gem-scrollbar-down');
-            const content = document.querySelector('.gem-content');
             
-            if (!scrollbarThumb || !scrollbarUp || !scrollbarDown || !content) return;
-            
+            // Scrollbar thumb dragging
             scrollbarThumb.addEventListener('mousedown', (e) => {
                 e.preventDefault();
+                
                 const startY = e.clientY;
-                const startTop = parseInt(getComputedStyle(scrollbarThumb).top || '0');
-                const scrollbarHeight = scrollbarThumb.parentElement.clientHeight - 36; // minus buttons height
+                const startTop = parseInt(scrollbarThumb.style.top || '16px');
+                const scrollbar = scrollbarThumb.parentElement;
+                const scrollbarHeight = scrollbar.offsetHeight - 32; // minus up/down buttons
                 
                 function onMouseMove(e) {
-                    let newTop = startTop + (e.clientY - startY);
-                    newTop = Math.max(0, Math.min(scrollbarHeight - scrollbarThumb.clientHeight, newTop));
-                    scrollbarThumb.style.top = newTop + 'px';
+                    const deltaY = e.clientY - startY;
+                    let newTop = Math.max(16, Math.min(scrollbarHeight - scrollbarThumb.offsetHeight + 16, startTop + deltaY));
+                    scrollbarThumb.style.top = `${newTop}px`;
                     
                     // Calculate scroll position
-                    const scrollRatio = newTop / (scrollbarHeight - scrollbarThumb.clientHeight);
-                    const scrollMax = content.scrollHeight - content.clientHeight;
-                    content.scrollTop = scrollRatio * scrollMax;
+                    const scrollRatio = (newTop - 16) / (scrollbarHeight - scrollbarThumb.offsetHeight);
+                    content.scrollTop = scrollRatio * (content.scrollHeight - content.offsetHeight);
                 }
                 
                 function onMouseUp() {
@@ -1329,122 +1249,186 @@
                 document.addEventListener('mouseup', onMouseUp);
             });
             
+            // Scroll buttons
             scrollbarUp.addEventListener('click', () => {
-                content.scrollTop -= 50;
+                content.scrollTop -= 20;
                 updateScrollbarThumb();
             });
             
             scrollbarDown.addEventListener('click', () => {
-                content.scrollTop += 50;
+                content.scrollTop += 20;
                 updateScrollbarThumb();
             });
             
+            // Update thumb position on content scroll
             content.addEventListener('scroll', updateScrollbarThumb);
             
             // Update on window resize
             window.addEventListener('resize', updateScrollbarThumb);
-            
-            // Initial update
-            setTimeout(updateScrollbarThumb, 500);
         }
-
-        // Update Scrollbar Thumb position
+        
+        // Update Scrollbar Thumb Position
         function updateScrollbarThumb() {
-            const scrollbarThumb = document.querySelector('.gem-scrollbar-thumb');
             const content = document.querySelector('.gem-content');
+            const scrollbarThumb = document.querySelector('.gem-scrollbar-thumb');
+            const scrollbar = scrollbarThumb.parentElement;
+            const scrollbarHeight = scrollbar.offsetHeight - 32; // minus up/down buttons
             
-            if (!scrollbarThumb || !content) return;
+            // Calculate thumb size
+            const thumbSizeRatio = Math.min(1, content.offsetHeight / content.scrollHeight);
+            const thumbHeight = Math.max(20, thumbSizeRatio * scrollbarHeight);
+            scrollbarThumb.style.height = `${thumbHeight}px`;
             
-            const scrollbarHeight = scrollbarThumb.parentElement.clientHeight - 36; // minus buttons height
+            // Calculate thumb position
+            const scrollRatio = content.scrollTop / (content.scrollHeight - content.offsetHeight || 1);
+            const thumbTop = 16 + scrollRatio * (scrollbarHeight - thumbHeight);
+            scrollbarThumb.style.top = `${isNaN(thumbTop) ? 16 : thumbTop}px`;
             
-            if (content.scrollHeight <= content.clientHeight) {
-                scrollbarThumb.style.display = 'none';
-                return;
-            }
-            
-            scrollbarThumb.style.display = 'block';
-            
-            // Calculate thumb size and position
-            const thumbSizeRatio = content.clientHeight / content.scrollHeight;
-            const thumbSize = Math.max(40, scrollbarHeight * thumbSizeRatio);
-            const scrollRatio = content.scrollTop / (content.scrollHeight - content.clientHeight);
-            const thumbPosition = scrollRatio * (scrollbarHeight - thumbSize);
-            
-            scrollbarThumb.style.height = thumbSize + 'px';
-            scrollbarThumb.style.top = thumbPosition + 'px';
+            // Hide thumb if no scrolling needed
+            scrollbarThumb.style.display = content.scrollHeight <= content.offsetHeight ? 'none' : 'block';
         }
-
-        // Select Repository Item (Icon View)
-        function selectRepoItem(item) {
+        
+        // Navigate With Keys
+        function navigateWithKeys(key) {
+            if (currentView === 'icon') {
+                const icons = Array.from(document.querySelectorAll('.gem-icon'));
+                if (icons.length === 0) return;
+                
+                // If nothing is selected, select the first item
+                if (selectedRepoIndex === -1) {
+                    selectedRepoIndex = 0;
+                    selectIcon(icons[selectedRepoIndex]);
+                    return;
+                }
+                
+                let newIndex = selectedRepoIndex;
+                const iconsPerRow = Math.floor(document.querySelector('.gem-icon-grid').offsetWidth / 80);
+                
+                switch (key) {
+                    case 'ArrowRight':
+                        newIndex = Math.min(icons.length - 1, selectedRepoIndex + 1);
+                        break;
+                    case 'ArrowLeft':
+                        newIndex = Math.max(0, selectedRepoIndex - 1);
+                        break;
+                    case 'ArrowDown':
+                        newIndex = Math.min(icons.length - 1, selectedRepoIndex + iconsPerRow);
+                        break;
+                    case 'ArrowUp':
+                        newIndex = Math.max(0, selectedRepoIndex - iconsPerRow);
+                        break;
+                }
+                
+                if (newIndex !== selectedRepoIndex && icons[newIndex]) {
+                    selectedRepoIndex = newIndex;
+                    selectIcon(icons[newIndex]);
+                }
+            } else {
+                // List view navigation
+                const rows = Array.from(document.querySelectorAll('.gem-list-view tr')).slice(1); // Skip header
+                if (rows.length === 0) return;
+                
+                // If nothing is selected, select the first item
+                if (selectedRepoIndex === -1) {
+                    selectedRepoIndex = 0;
+                    selectRow(rows[selectedRepoIndex]);
+                    return;
+                }
+                
+                let newIndex = selectedRepoIndex;
+                
+                switch (key) {
+                    case 'ArrowDown':
+                        newIndex = Math.min(rows.length - 1, selectedRepoIndex + 1);
+                        break;
+                    case 'ArrowUp':
+                        newIndex = Math.max(0, selectedRepoIndex - 1);
+                        break;
+                }
+                
+                if (newIndex !== selectedRepoIndex && rows[newIndex]) {
+                    selectedRepoIndex = newIndex;
+                    selectRow(rows[newIndex]);
+                }
+            }
+        }
+        
+        // Select Icon
+        function selectIcon(icon) {
             document.querySelectorAll('.gem-icon').forEach(el => {
                 el.classList.remove('selected');
             });
             
-            item.classList.add('selected');
-            item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            icon.classList.add('selected');
             
-            // Find the corresponding repository
-            const repoName = item.querySelector('.gem-icon-label').textContent;
+            // Ensure the icon is visible
+            icon.scrollIntoView({ behavior: 'auto', block: 'nearest' });
+            
+            // Get the repository name from the icon label
+            const repoName = icon.querySelector('.gem-icon-label').textContent;
             selectedRepo = allRepos.find(repo => repo.name === repoName);
         }
-
-        // Select List Item (List View)
-        function selectListItem(row) {
+        
+        // Select List Row
+        function selectRow(row) {
             document.querySelectorAll('.gem-list-view tr').forEach(el => {
                 el.classList.remove('selected');
             });
             
             row.classList.add('selected');
-            row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             
-            // Find the corresponding repository
+            // Ensure the row is visible
+            row.scrollIntoView({ behavior: 'auto', block: 'nearest' });
+            
+            // Get the repository name from the first cell
             const repoName = row.cells[0].textContent;
             selectedRepo = allRepos.find(repo => repo.name === repoName);
         }
-
-        // Toggle Window Size
+        
+        // Toggle Window Size (Maximize/Restore)
         function toggleWindowSize() {
             const mainWindow = document.getElementById('main-window');
             
-            if (mainWindow.style.position === 'fixed') {
-                // Restore original position and size
-                mainWindow.style.position = 'relative';
-                mainWindow.style.top = '';
-                mainWindow.style.left = '';
-                mainWindow.style.width = '';
-                mainWindow.style.height = '';
-                mainWindow.style.maxWidth = '900px';
-                mainWindow.style.margin = '0 auto';
+            if (mainWindow.dataset.maximized) {
+                // Restore original size and position
+                const pos = mainWindow.dataset.position.split(',');
+                mainWindow.style.top = pos[0];
+                mainWindow.style.left = pos[1];
+                mainWindow.style.width = pos[2];
+                mainWindow.style.height = pos[3];
+                delete mainWindow.dataset.maximized;
+                delete mainWindow.dataset.position;
             } else {
-                // Maximize window
-                mainWindow.style.position = 'fixed';
-                mainWindow.style.top = '24px'; // Below menu bar
+                // Save current position and size
+                mainWindow.dataset.position = `${mainWindow.style.top},${mainWindow.style.left},${mainWindow.style.width},${mainWindow.style.height}`;
+                
+                // Maximize (leaving space for menu bar)
+                mainWindow.style.top = `${var(--gem-menu-height)}px`;
                 mainWindow.style.left = '0';
                 mainWindow.style.width = '100%';
-                mainWindow.style.height = 'calc(100vh - 24px)';
-                mainWindow.style.maxWidth = 'none';
-                mainWindow.style.margin = '0';
+                mainWindow.style.height = `calc(100vh - ${var(--gem-menu-height)}px)`;
+                mainWindow.dataset.maximized = 'true';
             }
             
             // Update scrollbar after resize
-            setTimeout(updateScrollbarThumb, 100);
+            updateScrollbarThumb();
         }
-
+        
         // Toggle View Mode
         function toggleViewMode() {
             currentView = currentView === 'icon' ? 'list' : 'icon';
             setViewMode(currentView);
         }
-
+        
         // Set View Mode
         function setViewMode(mode) {
             currentView = mode;
-            renderRepositories(allRepos);
+            renderRepositories();
             
             // Update scrollbar after view change
-            setTimeout(updateScrollbarThumb, 100);
+            updateScrollbarThumb();
         }
-
+        
         // Sort Repositories
         function sortRepositories(sortType) {
             currentSort = sortType;
@@ -1462,32 +1446,18 @@
                 }
             });
             
-            renderRepositories(allRepos);
+            renderRepositories();
             
             // Update scrollbar after sorting
-            setTimeout(updateScrollbarThumb, 100);
+            updateScrollbarThumb();
         }
-
+        
         // Filter Repositories
         function filterRepositories() {
-            const searchTerm = document.getElementById('repo-search').value.toLowerCase();
-            
-            if (!searchTerm) {
-                renderRepositories(allRepos);
-                return;
-            }
-            
-            const filteredRepos = allRepos.filter(repo => 
-                repo.name.toLowerCase().includes(searchTerm) || 
-                (repo.description && repo.description.toLowerCase().includes(searchTerm))
-            );
-            
-            renderRepositories(filteredRepos);
-            
-            // Update scrollbar after filtering
-            setTimeout(updateScrollbarThumb, 100);
+            renderRepositories();
+            updateScrollbarThumb();
         }
-
+        
         // Fetch Repositories
         async function fetchRepositories() {
             const username = 'Swir';
@@ -1497,8 +1467,8 @@
             reposContainer.innerHTML = `
                 <div class="gem-loading">
                     <div class="gem-loading-text">Loading Repositories...</div>
-                    <div class="gem-loading-animation">
-                        <div class="gem-loading-bar"></div>
+                    <div class="gem-loading-bar">
+                        <div class="gem-loading-progress"></div>
                     </div>
                 </div>
             `;
@@ -1511,33 +1481,31 @@
                 }
                 
                 allRepos = await response.json();
+                selectedRepoIndex = -1;
+                selectedRepo = null;
                 
                 // Sort repositories
                 sortRepositories(currentSort);
-                
-                // Update scrollbar
-                setTimeout(updateScrollbarThumb, 100);
                 
             } catch (error) {
                 console.error('Error fetching repositories:', error);
                 showAlert(`Error: ${error.message}`);
                 reposContainer.innerHTML = `
-                    <div style="text-align: center; padding: 40px;">
-                        <div style="font-size: 30px; margin-bottom: 15px;">⚠</div>
-                        <div style="font-family: 'AtariST', 'Courier New', monospace; margin-bottom: 15px; font-size: 16px; font-weight: bold;">
+                    <div style="text-align: center; padding: 32px;">
+                        <div style="margin-bottom: 16px; font-size: 9px;">
                             Error loading repositories
                         </div>
-                        <div style="font-size: 14px; font-weight: bold;">
+                        <div style="font-size: 9px;">
                             ${error.message}
                         </div>
                     </div>
                 `;
             }
         }
-
-        // Get icon for repository based on language
+        
+        // Get Repository Icon Class
         function getRepoIcon(language) {
-            if (!language) return 'icon-file';
+            if (!language) return 'icon-generic';
             
             switch(language) {
                 case 'JavaScript':
@@ -1549,68 +1517,104 @@
                 case 'Python':
                     return 'icon-py';
                 default:
-                    return 'icon-file';
+                    return 'icon-generic';
             }
         }
-
+        
         // Render Repositories
-        function renderRepositories(repos) {
+        function renderRepositories() {
             const reposContainer = document.getElementById('repos-container');
+            const searchTerm = document.getElementById('repo-search').value.toLowerCase().trim();
+            
+            let filteredRepos = allRepos;
+            
+            // Apply search filter if needed
+            if (searchTerm) {
+                filteredRepos = allRepos.filter(repo => 
+                    repo.name.toLowerCase().includes(searchTerm) || 
+                    (repo.description && repo.description.toLowerCase().includes(searchTerm))
+                );
+            }
             
             if (currentView === 'icon') {
+                // Icon View
                 const iconGrid = document.createElement('div');
                 iconGrid.className = 'gem-icon-grid';
                 
-                repos.forEach((repo, index) => {
+                filteredRepos.forEach((repo, index) => {
                     const icon = document.createElement('div');
                     icon.className = 'gem-icon';
+                    
+                    // Check if this repo was previously selected
                     if (selectedRepo && selectedRepo.id === repo.id) {
                         icon.classList.add('selected');
                         selectedRepoIndex = index;
                     }
                     
-                    // Get icon class based on repository language
+                    // Get icon based on language
                     const iconClass = getRepoIcon(repo.language);
                     
                     icon.innerHTML = `
-                        <div class="gem-icon-box">
+                        <div class="gem-icon-graphic">
                             <div class="${iconClass}"></div>
                         </div>
                         <div class="gem-icon-label">${repo.name}</div>
                     `;
                     
-                    icon.addEventListener('click', (e) => {
+                    // Single click selects
+                    icon.addEventListener('click', () => {
                         selectedRepo = repo;
                         selectedRepoIndex = index;
-                        document.querySelectorAll('.gem-icon').forEach(el => {
-                            el.classList.remove('selected');
-                        });
-                        icon.classList.add('selected');
-                        
-                        // Double click
-                        if (e.detail === 2) {
-                            showRepoDetails(repo);
-                        }
+                        selectIcon(icon);
                     });
                     
+                    // Double click opens
+                    icon.addEventListener('dblclick', () => {
+                        selectedRepo = repo;
+                        selectedRepoIndex = index;
+                        showRepoDetails(repo);
+                    });
+                    
+                    // Right click context menu
                     icon.addEventListener('contextmenu', (e) => {
                         e.preventDefault();
                         selectedRepo = repo;
                         selectedRepoIndex = index;
+                        selectIcon(icon);
                         
-                        document.querySelectorAll('.gem-icon').forEach(el => {
-                            el.classList.remove('selected');
-                        });
-                        icon.classList.add('selected');
+                        // Show context menu
+                        document.getElementById('repo-context-menu').innerHTML = `
+                            <div class="gem-submenu-item" id="context-open">Open</div>
+                            <div class="gem-submenu-item" id="context-view-github">View on GitHub</div>
+                            <div class="gem-separator"></div>
+                            <div class="gem-submenu-item" id="context-copy-url">Copy URL</div>
+                        `;
                         
                         const contextMenu = document.getElementById('repo-context-menu');
                         contextMenu.style.display = 'block';
-                        contextMenu.style.left = e.pageX + 'px';
-                        contextMenu.style.top = e.pageY + 'px';
+                        contextMenu.style.left = `${e.pageX}px`;
+                        contextMenu.style.top = `${e.pageY}px`;
                         
-                        document.addEventListener('click', function hideMenu() {
+                        // Re-attach event handlers
+                        document.getElementById('context-open').addEventListener('click', () => {
+                            showRepoDetails(repo);
                             contextMenu.style.display = 'none';
-                            document.removeEventListener('click', hideMenu);
+                        });
+                        
+                        document.getElementById('context-view-github').addEventListener('click', () => {
+                            window.open(repo.html_url, '_blank');
+                            contextMenu.style.display = 'none';
+                        });
+                        
+                        document.getElementById('context-copy-url').addEventListener('click', () => {
+                            navigator.clipboard.writeText(repo.html_url)
+                                .then(() => {
+                                    showAlert('URL copied to clipboard');
+                                })
+                                .catch(err => {
+                                    showAlert('Error copying URL');
+                                });
+                            contextMenu.style.display = 'none';
                         });
                     });
                     
@@ -1619,24 +1623,31 @@
                 
                 reposContainer.innerHTML = '';
                 reposContainer.appendChild(iconGrid);
+                
             } else {
-                // List view
+                // List View
                 const table = document.createElement('table');
                 table.className = 'gem-list-view';
                 
-                // Header row
-                const header = document.createElement('tr');
-                header.innerHTML = `
-                    <th>Name</th>
-                    <th>Language</th>
-                    <th>Stars</th>
-                    <th>Updated</th>
+                // Table header
+                const thead = document.createElement('thead');
+                thead.innerHTML = `
+                    <tr>
+                        <th>Name</th>
+                        <th>Language</th>
+                        <th>Stars</th>
+                        <th>Updated</th>
+                    </tr>
                 `;
-                table.appendChild(header);
+                table.appendChild(thead);
                 
-                // Data rows
-                repos.forEach((repo, index) => {
+                // Table body
+                const tbody = document.createElement('tbody');
+                
+                filteredRepos.forEach((repo, index) => {
                     const row = document.createElement('tr');
+                    
+                    // Check if this repo was previously selected
                     if (selectedRepo && selectedRepo.id === repo.id) {
                         row.classList.add('selected');
                         selectedRepoIndex = index;
@@ -1651,62 +1662,91 @@
                         <td>${updatedDate}</td>
                     `;
                     
+                    // Single click selects
                     row.addEventListener('click', () => {
                         selectedRepo = repo;
                         selectedRepoIndex = index;
-                        
-                        document.querySelectorAll('.gem-list-view tr').forEach(el => {
-                            el.classList.remove('selected');
-                        });
-                        
-                        row.classList.add('selected');
+                        selectRow(row);
                     });
                     
+                    // Double click opens
                     row.addEventListener('dblclick', () => {
+                        selectedRepo = repo;
+                        selectedRepoIndex = index;
                         showRepoDetails(repo);
                     });
                     
+                    // Right click context menu
                     row.addEventListener('contextmenu', (e) => {
                         e.preventDefault();
                         selectedRepo = repo;
                         selectedRepoIndex = index;
+                        selectRow(row);
                         
-                        document.querySelectorAll('.gem-list-view tr').forEach(el => {
-                            el.classList.remove('selected');
-                        });
-                        
-                        row.classList.add('selected');
+                        // Show context menu
+                        document.getElementById('repo-context-menu').innerHTML = `
+                            <div class="gem-submenu-item" id="context-open">Open</div>
+                            <div class="gem-submenu-item" id="context-view-github">View on GitHub</div>
+                            <div class="gem-separator"></div>
+                            <div class="gem-submenu-item" id="context-copy-url">Copy URL</div>
+                        `;
                         
                         const contextMenu = document.getElementById('repo-context-menu');
                         contextMenu.style.display = 'block';
-                        contextMenu.style.left = e.pageX + 'px';
-                        contextMenu.style.top = e.pageY + 'px';
+                        contextMenu.style.left = `${e.pageX}px`;
+                        contextMenu.style.top = `${e.pageY}px`;
                         
-                        document.addEventListener('click', function hideMenu() {
+                        // Re-attach event handlers
+                        document.getElementById('context-open').addEventListener('click', () => {
+                            showRepoDetails(repo);
                             contextMenu.style.display = 'none';
-                            document.removeEventListener('click', hideMenu);
+                        });
+                        
+                        document.getElementById('context-view-github').addEventListener('click', () => {
+                            window.open(repo.html_url, '_blank');
+                            contextMenu.style.display = 'none';
+                        });
+                        
+                        document.getElementById('context-copy-url').addEventListener('click', () => {
+                            navigator.clipboard.writeText(repo.html_url)
+                                .then(() => {
+                                    showAlert('URL copied to clipboard');
+                                })
+                                .catch(err => {
+                                    showAlert('Error copying URL');
+                                });
+                            contextMenu.style.display = 'none';
                         });
                     });
                     
-                    table.appendChild(row);
+                    tbody.appendChild(row);
                 });
                 
+                table.appendChild(tbody);
                 reposContainer.innerHTML = '';
                 reposContainer.appendChild(table);
             }
             
-            // Update scrollbar after rendering
-            setTimeout(updateScrollbarThumb, 100);
+            // Update scrollbar
+            updateScrollbarThumb();
+            
+            // Show "No results" if no repositories found
+            if (filteredRepos.length === 0) {
+                reposContainer.innerHTML = `
+                    <div style="text-align: center; padding: 32px;">
+                        <div style="font-size: 9px;">
+                            No repositories found
+                        </div>
+                    </div>
+                `;
+            }
         }
-
+        
         // Show Repository Details
         function showRepoDetails(repo) {
-            const modal = document.getElementById('repo-detail-modal');
-            const title = document.getElementById('repo-detail-title');
+            document.getElementById('repo-detail-title').textContent = repo.name;
+            
             const content = document.getElementById('repo-detail-content');
-            
-            title.textContent = repo.name;
-            
             const createdDate = new Date(repo.created_at).toLocaleDateString();
             const updatedDate = new Date(repo.updated_at).toLocaleDateString();
             
@@ -1742,68 +1782,77 @@
                     <div class="gem-detail-value">${repo.forks_count}</div>
                 </div>
                 
-                <div class="gem-detail-row">
-                    <div class="gem-detail-label">Size:</div>
-                    <div class="gem-detail-value">${repo.size} KB</div>
-                </div>
-                
                 <div class="gem-button-row">
                     <div class="gem-button" onclick="closeModal('repo-detail-modal')">Cancel</div>
                     <div class="gem-button" onclick="window.open('${repo.html_url}', '_blank')">Open</div>
                 </div>
             `;
             
-            showModal('repo-detail-modal');
+            document.getElementById('repo-detail-modal').style.display = 'block';
+            
+            // Center the modal window
+            const modalWindow = document.querySelector('#repo-detail-modal .gem-window');
+            modalWindow.style.top = '50%';
+            modalWindow.style.left = '50%';
+            modalWindow.style.transform = 'translate(-50%, -50%)';
         }
-
-        // Show Modal
-        function showModal(modalId) {
-            document.getElementById(modalId).style.display = 'block';
-            document.getElementById('modal-overlay').style.display = 'block';
-        }
-
+        
         // Close Modal
         function closeModal(modalId) {
             document.getElementById(modalId).style.display = 'none';
-            document.getElementById('modal-overlay').style.display = 'none';
         }
-
+        
         // Close All Modals
         function closeAllModals() {
             document.getElementById('repo-detail-modal').style.display = 'none';
             document.getElementById('about-modal').style.display = 'none';
             document.getElementById('shortcuts-modal').style.display = 'none';
-            document.getElementById('modal-overlay').style.display = 'none';
             document.getElementById('alert-dialog').style.display = 'none';
             document.getElementById('confirm-dialog').style.display = 'none';
             document.getElementById('repo-context-menu').style.display = 'none';
         }
-
+        
         // Show Alert
         function showAlert(message) {
             document.getElementById('alert-message').textContent = message;
             document.getElementById('alert-dialog').style.display = 'block';
-            document.getElementById('modal-overlay').style.display = 'block';
         }
-
+        
         // Confirm Quit
         function confirmQuit() {
             document.getElementById('confirm-message').textContent = 'Are you sure you want to quit?';
             document.getElementById('confirm-dialog').style.display = 'block';
-            document.getElementById('modal-overlay').style.display = 'block';
         }
-
+        
         // Quit Application
         function quitApplication() {
-            window.close();
-            // Fallback if window.close doesn't work
-            document.body.innerHTML = `
-                <div class="gem-startup">
-                    <div class="gem-logo"></div>
-                    <div class="gem-startup-text">Thank you for using</div>
-                    <div class="gem-startup-text">Atari ST GEM GitHub Browser</div>
-                </div>
+            closeAllModals();
+            
+            // Show shutdown screen
+            const shutdownScreen = document.createElement('div');
+            shutdownScreen.className = 'gem-startup';
+            shutdownScreen.innerHTML = `
+                <div class="gem-logo"></div>
+                <div class="gem-startup-text">Shutting down...</div>
+                <div class="gem-startup-text" style="color: #666;">Thank you for using Atari ST GEM</div>
             `;
+            document.body.appendChild(shutdownScreen);
+            
+            // Remove all other elements after a brief delay
+            setTimeout(() => {
+                Array.from(document.body.children).forEach(child => {
+                    if (child !== shutdownScreen) {
+                        document.body.removeChild(child);
+                    }
+                });
+                
+                // Try to close window (may not work in all browsers)
+                setTimeout(() => {
+                    window.close();
+                    // If window.close doesn't work, redirect to blank page
+                    window.location.href = 'about:blank';
+                }, 1000);
+            }, 1000);
         }
     </script>
 </body>
