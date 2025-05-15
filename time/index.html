@@ -506,221 +506,6 @@
             flex: 1;
         }
         
-        /* Mobile enhancements */
-        .mobile-quick-actions {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background-color: var(--primary-color);
-            display: flex;
-            justify-content: space-around;
-            padding: 10px;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.2);
-            z-index: 100;
-            display: none; /* Hidden by default, shown on mobile */
-        }
-        
-        .quick-action-btn {
-            background-color: transparent;
-            border: none;
-            color: white;
-            font-size: 24px;
-            padding: 8px 12px;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background-color 0.2s;
-        }
-        
-        .quick-action-btn:active {
-            background-color: rgba(255,255,255,0.2);
-        }
-        
-        .card-view-container {
-            display: none; /* Hidden by default, shown when toggle is active */
-        }
-        
-        .entry-card {
-            background-color: white;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 15px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        
-        body.dark-theme .entry-card {
-            background-color: #2a2a2a;
-        }
-        
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-            font-weight: bold;
-        }
-        
-        .card-date {
-            color: var(--primary-color);
-        }
-        
-        body.dark-theme .card-date {
-            color: var(--accent-color);
-        }
-        
-        .card-client {
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-        
-        .card-times {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-            font-size: 0.9em;
-        }
-        
-        .card-time-label {
-            color: #777;
-        }
-        
-        body.dark-theme .card-time-label {
-            color: #aaa;
-        }
-        
-        .card-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-        }
-        
-        .card-btn {
-            background-color: transparent;
-            border: none;
-            color: var(--primary-color);
-            font-size: 16px;
-            padding: 5px;
-            cursor: pointer;
-        }
-        
-        body.dark-theme .card-btn {
-            color: var(--accent-color);
-        }
-        
-        .add-entry-fab {
-            position: fixed;
-            bottom: 80px;
-            right: 20px;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background-color: var(--secondary-color);
-            color: white;
-            font-size: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-            cursor: pointer;
-            z-index: 99;
-            border: none;
-            display: none; /* Hidden by default, shown on mobile */
-        }
-        
-        /* View toggle switch */
-        .view-toggle-container {
-            display: none; /* Hidden by default, shown on mobile */
-            margin: 10px 0;
-            text-align: center;
-        }
-        
-        .view-toggle-btn {
-            background-color: #f0f0f0;
-            border: none;
-            padding: 8px 15px;
-            font-size: 14px;
-            color: #555;
-            cursor: pointer;
-        }
-        
-        body.dark-theme .view-toggle-btn {
-            background-color: #333;
-            color: #ddd;
-        }
-        
-        .view-toggle-btn.active {
-            background-color: var(--secondary-color);
-            color: white;
-        }
-        
-        .view-toggle-btn:first-child {
-            border-top-left-radius: 20px;
-            border-bottom-left-radius: 20px;
-        }
-        
-        .view-toggle-btn:last-child {
-            border-top-right-radius: 20px;
-            border-bottom-right-radius: 20px;
-        }
-        
-        /* New entry modal */
-        .new-entry-form-group {
-            margin-bottom: 15px;
-        }
-        
-        .new-entry-form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-        
-        .new-entry-form-group input, .new-entry-form-group select {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            background-color: white;
-            color: var(--dark-text);
-            font-size: 16px; /* Larger for touch */
-        }
-        
-        body.dark-theme .new-entry-form-group input, 
-        body.dark-theme .new-entry-form-group select {
-            background-color: #333;
-            border-color: #555;
-            color: var(--light-text);
-        }
-        
-        .common-clients-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 5px;
-            margin-top: 5px;
-        }
-        
-        .client-chip {
-            background-color: var(--light-accent);
-            color: var(--primary-color);
-            border: 1px solid var(--accent-color);
-            border-radius: 15px;
-            padding: 5px 10px;
-            font-size: 12px;
-            cursor: pointer;
-        }
-        
-        body.dark-theme .client-chip {
-            background-color: var(--primary-color);
-            color: white;
-        }
-        
-        /* Main content padding for mobile */
-        .main-content-with-bottom-bar {
-            padding-bottom: 80px; /* Space for bottom action bar */
-        }
-        
         @media (max-width: 768px) {
             .header-input {
                 flex-direction: column;
@@ -767,32 +552,6 @@
             .summary-label {
                 font-size: 1em;
                 padding: 8px;
-            }
-            
-            /* Show mobile enhancements on small screens */
-            .mobile-quick-actions,
-            .add-entry-fab,
-            .view-toggle-container {
-                display: flex;
-            }
-            
-            .main-container {
-                padding-bottom: 90px; /* Make room for bottom action bar */
-            }
-            
-            /* Make table cells more touch-friendly */
-            td, th {
-                padding: 12px 6px;
-                font-size: 0.95em;
-            }
-            
-            /* Add visible edit actions */
-            .table-edit-indicator {
-                position: absolute;
-                right: 5px;
-                color: var(--accent-color);
-                font-size: 16px;
-                opacity: 0.7;
             }
         }
     </style>
@@ -867,21 +626,10 @@
             </div>
         </div>
         
-        <!-- View toggle for mobile -->
-        <div class="view-toggle-container">
-            <button class="view-toggle-btn active" id="tableViewBtn">
-                <i class="fas fa-table"></i> Table View
-            </button>
-            <button class="view-toggle-btn" id="cardViewBtn">
-                <i class="fas fa-th-large"></i> Card View
-            </button>
-        </div>
-        
         <div class="section">
             <h3 id="listTitle">Time list:</h3>
             
-            <!-- Table View (default) -->
-            <div class="result-table" id="tableView">
+            <div class="result-table">
                 <table id="resultTable">
                     <thead>
                         <tr>
@@ -896,13 +644,6 @@
                         <!-- Table content will be generated dynamically -->
                     </tbody>
                 </table>
-            </div>
-            
-            <!-- Card View (mobile-friendly alternative) -->
-            <div class="card-view-container" id="cardView">
-                <div id="cardContainer">
-                    <!-- Cards will be generated dynamically -->
-                </div>
             </div>
             
             <div class="summary-label" id="summaryLabel">Time List - Sum total: 0:00</div>
@@ -2452,321 +2193,34 @@
             });
         });
         
-        // Mobile view toggle
-        document.getElementById('tableViewBtn').addEventListener('click', () => {
-            document.getElementById('tableViewBtn').classList.add('active');
-            document.getElementById('cardViewBtn').classList.remove('active');
-            document.getElementById('tableView').style.display = 'block';
-            document.getElementById('cardView').style.display = 'none';
-        });
-        
-        document.getElementById('cardViewBtn').addEventListener('click', () => {
-            document.getElementById('cardViewBtn').classList.add('active');
-            document.getElementById('tableViewBtn').classList.remove('active');
-            document.getElementById('tableView').style.display = 'none';
-            document.getElementById('cardView').style.display = 'block';
-        });
-        
-        // Mobile quick action buttons
-        document.getElementById('quickAddBtn').addEventListener('click', () => {
-            showNewEntryModal();
-        });
-        
-        document.getElementById('quickFilterBtn').addEventListener('click', () => {
-            showFilterDialog();
-        });
-        
-        document.getElementById('quickGenerateBtn').addEventListener('click', () => {
-            parseAndDisplay();
-        });
-        
-        document.getElementById('quickStatsBtn').addEventListener('click', () => {
-            showStatistics();
-        });
-        
-        document.getElementById('quickExportMobileBtn').addEventListener('click', () => {
-            showExportLanguageDialog();
-        });
-        
-        // Floating action button
-        document.getElementById('addEntryFab').addEventListener('click', () => {
-            showNewEntryModal();
-        });
-        
-        // New entry modal
-        document.getElementById('closeNewEntryBtn').addEventListener('click', () => {
-            hideElement(document.getElementById('newEntryModal'));
-        });
-        
-        document.getElementById('cancelNewEntryBtn').addEventListener('click', () => {
-            hideElement(document.getElementById('newEntryModal'));
-        });
-        
-        document.getElementById('saveNewEntryBtn').addEventListener('click', () => {
-            addNewEntry();
-        });
-        
-        // Auto-calculate work time in new entry form
-        document.getElementById('newEntryStart').addEventListener('input', updateNewEntryWorkTime);
-        document.getElementById('newEntryEnd').addEventListener('input', updateNewEntryWorkTime);
-        
-        function updateNewEntryWorkTime() {
-            const start = document.getElementById('newEntryStart').value;
-            const end = document.getElementById('newEntryEnd').value;
-            
-            if (start && end) {
-                const workTime = calculateWorkTime(start, end);
-                if (workTime) {
-                    document.getElementById('newEntryWork').value = workTime;
-                }
-            }
-        }
-        
-        function showNewEntryModal() {
-            // Set today's date by default
-            const today = new Date();
-            const dateStr = `${today.getDate().toString().padStart(2, '0')}.${(today.getMonth() + 1).toString().padStart(2, '0')}`;
-            document.getElementById('newEntryDate').value = dateStr;
-            
-            // Clear other fields
-            document.getElementById('newEntryClient').value = '';
-            document.getElementById('newEntryStart').value = '';
-            document.getElementById('newEntryEnd').value = '';
-            document.getElementById('newEntryWork').value = '';
-            
-            // Update common clients
-            updateCommonClients();
-            
-            // Show modal
-            showElement(document.getElementById('newEntryModal'));
-            
-            // Focus on client field
-            document.getElementById('newEntryClient').focus();
-        }
-        
-        function updateCommonClients() {
-            // Extract unique clients from existing entries
-            const clientsContainer = document.getElementById('commonClientsContainer');
-            clientsContainer.innerHTML = '';
-            
-            if (entries.length === 0) return;
-            
-            // Count client occurrences
-            const clientCount = {};
-            entries.forEach(entry => {
-                if (entry.client) {
-                    clientCount[entry.client] = (clientCount[entry.client] || 0) + 1;
-                }
-            });
-            
-            // Sort by occurrence count and get top 5
-            const topClients = Object.entries(clientCount)
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 5)
-                .map(entry => entry[0]);
-            
-            // Create chips for top clients
-            topClients.forEach(client => {
-                const chip = document.createElement('div');
-                chip.className = 'client-chip';
-                chip.textContent = client;
-                chip.addEventListener('click', () => {
-                    document.getElementById('newEntryClient').value = client;
-                });
-                clientsContainer.appendChild(chip);
-            });
-        }
-        
-        function addNewEntry() {
-            const lang = translations[currentLang];
-            
-            const date = document.getElementById('newEntryDate').value.replace('.', '-');
-            const client = document.getElementById('newEntryClient').value;
-            const start = document.getElementById('newEntryStart').value;
-            const end = document.getElementById('newEntryEnd').value;
-            let workTime = document.getElementById('newEntryWork').value;
-            
-            // Validate inputs
-            if (!date || !client) {
-                alert(lang.error + ': ' + 'Date and client are required');
-                return;
+        // Initialize app with saved preferences
+        function initApp() {
+            // Load theme preference
+            const savedTheme = localStorage.getItem('wojthom-theme');
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark-theme');
+                document.getElementById('toggleThemeBtn').innerHTML = `<i class="fas fa-sun"></i> ${translations[currentLang].light_mode}`;
             }
             
-            // Make sure work time is calculated
-            if (start && end && (!workTime || workTime.trim() === '')) {
-                workTime = calculateWorkTime(start, end);
+            // Load language preference
+            const savedLang = localStorage.getItem('wojthom-language');
+            if (savedLang && translations[savedLang]) {
+                currentLang = savedLang;
             }
             
-            // Create new entry
-            const newEntry = {
-                date: date,
-                client: client,
-                startTime: start,
-                endTime: end,
-                workTime: workTime
-            };
+            updateLanguage(currentLang);
             
-            // Add to entries array
-            if (originalEntries) {
-                // If filtering is active, add to original entries to maintain filter state
-                originalEntries.push(newEntry);
-            }
-            
-            entries.push(newEntry);
-            
-            // Refresh table
-            refreshTable();
-            
-            // Create card view
-            updateCardView();
-            
-            // Hide modal
-            hideElement(document.getElementById('newEntryModal'));
-            
-            // Update status
-            statusBar.textContent = lang.entry_updated;
-        }
-        
-        function updateCardView() {
-            const cardContainer = document.getElementById('cardContainer');
-            cardContainer.innerHTML = '';
-            
-            entries.forEach((entry, index) => {
-                const card = document.createElement('div');
-                card.className = 'entry-card';
-                
-                card.innerHTML = `
-                    <div class="card-header">
-                        <span class="card-date">${entry.date}</span>
-                        <span class="card-work-time">${entry.workTime}</span>
-                    </div>
-                    <div class="card-client">${entry.client}</div>
-                    <div class="card-times">
-                        <div>
-                            <div class="card-time-label">${translations[currentLang].start_time}</div>
-                            <div>${entry.startTime}</div>
-                        </div>
-                        <div>
-                            <div class="card-time-label">${translations[currentLang].end_time}</div>
-                            <div>${entry.endTime}</div>
-                        </div>
-                    </div>
-                    <div class="card-actions">
-                        <button class="card-btn" data-action="edit" data-index="${index}">
-                            <i class="fas fa-pencil-alt"></i>
-                        </button>
-                    </div>
-                `;
-                
-                // Add event listener for edit
-                card.querySelector('[data-action="edit"]').addEventListener('click', () => {
-                    showEditDialog(index);
-                });
-                
-                cardContainer.appendChild(card);
+            // Set language checkmarks
+            document.querySelectorAll('.fa-check').forEach(check => {
+                check.style.visibility = 'hidden';
             });
             
-            // Add summary card
-            let totalMinutes = 0;
-            entries.forEach(entry => {
-                if (entry.workTime) {
-                    totalMinutes += parseTimeToMinutes(entry.workTime);
-                }
-            });
-            
-            const totalTimeStr = minutesToTimeStr(totalMinutes);
-            const lang = translations[currentLang];
-            
-            const summaryCard = document.createElement('div');
-            summaryCard.className = 'entry-card';
-            summaryCard.style.backgroundColor = 'var(--light-accent)';
-            summaryCard.style.textAlign = 'center';
-            
-            summaryCard.innerHTML = `
-                <div style="font-weight: bold; font-size: 1.2em;">${lang.sum_total}</div>
-                <div style="font-size: 1.5em; margin-top: 10px;">${totalTimeStr}</div>
-            `;
-            
-            cardContainer.appendChild(summaryCard);
+            document.querySelector(`.${currentLang}-check`).style.visibility = 'visible';
         }
         
-        // Modify parseAndDisplay to update card view
-        const originalParseAndDisplay = parseAndDisplay;
-        parseAndDisplay = function() {
-            originalParseAndDisplay();
-            updateCardView();
-        };
-        
-        // Modify refreshTable to update card view
-        const originalRefreshTable = refreshTable;
-        refreshTable = function() {
-            originalRefreshTable();
-            updateCardView();
-        };
+        // Call init function
+        initApp();
     </script>
-    <!-- Mobile-friendly quick action buttons -->
-    <div class="mobile-quick-actions">
-        <button class="quick-action-btn" id="quickAddBtn">
-            <i class="fas fa-plus"></i>
-        </button>
-        <button class="quick-action-btn" id="quickFilterBtn">
-            <i class="fas fa-filter"></i>
-        </button>
-        <button class="quick-action-btn" id="quickGenerateBtn">
-            <i class="fas fa-play"></i>
-        </button>
-        <button class="quick-action-btn" id="quickStatsBtn">
-            <i class="fas fa-chart-bar"></i>
-        </button>
-        <button class="quick-action-btn" id="quickExportMobileBtn">
-            <i class="fas fa-file-pdf"></i>
-        </button>
-    </div>
-    
-    <!-- Floating Action Button for adding new entries -->
-    <button class="add-entry-fab" id="addEntryFab">
-        <i class="fas fa-plus"></i>
-    </button>
-    
-    <!-- New Entry Modal -->
-    <div id="newEntryModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <div class="modal-title" id="newEntryModalTitle">Add New Entry</div>
-                <button class="close-btn" id="closeNewEntryBtn">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="new-entry-form-group">
-                    <label for="newEntryDate" id="newEntryDateLabel">Date</label>
-                    <input type="text" id="newEntryDate" placeholder="DD.MM">
-                </div>
-                <div class="new-entry-form-group">
-                    <label for="newEntryClient" id="newEntryClientLabel">Client/Address</label>
-                    <input type="text" id="newEntryClient">
-                    <div class="common-clients-container" id="commonClientsContainer">
-                        <!-- Common clients will be added dynamically -->
-                    </div>
-                </div>
-                <div class="new-entry-form-group">
-                    <label for="newEntryStart" id="newEntryStartLabel">Start time</label>
-                    <input type="text" id="newEntryStart" placeholder="HH:MM">
-                </div>
-                <div class="new-entry-form-group">
-                    <label for="newEntryEnd" id="newEntryEndLabel">End time</label>
-                    <input type="text" id="newEntryEnd" placeholder="HH:MM">
-                </div>
-                <div class="new-entry-form-group">
-                    <label for="newEntryWork" id="newEntryWorkLabel">Work time (calculated automatically)</label>
-                    <input type="text" id="newEntryWork" readonly>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="action-btn clear-btn" id="cancelNewEntryBtn">Cancel</button>
-                <button class="action-btn generate-btn" id="saveNewEntryBtn">Add Entry</button>
-            </div>
-        </div>
-    </div>
-
     <!-- Add Service Worker for offline support -->
     <script>
         // Service Worker code
