@@ -676,7 +676,7 @@
                 - Date (DD.MM, DD-MM, DD/MM)<br>
                 - Client/address<br>
                 - Time range (HH:MM-HH:MM)<br>
-                - Duration (Xh or X.Yh)</p>
+                - Duration (Xh or X.Yh or just X.Y)</p>
 
                 <p>Buttons:<br>
                 - Generate List: Processes the entered data<br>
@@ -836,6 +836,23 @@
             </div>
         </div>
     </div>
+    
+    <!-- Share Modal -->
+    <div id="shareModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="shareTitle">Share PDF</div>
+                <button class="close-btn" id="closeShareBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="shareLabel">PDF has been saved. Would you like to share it?</p>
+                <div class="buttons-container">
+                    <button class="action-btn generate-btn" id="confirmShareBtn">Share</button>
+                    <button class="action-btn clear-btn" id="cancelShareBtn">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script>
         // Translations
@@ -869,7 +886,7 @@
                 "work_time": "Arbeidstid",
                 "generated_on": "Generert",
                 "language": "Språk",
-                "help_text": "Hvordan bruke applikasjonen:\n\n1. Skriv inn en overskrift (valgfritt)\n2. Lim inn data i formatet:\n   DD.MM [Kunde/Adresse] HH:MM-HH:MM\n\nEksempler på oppføringer:\n• 15.04 ABC Selskap 08:00-16:00\n• 16.04 Jon Hansen 9:00-14:30\n• 17.04 Fjernmøte 8:30-10:00\n• 18.04 Verksted 8t\n\nProgrammet gjenkjenner automatisk:\n- Dato (DD.MM, DD-MM, DD/MM)\n- Kunde/adresse\n- Tidsintervall (HH:MM-HH:MM)\n- Varighet (Xt eller X.Yt)\n\nKnapper:\n- Generer Tidsliste: Behandler de angitte dataene\n- Tøm: Rydder tekstfeltet\n- Eksporter PDF: Lagrer listen i PDF-format",
+                "help_text": "Hvordan bruke applikasjonen:\n\n1. Skriv inn en overskrift (valgfritt)\n2. Lim inn data i formatet:\n   DD.MM [Kunde/Adresse] HH:MM-HH:MM\n\nEksempler på oppføringer:\n• 15.04 ABC Selskap 08:00-16:00\n• 16.04 Jon Hansen 9:00-14:30\n• 17.04 Fjernmøte 8:30-10:00\n• 18.04 Verksted 8t\n\nProgrammet gjenkjenner automatisk:\n- Dato (DD.MM, DD-MM, DD/MM)\n- Kunde/adresse\n- Tidsintervall (HH:MM-HH:MM)\n- Varighet (Xt eller X.Yt eller bare X.Y)\n\nKnapper:\n- Generer Tidsliste: Behandler de angitte dataene\n- Tøm: Rydder tekstfeltet\n- Eksporter PDF: Lagrer listen i PDF-format",
                 "help_usage": "Hjelp",
                 "switch_to_no": "Norsk",
                 "switch_to_pl": "Polsk",
@@ -905,7 +922,11 @@
                 "export_language_title": "Velg eksportspråk",
                 "export_language_label": "Velg språk for eksport:",
                 "export_language_success": "Eksportert med {language} språk",
-                "share": "Del"
+                "share": "Del",
+                "share_title": "Del PDF",
+                "share_label": "PDF er lagret. Vil du dele den?",
+                "share_btn": "Del",
+                "pdf_saved": "PDF lagret som: {filename}"
             },
             "pl": {
                 "title": "WojThom 3.0 - Profesjonalny Generator List Czasu Pracy",
@@ -936,7 +957,7 @@
                 "work_time": "Czas pracy",
                 "generated_on": "Wygenerowano",
                 "language": "Język",
-                "help_text": "Jak używać aplikacji:\n\n1. Wprowadź nagłówek (opcjonalnie)\n2. Wklej dane w formacie:\n   DD.MM [Klient/Adres] HH:MM-HH:MM\n\nPrzykłady wpisów:\n• 15.04 Firma ABC 08:00-16:00\n• 16.04 Jan Kowalski 9:00-14:30\n• 17.04 Spotkanie zdalne 8:30-10:00\n• 18.04 Warsztat 8h\n\nProgram automatycznie rozpoznaje:\n- Datę (DD.MM, DD-MM, DD/MM)\n- Klienta/adres\n- Zakres czasu (HH:MM-HH:MM)\n- Czas trwania (Xh lub X.Yh)\n\nPrzyciski:\n- Generuj Listę: Przetwarza wprowadzone dane\n- Wyczyść: Czyści pole tekstowe\n- Eksportuj PDF: Zapisuje listę w formacie PDF",
+                "help_text": "Jak używać aplikacji:\n\n1. Wprowadź nagłówek (opcjonalnie)\n2. Wklej dane w formacie:\n   DD.MM [Klient/Adres] HH:MM-HH:MM\n\nPrzykłady wpisów:\n• 15.04 Firma ABC 08:00-16:00\n• 16.04 Jan Kowalski 9:00-14:30\n• 17.04 Spotkanie zdalne 8:30-10:00\n• 18.04 Warsztat 8h\n\nProgram automatycznie rozpoznaje:\n- Datę (DD.MM, DD-MM, DD/MM)\n- Klienta/adres\n- Zakres czasu (HH:MM-HH:MM)\n- Czas trwania (Xh lub X.Yh lub samo X.Y)\n\nPrzyciski:\n- Generuj Listę: Przetwarza wprowadzone dane\n- Wyczyść: Czyści pole tekstowe\n- Eksportuj PDF: Zapisuje listę w formacie PDF",
                 "help_usage": "Pomoc",
                 "switch_to_no": "Norweski",
                 "switch_to_pl": "Polski",
@@ -972,7 +993,11 @@
                 "export_language_title": "Wybierz język eksportu",
                 "export_language_label": "Wybierz język dla eksportu:",
                 "export_language_success": "Wyeksportowano w języku {language}",
-                "share": "Udostępnij"
+                "share": "Udostępnij",
+                "share_title": "Udostępnij PDF",
+                "share_label": "PDF został zapisany. Czy chcesz go udostępnić?",
+                "share_btn": "Udostępnij",
+                "pdf_saved": "PDF zapisany jako: {filename}"
             },
             "en": {
                 "title": "WojThom 3.0 - Professional Time List Generator",
@@ -1003,7 +1028,7 @@
                 "work_time": "Work time",
                 "generated_on": "Generated on",
                 "language": "Language",
-                "help_text": "How to use the application:\n\n1. Enter a header (optional)\n2. Paste data in the format:\n   DD.MM [Client/Address] HH:MM-HH:MM\n\nEntry examples:\n• 15.04 ABC Company 08:00-16:00\n• 16.04 John Smith 9:00-14:30\n• 17.04 Remote Meeting 8:30-10:00\n• 18.04 Workshop 8h\n\nThe program automatically recognizes:\n- Date (DD.MM, DD-MM, DD/MM)\n- Client/address\n- Time range (HH:MM-HH:MM)\n- Duration (Xh or X.Yh)\n\nButtons:\n- Generate List: Processes the entered data\n- Clear: Cleans the text field\n- Export PDF: Saves the list in PDF format",
+                "help_text": "How to use the application:\n\n1. Enter a header (optional)\n2. Paste data in the format:\n   DD.MM [Client/Address] HH:MM-HH:MM\n\nEntry examples:\n• 15.04 ABC Company 08:00-16:00\n• 16.04 John Smith 9:00-14:30\n• 17.04 Remote Meeting 8:30-10:00\n• 18.04 Workshop 8h\n\nThe program automatically recognizes:\n- Date (DD.MM, DD-MM, DD/MM)\n- Client/address\n- Time range (HH:MM-HH:MM)\n- Duration (Xh or X.Yh or just X.Y)\n\nButtons:\n- Generate List: Processes the entered data\n- Clear: Cleans the text field\n- Export PDF: Saves the list in PDF format",
                 "help_usage": "Help",
                 "switch_to_no": "Norwegian",
                 "switch_to_pl": "Polish",
@@ -1039,7 +1064,11 @@
                 "export_language_title": "Choose Export Language",
                 "export_language_label": "Select language for export:",
                 "export_language_success": "Exported with {language} language",
-                "share": "Share"
+                "share": "Share",
+                "share_title": "Share PDF",
+                "share_label": "PDF has been saved. Would you like to share it?",
+                "share_btn": "Share",
+                "pdf_saved": "PDF saved as: {filename}"
             }
         };
         
@@ -1050,6 +1079,7 @@
         let currentEditingRow = null;
         let timeChart = null;
         let clientChart = null;
+        let lastExportedPdf = null;
         
         // DOM Elements
         const fileMenuBtn = document.getElementById('fileMenuBtn');
@@ -1081,6 +1111,14 @@
         const statisticsModal = document.getElementById('statisticsModal');
         const filterModal = document.getElementById('filterModal');
         const exportLanguageModal = document.getElementById('exportLanguageModal');
+        const shareModal = document.getElementById('shareModal');
+        
+        // Share elements
+        const shareTitle = document.getElementById('shareTitle');
+        const shareLabel = document.getElementById('shareLabel');
+        const confirmShareBtn = document.getElementById('confirmShareBtn');
+        const cancelShareBtn = document.getElementById('cancelShareBtn');
+        const closeShareBtn = document.getElementById('closeShareBtn');
         
         // Utility Functions
         function showElement(element) {
@@ -1243,6 +1281,12 @@
             document.getElementById('exportEN').textContent = lang.switch_to_en;
             document.getElementById('cancelExportBtn').textContent = lang.cancel;
             
+            // Update share modal
+            shareTitle.textContent = lang.share_title;
+            shareLabel.textContent = lang.share_label;
+            confirmShareBtn.textContent = lang.share_btn;
+            cancelShareBtn.textContent = lang.cancel;
+            
             // Update summary label
             updateSummaryLabel();
         }
@@ -1297,7 +1341,9 @@
                 // Try to find time range or duration
                 const timeRangeMatch = rest.match(/(\d{1,2}[\.:]\d{2})\s*[-–]\s*(\d{1,2}[\.:]\d{2})/);
                 const noDashMatch = rest.match(/(\d{1,2}:\d{2}):(\d{1,2}:\d{2})/);
-                const durationMatch = rest.match(/(\d+(?:[\.:]\d+)?)(?:h|H|t)\b/);
+                const durationWithUnitMatch = rest.match(/(\d+(?:[\.:]\d+)?)(?:h|H|t)\b/);
+                // Dodanie nowego wzorca dla wartości liczbowych bez oznaczeń jednostek
+                const durationWithoutUnitMatch = rest.match(/\s(\d+(?:[\.,]\d+)?)\s*$/);
                 
                 let start = '';
                 let end = '';
@@ -1322,9 +1368,9 @@
                     
                     // Extract client name (everything before the time notation)
                     client = rest.substring(0, noDashMatch.index).trim();
-                } else if (durationMatch) {
+                } else if (durationWithUnitMatch) {
                     // Direct duration specification (e.g., "8h" or "4.5t")
-                    const durStr = durationMatch[1].replace(',', '.');
+                    const durStr = durationWithUnitMatch[1].replace(',', '.');
                     
                     if (durStr.includes(':')) {
                         const [hrs, mins] = durStr.split(':').map(Number);
@@ -1336,7 +1382,22 @@
                     }
                     
                     // Extract client name (everything before the duration)
-                    client = rest.substring(0, durationMatch.index).trim();
+                    client = rest.substring(0, durationWithUnitMatch.index).trim();
+                } else if (durationWithoutUnitMatch) {
+                    // Obsługa wartości liczbowych bez oznaczeń jednostek (np. "0.75")
+                    const durStr = durationWithoutUnitMatch[1].replace(',', '.');
+                    
+                    if (durStr.includes(':')) {
+                        const [hrs, mins] = durStr.split(':').map(Number);
+                        workTime = formatTime(hrs, mins);
+                    } else {
+                        const hours = Math.floor(parseFloat(durStr));
+                        const minutes = Math.round((parseFloat(durStr) - hours) * 60);
+                        workTime = formatTime(hours, minutes);
+                    }
+                    
+                    // Extract client name (everything before the duration)
+                    client = rest.substring(0, durationWithoutUnitMatch.index).trim();
                 }
                 
                 // Create entry object
@@ -2009,38 +2070,51 @@
             // Save the PDF
             doc.save(fileName);
             
-            // Check if Web Share API is available for mobile sharing
+            // Update status bar
+            const langName = interfaceLang[`switch_to_${langCode}`];
+            statusBar.textContent = interfaceLang.pdf_saved.replace('{filename}', fileName);
+            
+            // Store the PDF data to share if desired
+            lastExportedPdf = {
+                blob: doc.output('blob'),
+                fileName: fileName,
+                title: title
+            };
+            
+            // Hide export language dialog
+            hideElement(exportLanguageModal);
+            
+            // Show share dialog if Web Share API is available
+            if (navigator.share) {
+                showElement(shareModal);
+            }
+        }
+        
+        function shareLastExportedPdf() {
+            if (!lastExportedPdf) return;
+            
             if (navigator.share) {
                 try {
-                    // Convert PDF to blob
-                    const pdfBlob = doc.output('blob');
-                    
                     // Create a File object
-                    const pdfFile = new File([pdfBlob], fileName, {
+                    const pdfFile = new File([lastExportedPdf.blob], lastExportedPdf.fileName, {
                         type: 'application/pdf'
                     });
                     
-                    // Show share dialog after a short delay to ensure file is saved
-                    setTimeout(() => {
-                        navigator.share({
-                            files: [pdfFile],
-                            title: title,
-                            text: exportLang.export_pdf_title
-                        }).catch(err => {
-                            console.warn('Sharing failed:', err);
-                        });
-                    }, 1000);
+                    // Use Web Share API
+                    navigator.share({
+                        files: [pdfFile],
+                        title: lastExportedPdf.title,
+                        text: translations[currentLang].export_pdf_title
+                    }).catch(err => {
+                        console.warn('Sharing failed:', err);
+                    });
                 } catch (err) {
                     console.warn('Failed to share file:', err);
                 }
             }
             
-            // Hide export language dialog
-            hideElement(exportLanguageModal);
-            
-            // Update status bar
-            const langName = interfaceLang[`switch_to_${langCode}`];
-            statusBar.textContent = interfaceLang.export_language_success.replace('{language}', langName);
+            // Hide share dialog
+            hideElement(shareModal);
         }
         
         // Event Listeners
@@ -2140,6 +2214,11 @@
         
         document.getElementById('closeExportLanguageBtn').addEventListener('click', () => hideElement(exportLanguageModal));
         document.getElementById('cancelExportBtn').addEventListener('click', () => hideElement(exportLanguageModal));
+        
+        // Share dialog buttons
+        closeShareBtn.addEventListener('click', () => hideElement(shareModal));
+        cancelShareBtn.addEventListener('click', () => hideElement(shareModal));
+        confirmShareBtn.addEventListener('click', shareLastExportedPdf);
         
         // Export buttons
         document.getElementById('exportNO').addEventListener('click', () => exportPDF('no'));
