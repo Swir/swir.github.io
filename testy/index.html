@@ -1,1 +1,62 @@
 
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <title>Czateria Mod App</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#000;color:#fff;font-family:Arial,Helvetica,sans-serif}
+    button{padding:10px 16px;border:none;border-radius:8px;cursor:pointer;font-size:15px;font-weight:bold;box-shadow:0 0 6px rgba(0,255,0,.4)}
+    #openChat{position:fixed;top:12px;left:12px;z-index:9;background:#0f0;color:#000}
+    #activate{position:fixed;bottom:16px;right:16px;z-index:9;background:#0f0;color:#000;display:none}
+  </style>
+  <script src="cordova.js"></script>
+</head>
+<body>
+  <button id="openChat">Wejdź na czat</button>
+  <button id="activate">Aktywuj&nbsp;MOD</button>
+
+<script>
+const CHAT_URL = "https://czateria.interia.pl/emb-chat,room,80";
+let chatWin = null;
+
+function init(){
+  const $open   = document.getElementById('openChat');
+  const $active = document.getElementById('activate');
+
+  $open.addEventListener('click', () => {
+    const openFunc = window.cordova && window.cordova.InAppBrowser ? window.cordova.InAppBrowser.open : null;
+    if(!openFunc){
+      alert('InAppBrowser plugin niezaładowany – sprawdź config.xml lub wybierz metodę URL + Custom JS w WebIntoApp.');
+      return;
+    }
+    chatWin = openFunc(
+      CHAT_URL,
+      '_blank',
+      'location=no,toolbar=no,hideurlbar=yes,hardwareback=yes'
+    );
+    chatWin.addEventListener('loadstop', () => {
+      $active.style.display = 'block';
+    });
+  });
+
+  $active.addEventListener('click', async () => {
+    if(!chatWin){ alert('Otwórz czat najpierw.'); return; }
+    try{
+      const code = await fetch('mod.js').then(r=>r.text());
+      chatWin.executeScript({ code });
+    }catch(e){
+      alert('Nie udało się wstrzyknąć moda: '+e);
+    }
+  });
+}
+
+if(window.cordova){
+  document.addEventListener('deviceready', init, false);
+}else{
+  window.addEventListener('load', init);
+}
+</script>
+</body>
+</html>
