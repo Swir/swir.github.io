@@ -1,8 +1,0 @@
-<?xml version='1.0' encoding='utf-8'?>
-<widget id="com.example.czateriamod" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
-  <content src="index.html" />
-  <access origin="*" />
-  <allow-navigation href="https://czateria.interia.pl/*" />
-  <plugin name="cordova-plugin-inappbrowser" source="npm" />
-  <preference name="Orientation" value="portrait" />
-</widget>
