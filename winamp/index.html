@@ -3,213 +3,378 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Winamp Classic – wersja PRO</title>
-
-  <!-- Winamp 2.x w JS -->
-  <!-- Używamy ostatniej stabilnej wersji 1.5.0 – "latest" bywa pre‑release i może nie mieć paczki /built/ -->
+  <title>Winamp Html - Working Edition</title>
+  
+  <!-- Webamp -->
   <script src="https://unpkg.com/webamp@1.5.0/built/webamp.bundle.min.js"></script>
-  <!-- Butterchurn (Milkdrop) Visualizer + Presety -->
-  <script src="https://cdn.jsdelivr.net/npm/butterchurn@2.6.7/dist/butterchurn.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/butterchurn-presets@2.6.7/dist/butterchurnPresets.min.js"></script>
-
+  
   <style>
-    html,body{height:100%;margin:0;background:#202020;font-family:Arial,Helvetica,sans-serif;display:flex;justify-content:center;align-items:center;overflow:hidden;}
-    #container{position:relative;text-align:center;}
-    #app{transform-origin:top left;}
-    #toolbar{margin-top:8px;display:flex;flex-wrap:wrap;gap:8px;justify-content:center;}
-    .btn{background:#444;border:1px solid #666;color:#fff;padding:6px 14px;border-radius:4px;cursor:pointer;font-size:14px;line-height:1;transition:background .15s;user-select:none;white-space:nowrap;}
-    .btn:hover{background:#555;}
-    input[type=file]{display:none;}
-    #visualizer{display:none;width:100%;height:320px;margin-top:10px;border:2px solid #444;border-radius:6px;box-shadow:0 4px 10px rgba(0,0,0,.6);}    
-    @media(max-width:600px){#visualizer{height:220px;}}
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #000;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      font-size: 11px;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    #app {
+      position: relative !important;
+    }
+
+    /* Winamp-style controls */
+    .controls {
+      background: linear-gradient(to bottom, #3a3a3a, #1e1e1e);
+      border: 1px solid #000;
+      box-shadow: inset 1px 1px 0 #555, inset -1px -1px 0 #222;
+      padding: 5px;
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+      justify-content: center;
+      max-width: 550px;
+    }
+
+    .btn {
+      background: linear-gradient(to bottom, #4a4a4a, #2a2a2a);
+      border: 1px solid #000;
+      box-shadow: inset 1px 1px 0 #666, inset -1px -1px 0 #111;
+      color: #00ff00;
+      padding: 4px 10px;
+      font-size: 11px;
+      cursor: pointer;
+      text-transform: uppercase;
+    }
+
+    .btn:hover {
+      background: linear-gradient(to bottom, #5a5a5a, #3a3a3a);
+    }
+
+    .btn:active {
+      background: linear-gradient(to bottom, #2a2a2a, #4a4a4a);
+      box-shadow: inset -1px -1px 0 #666, inset 1px 1px 0 #111;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    /* Info panel */
+    .info {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      padding: 10px;
+      margin-top: 10px;
+      font-family: monospace;
+      font-size: 10px;
+      color: #0f0;
+      max-width: 550px;
+      word-break: break-all;
+    }
+
+    .info div {
+      margin: 2px 0;
+    }
+
+    /* Radio stations */
+    .radio-list {
+      display: none;
+      background: #1a1a1a;
+      border: 1px solid #333;
+      padding: 5px;
+      margin-top: 5px;
+      max-width: 550px;
+    }
+
+    .radio-list.active {
+      display: block;
+    }
+
+    .station {
+      padding: 3px 8px;
+      cursor: pointer;
+      color: #aaa;
+    }
+
+    .station:hover {
+      background: #333;
+      color: #0f0;
+    }
   </style>
 </head>
 <body>
-  <div id="container">
+  <div class="container">
     <div id="app"></div>
-
-    <div id="toolbar">
-      <label class="btn" for="filePicker">🎵 Dodaj utwory</label>
-      <label class="btn" for="skinPicker">🎨 Załaduj skórkę</label>
-      <button class="btn" id="radioBtn">🌐 Dodaj radio</button>
-      <button class="btn" id="vizBtn">💫 Wizualizacja</button>
+    
+    <div class="controls">
+      <button class="btn" onclick="openFiles()">📁 PLIKI</button>
+      <button class="btn" onclick="openFolder()">📂 FOLDER</button>
+      <label class="btn" for="skinInput">🎨 SKÓRKA</label>
+      <button class="btn" onclick="toggleRadio()">📻 RADIO</button>
+      <button class="btn" onclick="clearAll()">🗑️ WYCZYŚĆ</button>
+      <button class="btn" onclick="testPlaylist()">🧪 TEST</button>
+      <button class="btn" onclick="showDebug()">🐛 DEBUG</button>
     </div>
 
-    <input type="file" id="filePicker" accept="audio/*" multiple>
-    <input type="file" id="skinPicker" accept=".wsz,.zip">
+    <div class="radio-list" id="radioList">
+      <div class="station" onclick="addStation('RMF FM', 'https://rs102-krk-cyfronet.rmfstream.pl/rmf_fm')">RMF FM</div>
+      <div class="station" onclick="addStation('Radio ZET', 'https://zt.cdn.eurozet.pl/zet-net.mp3')">Radio ZET</div>
+      <div class="station" onclick="addStation('Trójka', 'https://stream3.polskieradio.pl:8900/;')">Trójka</div>
+      <div class="station" onclick="addStation('TOK FM', 'https://pl-play.adtonos.com/tok-fm')">TOK FM</div>
+      <div class="station" onclick="addStation('Radio Maryja', 'https://radiomaryja.fastcast4u.com/proxy/radiomaryja?mp=/1')">Radio Maryja</div>
+      <div class="station" onclick="addStation('Jazz Radio', 'https://stream.jazzy.hu/jazzy.mp3')">Jazz Radio</div>
+      <div class="station" onclick="customStation()">➕ Dodaj własną...</div>
+    </div>
 
-    <canvas id="visualizer"></canvas>
+    <div class="info" id="info" style="display: none;"></div>
   </div>
 
-<script>
-/**************************************
- * 1) Inicjalizacja Winampa (Webamp)   *
- **************************************/
-const STARTER_TRACK=[{ // przykładowy CC utwór online
-  metaData:{artist:"Rolemusic",title:"Hey Hey"},
-  url:"https://archive.org/download/8bit_Beta/rolemusic_-_Hey_Hey.mp3"
-}];
+  <input type="file" id="fileInput" multiple accept="audio/*">
+  <input type="file" id="folderInput" webkitdirectory directory multiple>
+  <input type="file" id="skinInput" accept=".wsz,.zip">
 
-const webamp=new Webamp({
-  initialTracks:STARTER_TRACK,
-  enableHotkeys:true,
-  filePickers:[Webamp.browserFilePicker()],
-  requirejsPath:null
-});
+  <script>
+    let webamp = null;
 
-webamp.renderWhenReady(document.getElementById("app")).then(()=>{
-  // Po pełnym załadowaniu aplikacji
-  restoreSession();          // 4) Przywracamy zapisaną sesję
-  applyScale();              // 5) Skaluje interfejs do okna
-  initMediaSession();        // 3) Obsługa klawiszy systemowych
-});
+    // Initialize
+    window.addEventListener('load', async () => {
+      console.log('Initializing Winamp Html...');
+      
+      try {
+        // Create Webamp with minimal config
+        webamp = new Webamp({
+          initialTracks: []
+        });
 
-autoPersist();               // 4) Rozpoczyna auto‑zapis sesji co X sekund
-
-/**************************************
- * 2) Dodawanie lokalnych plików i skórek
- **************************************/
-document.getElementById("filePicker").addEventListener("change",e=>{
-  appendFiles([...e.target.files]);
-});
-
-document.getElementById("skinPicker").addEventListener("change",e=>{
-  const f=e.target.files[0];
-  if(f) loadSkin(f);
-});
-
-function appendFiles(files){
-  webamp.appendTracksFromFiles(files);
-}
-
-async function loadSkin(file){
-  const buffer=await file.arrayBuffer();
-  webamp.setSkin({url:null,buffer});
-}
-
-/**************************************
- * 3) MediaSession API (przyciski sprzętowe)
- **************************************/
-function initMediaSession(){
-  if(!('mediaSession' in navigator)) return;
-  const updateMetadata=track=>{
-    const t=track?.metaData||{};
-    navigator.mediaSession.metadata=new MediaMetadata({
-      title:t.title||track?.defaultName||'Nieznany utwór',
-      artist:t.artist||'',
-      album:t.album||'',
+        // Render
+        await webamp.renderWhenReady(document.getElementById('app'));
+        console.log('Webamp rendered successfully');
+        
+        // Set up file handlers
+        setupFileHandlers();
+        
+        // Add a test track to verify it works
+        addTestTrack();
+        
+      } catch (error) {
+        console.error('Failed to initialize:', error);
+        alert('Błąd inicjalizacji Winampa: ' + error.message);
+      }
     });
-  };
-  webamp.on("track-info-change",updateMetadata);
 
-  navigator.mediaSession.setActionHandler('play',()=>webamp.play());
-  navigator.mediaSession.setActionHandler('pause',()=>webamp.pause());
-  navigator.mediaSession.setActionHandler('previoustrack',()=>webamp.previousTrack());
-  navigator.mediaSession.setActionHandler('nexttrack',()=>webamp.nextTrack());
-}
+    // File handlers
+    function setupFileHandlers() {
+      // Regular files
+      document.getElementById('fileInput').addEventListener('change', handleFiles);
+      
+      // Folder
+      document.getElementById('folderInput').addEventListener('change', handleFiles);
+      
+      // Skin
+      document.getElementById('skinInput').addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          try {
+            const url = URL.createObjectURL(file);
+            await webamp.setSkin({ url: url });
+            console.log('Skin loaded');
+          } catch (error) {
+            console.error('Skin error:', error);
+          }
+        }
+      });
 
-/**************************************
- * 4) Zapisywanie i przywracanie sesji *
- **************************************/
-const SAVE_KEY='winamp_state_v1';
-function saveSession(){
-  const state=webamp.store.getState();
-  const remoteTracks=state.media.tracks.filter(t=>/^https?:/.test(t.url)).map(t=>({url:t.url,metaData:t.metaData}));
-  const data={
-    volume:state.volume,
-    playtime:state.media.timeElapsed,
-    playlist:remoteTracks,
-    skin:state.display.skinUrl||null
-  };
-  localStorage.setItem(SAVE_KEY,JSON.stringify(data));
-}
-function restoreSession(){
-  const raw=localStorage.getItem(SAVE_KEY);
-  if(!raw) return;
-  try{
-    const data=JSON.parse(raw);
-    if(Array.isArray(data.playlist)&&data.playlist.length)
-      webamp.appendTracks(data.playlist);
-    if(typeof data.volume==='number')
-      webamp.store.dispatch({type:'SET_VOLUME',volume:data.volume});
-    if(data.skin) webamp.setSkin({url:data.skin});
-  }catch(e){console.error('Restore failed',e);}
-}
-function autoPersist(){
-  setInterval(saveSession,15000); // co 15s
-  window.addEventListener('beforeunload',saveSession);
-}
+      // Drag and drop
+      document.addEventListener('dragover', e => e.preventDefault());
+      document.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const files = [...e.dataTransfer.files];
+        processFiles(files);
+      });
+    }
 
-/**************************************
- * 5) Responsywne skalowanie interfejsu
- **************************************/
-function applyScale(){
-  const BASE=275,margin=24;
-  const scale=Math.min(1,(window.innerWidth-margin)/BASE);
-  document.getElementById('app').style.transform=`scale(${scale})`;
-}
-window.addEventListener('resize',applyScale);
+    // Handle file input
+    function handleFiles(e) {
+      const files = [...e.target.files];
+      processFiles(files);
+      e.target.value = ''; // Reset
+    }
 
-/**************************************
- * 6) Drag & Drop (audio + skórki)     *
- **************************************/
-['dragenter','dragover','dragleave','drop'].forEach(ev=>document.addEventListener(ev,e=>e.preventDefault()));
-document.addEventListener('drop',e=>{
-  const files=[...e.dataTransfer.files];
-  appendFiles(files.filter(f=>f.type.startsWith('audio')));
-  const skin=files.find(f=>/\.(wsz|zip)$/i.test(f.name));
-  if(skin) loadSkin(skin);
-});
+    // Process files
+    function processFiles(files) {
+      console.log('Processing files:', files);
+      
+      const audioFiles = files.filter(f => {
+        const name = f.name.toLowerCase();
+        return name.endsWith('.mp3') || name.endsWith('.wav') || 
+               name.endsWith('.ogg') || name.endsWith('.m4a') ||
+               name.endsWith('.flac') || name.endsWith('.aac');
+      });
 
-/**************************************
- * 7) Internet Radio (mp3 stream)      *
- **************************************/
-document.getElementById('radioBtn').addEventListener('click',()=>{
-  const url=prompt('Podaj URL strumienia MP3 lub AAC (https://...):');
-  if(url){
-    webamp.appendTracks([{url,metaData:{title:url.replace(/^https?:\/\//,'').split('/')[0],artist:'Radio'}}]);
-  }
-});
+      if (audioFiles.length === 0) {
+        alert('Nie znaleziono plików audio');
+        return;
+      }
 
-/**************************************
- * 8) Butterchurn – Milkdrop 2 Visualizer
- **************************************/
-const vizCanvas=document.getElementById('visualizer');
-let viz=null, analyserNode=null;
-function initVisualizer(){
-  if(viz) return;
-  const ctx=webamp.getAudioContext();
-  analyserNode=ctx.createAnalyser();
-  analyserNode.fftSize=2048;
-  webamp.setAnalyserNode(analyserNode);
-  viz=butterchurn.createVisualizer(ctx,vizCanvas,{width:vizCanvas.clientWidth,height:vizCanvas.clientHeight,pixelRatio:window.devicePixelRatio||1});
-  const presets=butterchurnPresets.getPresets();
-  const names=Object.keys(presets);
-  let idx=0;
-  viz.loadPreset(presets[names[idx]],0.0);
-  // zmiana presetu co 45s
-  setInterval(()=>{
-    idx=(idx+1)%names.length;
-    viz.loadPreset(presets[names[idx]],2.0);
-  },45000);
-  (function render(){
-    if(!viz) return;
-    viz.render(analyserNode);
-    requestAnimationFrame(render);
-  })();
-  window.addEventListener('resize',()=>{
-    viz.setRendererSize(vizCanvas.clientWidth,vizCanvas.clientHeight);
-  });
-}
+      // Method 1: Try native Webamp method first
+      if (webamp.appendTracksFromFiles) {
+        try {
+          webamp.appendTracksFromFiles(audioFiles);
+          console.log(`Added ${audioFiles.length} files via native method`);
+          return;
+        } catch (e) {
+          console.log('Native method failed:', e);
+        }
+      }
 
-document.getElementById('vizBtn').addEventListener('click',()=>{
-  if(vizCanvas.style.display==='none'){
-    vizCanvas.style.display='block';
-    initVisualizer();
-  }else{
-    vizCanvas.style.display='none';
-  }
-});
-</script>
+      // Method 2: Create object URLs
+      const tracks = audioFiles.map(file => {
+        const url = URL.createObjectURL(file);
+        return {
+          url: url,
+          defaultName: file.name,
+          metaData: {
+            artist: '',
+            title: file.name.replace(/\.[^/.]+$/, '')
+          }
+        };
+      });
+
+      console.log('Adding tracks:', tracks);
+      webamp.appendTracks(tracks);
+    }
+
+    // UI Functions
+    function openFiles() {
+      document.getElementById('fileInput').click();
+    }
+
+    function openFolder() {
+      document.getElementById('folderInput').click();
+    }
+
+    function toggleRadio() {
+      const list = document.getElementById('radioList');
+      list.classList.toggle('active');
+    }
+
+    function addStation(name, url) {
+      console.log('Adding station:', name, url);
+      webamp.appendTracks([{
+        url: url,
+        defaultName: name,
+        metaData: {
+          artist: 'Radio',
+          title: name
+        }
+      }]);
+      toggleRadio();
+    }
+
+    function customStation() {
+      const url = prompt('URL stacji:');
+      if (url) {
+        const name = prompt('Nazwa:') || 'Custom Radio';
+        addStation(name, url);
+      }
+    }
+
+    function clearAll() {
+      if (confirm('Wyczyścić playlistę?')) {
+        // Get all track IDs and remove them
+        const state = webamp.store.getState();
+        const trackIds = Object.keys(state.playlist);
+        
+        trackIds.forEach(id => {
+          webamp.store.dispatch({
+            type: 'REMOVE_TRACKS',
+            ids: [id]
+          });
+        });
+        
+        console.log('Playlist cleared');
+      }
+    }
+
+    function testPlaylist() {
+      console.log('Adding test tracks...');
+      
+      const testTracks = [
+        {
+          url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+          defaultName: 'Test Song 1',
+          metaData: { artist: 'SoundHelix', title: 'Song 1' }
+        },
+        {
+          url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
+          defaultName: 'Test Song 2', 
+          metaData: { artist: 'SoundHelix', title: 'Song 2' }
+        }
+      ];
+      
+      webamp.appendTracks(testTracks);
+    }
+
+    function addTestTrack() {
+      // Add one test track on startup
+      webamp.appendTracks([{
+        url: 'https://ia800604.us.archive.org/16/items/SynthwaveOutrun/01.%20Eu%20Não%20Quero%20Falar%20Sobre%20Isso.mp3',
+        defaultName: 'Welcome to Winamp Html',
+        metaData: {
+          artist: 'Winamp Html',
+          title: 'Welcome Track'
+        }
+      }]);
+    }
+
+    function showDebug() {
+      const info = document.getElementById('info');
+      const state = webamp.store.getState();
+      
+      const playlist = state.playlist || {};
+      const tracks = state.tracks || {};
+      const trackCount = Object.keys(playlist).length;
+      
+      let html = `<div>WEBAMP DEBUG INFO</div>`;
+      html += `<div>==================</div>`;
+      html += `<div>Tracks in playlist: ${trackCount}</div>`;
+      html += `<div>Current track: ${state.media?.currentTrack || 'none'}</div>`;
+      html += `<div>Status: ${state.media?.status || 'unknown'}</div>`;
+      html += `<div>==================</div>`;
+      
+      Object.entries(playlist).forEach(([id, order]) => {
+        const track = tracks[id];
+        if (track) {
+          html += `<div>${order}: ${track.defaultName || track.url}</div>`;
+        }
+      });
+      
+      info.innerHTML = html;
+      info.style.display = info.style.display === 'none' ? 'block' : 'none';
+      
+      console.log('Full state:', state);
+    }
+
+    // Global error handler
+    window.addEventListener('error', (e) => {
+      console.error('Global error:', e);
+    });
+  </script>
 </body>
 </html>
