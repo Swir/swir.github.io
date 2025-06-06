@@ -1,9 +1,48 @@
-<!DOCTYPE html>
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
 <html lang="pl">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Winamp Html - Working Edition</title>
+  <title>Winamp Html - Enhanced Edition</title>
   
   <!-- Webamp -->
   <script src="https://unpkg.com/webamp@1.5.0/built/webamp.bundle.min.js"></script>
@@ -22,20 +61,23 @@
       font-size: 11px;
       min-height: 100vh;
       display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
+      flex-direction: column;
+      padding: 10px;
+      touch-action: manipulation; /* Improves touch responsiveness */
     }
 
     .container {
       display: flex;
       flex-direction: column;
-      align-items: center;
-      gap: 10px;
+      min-height: 100vh;
+      max-width: 600px;
+      margin: 0 auto;
+      flex-grow: 1;
     }
 
     #app {
       position: relative !important;
+      flex-grow: 1;
     }
 
     /* Winamp-style controls */
@@ -48,7 +90,9 @@
       gap: 5px;
       flex-wrap: wrap;
       justify-content: center;
-      max-width: 550px;
+      order: 2; /* Moves controls to the bottom */
+      width: 100%;
+      max-width: 600px;
     }
 
     .btn {
@@ -56,10 +100,14 @@
       border: 1px solid #000;
       box-shadow: inset 1px 1px 0 #666, inset -1px -1px 0 #111;
       color: #00ff00;
-      padding: 4px 10px;
-      font-size: 11px;
+      padding: 8px 12px;
+      font-size: 12px;
       cursor: pointer;
       text-transform: uppercase;
+      flex: 1;
+      text-align: center;
+      min-width: 80px;
+      touch-action: manipulation; /* Better touch support */
     }
 
     .btn:hover {
@@ -84,8 +132,9 @@
       font-family: monospace;
       font-size: 10px;
       color: #0f0;
-      max-width: 550px;
+      max-width: 600px;
       word-break: break-all;
+      order: 1; /* Places info above controls */
     }
 
     .info div {
@@ -99,7 +148,8 @@
       border: 1px solid #333;
       padding: 5px;
       margin-top: 5px;
-      max-width: 550px;
+      max-width: 600px;
+      order: 1; /* Places radio list above controls */
     }
 
     .radio-list.active {
@@ -107,14 +157,34 @@
     }
 
     .station {
-      padding: 3px 8px;
+      padding: 5px 8px;
       cursor: pointer;
       color: #aaa;
+      font-size: 12px;
     }
 
     .station:hover {
       background: #333;
       color: #0f0;
+    }
+
+    /* Responsive design */
+    @media (max-width: 600px) {
+      body {
+        font-size: 10px;
+        padding: 5px;
+      }
+
+      .btn {
+        padding: 6px 8px;
+        font-size: 10px;
+        min-width: 60px;
+      }
+
+      .controls {
+        gap: 3px;
+        padding: 3px;
+      }
     }
   </style>
 </head>
@@ -122,16 +192,6 @@
   <div class="container">
     <div id="app"></div>
     
-    <div class="controls">
-      <button class="btn" onclick="openFiles()">📁 PLIKI</button>
-      <button class="btn" onclick="openFolder()">📂 FOLDER</button>
-      <label class="btn" for="skinInput">🎨 SKÓRKA</label>
-      <button class="btn" onclick="toggleRadio()">📻 RADIO</button>
-      <button class="btn" onclick="clearAll()">🗑️ WYCZYŚĆ</button>
-      <button class="btn" onclick="testPlaylist()">🧪 TEST</button>
-      <button class="btn" onclick="showDebug()">🐛 DEBUG</button>
-    </div>
-
     <div class="radio-list" id="radioList">
       <div class="station" onclick="addStation('RMF FM', 'https://rs102-krk-cyfronet.rmfstream.pl/rmf_fm')">RMF FM</div>
       <div class="station" onclick="addStation('Radio ZET', 'https://zt.cdn.eurozet.pl/zet-net.mp3')">Radio ZET</div>
@@ -143,6 +203,16 @@
     </div>
 
     <div class="info" id="info" style="display: none;"></div>
+
+    <div class="controls">
+      <button class="btn" onclick="openFiles()">📁 PLIKI</button>
+      <button class="btn" onclick="openFolder()">📂 FOLDER</button>
+      <label class="btn" for="skinInput">🎨 SKÓRKA</label>
+      <button class="btn" onclick="toggleRadio()">📻 RADIO</button>
+      <button class="btn" onclick="clearAll()">🗑️ WYCZYŚĆ</button>
+      <button class="btn" onclick="testPlaylist()">🧪 TEST</button>
+      <button class="btn" onclick="showDebug()">🐛 DEBUG</button>
+    </div>
   </div>
 
   <input type="file" id="fileInput" multiple accept="audio/*">
@@ -151,6 +221,7 @@
 
   <script>
     let webamp = null;
+    const STORAGE_KEY = 'winamp_html_settings';
 
     // Initialize
     window.addEventListener('load', async () => {
@@ -159,7 +230,7 @@
       try {
         // Create Webamp with minimal config
         webamp = new Webamp({
-          initialTracks: []
+          initialTracks: loadPlaylist() || []
         });
 
         // Render
@@ -169,14 +240,70 @@
         // Set up file handlers
         setupFileHandlers();
         
-        // Add a test track to verify it works
-        addTestTrack();
+        // Restore settings
+        restoreSettings();
         
+        // Save playlist on track change
+        webamp.store.subscribe(() => {
+          savePlaylist();
+        });
+
       } catch (error) {
         console.error('Failed to initialize:', error);
         alert('Błąd inicjalizacji Winampa: ' + error.message);
       }
     });
+
+    // Save settings to localStorage
+    function saveSettings() {
+      const settings = {
+        radioVisible: document.getElementById('radioList').classList.contains('active'),
+        debugVisible: document.getElementById('info').style.display === 'block',
+        skinUrl: webamp.store.getState().display?.skin?.url || ''
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+    }
+
+    // Restore settings from localStorage
+    async function restoreSettings() {
+      const settings = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      if (settings.radioVisible) {
+        document.getElementById('radioList').classList.add('active');
+      }
+      if (settings.debugVisible) {
+        showDebug(); // Trigger debug panel to restore state
+      }
+      if (settings.skinUrl) {
+        try {
+          await webamp.setSkin({ url: settings.skinUrl });
+          console.log('Restored skin:', settings.skinUrl);
+        } catch (e) {
+          console.error('Failed to restore skin:', e);
+        }
+      }
+    }
+
+    // Save playlist to localStorage
+    function savePlaylist() {
+      const state = webamp.store.getState();
+      const playlist = state.playlist || {};
+      const tracks = state.tracks || {};
+      const savedTracks = Object.entries(playlist).map(([id, order]) => {
+        const track = tracks[id];
+        return track ? {
+          url: track.url,
+          defaultName: track.defaultName,
+          metaData: track.metaData
+        } : null;
+      }).filter(Boolean);
+      localStorage.setItem('winamp_playlist', JSON.stringify(savedTracks));
+    }
+
+    // Load playlist from localStorage
+    function loadPlaylist() {
+      const saved = localStorage.getItem('winamp_playlist');
+      return saved ? JSON.parse(saved) : null;
+    }
 
     // File handlers
     function setupFileHandlers() {
@@ -192,10 +319,12 @@
         if (file) {
           try {
             const url = URL.createObjectURL(file);
-            await webamp.setSkin({ url: url });
-            console.log('Skin loaded');
+            await webamp.setSkin({ url });
+            saveSettings();
+            console.log('Skin loaded and saved');
           } catch (error) {
             console.error('Skin error:', error);
+            alert('Błąd ładowania skórki: ' + error.message);
           }
         }
       });
@@ -237,6 +366,7 @@
         try {
           webamp.appendTracksFromFiles(audioFiles);
           console.log(`Added ${audioFiles.length} files via native method`);
+          savePlaylist();
           return;
         } catch (e) {
           console.log('Native method failed:', e);
@@ -258,6 +388,7 @@
 
       console.log('Adding tracks:', tracks);
       webamp.appendTracks(tracks);
+      savePlaylist();
     }
 
     // UI Functions
@@ -272,6 +403,7 @@
     function toggleRadio() {
       const list = document.getElementById('radioList');
       list.classList.toggle('active');
+      saveSettings();
     }
 
     function addStation(name, url) {
@@ -284,20 +416,26 @@
           title: name
         }
       }]);
+      savePlaylist();
       toggleRadio();
     }
 
     function customStation() {
       const url = prompt('URL stacji:');
       if (url) {
-        const name = prompt('Nazwa:') || 'Custom Radio';
-        addStation(name, url);
+        // Basic URL validation
+        try {
+          new URL(url);
+          const name = prompt('Nazwa:') || 'Custom Radio';
+          addStation(name, url);
+        } catch (e) {
+          alert('Nieprawidłowy adres URL stacji');
+        }
       }
     }
 
     function clearAll() {
       if (confirm('Wyczyścić playlistę?')) {
-        // Get all track IDs and remove them
         const state = webamp.store.getState();
         const trackIds = Object.keys(state.playlist);
         
@@ -309,6 +447,7 @@
         });
         
         console.log('Playlist cleared');
+        localStorage.removeItem('winamp_playlist');
       }
     }
 
@@ -329,18 +468,7 @@
       ];
       
       webamp.appendTracks(testTracks);
-    }
-
-    function addTestTrack() {
-      // Add one test track on startup
-      webamp.appendTracks([{
-        url: 'https://ia800604.us.archive.org/16/items/SynthwaveOutrun/01.%20Eu%20Não%20Quero%20Falar%20Sobre%20Isso.mp3',
-        defaultName: 'Welcome to Winamp Html',
-        metaData: {
-          artist: 'Winamp Html',
-          title: 'Welcome Track'
-        }
-      }]);
+      savePlaylist();
     }
 
     function showDebug() {
@@ -367,13 +495,13 @@
       
       info.innerHTML = html;
       info.style.display = info.style.display === 'none' ? 'block' : 'none';
-      
-      console.log('Full state:', state);
+      saveSettings();
     }
 
     // Global error handler
     window.addEventListener('error', (e) => {
       console.error('Global error:', e);
+      alert('Wystąpił błąd: ' + e.message);
     });
   </script>
 </body>
