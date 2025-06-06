@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Winamp Classic – wersja PRO</title>
+
+  <!-- Winamp 2.x w JS -->
+  <!-- Używamy ostatniej stabilnej wersji 1.5.0 – "latest" bywa pre‑release i może nie mieć paczki /built/ -->
+  <script src="https://unpkg.com/webamp@1.5.0/built/webamp.bundle.min.js"></script>
+  <!-- Butterchurn (Milkdrop) Visualizer + Presety -->
+  <script src="https://cdn.jsdelivr.net/npm/butterchurn@2.6.7/dist/butterchurn.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/butterchurn-presets@2.6.7/dist/butterchurnPresets.min.js"></script>
+
+  <style>
+    html,body{height:100%;margin:0;background:#202020;font-family:Arial,Helvetica,sans-serif;display:flex;justify-content:center;align-items:center;overflow:hidden;}
+    #container{position:relative;text-align:center;}
+    #app{transform-origin:top left;}
+    #toolbar{margin-top:8px;display:flex;flex-wrap:wrap;gap:8px;justify-content:center;}
+    .btn{background:#444;border:1px solid #666;color:#fff;padding:6px 14px;border-radius:4px;cursor:pointer;font-size:14px;line-height:1;transition:background .15s;user-select:none;white-space:nowrap;}
+    .btn:hover{background:#555;}
+    input[type=file]{display:none;}
+    #visualizer{display:none;width:100%;height:320px;margin-top:10px;border:2px solid #444;border-radius:6px;box-shadow:0 4px 10px rgba(0,0,0,.6);}    
+    @media(max-width:600px){#visualizer{height:220px;}}
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="app"></div>
+
+    <div id="toolbar">
+      <label class="btn" for="filePicker">🎵 Dodaj utwory</label>
+      <label class="btn" for="skinPicker">🎨 Załaduj skórkę</label>
+      <button class="btn" id="radioBtn">🌐 Dodaj radio</button>
+      <button class="btn" id="vizBtn">💫 Wizualizacja</button>
+    </div>
+
+    <input type="file" id="filePicker" accept="audio/*" multiple>
+    <input type="file" id="skinPicker" accept=".wsz,.zip">
+
+    <canvas id="visualizer"></canvas>
+  </div>
+
+<script>
+/**************************************
+ * 1) Inicjalizacja Winampa (Webamp)   *
+ **************************************/
+const STARTER_TRACK=[{ // przykładowy CC utwór online
+  metaData:{artist:"Rolemusic",title:"Hey Hey"},
+  url:"https://archive.org/download/8bit_Beta/rolemusic_-_Hey_Hey.mp3"
+}];
+
+const webamp=new Webamp({
+  initialTracks:STARTER_TRACK,
+  enableHotkeys:true,
+  filePickers:[Webamp.browserFilePicker()],
+  requirejsPath:null
+});
+
+webamp.renderWhenReady(document.getElementById("app")).then(()=>{
+  // Po pełnym załadowaniu aplikacji
+  restoreSession();          // 4) Przywracamy zapisaną sesję
+  applyScale();              // 5) Skaluje interfejs do okna
+  initMediaSession();        // 3) Obsługa klawiszy systemowych
+});
+
+autoPersist();               // 4) Rozpoczyna auto‑zapis sesji co X sekund
+
+/**************************************
+ * 2) Dodawanie lokalnych plików i skórek
+ **************************************/
+document.getElementById("filePicker").addEventListener("change",e=>{
+  appendFiles([...e.target.files]);
+});
+
+document.getElementById("skinPicker").addEventListener("change",e=>{
+  const f=e.target.files[0];
+  if(f) loadSkin(f);
+});
+
+function appendFiles(files){
+  webamp.appendTracksFromFiles(files);
+}
+
+async function loadSkin(file){
+  const buffer=await file.arrayBuffer();
+  webamp.setSkin({url:null,buffer});
+}
+
+/**************************************
+ * 3) MediaSession API (przyciski sprzętowe)
+ **************************************/
+function initMediaSession(){
+  if(!('mediaSession' in navigator)) return;
+  const updateMetadata=track=>{
+    const t=track?.metaData||{};
+    navigator.mediaSession.metadata=new MediaMetadata({
+      title:t.title||track?.defaultName||'Nieznany utwór',
+      artist:t.artist||'',
+      album:t.album||'',
+    });
+  };
+  webamp.on("track-info-change",updateMetadata);
+
+  navigator.mediaSession.setActionHandler('play',()=>webamp.play());
+  navigator.mediaSession.setActionHandler('pause',()=>webamp.pause());
+  navigator.mediaSession.setActionHandler('previoustrack',()=>webamp.previousTrack());
+  navigator.mediaSession.setActionHandler('nexttrack',()=>webamp.nextTrack());
+}
+
+/**************************************
+ * 4) Zapisywanie i przywracanie sesji *
+ **************************************/
+const SAVE_KEY='winamp_state_v1';
+function saveSession(){
+  const state=webamp.store.getState();
+  const remoteTracks=state.media.tracks.filter(t=>/^https?:/.test(t.url)).map(t=>({url:t.url,metaData:t.metaData}));
+  const data={
+    volume:state.volume,
+    playtime:state.media.timeElapsed,
+    playlist:remoteTracks,
+    skin:state.display.skinUrl||null
+  };
+  localStorage.setItem(SAVE_KEY,JSON.stringify(data));
+}
+function restoreSession(){
+  const raw=localStorage.getItem(SAVE_KEY);
+  if(!raw) return;
+  try{
+    const data=JSON.parse(raw);
+    if(Array.isArray(data.playlist)&&data.playlist.length)
+      webamp.appendTracks(data.playlist);
+    if(typeof data.volume==='number')
+      webamp.store.dispatch({type:'SET_VOLUME',volume:data.volume});
+    if(data.skin) webamp.setSkin({url:data.skin});
+  }catch(e){console.error('Restore failed',e);}
+}
+function autoPersist(){
+  setInterval(saveSession,15000); // co 15s
+  window.addEventListener('beforeunload',saveSession);
+}
+
+/**************************************
+ * 5) Responsywne skalowanie interfejsu
+ **************************************/
+function applyScale(){
+  const BASE=275,margin=24;
+  const scale=Math.min(1,(window.innerWidth-margin)/BASE);
+  document.getElementById('app').style.transform=`scale(${scale})`;
+}
+window.addEventListener('resize',applyScale);
+
+/**************************************
+ * 6) Drag & Drop (audio + skórki)     *
+ **************************************/
+['dragenter','dragover','dragleave','drop'].forEach(ev=>document.addEventListener(ev,e=>e.preventDefault()));
+document.addEventListener('drop',e=>{
+  const files=[...e.dataTransfer.files];
+  appendFiles(files.filter(f=>f.type.startsWith('audio')));
+  const skin=files.find(f=>/\.(wsz|zip)$/i.test(f.name));
+  if(skin) loadSkin(skin);
+});
+
+/**************************************
+ * 7) Internet Radio (mp3 stream)      *
+ **************************************/
+document.getElementById('radioBtn').addEventListener('click',()=>{
+  const url=prompt('Podaj URL strumienia MP3 lub AAC (https://...):');
+  if(url){
+    webamp.appendTracks([{url,metaData:{title:url.replace(/^https?:\/\//,'').split('/')[0],artist:'Radio'}}]);
+  }
+});
+
+/**************************************
+ * 8) Butterchurn – Milkdrop 2 Visualizer
+ **************************************/
+const vizCanvas=document.getElementById('visualizer');
+let viz=null, analyserNode=null;
+function initVisualizer(){
+  if(viz) return;
+  const ctx=webamp.getAudioContext();
+  analyserNode=ctx.createAnalyser();
+  analyserNode.fftSize=2048;
+  webamp.setAnalyserNode(analyserNode);
+  viz=butterchurn.createVisualizer(ctx,vizCanvas,{width:vizCanvas.clientWidth,height:vizCanvas.clientHeight,pixelRatio:window.devicePixelRatio||1});
+  const presets=butterchurnPresets.getPresets();
+  const names=Object.keys(presets);
+  let idx=0;
+  viz.loadPreset(presets[names[idx]],0.0);
+  // zmiana presetu co 45s
+  setInterval(()=>{
+    idx=(idx+1)%names.length;
+    viz.loadPreset(presets[names[idx]],2.0);
+  },45000);
+  (function render(){
+    if(!viz) return;
+    viz.render(analyserNode);
+    requestAnimationFrame(render);
+  })();
+  window.addEventListener('resize',()=>{
+    viz.setRendererSize(vizCanvas.clientWidth,vizCanvas.clientHeight);
+  });
+}
+
+document.getElementById('vizBtn').addEventListener('click',()=>{
+  if(vizCanvas.style.display==='none'){
+    vizCanvas.style.display='block';
+    initVisualizer();
+  }else{
+    vizCanvas.style.display='none';
+  }
+});
+</script>
+</body>
+</html>
