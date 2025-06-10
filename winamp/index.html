@@ -1,53 +1,34 @@
-<script type="text/javascript">
-        var gk_isXlsx = false;
-        var gk_xlsxFileLookup = {};
-        var gk_fileData = {};
-        function filledCell(cell) {
-          return cell !== '' && cell != null;
-        }
-        function loadFileData(filename) {
-        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-            try {
-                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-                var firstSheetName = workbook.SheetNames[0];
-                var worksheet = workbook.Sheets[firstSheetName];
-
-                // Convert sheet to JSON to filter blank rows
-                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                // Filter out blank rows (rows where all cells are empty, null, or undefined)
-                var filteredData = jsonData.filter(row => row.some(filledCell));
-
-                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
-                var headerRowIndex = filteredData.findIndex((row, index) =>
-                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-                );
-                // Fallback
-                if (headerRowIndex === -1 || headerRowIndex > 25) {
-                  headerRowIndex = 0;
-                }
-
-                // Convert filtered JSON back to CSV
-                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
-                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-                return csv;
-            } catch (e) {
-                console.error(e);
-                return "";
-            }
-        }
-        return gk_fileData[filename] || "";
-        }
-        </script><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Winamp Html - Enhanced Edition</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Winamp Ultimate - Enhanced Edition</title>
+  
+  <!-- PWA Meta -->
+  <meta name="theme-color" content="#000000">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Winamp Ultimate">
+  <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiV2luYW1wIFVsdGltYXRlIiwic2hvcnRfbmFtZSI6IldpbmFtcCIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwidGhlbWVfY29sb3IiOiIjMDAwMDAwIiwiYmFja2dyb3VuZF9jb2xvciI6IiMwMDAwMDAiLCJzdGFydF91cmwiOiIvIiwiaWNvbnMiOlt7InNyYyI6ImRhdGE6aW1hZ2Uvc3ZnK3htbDtiYXNlNjQsUEQ5NGJXd2dkbVZ5YzJsdmJqMGlNUzR3SWlCbGJtTnZaR2x1WnowaWRYUm1MVGdpUHo0OFczTjJad0U9PSIsInNpemVzIjoiNTEyeDUxMiIsInR5cGUiOiJpbWFnZS9zdmcreG1sIn1dfQ==">
   
   <!-- Webamp -->
   <script src="https://unpkg.com/webamp@1.5.0/built/webamp.bundle.min.js"></script>
   
   <style>
+    :root {
+      --primary-bg: #0a0a0a;
+      --secondary-bg: #1a1a1a;
+      --accent-color: #00ff41;
+      --accent-glow: #00ff4150;
+      --text-color: #ffffff;
+      --border-color: #333333;
+      --button-bg: linear-gradient(145deg, #2a2a2a, #1a1a1a);
+      --button-hover: linear-gradient(145deg, #3a3a3a, #2a2a2a);
+      --shadow: 0 4px 15px rgba(0, 255, 65, 0.1);
+      --glow: 0 0 20px rgba(0, 255, 65, 0.3);
+    }
+
     * {
       margin: 0;
       padding: 0;
@@ -55,165 +36,528 @@
     }
 
     body {
-      background: #000;
-      color: #fff;
-      font-family: Arial, sans-serif;
+      background: var(--primary-bg);
+      background-image: 
+        radial-gradient(circle at 25% 25%, rgba(0, 255, 65, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 75% 75%, rgba(0, 255, 65, 0.05) 0%, transparent 50%),
+        linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0a0a0a 100%);
+      background-attachment: fixed;
+      color: var(--text-color);
+      font-family: 'Segoe UI', 'Roboto', Arial, sans-serif;
       font-size: 11px;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       padding: 10px;
-      touch-action: manipulation; /* Improves touch responsiveness */
+      touch-action: manipulation;
+      overflow-x: hidden;
     }
 
     .container {
       display: flex;
       flex-direction: column;
       min-height: 100vh;
-      max-width: 600px;
+      max-width: 1000px;
       margin: 0 auto;
       flex-grow: 1;
+      position: relative;
+    }
+
+    .background-animation {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: -1;
+      opacity: 0.1;
+    }
+
+    .bg-particle {
+      position: absolute;
+      width: 2px;
+      height: 2px;
+      background: var(--accent-color);
+      border-radius: 50%;
+      animation: float 6s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0; }
+      50% { transform: translateY(-20px) rotate(180deg); opacity: 1; }
     }
 
     #app {
       position: relative !important;
       flex-grow: 1;
+      margin-bottom: 15px;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      min-height: 400px;
     }
 
-    /* Winamp-style controls */
     .controls {
-      background: linear-gradient(to bottom, #3a3a3a, #1e1e1e);
-      border: 1px solid #000;
-      box-shadow: inset 1px 1px 0 #555, inset -1px -1px 0 #222;
-      padding: 5px;
+      background: var(--secondary-bg);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 12px;
       display: flex;
-      gap: 5px;
       flex-wrap: wrap;
+      gap: 8px;
       justify-content: center;
-      order: 2; /* Moves controls to the bottom */
+      align-items: center;
+      order: 2;
       width: 100%;
-      max-width: 600px;
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .controls::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(0, 255, 65, 0.1), transparent);
+      animation: shimmer 3s infinite;
+    }
+
+    @keyframes shimmer {
+      0% { left: -100%; }
+      100% { left: 100%; }
     }
 
     .btn {
-      background: linear-gradient(to bottom, #4a4a4a, #2a2a2a);
-      border: 1px solid #000;
-      box-shadow: inset 1px 1px 0 #666, inset -1px -1px 0 #111;
-      color: #00ff00;
-      padding: 8px 12px;
-      font-size: 12px;
+      background: var(--button-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      color: var(--accent-color);
+      padding: 10px 16px;
+      font-size: 11px;
+      font-weight: 600;
       cursor: pointer;
       text-transform: uppercase;
-      flex: 1;
       text-align: center;
-      min-width: 80px;
-      touch-action: manipulation; /* Better touch support */
+      min-width: 100px;
+      touch-action: manipulation;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+
+    .btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(0, 255, 65, 0.2), transparent);
+      transition: left 0.5s;
     }
 
     .btn:hover {
-      background: linear-gradient(to bottom, #5a5a5a, #3a3a3a);
+      background: var(--button-hover);
+      box-shadow: var(--glow);
+      transform: translateY(-2px);
+      border-color: var(--accent-color);
+    }
+
+    .btn:hover::before {
+      left: 100%;
     }
 
     .btn:active {
-      background: linear-gradient(to bottom, #2a2a2a, #4a4a4a);
-      box-shadow: inset -1px -1px 0 #666, inset 1px 1px 0 #111;
+      transform: translateY(0);
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .btn.active {
+      background: var(--accent-color);
+      color: var(--primary-bg);
+      box-shadow: var(--glow);
     }
 
     input[type="file"] {
       display: none;
     }
 
-    /* Info panel */
     .info {
-      background: #1a1a1a;
-      border: 1px solid #333;
-      padding: 10px;
-      margin-top: 10px;
-      font-family: monospace;
-      font-size: 10px;
-      color: #0f0;
-      max-width: 600px;
+      background: var(--secondary-bg);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 10px;
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      color: var(--accent-color);
       word-break: break-all;
-      order: 1; /* Places info above controls */
+      order: 1;
+      box-shadow: var(--shadow);
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .info::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .info::-webkit-scrollbar-track {
+      background: var(--primary-bg);
+      border-radius: 3px;
+    }
+
+    .info::-webkit-scrollbar-thumb {
+      background: var(--accent-color);
+      border-radius: 3px;
     }
 
     .info div {
-      margin: 2px 0;
+      margin: 3px 0;
+      padding: 2px 0;
+      border-bottom: 1px solid rgba(0, 255, 65, 0.1);
     }
 
-    /* Radio stations */
-    .radio-list {
+    .radio-container {
       display: none;
-      background: #1a1a1a;
-      border: 1px solid #333;
-      padding: 5px;
-      margin-top: 5px;
-      max-width: 600px;
-      order: 1; /* Places radio list above controls */
+      background: var(--secondary-bg);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 10px;
+      order: 1;
+      box-shadow: var(--shadow);
+      max-height: 500px;
+      overflow-y: auto;
     }
 
-    .radio-list.active {
+    .radio-container::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .radio-container::-webkit-scrollbar-track {
+      background: var(--primary-bg);
+      border-radius: 3px;
+    }
+
+    .radio-container::-webkit-scrollbar-thumb {
+      background: var(--accent-color);
+      border-radius: 3px;
+    }
+
+    .radio-container.active {
       display: block;
+      animation: slideDown 0.3s ease-out;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .radio-header {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+    }
+
+    .search-input {
+      flex: 1;
+      background: var(--primary-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 8px 12px;
+      color: var(--text-color);
+      font-size: 12px;
+      min-width: 200px;
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: var(--accent-color);
+      box-shadow: 0 0 10px rgba(0, 255, 65, 0.3);
+    }
+
+    .country-filter, .genre-filter {
+      background: var(--primary-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 8px 12px;
+      color: var(--text-color);
+      font-size: 12px;
+      min-width: 120px;
+    }
+
+    .country-filter:focus, .genre-filter:focus {
+      outline: none;
+      border-color: var(--accent-color);
+    }
+
+    .radio-stats {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      padding: 8px 12px;
+      background: rgba(0, 255, 65, 0.05);
+      border-radius: 6px;
+      font-size: 11px;
+    }
+
+    .radio-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 8px;
     }
 
     .station {
-      padding: 5px 8px;
+      padding: 12px;
       cursor: pointer;
-      color: #aaa;
-      font-size: 12px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .station::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      width: 3px;
+      background: var(--accent-color);
+      transform: scaleY(0);
+      transition: transform 0.3s ease;
     }
 
     .station:hover {
-      background: #333;
-      color: #0f0;
+      background: rgba(0, 255, 65, 0.1);
+      border-color: var(--accent-color);
+      transform: translateX(5px);
     }
 
-    /* Responsive design */
-    @media (max-width: 600px) {
+    .station:hover::before {
+      transform: scaleY(1);
+    }
+
+    .station-name {
+      font-weight: 600;
+      color: var(--accent-color);
+      font-size: 13px;
+      margin-bottom: 4px;
+    }
+
+    .station-info {
+      font-size: 11px;
+      color: #aaa;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .station-country {
+      background: rgba(0, 255, 65, 0.2);
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 10px;
+    }
+
+    .loading {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--secondary-bg);
+      border: 1px solid var(--accent-color);
+      border-radius: 12px;
+      padding: 20px;
+      z-index: 1000;
+      box-shadow: var(--glow);
+    }
+
+    .loading.active {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--border-color);
+      border-top: 2px solid var(--accent-color);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--secondary-bg);
+      border: 1px solid var(--accent-color);
+      border-radius: 8px;
+      padding: 12px 16px;
+      color: var(--accent-color);
+      font-size: 12px;
+      z-index: 1000;
+      transform: translateX(100%);
+      transition: transform 0.3s ease;
+      box-shadow: var(--glow);
+      max-width: 300px;
+    }
+
+    .notification.show {
+      transform: translateX(0);
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
       body {
         font-size: 10px;
         padding: 5px;
       }
 
-      .btn {
-        padding: 6px 8px;
-        font-size: 10px;
-        min-width: 60px;
+      .container {
+        max-width: 100%;
       }
 
       .controls {
-        gap: 3px;
-        padding: 3px;
+        padding: 8px;
+        gap: 6px;
+      }
+
+      .btn {
+        padding: 8px 12px;
+        font-size: 10px;
+        min-width: 80px;
+      }
+
+      .radio-header {
+        flex-direction: column;
+      }
+
+      .search-input, .country-filter, .genre-filter {
+        min-width: unset;
+        width: 100%;
+      }
+
+      .radio-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .radio-stats {
+        flex-direction: column;
+        gap: 5px;
+        text-align: center;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .btn {
+        font-size: 9px;
+        padding: 6px 10px;
+        min-width: 70px;
+      }
+
+      .notification {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+        max-width: unset;
+      }
+    }
+
+    /* Dark mode improvements */
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --primary-bg: #000000;
+        --secondary-bg: #111111;
+      }
+    }
+
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
       }
     }
   </style>
 </head>
 <body>
+  <div class="background-animation" id="bgAnimation"></div>
+  
   <div class="container">
     <div id="app"></div>
     
-    <div class="radio-list" id="radioList">
-      <div class="station" onclick="addStation('RMF FM', 'https://rs102-krk-cyfronet.rmfstream.pl/rmf_fm')">RMF FM</div>
-      <div class="station" onclick="addStation('Radio ZET', 'https://zt.cdn.eurozet.pl/zet-net.mp3')">Radio ZET</div>
-      <div class="station" onclick="addStation('Trójka', 'https://stream3.polskieradio.pl:8900/;')">Trójka</div>
-      <div class="station" onclick="addStation('TOK FM', 'https://pl-play.adtonos.com/tok-fm')">TOK FM</div>
-      <div class="station" onclick="addStation('Radio Maryja', 'https://radiomaryja.fastcast4u.com/proxy/radiomaryja?mp=/1')">Radio Maryja</div>
-      <div class="station" onclick="addStation('Jazz Radio', 'https://stream.jazzy.hu/jazzy.mp3')">Jazz Radio</div>
-      <div class="station" onclick="customStation()">➕ Dodaj własną...</div>
+    <div class="radio-container" id="radioContainer">
+      <div class="radio-header">
+        <input type="text" class="search-input" id="searchInput" placeholder="🔍 Szukaj stacji...">
+        <select class="country-filter" id="countryFilter">
+          <option value="">🌍 Wszystkie kraje</option>
+        </select>
+        <select class="genre-filter" id="genreFilter">
+          <option value="">🎵 Wszystkie gatunki</option>
+        </select>
+        <button class="btn" onclick="loadRadioStations()">🔄 ODŚWIEŻ</button>
+      </div>
+      
+      <div class="radio-stats" id="radioStats">
+        <span>📻 Ładowanie stacji...</span>
+      </div>
+      
+      <div class="radio-grid" id="radioGrid">
+        <!-- Dynamic content -->
+      </div>
     </div>
 
     <div class="info" id="info" style="display: none;"></div>
 
     <div class="controls">
-      <button class="btn" onclick="openFiles()">📁 PLIKI</button>
-      <button class="btn" onclick="openFolder()">📂 FOLDER</button>
-      <label class="btn" for="skinInput">🎨 SKÓRKA</label>
-      <button class="btn" onclick="toggleRadio()">📻 RADIO</button>
-      <button class="btn" onclick="clearAll()">🗑️ WYCZYŚĆ</button>
-      <button class="btn" onclick="testPlaylist()">🧪 TEST</button>
-      <button class="btn" onclick="showDebug()">🐛 DEBUG</button>
+      <button class="btn" onclick="openFiles()" title="Załaduj pliki audio">📁 PLIKI</button>
+      <button class="btn" onclick="openFolder()" title="Załaduj folder">📂 FOLDER</button>
+      <label class="btn" for="skinInput" title="Zmień skórkę">🎨 SKÓRKA</label>
+      <button class="btn" onclick="toggleRadio()" title="Lista stacji radiowych" id="radioBtn">📻 RADIO</button>
+      <button class="btn" onclick="clearAll()" title="Wyczyść playlistę">🗑️ WYCZYŚĆ</button>
+      <button class="btn" onclick="testPlaylist()" title="Dodaj testowe utwory">🧪 TEST</button>
+      <button class="btn" onclick="showDebug()" title="Informacje debugowania" id="debugBtn">🐛 DEBUG</button>
+      <button class="btn" onclick="installPWA()" title="Zainstaluj aplikację" id="installBtn" style="display: none;">📱 INSTALL</button>
     </div>
   </div>
+
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <span>Ładowanie...</span>
+  </div>
+
+  <div class="notification" id="notification"></div>
 
   <input type="file" id="fileInput" multiple accept="audio/*">
   <input type="file" id="folderInput" webkitdirectory directory multiple>
@@ -221,177 +565,634 @@
 
   <script>
     let webamp = null;
+    let deferredPrompt = null;
+    let radioStations = [];
+    let filteredStations = [];
     const STORAGE_KEY = 'winamp_html_settings';
+    const RADIO_API = 'https://de1.api.radio-browser.info/json';
 
-    // Initialize
-    window.addEventListener('load', async () => {
-      console.log('Initializing Winamp Html...');
+    // Radio API Functions
+    async function loadRadioStations() {
+      setLoading(true);
+      try {
+        showNotification('Ładowanie stacji radiowych...');
+        
+        // Load popular stations (top 200 by votes)
+        const response = await fetch(`${RADIO_API}/stations/topvote/200`);
+        if (!response.ok) throw new Error('Błąd API');
+        
+        const stations = await response.json();
+        radioStations = stations.filter(station => 
+          station.name && 
+          station.url_resolved && 
+          station.url_resolved.includes('http')
+        );
+        
+        filteredStations = [...radioStations];
+        
+        // Load countries and genres for filters
+        await loadCountries();
+        await loadGenres();
+        
+        displayRadioStations();
+        updateRadioStats();
+        showNotification(`Załadowano ${radioStations.length} stacji radiowych!`);
+        
+      } catch (error) {
+        console.error('Radio API error:', error);
+        showNotification('Błąd ładowania stacji radiowych');
+        loadFallbackStations();
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    async function loadCountries() {
+      try {
+        const response = await fetch(`${RADIO_API}/countries`);
+        if (!response.ok) return;
+        
+        const countries = await response.json();
+        const countryFilter = document.getElementById('countryFilter');
+        
+        // Clear existing options except first
+        countryFilter.innerHTML = '<option value="">🌍 Wszystkie kraje</option>';
+        
+        countries
+          .filter(country => country.stationcount > 10)
+          .sort((a, b) => b.stationcount - a.stationcount)
+          .slice(0, 50)
+          .forEach(country => {
+            const option = document.createElement('option');
+            option.value = country.name;
+            option.textContent = `${country.name} (${country.stationcount})`;
+            countryFilter.appendChild(option);
+          });
+          
+      } catch (error) {
+        console.error('Countries load error:', error);
+      }
+    }
+
+    async function loadGenres() {
+      try {
+        const response = await fetch(`${RADIO_API}/tags`);
+        if (!response.ok) return;
+        
+        const tags = await response.json();
+        const genreFilter = document.getElementById('genreFilter');
+        
+        // Clear existing options except first
+        genreFilter.innerHTML = '<option value="">🎵 Wszystkie gatunki</option>';
+        
+        tags
+          .filter(tag => tag.stationcount > 5)
+          .sort((a, b) => b.stationcount - a.stationcount)
+          .slice(0, 30)
+          .forEach(tag => {
+            const option = document.createElement('option');
+            option.value = tag.name;
+            option.textContent = `${tag.name} (${tag.stationcount})`;
+            genreFilter.appendChild(option);
+          });
+          
+      } catch (error) {
+        console.error('Genres load error:', error);
+      }
+    }
+
+    function loadFallbackStations() {
+      radioStations = [
+        {
+          name: "RMF FM",
+          url_resolved: "https://rs102-krk-cyfronet.rmfstream.pl/rmf_fm",
+          country: "Poland",
+          tags: "pop,hits",
+          votes: 1000
+        },
+        {
+          name: "Radio ZET",
+          url_resolved: "https://zt.cdn.eurozet.pl/zet-net.mp3",
+          country: "Poland", 
+          tags: "pop,news",
+          votes: 950
+        },
+        {
+          name: "BBC Radio 1",
+          url_resolved: "http://stream.live.vc.bbcmedia.co.uk/bbc_radio_one",
+          country: "United Kingdom",
+          tags: "pop,rock",
+          votes: 2000
+        },
+        {
+          name: "Jazz Radio",
+          url_resolved: "https://stream.jazzy.hu/jazzy.mp3",
+          country: "Hungary",
+          tags: "jazz",
+          votes: 500
+        }
+      ];
+      
+      filteredStations = [...radioStations];
+      displayRadioStations();
+      updateRadioStats();
+    }
+
+    function displayRadioStations() {
+      const grid = document.getElementById('radioGrid');
+      grid.innerHTML = '';
+      
+      const stationsToShow = filteredStations.slice(0, 50); // Limit for performance
+      
+      stationsToShow.forEach(station => {
+        const stationDiv = document.createElement('div');
+        stationDiv.className = 'station';
+        stationDiv.onclick = () => addRadioStation(station);
+        
+        const countryFlag = getCountryFlag(station.country);
+        const genre = station.tags ? station.tags.split(',')[0] : 'radio';
+        
+        stationDiv.innerHTML = `
+          <div class="station-name">${station.name}</div>
+          <div class="station-info">
+            <span>${countryFlag} ${station.country || 'Unknown'}</span>
+            <span class="station-country">${genre}</span>
+          </div>
+        `;
+        
+        grid.appendChild(stationDiv);
+      });
+    }
+
+    function updateRadioStats() {
+      const stats = document.getElementById('radioStats');
+      const totalStations = radioStations.length;
+      const filteredCount = filteredStations.length;
+      const countries = [...new Set(radioStations.map(s => s.country).filter(Boolean))].length;
+      
+      stats.innerHTML = `
+        <span>📻 Stacji: ${filteredCount}/${totalStations}</span>
+        <span>🌍 Krajów: ${countries}</span>
+        <span>🔊 Najlepsze stacje z całego świata</span>
+      `;
+    }
+
+    function filterStations() {
+      const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+      const selectedCountry = document.getElementById('countryFilter').value;
+      const selectedGenre = document.getElementById('genreFilter').value;
+      
+      filteredStations = radioStations.filter(station => {
+        const matchesSearch = !searchTerm || 
+          station.name.toLowerCase().includes(searchTerm) ||
+          (station.tags && station.tags.toLowerCase().includes(searchTerm));
+        
+        const matchesCountry = !selectedCountry || station.country === selectedCountry;
+        
+        const matchesGenre = !selectedGenre || 
+          (station.tags && station.tags.toLowerCase().includes(selectedGenre.toLowerCase()));
+        
+        return matchesSearch && matchesCountry && matchesGenre;
+      });
+      
+      displayRadioStations();
+      updateRadioStats();
+    }
+
+    function getCountryFlag(country) {
+      const flags = {
+        'Poland': '🇵🇱',
+        'United States': '🇺🇸',
+        'United Kingdom': '🇬🇧',
+        'Germany': '🇩🇪',
+        'France': '🇫🇷',
+        'Italy': '🇮🇹',
+        'Spain': '🇪🇸',
+        'Netherlands': '🇳🇱',
+        'Canada': '🇨🇦',
+        'Australia': '🇦🇺',
+        'Japan': '🇯🇵',
+        'Brazil': '🇧🇷',
+        'Russia': '🇷🇺',
+        'Hungary': '🇭🇺',
+        'Czech Republic': '🇨🇿'
+      };
+      return flags[country] || '🌐';
+    }
+
+    function addRadioStation(station) {
+      console.log('Adding station:', station.name, station.url_resolved);
+      setLoading(true);
       
       try {
-        // Create Webamp with minimal config
-        webamp = new Webamp({
-          initialTracks: loadPlaylist() || []
+        webamp.appendTracks([{
+          url: station.url_resolved,
+          defaultName: station.name,
+          metaData: {
+            artist: 'Radio',
+            title: station.name
+          }
+        }]);
+        
+        savePlaylist();
+        showNotification(`Dodano: ${station.name}`);
+        toggleRadio(); // Close radio panel after adding
+      } catch (error) {
+        console.error('Error adding station:', error);
+        showNotification('Błąd dodawania stacji');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    // Setup radio filters
+    function setupRadioFilters() {
+      const searchInput = document.getElementById('searchInput');
+      const countryFilter = document.getElementById('countryFilter');
+      const genreFilter = document.getElementById('genreFilter');
+      
+      // Debounced search
+      let searchTimeout;
+      searchInput.addEventListener('input', () => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(filterStations, 300);
+      });
+      
+      countryFilter.addEventListener('change', filterStations);
+      genreFilter.addEventListener('change', filterStations);
+    }
+
+    // PWA Installation
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      document.getElementById('installBtn').style.display = 'block';
+    });
+
+    function installPWA() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((choiceResult) => {
+          if (choiceResult.outcome === 'accepted') {
+            showNotification('Aplikacja została zainstalowana!');
+          }
+          deferredPrompt = null;
+          document.getElementById('installBtn').style.display = 'none';
+        });
+      }
+    }
+
+    // Background Animation
+    function createBackgroundAnimation() {
+      const bg = document.getElementById('bgAnimation');
+      const particleCount = window.innerWidth < 768 ? 20 : 40;
+      
+      for (let i = 0; i < particleCount; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'bg-particle';
+        particle.style.left = Math.random() * 100 + '%';
+        particle.style.top = Math.random() * 100 + '%';
+        particle.style.animationDelay = Math.random() * 6 + 's';
+        particle.style.animationDuration = (Math.random() * 4 + 4) + 's';
+        bg.appendChild(particle);
+      }
+    }
+
+    // Notification System
+    function showNotification(message, duration = 3000) {
+      const notification = document.getElementById('notification');
+      notification.textContent = message;
+      notification.classList.add('show');
+      
+      setTimeout(() => {
+        notification.classList.remove('show');
+      }, duration);
+    }
+
+    // Loading State
+    function setLoading(isLoading) {
+      const loading = document.getElementById('loading');
+      if (isLoading) {
+        loading.classList.add('active');
+      } else {
+        loading.classList.remove('active');
+      }
+    }
+
+    // Service Worker Registration
+    if ('serviceWorker' in navigator) {
+      const swCode = `
+        const CACHE_NAME = 'winamp-ultimate-v1';
+        const urlsToCache = [];
+        
+        self.addEventListener('install', (event) => {
+          event.waitUntil(
+            caches.open(CACHE_NAME)
+              .then((cache) => cache.addAll(urlsToCache))
+          );
         });
 
-        // Render
+        self.addEventListener('fetch', (event) => {
+          event.respondWith(
+            caches.match(event.request)
+              .then((response) => {
+                if (response) {
+                  return response;
+                }
+                return fetch(event.request);
+              })
+          );
+        });
+      `;
+      
+      const blob = new Blob([swCode], { type: 'application/javascript' });
+      const swUrl = URL.createObjectURL(blob);
+      
+      navigator.serviceWorker.register(swUrl)
+        .then(() => console.log('Service Worker registered'))
+        .catch((error) => console.log('Service Worker registration failed:', error));
+    }
+
+    window.addEventListener('load', async () => {
+      console.log('Initializing Winamp Ultimate...');
+      setLoading(true);
+      createBackgroundAnimation();
+      
+      try {
+        webamp = new Webamp({
+          initialTracks: loadPlaylist()?.tracks || [],
+          __butterchurnOptions: {
+            importButterchurn: () => import('https://unpkg.com/butterchurn@2.6.7/lib/butterchurn.min.js'),
+            importButterchurnPresets: () => import('https://unpkg.com/butterchurn-presets@2.4.7/lib/butterchurnPresets.min.js'),
+          },
+        });
+
         await webamp.renderWhenReady(document.getElementById('app'));
         console.log('Webamp rendered successfully');
         
-        // Set up file handlers
         setupFileHandlers();
-        
-        // Restore settings
+        setupRadioFilters();
         restoreSettings();
+        setupKeyboardShortcuts();
+        loadRadioStations(); // Load radio stations on startup
         
-        // Save playlist on track change
         webamp.store.subscribe(() => {
           savePlaylist();
+          saveSettings();
         });
+
+        showNotification('Winamp Ultimate załadowany!');
 
       } catch (error) {
         console.error('Failed to initialize:', error);
-        alert('Błąd inicjalizacji Winampa: ' + error.message);
+        showNotification('Błąd inicjalizacji: ' + error.message, 5000);
+      } finally {
+        setLoading(false);
       }
     });
 
-    // Save settings to localStorage
-    function saveSettings() {
-      const settings = {
-        radioVisible: document.getElementById('radioList').classList.contains('active'),
-        debugVisible: document.getElementById('info').style.display === 'block',
-        skinUrl: webamp.store.getState().display?.skin?.url || ''
-      };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-    }
-
-    // Restore settings from localStorage
-    async function restoreSettings() {
-      const settings = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-      if (settings.radioVisible) {
-        document.getElementById('radioList').classList.add('active');
-      }
-      if (settings.debugVisible) {
-        showDebug(); // Trigger debug panel to restore state
-      }
-      if (settings.skinUrl) {
-        try {
-          await webamp.setSkin({ url: settings.skinUrl });
-          console.log('Restored skin:', settings.skinUrl);
-        } catch (e) {
-          console.error('Failed to restore skin:', e);
+    // Keyboard Shortcuts
+    function setupKeyboardShortcuts() {
+      document.addEventListener('keydown', (e) => {
+        if (e.ctrlKey || e.metaKey) {
+          switch(e.key) {
+            case 'o':
+            case 'O':
+              e.preventDefault();
+              openFiles();
+              break;
+            case ' ':
+              e.preventDefault();
+              webamp.pause();
+              break;
+            case 'ArrowLeft':
+              e.preventDefault();
+              webamp.previousTrack();
+              break;
+            case 'ArrowRight':
+              e.preventDefault();
+              webamp.nextTrack();
+              break;
+          }
         }
+      });
+    }
+
+    function saveSettings() {
+      try {
+        const state = webamp.store.getState();
+        const settings = {
+          radioVisible: document.getElementById('radioContainer').classList.contains('active'),
+          debugVisible: document.getElementById('info').style.display === 'block',
+          skinUrl: state.display?.skin?.url || '',
+          volume: state.media?.volume || 1,
+          shuffle: state.playlist?.shuffle || false,
+          repeat: state.playlist?.repeat || false,
+          lastSaved: Date.now()
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+      } catch (e) {
+        console.error('Failed to save settings:', e);
       }
     }
 
-    // Save playlist to localStorage
+    async function restoreSettings() {
+      try {
+        const settings = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+        
+        if (settings.radioVisible) {
+          document.getElementById('radioContainer').classList.add('active');
+          document.getElementById('radioBtn').classList.add('active');
+        }
+        
+        if (settings.debugVisible) {
+          showDebug();
+        }
+        
+        if (settings.skinUrl) {
+          try {
+            setLoading(true);
+            await webamp.setSkin({ url: settings.skinUrl });
+            showNotification('Skórka przywrócona');
+          } catch (e) {
+            console.error('Failed to restore skin:', e);
+            showNotification('Nie udało się przywrócić skórki');
+          } finally {
+            setLoading(false);
+          }
+        }
+        
+        if (settings.volume !== undefined) webamp.setVolume(settings.volume);
+        if (settings.shuffle !== undefined) {
+          webamp.store.dispatch({ type: 'SET_SHUFFLE', shuffle: settings.shuffle });
+        }
+        if (settings.repeat !== undefined) {
+          webamp.store.dispatch({ type: 'SET_REPEAT', repeat: settings.repeat });
+        }
+      } catch (e) {
+        console.error('Failed to restore settings:', e);
+      }
+    }
+
     function savePlaylist() {
-      const state = webamp.store.getState();
-      const playlist = state.playlist || {};
-      const tracks = state.tracks || {};
-      const savedTracks = Object.entries(playlist).map(([id, order]) => {
-        const track = tracks[id];
-        return track ? {
-          url: track.url,
-          defaultName: track.defaultName,
-          metaData: track.metaData
-        } : null;
-      }).filter(Boolean);
-      localStorage.setItem('winamp_playlist', JSON.stringify(savedTracks));
+      try {
+        const state = webamp.store.getState();
+        const playlist = state.playlist || {};
+        const tracks = state.tracks || {};
+        const savedTracks = Object.entries(playlist).map(([id, order]) => {
+          const track = tracks[id];
+          return track ? {
+            url: track.url,
+            defaultName: track.defaultName,
+            metaData: track.metaData
+          } : null;
+        }).filter(Boolean);
+        
+        const currentTrackId = state.media?.currentTrack;
+        let currentIndex = -1;
+        if (currentTrackId) {
+          currentIndex = playlist[currentTrackId];
+        }
+        
+        localStorage.setItem('winamp_playlist', JSON.stringify({ 
+          tracks: savedTracks, 
+          currentIndex,
+          lastSaved: Date.now()
+        }));
+      } catch (e) {
+        console.error('Failed to save playlist:', e);
+      }
     }
 
-    // Load playlist from localStorage
     function loadPlaylist() {
-      const saved = localStorage.getItem('winamp_playlist');
-      return saved ? JSON.parse(saved) : null;
+      try {
+        const saved = localStorage.getItem('winamp_playlist');
+        if (saved) {
+          const data = JSON.parse(saved);
+          if (data.tracks && data.tracks.length > 0) {
+            setTimeout(() => {
+              webamp.appendTracks(data.tracks);
+              if (data.currentIndex >= 0) {
+                setTimeout(() => {
+                  const state = webamp.store.getState();
+                  const playlist = state.playlist || {};
+                  const trackIds = Object.entries(playlist).sort((a, b) => a[1] - b[1]).map(e => e[0]);
+                  const trackIdToPlay = trackIds[data.currentIndex];
+                  if (trackIdToPlay) {
+                    webamp.store.dispatch({ type: 'PLAY_TRACK', trackId: trackIdToPlay });
+                  }
+                }, 1000);
+              }
+            }, 500);
+            return data;
+          }
+        }
+      } catch (e) {
+        console.error('Failed to load playlist:', e);
+      }
+      return null;
     }
 
-    // File handlers
     function setupFileHandlers() {
-      // Regular files
       document.getElementById('fileInput').addEventListener('change', handleFiles);
-      
-      // Folder
       document.getElementById('folderInput').addEventListener('change', handleFiles);
-      
-      // Skin
       document.getElementById('skinInput').addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (file) {
           try {
+            setLoading(true);
             const url = URL.createObjectURL(file);
             await webamp.setSkin({ url });
             saveSettings();
-            console.log('Skin loaded and saved');
+            showNotification('Skórka załadowana!');
           } catch (error) {
             console.error('Skin error:', error);
-            alert('Błąd ładowania skórki: ' + error.message);
+            showNotification('Błąd ładowania skórki: ' + error.message);
+          } finally {
+            setLoading(false);
           }
         }
       });
 
-      // Drag and drop
+      // Enhanced drag & drop
+      let dragCounter = 0;
+      
+      document.addEventListener('dragenter', (e) => {
+        e.preventDefault();
+        dragCounter++;
+        document.body.style.background = 'rgba(0, 255, 65, 0.1)';
+      });
+      
+      document.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        dragCounter--;
+        if (dragCounter === 0) {
+          document.body.style.background = '';
+        }
+      });
+      
       document.addEventListener('dragover', e => e.preventDefault());
+      
       document.addEventListener('drop', (e) => {
         e.preventDefault();
+        dragCounter = 0;
+        document.body.style.background = '';
         const files = [...e.dataTransfer.files];
         processFiles(files);
       });
     }
 
-    // Handle file input
     function handleFiles(e) {
       const files = [...e.target.files];
       processFiles(files);
-      e.target.value = ''; // Reset
+      e.target.value = '';
     }
 
-    // Process files
     function processFiles(files) {
       console.log('Processing files:', files);
+      setLoading(true);
       
       const audioFiles = files.filter(f => {
         const name = f.name.toLowerCase();
-        return name.endsWith('.mp3') || name.endsWith('.wav') || 
-               name.endsWith('.ogg') || name.endsWith('.m4a') ||
-               name.endsWith('.flac') || name.endsWith('.aac');
+        return name.match(/\.(mp3|wav|ogg|m4a|flac|aac|opus|webm)$/);
       });
 
       if (audioFiles.length === 0) {
-        alert('Nie znaleziono plików audio');
+        showNotification('Nie znaleziono plików audio');
+        setLoading(false);
         return;
       }
 
-      // Method 1: Try native Webamp method first
-      if (webamp.appendTracksFromFiles) {
-        try {
+      try {
+        if (webamp.appendTracksFromFiles) {
           webamp.appendTracksFromFiles(audioFiles);
-          console.log(`Added ${audioFiles.length} files via native method`);
-          savePlaylist();
-          return;
-        } catch (e) {
-          console.log('Native method failed:', e);
+          showNotification(`Dodano ${audioFiles.length} plików`);
+        } else {
+          const tracks = audioFiles.map(file => {
+            const url = URL.createObjectURL(file);
+            return {
+              url: url,
+              defaultName: file.name,
+              metaData: {
+                artist: '',
+                title: file.name.replace(/\.[^/.]+$/, '')
+              }
+            };
+          });
+
+          webamp.appendTracks(tracks);
+          showNotification(`Dodano ${tracks.length} utworów`);
         }
+        
+        savePlaylist();
+      } catch (error) {
+        console.error('Error processing files:', error);
+        showNotification('Błąd przetwarzania plików');
+      } finally {
+        setLoading(false);
       }
-
-      // Method 2: Create object URLs
-      const tracks = audioFiles.map(file => {
-        const url = URL.createObjectURL(file);
-        return {
-          url: url,
-          defaultName: file.name,
-          metaData: {
-            artist: '',
-            title: file.name.replace(/\.[^/.]+$/, '')
-          }
-        };
-      });
-
-      console.log('Adding tracks:', tracks);
-      webamp.appendTracks(tracks);
-      savePlaylist();
     }
 
-    // UI Functions
     function openFiles() {
       document.getElementById('fileInput').click();
     }
@@ -401,58 +1202,48 @@
     }
 
     function toggleRadio() {
-      const list = document.getElementById('radioList');
-      list.classList.toggle('active');
+      const container = document.getElementById('radioContainer');
+      const btn = document.getElementById('radioBtn');
+      
+      container.classList.toggle('active');
+      btn.classList.toggle('active');
+      
+      if (container.classList.contains('active')) {
+        showNotification('Panel radia otwarty');
+      }
+      
       saveSettings();
     }
 
-    function addStation(name, url) {
-      console.log('Adding station:', name, url);
-      webamp.appendTracks([{
-        url: url,
-        defaultName: name,
-        metaData: {
-          artist: 'Radio',
-          title: name
-        }
-      }]);
-      savePlaylist();
-      toggleRadio();
-    }
-
-    function customStation() {
-      const url = prompt('URL stacji:');
-      if (url) {
-        // Basic URL validation
-        try {
-          new URL(url);
-          const name = prompt('Nazwa:') || 'Custom Radio';
-          addStation(name, url);
-        } catch (e) {
-          alert('Nieprawidłowy adres URL stacji');
-        }
-      }
-    }
-
     function clearAll() {
-      if (confirm('Wyczyścić playlistę?')) {
-        const state = webamp.store.getState();
-        const trackIds = Object.keys(state.playlist);
+      if (confirm('Wyczyścić całą playlistę?')) {
+        setLoading(true);
         
-        trackIds.forEach(id => {
-          webamp.store.dispatch({
-            type: 'REMOVE_TRACKS',
-            ids: [id]
+        try {
+          const state = webamp.store.getState();
+          const trackIds = Object.keys(state.playlist || {});
+          
+          trackIds.forEach(id => {
+            webamp.store.dispatch({
+              type: 'REMOVE_TRACKS',
+              ids: [id]
+            });
           });
-        });
-        
-        console.log('Playlist cleared');
-        localStorage.removeItem('winamp_playlist');
+          
+          localStorage.removeItem('winamp_playlist');
+          showNotification('Playlista wyczyszczona');
+        } catch (error) {
+          console.error('Error clearing playlist:', error);
+          showNotification('Błąd czyszczenia playlisty');
+        } finally {
+          setLoading(false);
+        }
       }
     }
 
     function testPlaylist() {
       console.log('Adding test tracks...');
+      setLoading(true);
       
       const testTracks = [
         {
@@ -464,44 +1255,79 @@
           url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
           defaultName: 'Test Song 2', 
           metaData: { artist: 'SoundHelix', title: 'Song 2' }
+        },
+        {
+          url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
+          defaultName: 'Test Song 3', 
+          metaData: { artist: 'SoundHelix', title: 'Song 3' }
         }
       ];
       
-      webamp.appendTracks(testTracks);
-      savePlaylist();
+      try {
+        webamp.appendTracks(testTracks);
+        savePlaylist();
+        showNotification('Dodano testowe utwory');
+      } catch (error) {
+        console.error('Error adding test tracks:', error);
+        showNotification('Błąd dodawania testowych utworów');
+      } finally {
+        setLoading(false);
+      }
     }
 
     function showDebug() {
       const info = document.getElementById('info');
-      const state = webamp.store.getState();
+      const btn = document.getElementById('debugBtn');
       
-      const playlist = state.playlist || {};
-      const tracks = state.tracks || {};
-      const trackCount = Object.keys(playlist).length;
+      if (info.style.display === 'none' || !info.style.display) {
+        const state = webamp.store.getState();
+        
+        const playlist = state.playlist || {};
+        const tracks = state.tracks || {};
+        const trackCount = Object.keys(playlist).length;
+        
+        let html = `<div><strong>🐛 Winamp Ultimate - Debug Info</strong></div>`;
+        html += `<div>==========================================</div>`;
+        html += `<div>📊 Tracks in playlist: ${trackCount}</div>`;
+        html += `<div>🎵 Current track: ${state.media?.currentTrack || 'none'}</div>`;
+        html += `<div>▶️ Status: ${state.media?.status || 'unknown'}</div>`;
+        html += `<div>🔊 Volume: ${Math.round((state.media?.volume || 0) * 100)}%</div>`;
+        html += `<div>🔀 Shuffle: ${state.playlist?.shuffle ? 'ON' : 'OFF'}</div>`;
+        html += `<div>🔁 Repeat: ${state.playlist?.repeat ? 'ON' : 'OFF'}</div>`;
+        html += `<div>📻 Radio stations: ${radioStations.length}</div>`;
+        html += `<div>💾 Storage used: ${(JSON.stringify(localStorage).length / 1024).toFixed(2)} KB</div>`;
+        html += `<div>==========================================</div>`;
+        html += `<div><strong>📋 Playlist:</strong></div>`;
+        
+        Object.entries(playlist).forEach(([id, order]) => {
+          const track = tracks[id];
+          if (track) {
+            const current = state.media?.currentTrack === id ? '▶️ ' : '';
+            html += `<div>${current}${order + 1}: ${track.defaultName || track.url}</div>`;
+          }
+        });
+        
+        info.innerHTML = html;
+        info.style.display = 'block';
+        btn.classList.add('active');
+        showNotification('Debug info wyświetlone');
+      } else {
+        info.style.display = 'none';
+        btn.classList.remove('active');
+      }
       
-      let html = `<div>WEBAMP DEBUG INFO</div>`;
-      html += `<div>==================</div>`;
-      html += `<div>Tracks in playlist: ${trackCount}</div>`;
-      html += `<div>Current track: ${state.media?.currentTrack || 'none'}</div>`;
-      html += `<div>Status: ${state.media?.status || 'unknown'}</div>`;
-      html += `<div>==================</div>`;
-      
-      Object.entries(playlist).forEach(([id, order]) => {
-        const track = tracks[id];
-        if (track) {
-          html += `<div>${order}: ${track.defaultName || track.url}</div>`;
-        }
-      });
-      
-      info.innerHTML = html;
-      info.style.display = info.style.display === 'none' ? 'block' : 'none';
       saveSettings();
     }
 
-    // Global error handler
+    // Error handling
     window.addEventListener('error', (e) => {
       console.error('Global error:', e);
-      alert('Wystąpił błąd: ' + e.message);
+      showNotification('Wystąpił błąd: ' + e.message);
+    });
+
+    window.addEventListener('unhandledrejection', (e) => {
+      console.error('Unhandled promise rejection:', e);
+      showNotification('Błąd: ' + e.reason);
     });
   </script>
 </body>
