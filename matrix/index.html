@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matrix Chat v4.0 - DEMO</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #000;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+        
+        .matrix-rain {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+        
+        .matrix-char {
+            position: absolute;
+            color: #00ff00;
+            font-size: 12px;
+            font-weight: bold;
+            text-shadow: 0 0 10px #00ff00;
+            animation: fall linear infinite;
+        }
+        
+        @keyframes fall {
+            to {
+                transform: translateY(100vh);
+                opacity: 0;
+            }
+        }
+        
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+        
+        @keyframes glow {
+            0%, 100% { text-shadow: 0 0 5px #00ff00; }
+            50% { text-shadow: 0 0 20px #00ff00, 0 0 30px #00ff00; }
+        }
+        
+        .container {
+            position: relative;
+            z-index: 10;
+            padding: 10px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            border: 2px solid #00ff00;
+            padding: 15px;
+            margin-bottom: 10px;
+            text-align: center;
+            animation: glow 2s ease-in-out infinite;
+        }
+        
+        .title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .status-line {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+        
+        .main-content {
+            flex: 1;
+            display: flex;
+            gap: 10px;
+            min-height: 0;
+        }
+        
+        .chat-panel {
+            flex: 1;
+            border: 2px solid #00ff00;
+            display: flex;
+            flex-direction: column;
+            background: rgba(0, 20, 0, 0.5);
+        }
+        
+        .chat-header {
+            padding: 10px;
+            border-bottom: 1px solid #00ff00;
+            text-align: center;
+            font-weight: bold;
+            background: rgba(0, 50, 0, 0.3);
+        }
+        
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            font-size: 13px;
+            line-height: 1.4;
+            background: rgba(0, 10, 0, 0.3);
+        }
+        
+        .message {
+            margin-bottom: 8px;
+            word-wrap: break-word;
+        }
+        
+        .message-time {
+            color: #0080ff;
+            font-size: 11px;
+        }
+        
+        .message-user {
+            color: #ffff00;
+            font-weight: bold;
+        }
+        
+        .message-rank {
+            color: #ff8800;
+            font-size: 11px;
+        }
+        
+        .message-text {
+            color: #00ff88;
+            margin-left: 5px;
+        }
+        
+        .message-system {
+            color: #ff4444;
+            font-style: italic;
+        }
+        
+        .input-container {
+            padding: 10px;
+            border-top: 1px solid #00ff00;
+            background: rgba(0, 50, 0, 0.3);
+        }
+        
+        .input-line {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .input-prompt {
+            color: #00ff00;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .message-input {
+            flex: 1;
+            background: transparent;
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            padding: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        
+        .message-input:focus {
+            outline: none;
+            border-color: #00ffff;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+        }
+        
+        .send-button {
+            background: #003300;
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            padding: 8px 15px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+        }
+        
+        .send-button:hover {
+            background: #005500;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        }
+        
+        .sidebar {
+            width: 300px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .panel {
+            border: 2px solid #00ff00;
+            background: rgba(0, 20, 0, 0.5);
+        }
+        
+        .panel-header {
+            padding: 10px;
+            background: rgba(0, 50, 0, 0.5);
+            border-bottom: 1px solid #00ff00;
+            text-align: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .panel-content {
+            padding: 10px;
+            font-size: 12px;
+            line-height: 1.3;
+        }
+        
+        .user-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .user-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px;
+            border-bottom: 1px solid #004400;
+            cursor: pointer;
+        }
+        
+        .user-item:hover {
+            background: rgba(0, 100, 0, 0.3);
+        }
+        
+        .user-rank {
+            color: #ff8800;
+            font-size: 10px;
+            margin-right: 5px;
+        }
+        
+        .user-name {
+            color: #ffff00;
+            flex: 1;
+        }
+        
+        .user-guest {
+            color: #ff00ff;
+        }
+        
+        .room-list {
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        
+        .room-item {
+            padding: 5px;
+            border-bottom: 1px solid #004400;
+            cursor: pointer;
+        }
+        
+        .room-item:hover {
+            background: rgba(0, 100, 0, 0.3);
+        }
+        
+        .room-item.active {
+            background: rgba(0, 150, 0, 0.4);
+            border-left: 3px solid #00ff00;
+        }
+        
+        .btn {
+            padding: 8px;
+            background: #001100;
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 11px;
+            margin-bottom: 5px;
+        }
+        
+        .btn:hover {
+            background: #003300;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        }
+        
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #00ff00;
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 8px;
+            text-align: center;
+            cursor: pointer;
+            border-right: 1px solid #00ff00;
+            background: rgba(0, 30, 0, 0.5);
+        }
+        
+        .tab:last-child {
+            border-right: none;
+        }
+        
+        .tab.active {
+            background: rgba(0, 80, 0, 0.7);
+            color: #44ff44;
+        }
+        
+        .tab:hover {
+            background: rgba(0, 60, 0, 0.6);
+        }
+        
+        .cursor {
+            animation: blink 1s infinite;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                flex-direction: row;
+            }
+            
+            .panel {
+                flex: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="matrix-rain" id="matrixRain"></div>
+    
+    <div class="container">
+        <div class="header">
+            <div class="title">≋≋≋ MATRIX SECURE TERMINAL ≋≋≋</div>
+            <div class="status-line">
+                Zalogowany: <span style="color: #ffff00;">Wybraniec Neo</span> 
+                | Online: <span id="onlineCount">4</span> 
+                | Pokój: <span id="currentRoom">#główny</span>
+                | Czas: <span id="currentTime">15:42:18</span>
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <div class="chat-panel">
+                <div class="tabs">
+                    <div class="tab active">💬 Czat Publiczny</div>
+                    <div class="tab">💌 Wiadomości Prywatne</div>
+                </div>
+                
+                <div class="chat-header">
+                    ≋≋≋ TRANSMISJA POKOJU <span id="roomName">#GŁÓWNY</span> ≋≋≋
+                </div>
+                
+                <div class="messages-container">
+                    <div class="message message-system">
+                        <span class="message-time">[15:40:12]</span> 
+                        <span class="message-text">Neo dołączył do pokoju #główny</span>
+                    </div>
+                    <div class="message">
+                        <span class="message-time">[15:40:45]</span>
+                        <span class="message-rank" style="color: #ff8800;">Wybraniec</span>
+                        <span class="message-user">Neo:</span>
+                        <span class="message-text">System Matrix Chat działa poprawnie!</span>
+                    </div>
+                    <div class="message">
+                        <span class="message-time">[15:41:12]</span>
+                        <span class="message-rank" style="color: #ff8800;">Przebudzony</span>
+                        <span class="message-user">Morpheus:</span>
+                        <span class="message-text">Witaj w prawdziwym świecie, Neo.</span>
+                    </div>
+                    <div class="message">
+                        <span class="message-time">[15:41:35]</span>
+                        <span class="message-rank" style="color: #ff00ff;">Gość</span>
+                        <span class="message-user user-guest">Smith:</span>
+                        <span class="message-text">Mr. Anderson...</span>
+                    </div>
+                    <div class="message">
+                        <span class="message-time">[15:42:01]</span>
+                        <span class="message-rank" style="color: #ff8800;">Czerwona Pigułka</span>
+                        <span class="message-user">Trinity:</span>
+                        <span class="message-text">Instalacja przebiegła bez problemów. Wszystkie systemy online.</span>
+                    </div>
+                    <div class="message">
+                        <span class="message-time">[15:42:18]</span>
+                        <span class="message-user">Neo</span>
+                        <span class="cursor">█</span>
+                    </div>
+                </div>
+                
+                <div class="input-container">
+                    <div class="input-line">
+                        <span class="input-prompt">Neo@główny></span>
+                        <input type="text" class="message-input" placeholder="Wprowadź wiadomość... (/pomoc - komendy)" maxlength="500">
+                        <button class="send-button">📤 WYŚLIJ</button>
+                    </div>
+                    <div style="font-size: 11px; color: #888; margin-top: 5px;">
+                        Komendy: /pomoc /pokoje /priv [nick] /kto /quit | Enter - wyślij | Esc - wyczyść
+                    </div>
+                </div>
+            </div>
+            
+            <div class="sidebar">
+                <div class="panel">
+                    <div class="panel-header">👥 AGENCI ONLINE</div>
+                    <div class="panel-content">
+                        <div class="user-list">
+                            <div class="user-item">
+                                <span class="user-rank">Wybraniec</span>
+                                <span class="user-name">Neo</span>
+                            </div>
+                            <div class="user-item">
+                                <span class="user-rank">Przebudzony</span>
+                                <span class="user-name">Morpheus</span>
+                            </div>
+                            <div class="user-item">
+                                <span class="user-rank">Czerwona Pigułka</span>
+                                <span class="user-name">Trinity</span>
+                            </div>
+                            <div class="user-item">
+                                <span class="user-rank">Gość</span>
+                                <span class="user-name user-guest">Smith</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="panel">
+                    <div class="panel-header">🏠 DOSTĘPNE POKOJE</div>
+                    <div class="panel-content">
+                        <div class="room-list">
+                            <div class="room-item active">#główny</div>
+                            <div class="room-item">#czerwona-pigułka</div>
+                            <div class="room-item">#niebieski-kod</div>
+                            <div class="room-item">#zion</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="panel">
+                    <div class="panel-header">⚡ SZYBKIE AKCJE</div>
+                    <div class="panel-content">
+                        <button class="btn">👥 Lista Agentów</button>
+                        <button class="btn">🏠 Lista Pokoi</button>
+                        <button class="btn">❓ Pomoc</button>
+                        <button class="btn" style="background: #550000; border-color: #ff4444; color: #ff4444;">🚪 Wyloguj</button>
+                    </div>
+                </div>
+                
+                <div class="panel">
+                    <div class="panel-header">🔮 STATUS SYSTEMU</div>
+                    <div class="panel-content">
+                        <div style="font-size: 11px; color: #888;">
+                            <div>Wersja: Matrix Chat v4.0</div>
+                            <div>Szyfrowanie: AES-256</div>
+                            <div>Status: <span style="color: #44ff44;">ONLINE</span></div>
+                            <div>Uptime: <span>02:15:30</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Matrix Rain Effect
+        function createMatrixRain() {
+            const container = document.getElementById('matrixRain');
+            const chars = ['0', '1', 'ア', 'カ', 'サ', 'タ', 'ナ', 'ハ', 'マ', 'ヤ', 'ラ', 'ワ'];
+            
+            setInterval(() => {
+                if (Math.random() > 0.85) {
+                    const char = document.createElement('div');
+                    char.className = 'matrix-char';
+                    char.textContent = chars[Math.floor(Math.random() * chars.length)];
+                    char.style.left = Math.random() * 100 + '%';
+                    char.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                    char.style.opacity = Math.random() * 0.8 + 0.2;
+                    
+                    container.appendChild(char);
+                    
+                    setTimeout(() => {
+                        if (char.parentNode) {
+                            char.parentNode.removeChild(char);
+                        }
+                    }, 5000);
+                }
+            }, 100);
+        }
+        
+        // Aktualizacja czasu
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('currentTime').textContent = now.toLocaleTimeString();
+        }
+        
+        // Inicjalizacja
+        createMatrixRain();
+        updateTime();
+        setInterval(updateTime, 1000);
+        
+        // Symulacja aktywności
+        let messageCount = 0;
+        const demoMessages = [
+            { user: 'Morpheus', rank: 'Przebudzony', text: 'Czy wiesz czym jest Matrix?' },
+            { user: 'Trinity', rank: 'Czerwona Pigułka', text: 'Wszyscy systemy działają prawidłowo.' },
+            { user: 'Cypher', rank: 'Nowy Rekrut', text: 'Ignorance is bliss...' },
+            { user: 'Agent_Smith', rank: 'Gość', text: 'Mr. Anderson, you disappoint me.' },
+            { user: 'Neo', rank: 'Wybraniec', text: 'I know kung fu.' }
+        ];
+        
+        function addDemoMessage() {
+            const container = document.querySelector('.messages-container');
+            const msg = demoMessages[messageCount % demoMessages.length];
+            const now = new Date();
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message';
+            messageDiv.innerHTML = `
+                <span class="message-time">[${now.toLocaleTimeString()}]</span>
+                <span class="message-rank" style="color: #ff8800;">${msg.rank}</span>
+                <span class="message-user">${msg.user}:</span>
+                <span class="message-text">${msg.text}</span>
+            `;
+            
+            container.appendChild(messageDiv);
+            container.scrollTop = container.scrollHeight;
+            messageCount++;
+            
+            // Usuń stare wiadomości aby nie przepełnić
+            const messages = container.children;
+            if (messages.length > 20) {
+                container.removeChild(messages[0]);
+            }
+        }
+        
+        // Dodaj nową wiadomość co 8-15 sekund
+        setInterval(addDemoMessage, Math.random() * 7000 + 8000);
+        
+        // Interaktywność
+        document.querySelector('.message-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                const message = this.value.trim();
+                if (message) {
+                    const container = document.querySelector('.messages-container');
+                    const now = new Date();
+                    
+                    const messageDiv = document.createElement('div');
+                    messageDiv.className = 'message';
+                    messageDiv.innerHTML = `
+                        <span class="message-time">[${now.toLocaleTimeString()}]</span>
+                        <span class="message-rank" style="color: #ffff00;">Wybraniec</span>
+                        <span class="message-user">Neo:</span>
+                        <span class="message-text">${message}</span>
+                    `;
+                    
+                    container.appendChild(messageDiv);
+                    container.scrollTop = container.scrollHeight;
+                    this.value = '';
+                }
+            }
+        });
+        
+        // Przełączanie pokoi
+        document.querySelectorAll('.room-item').forEach(room => {
+            room.addEventListener('click', function() {
+                document.querySelectorAll('.room-item').forEach(r => r.classList.remove('active'));
+                this.classList.add('active');
+                document.getElementById('currentRoom').textContent = this.textContent;
+                document.getElementById('roomName').textContent = this.textContent.toUpperCase();
+                
+                // Symuluj zmianę prompt
+                document.querySelector('.input-prompt').textContent = `Neo@${this.textContent.substring(1)}>`;
+            });
+        });
+        
+        // Przełączanie tabów
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+        
+        // Kliknięcie na użytkownika - rozpocznij prywatny czat
+        document.querySelectorAll('.user-item').forEach(user => {
+            user.addEventListener('click', function() {
+                const username = this.querySelector('.user-name').textContent;
+                if (username !== 'Neo') {
+                    alert(`Rozpoczynanie prywatnego czatu z ${username}...`);
+                    document.querySelectorAll('.tab')[1].click(); // Przełącz na prywatne
+                }
+            });
+        });
+    </script>
+</body>
+</html>
