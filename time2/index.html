@@ -2,665 +2,2465 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>WojThom 6.0 - Time Report</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WojThom 4.0 - Time List Generator</title>
     
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome Icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Chart.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <!-- jsPDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- jsPDF-AutoTable -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     
     <style>
         :root {
-            --primary: #2c3e50;
-            --secondary: #34495e;
-            --highlight: #2980b9;
-            --bg: #f4f6f8;
-            --card: #ffffff;
-            --text: #2c3e50;
-            --border: #dfe6e9;
-            --danger: #c0392b;
-            --success: #27ae60;
+            --primary-color: #1A5276;
+            --secondary-color: #2874A6;
+            --accent-color: #3498DB;
+            --light-accent: #EBF5FB;
+            --dark-text: #333;
+            --light-text: #f8f9fa;
+            --highlight: #F39C12;
+            --success-color: #2E8B57;
+            --danger-color: #C0392B;
+            --even-row: #ffffff;
+            --odd-row: #E8F4FC;
+            --sum-row: #D3D3D3;
         }
-
-        body.dark-mode {
-            --primary: #ecf0f1;
-            --secondary: #bdc3c7;
-            --highlight: #3498db;
-            --bg: #121212;
-            --card: #1e1e1e;
-            --text: #ecf0f1;
-            --border: #333;
+        
+        body.dark-theme {
+            --primary-color: #0d2c3e;
+            --secondary-color: #134563;
+            --accent-color: #1a698e;
+            --light-accent: #0a2433;
+            --dark-text: #f8f9fa;
+            --light-text: #f8f9fa;
+            --even-row: #1a1a1a;
+            --odd-row: #262626;
+            --sum-row: #333333;
+            background-color: #121212;
+            color: var(--light-text);
         }
-
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
         
         body {
-            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
             padding: 0;
-            padding-bottom: 50px;
-            transition: background 0.3s, color 0.3s;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
-
-        /* Top Navigation */
-        .navbar {
-            background: #ffffff;
-            color: var(--primary);
-            padding: 15px 20px;
+        
+        .toolbar {
+            background-color: var(--primary-color);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        .menu-items {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .toolbar-btn {
+            background: transparent;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 5px 10px;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        
+        .toolbar-btn:hover {
+            background-color: var(--secondary-color);
+        }
+        
+        .dropdown-container {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            background-color: white;
+            min-width: 160px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1001;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        body.dark-theme .dropdown-menu {
+            background-color: #333;
+        }
+        
+        .dropdown-menu button {
+            width: 100%;
+            text-align: left;
+            padding: 12px 16px;
+            border: none;
+            background: none;
+            color: var(--dark-text);
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        body.dark-theme .dropdown-menu button {
+            color: var(--light-text);
+        }
+        
+        .dropdown-menu button:hover {
+            background-color: var(--light-accent);
+        }
+        
+        .show {
+            display: block;
+        }
+        
+        .separator {
+            height: 1px;
+            background-color: #ddd;
+            margin: 5px 0;
+        }
+        
+        body.dark-theme .separator {
+            background-color: #666;
+        }
+        
+        .main-container {
+            flex: 1;
+            padding: 15px;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        
+        .section {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            padding: 15px;
+        }
+        
+        body.dark-theme .section {
+            background-color: #1e1e1e;
+        }
+        
+        .header-input {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .header-input label {
+            font-weight: bold;
+            margin-right: 10px;
+            white-space: nowrap;
+        }
+        
+        .header-input input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            min-width: 200px;
+            background-color: white;
+            color: var(--dark-text);
+        }
+        
+        body.dark-theme .header-input input {
+            background-color: #333;
+            border-color: #555;
+            color: var(--light-text);
+        }
+        
+        .input-area {
+            margin-bottom: 10px;
+        }
+        
+        .input-area label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .input-area textarea {
+            width: 100%;
+            height: 100px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: 'Consolas', monospace;
+            resize: vertical;
+            background-color: white;
+            color: var(--dark-text);
+        }
+        
+        body.dark-theme .input-area textarea {
+            background-color: #333;
+            border-color: #555;
+            color: var(--light-text);
+        }
+        
+        .buttons-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .action-btn {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: white;
+            transition: opacity 0.3s;
+        }
+        
+        .action-btn:hover {
+            opacity: 0.9;
+        }
+        
+        .action-btn:active {
+            opacity: 0.8;
+        }
+        
+        .generate-btn {
+            background-color: var(--secondary-color);
+        }
+        
+        .clear-btn {
+            background-color: #7B7D7D;
+        }
+        
+        .help-btn {
+            background-color: var(--highlight);
+        }
+        
+        .export-btn {
+            background-color: var(--danger-color);
+        }
+        
+        .filter-btn {
+            background-color: var(--accent-color);
+        }
+        
+        .stats-btn {
+            background-color: var(--success-color);
+        }
+        
+        .result-table {
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+        }
+        
+        th {
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 12px 8px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+        }
+        
+        td {
+            padding: 10px 8px;
+            text-align: center;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        body.dark-theme td {
+            border-bottom-color: #444;
+        }
+        
+        .client-col {
+            text-align: left;
+        }
+        
+        tr.even-row {
+            background-color: var(--even-row);
+        }
+        
+        tr.odd-row {
+            background-color: var(--odd-row);
+        }
+        
+        tr.summary-row {
+            background-color: var(--sum-row);
+            font-weight: bold;
+        }
+        
+        .summary-label {
+            text-align: right;
+            font-weight: bold;
+            font-size: 1.1em;
+            padding: 10px;
+        }
+        
+        .status-bar {
+            background-color: #f8f9fa;
+            color: #555;
+            padding: 8px 15px;
+            font-size: 0.9em;
+            text-align: center;
+            border-top: 1px solid #ddd;
+        }
+        
+        body.dark-theme .status-bar {
+            background-color: #2a2a2a;
+            color: #bbb;
+            border-top-color: #444;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1001;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            width: 80%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        body.dark-theme .modal-content {
+            background-color: #2a2a2a;
+            color: var(--light-text);
+        }
+        
+        .modal-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            border-bottom: 1px solid var(--border);
+            margin-bottom: 15px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
         }
-        body.dark-mode .navbar { background: #1e1e1e; border-bottom: 1px solid #333; }
-
-        .app-title { font-weight: 700; font-size: 1.1rem; letter-spacing: 0.5px; color: var(--highlight); }
-        .menu-btn { background: none; border: none; color: var(--text); font-size: 1.4rem; padding: 5px; cursor: pointer; }
-
-        /* Side Menu */
-        .dropdown-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 998; backdrop-filter: blur(2px); }
-        .main-menu {
-            position: fixed; top: 0; right: -280px; width: 280px; height: 100%;
-            background: var(--card); z-index: 999; transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: -5px 0 15px rgba(0,0,0,0.1); padding-top: 60px;
-        }
-        .main-menu.open { right: 0; }
-        .menu-close { position: absolute; top: 15px; right: 20px; font-size: 1.5rem; background:none; border:none; color: var(--text); cursor: pointer; }
-
-        .menu-item {
-            display: flex; align-items: center; width: 100%; padding: 15px 25px;
-            text-align: left; background: none; border: none; border-bottom: 1px solid var(--border);
-            color: var(--text); font-size: 0.95rem; cursor: pointer;
-        }
-        .menu-item:active { background: rgba(0,0,0,0.05); }
-        .menu-item i { margin-right: 15px; width: 20px; text-align: center; color: var(--highlight); opacity: 0.8; }
-        .menu-header { padding: 15px 25px 5px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; color: var(--secondary); letter-spacing: 1px; margin-top: 10px; opacity: 0.7; }
-
-        /* Main Container */
-        .container { padding: 20px; max-width: 800px; margin: 0 auto; }
         
-        .card {
-            background: var(--card); border-radius: 12px; padding: 25px;
-            margin-bottom: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.03); border: 1px solid var(--border);
+        body.dark-theme .modal-header {
+            border-bottom-color: #444;
         }
-
-        /* Inputs */
-        label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.85rem; color: var(--secondary); text-transform: uppercase; letter-spacing: 0.5px; }
-        input, textarea, select {
-            width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px;
-            background: var(--bg); color: var(--text); font-size: 16px; margin-bottom: 20px;
-            font-family: inherit; transition: border-color 0.2s;
-        }
-        input:focus, textarea:focus { border-color: var(--highlight); }
-        textarea { height: 120px; font-family: 'Monaco', 'Consolas', monospace; line-height: 1.5; resize: vertical; }
-
-        /* Buttons */
-        .btn {
-            border: none; border-radius: 8px; padding: 14px; font-size: 0.95rem; font-weight: 600;
-            cursor: pointer; color: white; display: flex; align-items: center; justify-content: center;
-            gap: 10px; transition: opacity 0.2s; width: 100%;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .btn:active { transform: translateY(1px); box-shadow: none; }
-        .btn-primary { background: var(--highlight); }
-        .btn-danger { background: var(--danger); }
-        .btn-neutral { background: #95a5a6; }
-        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
-
-        /* Table */
-        .table-container { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border); margin-top: 10px; }
-        table { width: 100%; border-collapse: collapse; }
-        th { background: #f8f9fa; color: var(--secondary); padding: 12px 15px; text-align: left; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; border-bottom: 2px solid var(--border); white-space: nowrap; }
-        body.dark-mode th { background: #2c2c2c; }
         
-        td { padding: 14px 15px; border-bottom: 1px solid var(--border); color: var(--text); font-size: 0.95rem; vertical-align: middle; }
+        .modal-title {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
         
-        /* Row Styling */
-        tbody tr:last-child td { border-bottom: none; }
-        tbody tr { cursor: pointer; transition: background 0.1s; }
-        tbody tr:hover { background-color: rgba(0,0,0,0.02); }
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            cursor: pointer;
+            color: var(--dark-text);
+        }
         
-        tr.error-row { background-color: rgba(192, 57, 43, 0.08); }
-        tr.error-row td:first-child { border-left: 4px solid var(--danger); }
-
-        .client-col { font-weight: 500; }
-        .time-col { font-family: 'Monaco', monospace; font-weight: 600; text-align: right; color: var(--highlight); }
-
-        /* Summary */
-        .summary-row {
-            display: flex; justify-content: space-between; align-items: center;
-            margin-top: 20px; padding-top: 20px; border-top: 1px dashed var(--border);
+        body.dark-theme .close-btn {
+            color: var(--light-text);
         }
-        .summary-label { font-size: 0.9rem; color: var(--secondary); font-weight: 600; text-transform: uppercase; }
-        .summary-value { font-size: 1.5rem; color: var(--text); font-weight: 700; font-family: 'Monaco', monospace; }
-
-        /* Modals */
-        .modal {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6); z-index: 2000; justify-content: center; align-items: flex-end;
-            backdrop-filter: blur(2px);
-        }
-        .modal.open { display: flex; }
-        .modal-content {
-            background: var(--card); width: 100%; max-width: 600px;
-            border-radius: 20px 20px 0 0; padding: 30px;
-            animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        @media (min-width: 768px) { .modal { align-items: center; } .modal-content { border-radius: 12px; width: 90%; } }
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; font-size: 1.2rem; font-weight: 700; }
-
-        /* Toast */
-        .toast {
-            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px);
-            background: #333; color: white; padding: 12px 24px; border-radius: 50px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2); z-index: 3000; opacity: 0; transition: all 0.4s;
-            font-weight: 500; font-size: 0.9rem; display: flex; align-items: center; gap: 8px;
+        .modal-footer {
+            margin-top: 15px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            border-top: 1px solid #ddd;
+            padding-top: 15px;
         }
-        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        
+        body.dark-theme .modal-footer {
+            border-top-color: #444;
+        }
+        
+        .edit-form-group {
+            margin-bottom: 15px;
+        }
+        
+        .edit-form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        .edit-form-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: white;
+            color: var(--dark-text);
+        }
+        
+        body.dark-theme .edit-form-group input {
+            background-color: #333;
+            border-color: #555;
+            color: var(--light-text);
+        }
+        
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 15px;
+        }
+        
+        body.dark-theme .tabs {
+            border-bottom-color: #444;
+        }
+        
+        .tab {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+        
+        .tab.active {
+            border-bottom-color: var(--accent-color);
+            font-weight: bold;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .chart-container {
+            width: 100%;
+            height: 300px;
+            margin-bottom: 20px;
+        }
+        
+        /* Filter dialog styles */
+        .filter-form-group {
+            margin-bottom: 15px;
+        }
+        
+        .filter-form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        .filter-form-group input, .filter-form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: white;
+            color: var(--dark-text);
+        }
+        
+        body.dark-theme .filter-form-group input, 
+        body.dark-theme .filter-form-group select {
+            background-color: #333;
+            border-color: #555;
+            color: var(--light-text);
+        }
+        
+        .filter-date-inputs {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .filter-date-input {
+            flex: 1;
+        }
+        
+        @media (max-width: 768px) {
+            .header-input {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .header-input input {
+                width: 100%;
+            }
+            
+            .buttons-container {
+                justify-content: center;
+            }
+            
+            .action-btn {
+                flex: 1;
+                min-width: 120px;
+                justify-content: center;
+            }
+            
+            .modal-content {
+                width: 95%;
+                margin: 5% auto;
+            }
+            
+            .filter-date-inputs {
+                flex-direction: column;
+            }
+            
+            th, td {
+                padding: 8px 4px;
+                font-size: 0.9em;
+            }
+            
+            .toolbar {
+                padding: 5px 10px;
+            }
+            
+            .toolbar-btn {
+                padding: 5px;
+                font-size: 14px;
+            }
+            
+            .summary-label {
+                font-size: 1em;
+                padding: 8px;
+            }
+        }
     </style>
 </head>
 <body>
-
-    <nav class="navbar">
-        <div class="app-title">WojThom 6.0</div>
-        <button class="menu-btn" id="menuToggle"><i class="fas fa-bars"></i></button>
-    </nav>
-
-    <div class="dropdown-overlay" id="menuOverlay"></div>
-    <div class="main-menu" id="mainMenu">
-        <button class="menu-close" id="menuClose">&times;</button>
-        
-        <div class="menu-header" id="txt_menu_file">File</div>
-        <button class="menu-item" onclick="openModal('exportModal')"><i class="fas fa-file-pdf"></i> <span id="txt_export">Export PDF</span></button>
-        <button class="menu-item" onclick="clearData()"><i class="fas fa-trash"></i> <span id="txt_clear">Clear Data</span></button>
-        
-        <div class="menu-header" id="txt_menu_tools">Tools</div>
-        <button class="menu-item" onclick="showStatistics()"><i class="fas fa-chart-pie"></i> <span id="txt_stats">Statistics</span></button>
-        <button class="menu-item" onclick="openModal('filterModal')"><i class="fas fa-filter"></i> <span id="txt_filter">Filter</span></button>
-        
-        <div class="menu-header" id="txt_menu_settings">Settings</div>
-        <button class="menu-item" onclick="toggleTheme()"><i class="fas fa-adjust"></i> <span id="txt_theme">Dark Mode</span></button>
-        <button class="menu-item" onclick="setLanguage('en')">🇬🇧 English</button>
-        <button class="menu-item" onclick="setLanguage('no')">🇳🇴 Norsk</button>
-        <button class="menu-item" onclick="setLanguage('pl')">🇵🇱 Polski</button>
-    </div>
-
-    <div class="container">
-        
-        <div class="card">
-            <label for="headerInput" id="lbl_header">Report Title</label>
-            <input type="text" id="headerInput" value="Time Report">
-            
-            <label for="rawInput" id="lbl_input">Paste Data (Date | Client | Hours)</label>
-            <textarea id="rawInput" placeholder="Examples:&#10;12.05 Client A 08:00-16:00&#10;13.05 Client B 0.75&#10;14.05 Client C 8h"></textarea>
-            
-            <button class="btn btn-primary" onclick="processData()">
-                <i class="fas fa-check"></i> <span id="btn_generate">Generate List</span>
-            </button>
-        </div>
-
-        <div class="card" id="resultCard" style="display:none;">
-            <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
-                <label id="lbl_result">Result</label>
-            </div>
-
-            <div class="table-container">
-                <table id="resultTable">
-                    <thead>
-                        <tr>
-                            <th id="th_date">Date</th>
-                            <th id="th_client">Client / Note</th>
-                            <th id="th_time" style="text-align:right">Time Entered</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tableBody"></tbody>
-                </table>
-            </div>
-            
-            <div class="summary-row">
-                <div class="summary-label" id="lbl_total">Total Hours</div>
-                <div class="summary-value" id="summaryValue">0:00</div>
-            </div>
-            
-            <div class="btn-group">
-                <button class="btn btn-danger" onclick="openModal('exportModal')">
-                    <i class="fas fa-file-pdf"></i> PDF
+    <div class="toolbar">
+        <div class="menu-items">
+            <div class="dropdown-container">
+                <button class="toolbar-btn" id="fileMenuBtn">
+                    <i class="fas fa-file"></i> <span class="menu-text">File</span>
                 </button>
+                <div class="dropdown-menu" id="fileMenu">
+                    <button id="exportPdfBtn"><i class="fas fa-file-pdf"></i> Export PDF</button>
+                    <div class="separator"></div>
+                    <button id="toggleThemeBtn"><i class="fas fa-moon"></i> Dark Mode</button>
+                    <div class="separator"></div>
+                    <button id="exitBtn"><i class="fas fa-sign-out-alt"></i> Exit</button>
+                </div>
+            </div>
+            
+            <div class="dropdown-container">
+                <button class="toolbar-btn" id="helpMenuBtn">
+                    <i class="fas fa-question-circle"></i> <span class="menu-text">Help</span>
+                </button>
+                <div class="dropdown-menu" id="helpMenu">
+                    <button id="statisticsBtn"><i class="fas fa-chart-bar"></i> Statistics</button>
+                    <button id="filterBtn"><i class="fas fa-filter"></i> Filter</button>
+                    <div class="separator"></div>
+                    <button id="helpBtn"><i class="fas fa-question-circle"></i> Help</button>
+                    <button id="aboutBtn"><i class="fas fa-info-circle"></i> About</button>
+                </div>
             </div>
         </div>
-    </div>
-
-    <div id="editModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <span id="modal_edit_title">Edit Entry</span>
-                <span onclick="closeModal('editModal')" style="cursor:pointer">&times;</span>
-            </div>
-            <input type="hidden" id="editIndex">
-            
-            <label id="lbl_edit_date">Date</label>
-            <input type="text" id="editDate">
-            
-            <label id="lbl_edit_client">Client</label>
-            <input type="text" id="editClient">
-            
-            <label id="lbl_edit_display">Display Time (Exact text on PDF)</label>
-            <input type="text" id="editDisplayTime" placeholder="e.g. 0.75 or 08:00-16:00">
-            <small style="color:#7f8c8d; display:block; margin-top:-15px; margin-bottom:15px;">The system calculates math from this automatically.</small>
-
-            <div class="btn-group">
-                <button class="btn btn-neutral" onclick="closeModal('editModal')" id="btn_cancel">Cancel</button>
-                <button class="btn btn-primary" onclick="saveEdit()" id="btn_save">Save</button>
-            </div>
-            <button class="btn btn-danger" onclick="deleteEntry()" style="margin-top:15px;" id="btn_delete">Delete</button>
-        </div>
-    </div>
-
-    <div id="exportModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <span id="modal_export_title">Select Language</span>
-                <span onclick="closeModal('exportModal')" style="cursor:pointer">&times;</span>
-            </div>
-            <button class="btn btn-primary" onclick="generatePDF('en')" style="margin-bottom:10px;">🇬🇧 English</button>
-            <button class="btn btn-primary" onclick="generatePDF('no')" style="margin-bottom:10px;">🇳🇴 Norsk</button>
-            <button class="btn btn-primary" onclick="generatePDF('pl')">🇵🇱 Polski</button>
-        </div>
-    </div>
-
-    <div id="filterModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <span id="modal_filter_title">Filter</span>
-                <span onclick="closeModal('filterModal')" style="cursor:pointer">&times;</span>
-            </div>
-            <select id="filterClient"><option value="">All Clients</option></select>
-            <div class="btn-group">
-                <button class="btn btn-neutral" onclick="resetFilter()" id="btn_reset">Reset</button>
-                <button class="btn btn-primary" onclick="applyFilter()" id="btn_apply">Apply</button>
+        
+        <div class="dropdown-container">
+            <button class="toolbar-btn" id="languageBtn">
+                <i class="fas fa-language"></i> <span class="menu-text">Language</span>
+            </button>
+            <div class="dropdown-menu" id="languageMenu">
+                <button id="langNO"><i class="fas fa-check no-check"></i> Norwegian</button>
+                <button id="langPL"><i class="fas fa-check pl-check"></i> Polish</button>
+                <button id="langEN"><i class="fas fa-check en-check"></i> English</button>
             </div>
         </div>
     </div>
     
-    <div id="statsModal" class="modal">
+    <div class="main-container">
+        <div class="section">
+            <div class="header-input">
+                <label for="headerInput" id="headerLabel">Header:</label>
+                <input type="text" id="headerInput" value="Time List">
+            </div>
+            
+            <div class="input-area">
+                <label for="rawInput" id="inputLabel">Paste raw data:</label>
+                <textarea id="rawInput" placeholder="DD.MM Client/Address HH:MM-HH:MM"></textarea>
+            </div>
+            
+            <div class="buttons-container">
+                <button class="action-btn generate-btn" id="generateBtn">
+                    <i class="fas fa-play"></i> Generate List
+                </button>
+                <button class="action-btn clear-btn" id="clearBtn">
+                    <i class="fas fa-trash-alt"></i> Clear
+                </button>
+                <button class="action-btn help-btn" id="quickHelpBtn">
+                    <i class="fas fa-question-circle"></i> Help
+                </button>
+                <button class="action-btn export-btn" id="quickExportBtn">
+                    <i class="fas fa-file-pdf"></i> Export PDF
+                </button>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h3 id="listTitle">Time list:</h3>
+            
+            <div class="result-table">
+                <table id="resultTable">
+                    <thead>
+                        <tr>
+                            <th id="dateHeader">Date</th>
+                            <th id="clientHeader">Client/Address</th>
+                            <th id="startHeader">Start time</th>
+                            <th id="endHeader">End time</th>
+                            <th id="workHeader">Work time</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultBody">
+                        <!-- Table content will be generated dynamically -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="summary-label" id="summaryLabel">Time List - Sum total: 0:00</div>
+        </div>
+    </div>
+    
+    <div class="status-bar" id="statusBar">Ready to generate time list</div>
+    
+    <!-- Help Modal -->
+    <div id="helpModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <span id="txt_stats_title">Statistics</span>
-                <span onclick="closeModal('statsModal')" style="cursor:pointer">&times;</span>
+                <div class="modal-title" id="helpModalTitle">Help</div>
+                <button class="close-btn" id="closeHelpBtn">&times;</button>
             </div>
-            <div style="height:300px;"><canvas id="chartCanvas"></canvas></div>
-            <button class="btn btn-neutral" onclick="closeModal('statsModal')" style="margin-top:20px;">Close</button>
+            <div class="modal-body" id="helpModalBody">
+                <p>How to use the application:</p>
+
+                <p>1. Enter a header (optional)<br>
+                2. Paste data in the format:<br>
+                   DD.MM [Client/Address] HH:MM-HH:MM</p>
+
+                <p>Entry examples:<br>
+                • 15.04 ABC Company 08:00-16:00<br>
+                • 16.04 John Smith 9:00-14:30<br>
+                • 17.04 Remote Meeting 8:30-10:00<br>
+                • 18.04 Workshop 8h<br>
+                • 19.04 Project 0.75<br>
+                • 20.04 Task 0:45<br>
+                • 21,04 Test 08.00 - 16.00<br>
+                • 22 04 Another 0 75</p>
+
+                <p>The program automatically recognizes various formats:<br>
+                - Date (DD.MM, DD,MM, DD/MM, DD-MM, DD MM etc.)<br>
+                - Client/address<br>
+                - Time range (HH:MM-HH:MM, HH.MM-HH.MM, HH MM - HH MM etc.)<br>
+                - Duration (Xh, X h, X.Y, X,Y, X Y, HH:MM etc.)<br>
+                If date or time is missing, the app will prompt you to enter it.</p>
+
+                <p>Buttons:<br>
+                - Generate List: Processes the entered data<br>
+                - Clear: Cleans the text field<br>
+                - Export PDF: Saves the list as PDF</p>
+            </div>
+            <div class="modal-footer">
+                <button class="action-btn clear-btn" id="closeHelpModalBtn">Close</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- About Modal -->
+    <div id="aboutModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="aboutModalTitle">About</div>
+                <button class="close-btn" id="closeAboutBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="aboutModalText">WojThom 3.0 - Time List Generator</p>
+                <p>Web Version</p>
+                <p>Program conceived and created by Wojciech K. and Thomas O.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="action-btn clear-btn" id="closeAboutModalBtn">Close</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Edit Entry Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="editModalTitle">Edit Entry</div>
+                <button class="close-btn" id="closeEditBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="edit-form-group">
+                    <label for="editDate" id="editDateLabel">Date</label>
+                    <input type="text" id="editDate">
+                </div>
+                <div class="edit-form-group">
+                    <label for="editClient" id="editClientLabel">Client/Address</label>
+                    <input type="text" id="editClient">
+                </div>
+                <div class="edit-form-group">
+                    <label for="editStart" id="editStartLabel">Start time</label>
+                    <input type="text" id="editStart">
+                </div>
+                <div class="edit-form-group">
+                    <label for="editEnd" id="editEndLabel">End time</label>
+                    <input type="text" id="editEnd">
+                </div>
+                <div class="edit-form-group">
+                    <label for="editWork" id="editWorkLabel">Work time</label>
+                    <input type="text" id="editWork">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="action-btn clear-btn" id="cancelEditBtn">Cancel</button>
+                <button class="action-btn generate-btn" id="saveEditBtn">Save</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Statistics Modal -->
+    <div id="statisticsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="statisticsModalTitle">Work Statistics</div>
+                <button class="close-btn" id="closeStatisticsBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="tabs">
+                    <div class="tab active" id="timeTab" data-tab="timeChart">
+                        <span id="timeTabLabel">Work distribution by date</span>
+                    </div>
+                    <div class="tab" id="clientTab" data-tab="clientChart">
+                        <span id="clientTabLabel">Work distribution by client</span>
+                    </div>
+                </div>
+                <div class="tab-content active" id="timeChart">
+                    <div class="chart-container">
+                        <canvas id="timeChartCanvas"></canvas>
+                    </div>
+                </div>
+                <div class="tab-content" id="clientChart">
+                    <div class="chart-container">
+                        <canvas id="clientChartCanvas"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="action-btn clear-btn" id="closeStatisticsModalBtn">Close</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Filter Modal -->
+    <div id="filterModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="filterModalTitle">Filter Data</div>
+                <button class="close-btn" id="closeFilterBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="filter-form-group">
+                    <label id="dateRangeLabel">Date range:</label>
+                    <div class="filter-date-inputs">
+                        <div class="filter-date-input">
+                            <label for="dateFrom" id="dateFromLabel">From date</label>
+                            <input type="text" id="dateFrom" placeholder="DD-MM">
+                        </div>
+                        <div class="filter-date-input">
+                            <label for="dateTo" id="dateToLabel">To date</label>
+                            <input type="text" id="dateTo" placeholder="DD-MM">
+                        </div>
+                    </div>
+                </div>
+                <div class="filter-form-group">
+                    <label for="clientFilter" id="clientFilterLabel">Client:</label>
+                    <select id="clientFilter">
+                        <option value="">All clients</option>
+                    </select>
+                </div>
+                <div class="filter-form-group">
+                    <label for="minHours" id="minHoursLabel">Minimum work time (hours):</label>
+                    <input type="number" id="minHours" min="0" step="0.5" value="0">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="action-btn clear-btn" id="cancelFilterBtn">Cancel</button>
+                <button class="action-btn filter-btn" id="resetFilterBtn">Reset</button>
+                <button class="action-btn generate-btn" id="applyFilterBtn">Apply Filter</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- PDF Export Language Modal -->
+    <div id="exportLanguageModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="exportLanguageTitle">Choose Export Language</div>
+                <button class="close-btn" id="closeExportLanguageBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="exportLanguageLabel">Select language for export:</p>
+                <div class="buttons-container">
+                    <button class="action-btn generate-btn" id="exportNO">Norwegian</button>
+                    <button class="action-btn generate-btn" id="exportPL">Polish</button>
+                    <button class="action-btn generate-btn" id="exportEN">English</button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="action-btn clear-btn" id="cancelExportBtn">Cancel</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Share Modal -->
+    <div id="shareModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="shareTitle">Share PDF</div>
+                <button class="close-btn" id="closeShareBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="shareLabel">PDF has been saved. Would you like to share it?</p>
+                <div class="buttons-container">
+                    <button class="action-btn generate-btn" id="confirmShareBtn">Share</button>
+                    <button class="action-btn clear-btn" id="cancelShareBtn">Cancel</button>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div id="toast" class="toast">Message</div>
-
     <script>
-        // --- DATA & CONFIG ---
+        // Translations
         const translations = {
-            en: {
-                header: "Report Title", input: "Paste Data (Date | Client | Hours)", generate: "Generate List",
-                result: "Result", date: "Date", client: "Client / Note", time: "Time Entered", total: "Total Hours",
-                file: "File", tools: "Tools", settings: "Settings", export: "Export PDF", clear: "Clear Data",
-                stats: "Statistics", filter: "Filter", theme: "Dark Mode",
-                edit_title: "Edit Entry", display_time: "Display Time (Exact text)", 
-                save: "Save", cancel: "Cancel", delete: "Delete",
-                export_title: "Select Language", filter_title: "Filter", reset: "Reset", apply: "Apply",
-                toast_gen: "List generated!", toast_err: "Check red highlighted rows",
-                pdf_gen: "Generated on", pdf_page: "Page", sum: "Total"
+            "no": {
+                "title": "WojThom 3.0 - Profesjonell Tidsliste Generator",
+                "file_menu": "Fil",
+                "help_menu": "Hjelp",
+                "header_label": "Overskrift:",
+                "default_header": "Tidsliste",
+                "input_label": "Lim inn rådata:",
+                "generate_btn": "Generer Tidsliste",
+                "clear_btn": "Tøm",
+                "export_pdf_btn": "Eksporter PDF",
+                "list_title": "Tidsliste:",
+                "help_title": "Hjelp",
+                "about_title": "Om",
+                "about_text": "WojThom 3.0 - Tidsliste Generator",
+                "exit_btn": "Avslutt",
+                "export_pdf_title": "Eksport PDF",
+                "saved_to": "Lagrert til {path}",
+                "sum_total": "Sum totalt",
+                "ready_status": "Klar til å generere tidsliste",
+                "generated_rows": "Generert {count} rader",
+                "warning": "Advarsel",
+                "no_data": "Ingen data å eksportere",
+                "date": "Dato",
+                "client_address": "Kunde/Adresse",
+                "start_time": "Starttid",
+                "end_time": "Sluttid",
+                "work_time": "Arbeidstid",
+                "generated_on": "Generert",
+                "language": "Språk",
+                "help_text": "Hvordan bruke applikasjonen:\n\n1. Skriv inn en overskrift (valgfritt)\n2. Lim inn data i formatet:\n   DD.MM [Kunde/Adresse] HH:MM-HH:MM\n\nEksempler på oppføringer:\n• 15.04 ABC Selskap 08:00-16:00\n• 16.04 Jon Hansen 9:00-14:30\n• 17.04 Fjernmøte 8:30-10:00\n• 18.04 Verksted 8t\n\nProgrammet gjenkjenner automatisk:\n- Dato (DD.MM, DD-MM, DD/MM)\n- Kunde/adresse\n- Tidsintervall (HH:MM-HH:MM)\n- Varighet (Xt eller X.Yt eller bare X.Y)\n\nKnapper:\n- Generer Tidsliste: Behandler de angitte dataene\n- Tøm: Rydder tekstfeltet\n- Eksporter PDF: Lagrer listen i PDF-format",
+                "help_usage": "Hjelp",
+                "switch_to_no": "Norsk",
+                "switch_to_pl": "Polsk",
+                "switch_to_en": "Engelsk",
+                "dark_mode": "Mørk modus",
+                "light_mode": "Lys modus",
+                "statistics": "Statistikk",
+                "filter": "Filter",
+                "error": "Feil",
+                "statistics_title": "Arbeidsstatistikk",
+                "time_chart": "Arbeidsfordeling etter dato",
+                "client_chart": "Arbeidsfordeling etter kunde",
+                "time_distribution": "Arbeidsfordeling etter dato",
+                "client_distribution": "Arbeidsfordeling etter kunde",
+                "hours": "Timer",
+                "close_btn": "Lukk",
+                "filter_title": "Filtrer data",
+                "date_range": "Datoområde:",
+                "client_filter": "Kunde:",
+                "min_hours": "Minste arbeidstid (timer):",
+                "apply_filter": "Bruk filter",
+                "reset_filter": "Tilbakestill",
+                "cancel": "Avbryt",
+                "filter_applied": "Filter brukt",
+                "filter_cleared": "Filter fjernet",
+                "date_from": "Fra dato",
+                "date_to": "Til dato",
+                "client": "Kunde",
+                "edit_entry": "Rediger oppføring",
+                "save_btn": "Lagre",
+                "entry_updated": "Oppføring oppdatert",
+                "other": "Andre",
+                "export_language_title": "Velg eksportspråk",
+                "export_language_label": "Velg språk for eksport:",
+                "export_language_success": "Eksportert med {language} språk",
+                "share": "Del",
+                "share_title": "Del PDF",
+                "share_label": "PDF er lagret. Vil du dele den?",
+                "share_btn": "Del",
+                "pdf_saved": "PDF lagret som: {filename}"
             },
-            pl: {
-                header: "Tytuł Raportu", input: "Wklej Dane (Data | Klient | Godziny)", generate: "Generuj Listę",
-                result: "Wynik", date: "Data", client: "Klient / Opis", time: "Wpisany Czas", total: "Suma Godzin",
-                file: "Plik", tools: "Narzędzia", settings: "Ustawienia", export: "Eksport PDF", clear: "Wyczyść",
-                stats: "Statystyki", filter: "Filtruj", theme: "Tryb Ciemny",
-                edit_title: "Edycja Wpisu", display_time: "Wyświetlany Czas (Dokładny tekst)", 
-                save: "Zapisz", cancel: "Anuluj", delete: "Usuń",
-                export_title: "Wybierz Język", filter_title: "Filtrowanie", reset: "Reset", apply: "Zastosuj",
-                toast_gen: "Lista wygenerowana!", toast_err: "Sprawdź błędy (na czerwono)",
-                pdf_gen: "Wygenerowano", pdf_page: "Strona", sum: "Razem"
+            "pl": {
+                "title": "WojThom 3.0 - Profesjonalny Generator List Czasu Pracy",
+                "file_menu": "Plik",
+                "help_menu": "Pomoc",
+                "header_label": "Nagłówek:",
+                "default_header": "Lista Czasu Pracy",
+                "input_label": "Wklej dane wejściowe:",
+                "generate_btn": "Generuj Listę",
+                "clear_btn": "Wyczyść",
+                "export_pdf_btn": "Eksportuj PDF",
+                "list_title": "Lista czasu pracy:",
+                "help_title": "Pomoc",
+                "about_title": "O programie",
+                "about_text": "WojThom 3.0 - Generator List Czasu Pracy",
+                "exit_btn": "Wyjście",
+                "export_pdf_title": "Eksport PDF",
+                "saved_to": "Zapisano do {path}",
+                "sum_total": "Suma całkowita",
+                "ready_status": "Gotowy do generowania listy",
+                "generated_rows": "Wygenerowano {count} wierszy",
+                "warning": "Ostrzeżenie",
+                "no_data": "Brak danych do eksportu",
+                "date": "Data",
+                "client_address": "Klient/Adres",
+                "start_time": "Czas rozpoczęcia",
+                "end_time": "Czas zakończenia",
+                "work_time": "Czas pracy",
+                "generated_on": "Wygenerowano",
+                "language": "Język",
+                "help_text": "Jak używać aplikacji:\n\n1. Wprowadź nagłówek (opcjonalnie)\n2. Wklej dane w formacie:\n   DD.MM [Klient/Adres] HH:MM-HH:MM\n\nPrzykłady wpisów:\n• 15.04 Firma ABC 08:00-16:00\n• 16.04 Jan Kowalski 9:00-14:30\n• 17.04 Spotkanie zdalne 8:30-10:00\n• 18.04 Warsztat 8h\n\nProgram automatycznie rozpoznaje:\n- Datę (DD.MM, DD-MM, DD/MM)\n- Klienta/adres\n- Zakres czasu (HH:MM-HH:MM)\n- Czas trwania (Xh lub X.Yh lub samo X.Y)\n\nPrzyciski:\n- Generuj Listę: Przetwarza wprowadzone dane\n- Wyczyść: Czyści pole tekstowe\n- Eksportuj PDF: Zapisuje listę w formacie PDF",
+                "help_usage": "Pomoc",
+                "switch_to_no": "Norweski",
+                "switch_to_pl": "Polski",
+                "switch_to_en": "Angielski",
+                "dark_mode": "Tryb ciemny",
+                "light_mode": "Tryb jasny",
+                "statistics": "Statystyki",
+                "filter": "Filtruj",
+                "error": "Błąd",
+                "statistics_title": "Statystyki pracy",
+                "time_chart": "Rozkład pracy wg daty",
+                "client_chart": "Rozkład pracy wg klienta",
+                "time_distribution": "Rozkład czasu pracy wg daty",
+                "client_distribution": "Rozkład czasu pracy wg klienta",
+                "hours": "Godziny",
+                "close_btn": "Zamknij",
+                "filter_title": "Filtruj dane",
+                "date_range": "Zakres dat:",
+                "client_filter": "Klient:",
+                "min_hours": "Minimalny czas pracy (godziny):",
+                "apply_filter": "Zastosuj filtr",
+                "reset_filter": "Resetuj",
+                "cancel": "Anuluj",
+                "filter_applied": "Zastosowano filtr",
+                "filter_cleared": "Usunięto filtr",
+                "date_from": "Od daty",
+                "date_to": "Do daty",
+                "client": "Klient",
+                "edit_entry": "Edytuj wpis",
+                "save_btn": "Zapisz",
+                "entry_updated": "Wpis zaktualizowany",
+                "other": "Inne",
+                "export_language_title": "Wybierz język eksportu",
+                "export_language_label": "Wybierz język dla eksportu:",
+                "export_language_success": "Wyeksportowano w języku {language}",
+                "share": "Udostępnij",
+                "share_title": "Udostępnij PDF",
+                "share_label": "PDF został zapisany. Czy chcesz go udostępnić?",
+                "share_btn": "Udostępnij",
+                "pdf_saved": "PDF zapisany jako: {filename}"
             },
-            no: {
-                header: "Rapporttittel", input: "Lim inn data (Dato | Kunde | Timer)", generate: "Generer Liste",
-                result: "Resultat", date: "Dato", client: "Kunde / Notat", time: "Tid Skrevet", total: "Totalt Timer",
-                file: "Fil", tools: "Verktøy", settings: "Innstillinger", export: "Eksport PDF", clear: "Tøm Data",
-                stats: "Statistikk", filter: "Filter", theme: "Mørk Modus",
-                edit_title: "Rediger Oppføring", display_time: "Vist Tid (Eksakt tekst)", 
-                save: "Lagre", cancel: "Avbryt", delete: "Slett",
-                export_title: "Velg Språk", filter_title: "Filter", reset: "Tilbakestill", apply: "Bruk",
-                toast_gen: "Liste generert!", toast_err: "Sjekk røde feil",
-                pdf_gen: "Generert", pdf_page: "Side", sum: "Totalt"
+            "en": {
+                "title": "WojThom 3.0 - Professional Time List Generator",
+                "file_menu": "File",
+                "help_menu": "Help",
+                "header_label": "Header:",
+                "default_header": "Time List",
+                "input_label": "Paste raw data:",
+                "generate_btn": "Generate List",
+                "clear_btn": "Clear",
+                "export_pdf_btn": "Export PDF",
+                "list_title": "Time list:",
+                "help_title": "Help",
+                "about_title": "About",
+                "about_text": "WojThom 3.0 - Time List Generator",
+                "exit_btn": "Exit",
+                "export_pdf_title": "Export PDF",
+                "saved_to": "Saved to {path}",
+                "sum_total": "Sum total",
+                "ready_status": "Ready to generate time list",
+                "generated_rows": "Generated {count} rows",
+                "warning": "Warning",
+                "no_data": "No data to export",
+                "date": "Date",
+                "client_address": "Client/Address",
+                "start_time": "Start time",
+                "end_time": "End time",
+                "work_time": "Work time",
+                "generated_on": "Generated on",
+                "language": "Language",
+                "help_text": "How to use the application:\n\n1. Enter a header (optional)\n2. Paste data in the format:\n   DD.MM [Client/Address] HH:MM-HH:MM\n\nEntry examples:\n• 15.04 ABC Company 08:00-16:00\n• 16.04 John Smith 9:00-14:30\n• 17.04 Remote Meeting 8:30-10:00\n• 18.04 Workshop 8h\n• 19.04 Project 0.75\n• 20.04 Task 0:45\n• 21,04 Test 08.00 - 16.00\n• 22 04 Another 0 75\n\nThe program automatically recognizes various formats:\n- Date (DD.MM, DD,MM, DD/MM, DD-MM, DD MM etc.)\n- Client/address\n- Time range (HH:MM-HH:MM, HH.MM-HH.MM, HH MM - HH MM etc.)\n- Duration (Xh, X h, X.Y, X,Y, X Y, HH:MM etc.)\nIf date or time is missing, the app will prompt you to enter it.\n\nButtons:\n- Generate List: Processes the entered data\n- Clear: Cleans the text field\n- Export PDF: Saves the list in PDF format",
+                "help_usage": "Help",
+                "switch_to_no": "Norwegian",
+                "switch_to_pl": "Polish",
+                "switch_to_en": "English",
+                "dark_mode": "Dark Mode",
+                "light_mode": "Light Mode",
+                "statistics": "Statistics",
+                "filter": "Filter",
+                "error": "Error",
+                "statistics_title": "Work Statistics",
+                "time_chart": "Work distribution by date",
+                "client_chart": "Work distribution by client",
+                "time_distribution": "Work time distribution by date",
+                "client_distribution": "Work time distribution by client",
+                "hours": "Hours",
+                "close_btn": "Close",
+                "filter_title": "Filter Data",
+                "date_range": "Date range:",
+                "client_filter": "Client:",
+                "min_hours": "Minimum work time (hours):",
+                "apply_filter": "Apply Filter",
+                "reset_filter": "Reset",
+                "cancel": "Cancel",
+                "filter_applied": "Filter applied",
+                "filter_cleared": "Filter cleared",
+                "date_from": "From date",
+                "date_to": "To date",
+                "client": "Client",
+                "edit_entry": "Edit Entry",
+                "save_btn": "Save",
+                "entry_updated": "Entry updated",
+                "other": "Others",
+                "export_language_title": "Choose Export Language",
+                "export_language_label": "Select language for export:",
+                "export_language_success": "Exported with {language} language",
+                "share": "Share",
+                "share_title": "Share PDF",
+                "share_label": "PDF has been saved. Would you like to share it?",
+                "share_btn": "Share",
+                "pdf_saved": "PDF saved as: {filename}"
             }
         };
-
-        let currentLang = localStorage.getItem('wt6_lang') || 'en';
+        
+        // Application state
+        let currentLang = "en";
         let entries = [];
         let originalEntries = null;
-        let myChart = null;
-
-        // --- INIT ---
-        document.addEventListener('DOMContentLoaded', () => {
-            loadStorage();
-            setLanguage(currentLang);
-            if(document.getElementById('rawInput').value.trim()) processData();
-
-            document.getElementById('menuToggle').onclick = () => {
-                document.getElementById('mainMenu').classList.add('open');
-                document.getElementById('menuOverlay').style.display = 'block';
-            };
-            const closeMenu = () => {
-                document.getElementById('mainMenu').classList.remove('open');
-                document.getElementById('menuOverlay').style.display = 'none';
-            };
-            document.getElementById('menuClose').onclick = closeMenu;
-            document.getElementById('menuOverlay').onclick = closeMenu;
-
-            ['rawInput', 'headerInput'].forEach(id => {
-                document.getElementById(id).addEventListener('input', () => {
-                    localStorage.setItem('wt6_' + id, document.getElementById(id).value);
-                });
-            });
-        });
-
-        function loadStorage() {
-            const savedInput = localStorage.getItem('wt6_rawInput');
-            const savedHeader = localStorage.getItem('wt6_headerInput');
-            const savedTheme = localStorage.getItem('wt6_theme');
-            if(savedInput) document.getElementById('rawInput').value = savedInput;
-            if(savedHeader) document.getElementById('headerInput').value = savedHeader;
-            if(savedTheme === 'dark') document.body.classList.add('dark-mode');
+        let currentEditingRow = null;
+        let timeChart = null;
+        let clientChart = null;
+        let lastExportedPdf = null;
+        
+        // DOM Elements
+        const fileMenuBtn = document.getElementById('fileMenuBtn');
+        const fileMenu = document.getElementById('fileMenu');
+        const helpMenuBtn = document.getElementById('helpMenuBtn');
+        const helpMenu = document.getElementById('helpMenu');
+        const languageBtn = document.getElementById('languageBtn');
+        const languageMenu = document.getElementById('languageMenu');
+        
+        // Input elements
+        const headerInput = document.getElementById('headerInput');
+        const rawInput = document.getElementById('rawInput');
+        
+        // Button elements
+        const generateBtn = document.getElementById('generateBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const quickHelpBtn = document.getElementById('quickHelpBtn');
+        const quickExportBtn = document.getElementById('quickExportBtn');
+        
+        // Table elements
+        const resultBody = document.getElementById('resultBody');
+        const summaryLabel = document.getElementById('summaryLabel');
+        const statusBar = document.getElementById('statusBar');
+        
+        // Modal elements
+        const helpModal = document.getElementById('helpModal');
+        const aboutModal = document.getElementById('aboutModal');
+        const editModal = document.getElementById('editModal');
+        const statisticsModal = document.getElementById('statisticsModal');
+        const filterModal = document.getElementById('filterModal');
+        const exportLanguageModal = document.getElementById('exportLanguageModal');
+        const shareModal = document.getElementById('shareModal');
+        
+        // Share elements
+        const shareTitle = document.getElementById('shareTitle');
+        const shareLabel = document.getElementById('shareLabel');
+        const confirmShareBtn = document.getElementById('confirmShareBtn');
+        const cancelShareBtn = document.getElementById('cancelShareBtn');
+        const closeShareBtn = document.getElementById('closeShareBtn');
+        
+        // Utility Functions
+        function showElement(element) {
+            element.style.display = 'block';
         }
-
-        // --- CORE LOGIC ---
-        function calculateMinutes(str) {
-            if(!str) return 0;
-            str = str.trim();
+        
+        function hideElement(element) {
+            element.style.display = 'none';
+        }
+        
+        function toggleDropdown(menu) {
+            const isVisible = menu.style.display === 'block';
             
-            // 1. Check Range (HH:MM - HH:MM)
-            let rangeMatch = str.match(/(\d{1,2}[:.]\d{2})\s*[-–]\s*(\d{1,2}[:.]\d{2})/);
-            if(rangeMatch) {
-                let s = parseToMins(rangeMatch[1]);
-                let e = parseToMins(rangeMatch[2]);
-                return e - s;
+            // Hide all dropdowns
+            document.querySelectorAll('.dropdown-menu').forEach(dropdown => {
+                hideElement(dropdown);
+            });
+            
+            // Show this dropdown if it was not visible
+            if (!isVisible) {
+                showElement(menu);
             }
-
-            // 2. Check Explicit Duration (e.g., 8h, 30m)
-            if(str.match(/\dh/i) || str.match(/\dm/i)) {
-                 let h = parseInt(str.match(/(\d+)h/i)?.[1] || 0);
-                 let m = parseInt(str.match(/(\d+)m/i)?.[1] || 0);
-                 return (h * 60) + m;
+        }
+        
+        function formatTime(hours, minutes) {
+            return `${hours}:${minutes.toString().padStart(2, '0')}`;
+        }
+        
+        function parseTimeToMinutes(timeStr) {
+            if (!timeStr) return 0;
+            
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            return (hours || 0) * 60 + (minutes || 0);
+        }
+        
+        function minutesToTimeStr(minutes) {
+            const hours = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+            return formatTime(hours, mins);
+        }
+        
+        function parseWorkToMinutes(timeStr) {
+            if (!timeStr) return 0;
+            
+            timeStr = timeStr.trim().toLowerCase().replace(/[\ ,]/g, '.').replace(/\s*[ht]/g, '');
+            
+            if (timeStr.includes(':')) {
+                const [hours, minutes] = timeStr.split(':').map(Number);
+                return (hours || 0) * 60 + (minutes || 0);
+            } else {
+                const num = parseFloat(timeStr);
+                if (isNaN(num)) return 0;
+                return Math.round(num * 60);
             }
-
-            // 3. Check Decimal or Clean Number (0.75 or 8)
-            // Replace comma with dot
-            let clean = str.replace(',', '.').replace(/[^\d.]/g, '');
-            if(!isNaN(parseFloat(clean))) {
-                return Math.round(parseFloat(clean) * 60);
+        }
+        
+        function calculateWorkTime(startTime, endTime) {
+            if (!startTime || !endTime) return '';
+            
+            const startMinutes = parseTimeToMinutes(startTime);
+            const endMinutes = parseTimeToMinutes(endTime);
+            
+            if (isNaN(startMinutes) || isNaN(endMinutes)) return '';
+            
+            const diffMinutes = endMinutes - startMinutes;
+            if (diffMinutes <= 0) return '';
+            
+            return minutesToTimeStr(diffMinutes);
+        }
+        
+        function updateLanguage(langCode) {
+            if (!translations[langCode]) return;
+            
+            currentLang = langCode;
+            const lang = translations[currentLang];
+            
+            // Update document title
+            document.title = lang.title;
+            
+            // Update menu items
+            document.querySelector('#fileMenuBtn .menu-text').textContent = lang.file_menu;
+            document.querySelector('#helpMenuBtn .menu-text').textContent = lang.help_menu;
+            document.querySelector('#languageBtn .menu-text').textContent = lang.language;
+            
+            // Update menu dropdown items
+            document.getElementById('exportPdfBtn').textContent = lang.export_pdf_btn;
+            document.getElementById('toggleThemeBtn').textContent = document.body.classList.contains('dark-theme') ? lang.light_mode : lang.dark_mode;
+            document.getElementById('exitBtn').textContent = lang.exit_btn;
+            
+            document.getElementById('statisticsBtn').textContent = lang.statistics;
+            document.getElementById('filterBtn').textContent = lang.filter;
+            document.getElementById('helpBtn').textContent = lang.help_usage;
+            document.getElementById('aboutBtn').textContent = lang.about_title;
+            
+            document.getElementById('langNO').innerHTML = `<i class="fas fa-check no-check"></i> ${lang.switch_to_no}`;
+            document.getElementById('langPL').innerHTML = `<i class="fas fa-check pl-check"></i> ${lang.switch_to_pl}`;
+            document.getElementById('langEN').innerHTML = `<i class="fas fa-check en-check"></i> ${lang.switch_to_en}`;
+            
+            // Update checkmarks
+            document.querySelectorAll('.fa-check').forEach(check => {
+                check.style.visibility = 'hidden';
+            });
+            
+            document.querySelector(`.${currentLang}-check`).style.visibility = 'visible';
+            
+            // Update input labels
+            document.getElementById('headerLabel').textContent = lang.header_label;
+            document.getElementById('inputLabel').textContent = lang.input_label;
+            
+            // Update default header value if it's the default
+            if (headerInput.value === translations.en.default_header || 
+                headerInput.value === translations.no.default_header ||
+                headerInput.value === translations.pl.default_header) {
+                headerInput.value = lang.default_header;
             }
-
-            return 0;
+            
+            // Update buttons
+            document.getElementById('generateBtn').innerHTML = `<i class="fas fa-play"></i> ${lang.generate_btn}`;
+            document.getElementById('clearBtn').innerHTML = `<i class="fas fa-trash-alt"></i> ${lang.clear_btn}`;
+            document.getElementById('quickHelpBtn').innerHTML = `<i class="fas fa-question-circle"></i> ${lang.help_usage}`;
+            document.getElementById('quickExportBtn').innerHTML = `<i class="fas fa-file-pdf"></i> ${lang.export_pdf_btn}`;
+            
+            // Update table headers
+            document.getElementById('listTitle').textContent = lang.list_title;
+            document.getElementById('dateHeader').textContent = lang.date;
+            document.getElementById('clientHeader').textContent = lang.client_address;
+            document.getElementById('startHeader').textContent = lang.start_time;
+            document.getElementById('endHeader').textContent = lang.end_time;
+            document.getElementById('workHeader').textContent = lang.work_time;
+            
+            // Update status bar
+            if (entries.length === 0) {
+                statusBar.textContent = lang.ready_status;
+            } else {
+                statusBar.textContent = lang.generated_rows.replace('{count}', entries.length);
+            }
+            
+            // Update modal titles and content
+            document.getElementById('helpModalTitle').textContent = lang.help_title;
+            document.getElementById('helpModalBody').innerHTML = lang.help_text.replace(/\n/g, '<br>');
+            document.getElementById('closeHelpModalBtn').textContent = lang.close_btn;
+            
+            document.getElementById('aboutModalTitle').textContent = lang.about_title;
+            document.getElementById('aboutModalText').textContent = lang.about_text;
+            document.getElementById('closeAboutModalBtn').textContent = lang.close_btn;
+            
+            document.getElementById('editModalTitle').textContent = lang.edit_entry;
+            document.getElementById('editDateLabel').textContent = lang.date;
+            document.getElementById('editClientLabel').textContent = lang.client_address;
+            document.getElementById('editStartLabel').textContent = lang.start_time;
+            document.getElementById('editEndLabel').textContent = lang.end_time;
+            document.getElementById('editWorkLabel').textContent = lang.work_time;
+            document.getElementById('cancelEditBtn').textContent = lang.cancel;
+            document.getElementById('saveEditBtn').textContent = lang.save_btn;
+            
+            document.getElementById('statisticsModalTitle').textContent = lang.statistics_title;
+            document.getElementById('timeTabLabel').textContent = lang.time_chart;
+            document.getElementById('clientTabLabel').textContent = lang.client_chart;
+            document.getElementById('closeStatisticsModalBtn').textContent = lang.close_btn;
+            
+            document.getElementById('filterModalTitle').textContent = lang.filter_title;
+            document.getElementById('dateRangeLabel').textContent = lang.date_range;
+            document.getElementById('dateFromLabel').textContent = lang.date_from;
+            document.getElementById('dateToLabel').textContent = lang.date_to;
+            document.getElementById('clientFilterLabel').textContent = lang.client_filter;
+            document.getElementById('minHoursLabel').textContent = lang.min_hours;
+            document.getElementById('cancelFilterBtn').textContent = lang.cancel;
+            document.getElementById('resetFilterBtn').textContent = lang.reset_filter;
+            document.getElementById('applyFilterBtn').textContent = lang.apply_filter;
+            
+            document.getElementById('exportLanguageTitle').textContent = lang.export_language_title;
+            document.getElementById('exportLanguageLabel').textContent = lang.export_language_label;
+            document.getElementById('exportNO').textContent = lang.switch_to_no;
+            document.getElementById('exportPL').textContent = lang.switch_to_pl;
+            document.getElementById('exportEN').textContent = lang.switch_to_en;
+            document.getElementById('cancelExportBtn').textContent = lang.cancel;
+            
+            // Update share modal
+            shareTitle.textContent = lang.share_title;
+            shareLabel.textContent = lang.share_label;
+            confirmShareBtn.textContent = lang.share_btn;
+            cancelShareBtn.textContent = lang.cancel;
+            
+            // Update summary label
+            updateSummaryLabel();
+            
+            // Save language preference
+            localStorage.setItem('wojthom-language', currentLang);
         }
-
-        function parseToMins(timeStr) {
-            timeStr = timeStr.replace('.', ':');
-            let [h, m] = timeStr.split(':').map(Number);
-            return (h * 60) + (m || 0);
-        }
-
-        function minsToTotalStr(mins) {
-            let h = Math.floor(mins / 60);
-            let m = Math.round(mins % 60);
-            return `${h}:${m.toString().padStart(2,'0')}`;
-        }
-
-        function processData() {
-            const raw = document.getElementById('rawInput').value;
-            const lines = raw.split('\n');
-            entries = [];
-            let hasErr = false;
-
-            lines.forEach(line => {
-                if(!line.trim()) return;
-                
-                let e = { original: line, date: '', client: '', displayTime: '', minutes: 0, error: false };
-
-                // 1. Date (Start of line)
-                let dateMatch = line.match(/^(\d{1,2}[.,/-]\d{1,2})/);
-                let rest = line;
-                
-                if(dateMatch) {
-                    e.date = dateMatch[1].replace(/[.,/]/, '-');
-                    rest = line.substring(dateMatch[0].length).trim();
-                } else {
-                    e.error = true;
-                    e.client = line; // Fail safe
-                }
-
-                // 2. Extract Time String (End of line usually)
-                // Look for Range first
-                let rangeMatch = rest.match(/(\d{1,2}[:.]\d{2})\s*[-–]\s*(\d{1,2}[:.]\d{2})/);
-                // Look for Decimal/Hours at end
-                let decimalMatch = rest.match(/(\d+([.,]\d+)?\s*[h]?)$/i);
-                
-                if(rangeMatch) {
-                    e.displayTime = rangeMatch[0]; // Exact text
-                    e.minutes = calculateMinutes(e.displayTime);
-                    e.client = rest.replace(e.displayTime, '').trim();
-                } else if(decimalMatch) {
-                    e.displayTime = decimalMatch[0].trim(); // Exact text (e.g. 0.75)
-                    e.minutes = calculateMinutes(e.displayTime);
-                    e.client = rest.substring(0, decimalMatch.index).trim();
-                } else {
-                    // Fallback: try to find anything looking like time
-                    e.error = true;
-                    e.client = rest;
-                }
-
-                if(!e.client) e.client = "?";
-                if(e.minutes <= 0 && !e.error) { e.error = true; } // Flag if calc failed
-
-                entries.push(e);
-                if(e.error) hasErr = true;
-            });
-
-            originalEntries = [...entries];
-            renderTable();
-            document.getElementById('resultCard').style.display = 'block';
-            if(window.innerWidth < 768) document.getElementById('resultCard').scrollIntoView({behavior:'smooth'});
-            showToast(hasErr ? translations[currentLang].toast_err : translations[currentLang].toast_gen, hasErr);
-        }
-
-        function renderTable() {
-            const tbody = document.getElementById('tableBody');
-            tbody.innerHTML = '';
-            let totalMins = 0;
-
-            entries.forEach((e, i) => {
-                let tr = document.createElement('tr');
-                if(e.error) tr.className = 'error-row';
-                tr.onclick = () => openEdit(i);
-
-                tr.innerHTML = `
-                    <td style="width:20%">${e.date}</td>
-                    <td class="client-col">${e.client}</td>
-                    <td class="time-col">${e.displayTime || '?'}</td>
-                `;
-                if(!e.error) totalMins += e.minutes;
-                tbody.appendChild(tr);
+        
+        function updateSummaryLabel() {
+            const lang = translations[currentLang];
+            const title = headerInput.value.trim() || lang.default_header;
+            
+            let totalMinutes = 0;
+            
+            entries.forEach(entry => {
+                totalMinutes += entry.minutes;
             });
             
-            document.getElementById('summaryValue').innerText = minsToTotalStr(totalMins);
+            summaryLabel.textContent = `${title} - ${lang.sum_total}: ${minutesToTimeStr(totalMinutes)}`;
         }
-
-        // --- EDITING ---
-        function openEdit(i) {
-            let e = entries[i];
-            document.getElementById('editIndex').value = i;
-            document.getElementById('editDate').value = e.date;
-            document.getElementById('editClient').value = e.client;
-            document.getElementById('editDisplayTime').value = e.displayTime;
-            openModal('editModal');
-        }
-
-        function saveEdit() {
-            let i = document.getElementById('editIndex').value;
-            let e = entries[i];
-            e.date = document.getElementById('editDate').value;
-            e.client = document.getElementById('editClient').value;
-            e.displayTime = document.getElementById('editDisplayTime').value;
-            
-            // Recalculate logic based on new display string
-            e.minutes = calculateMinutes(e.displayTime);
-            e.error = (e.minutes <= 0);
-
-            renderTable();
-            closeModal('editModal');
-        }
-
-        function deleteEntry() {
-            entries.splice(document.getElementById('editIndex').value, 1);
-            if(originalEntries) originalEntries = [...entries];
-            renderTable(); closeModal('editModal');
-        }
-
-        // --- PDF ---
-        function generatePDF(langCode) {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            const t = translations[langCode];
-            
-            // Modern Corporate Styling
-            const colHeader = [245, 247, 250]; // Light grey bg
-            const colText = [44, 62, 80]; // Dark blue text
-            const colLine = [189, 195, 199];
-
-            // Header Section
-            doc.setFont("helvetica", "bold");
-            doc.setFontSize(20);
-            doc.setTextColor(...colText);
-            doc.text(document.getElementById('headerInput').value.toUpperCase(), 14, 20);
-
-            doc.setLineWidth(0.5);
-            doc.setDrawColor(...colLine);
-            doc.line(14, 25, 196, 25);
-
-            // Metadata
-            doc.setFontSize(10);
-            doc.setFont("helvetica", "normal");
-            doc.setTextColor(100);
-            doc.text(`${t.pdf_gen}: ${new Date().toLocaleDateString()}`, 196, 20, { align: 'right' });
-
-            // Table Data
-            let body = entries.map(e => [e.date, e.client, e.displayTime]);
-            let totalMins = entries.reduce((acc, e) => acc + e.minutes, 0);
-
-            // Total Row (Styled differently)
-            body.push(['', '', { content: `${t.sum}: ${minsToTotalStr(totalMins)}`, styles: { fontStyle: 'bold', halign: 'right', fillColor: [240, 240, 240], textColor: colText } }]);
-
-            doc.autoTable({
-                startY: 35,
-                head: [[t.date.toUpperCase(), t.client.toUpperCase(), t.time.toUpperCase()]],
-                body: body,
-                theme: 'plain', // Clean modern look
-                headStyles: { 
-                    fillColor: colHeader, 
-                    textColor: colText, 
-                    fontStyle: 'bold',
-                    lineWidth: { bottom: 0.5 },
-                    lineColor: colLine
-                },
-                styles: { 
-                    fontSize: 10, 
-                    cellPadding: 4, 
-                    textColor: colText,
-                    lineColor: [240, 240, 240],
-                    lineWidth: { bottom: 0.1 }
-                },
-                columnStyles: { 
-                    0: { cellWidth: 30 }, 
-                    1: { cellWidth: 'auto' }, 
-                    2: { cellWidth: 40, halign: 'right', fontStyle: 'bold' } 
-                },
-                didDrawPage: function (data) {
-                    // Footer
-                    let pageStr = `${t.pdf_page} ${doc.internal.getNumberOfPages()}`;
-                    doc.setFontSize(8);
-                    doc.setTextColor(150);
-                    doc.text(pageStr, 196, 290, { align: 'right' });
-                }
-            });
-
-            doc.save('TimeReport_WojThom.pdf');
-            closeModal('exportModal');
-        }
-
-        // --- UTILS ---
-        function setLanguage(lang) {
-            currentLang = lang;
-            localStorage.setItem('wt6_lang', lang);
-            const t = translations[lang];
-            
-            const ids = {
-                'lbl_header': t.header, 'lbl_input': t.input, 'btn_generate': t.generate, 'lbl_result': t.result,
-                'th_date': t.date, 'th_client': t.client, 'th_time': t.time, 'lbl_total': t.total,
-                'txt_menu_file': t.file, 'txt_menu_tools': t.tools, 'txt_menu_settings': t.settings,
-                'txt_export': t.export, 'txt_clear': t.clear, 'txt_stats': t.stats, 'txt_filter': t.filter, 'txt_theme': t.theme,
-                'modal_edit_title': t.edit_title, 'lbl_edit_date': t.date, 'lbl_edit_client': t.client, 'lbl_edit_display': t.display_time,
-                'btn_save': t.save, 'btn_cancel': t.cancel, 'btn_delete': t.delete, 'modal_export_title': t.export_title,
-                'modal_filter_title': t.filter_title, 'btn_reset': t.reset, 'btn_apply': t.apply, 'txt_stats_title': t.stats
-            };
-            for(let id in ids) { let el = document.getElementById(id); if(el) el.innerText = ids[id]; }
-            if(entries.length) renderTable();
-            document.getElementById('mainMenu').classList.remove('open');
-            document.getElementById('menuOverlay').style.display = 'none';
-        }
-
-        function openModal(id) { document.getElementById(id).classList.add('open'); }
-        function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-        function showToast(msg, err=false) {
-            let t = document.getElementById('toast');
-            t.innerHTML = (err ? '<i class="fas fa-exclamation-circle"></i> ' : '<i class="fas fa-check"></i> ') + msg;
-            t.style.background = err ? 'var(--danger)' : '#333';
-            t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 3000);
-        }
+        
         function toggleTheme() {
-            document.body.classList.toggle('dark-mode');
-            localStorage.setItem('wt6_theme', document.body.classList.contains('dark-mode')?'dark':'light');
-            document.getElementById('mainMenu').classList.remove('open');
-            document.getElementById('menuOverlay').style.display = 'none';
+            const isDarkTheme = document.body.classList.toggle('dark-theme');
+            const lang = translations[currentLang];
+            
+            // Update theme toggle button text
+            document.getElementById('toggleThemeBtn').innerHTML = `<i class="fas fa-${isDarkTheme ? 'sun' : 'moon'}"></i> ${isDarkTheme ? lang.light_mode : lang.dark_mode}`;
+            
+            // Store theme preference
+            localStorage.setItem('wojthom-theme', isDarkTheme ? 'dark' : 'light');
         }
-        function clearData() {
-            if(confirm("Are you sure?")) {
-                document.getElementById('rawInput').value=''; entries=[]; 
-                localStorage.setItem('wt6_rawInput','');
-                document.getElementById('resultCard').style.display='none';
-                document.getElementById('mainMenu').classList.remove('open');
-                document.getElementById('menuOverlay').style.display = 'none';
+        
+        function parseAndDisplay() {
+            const lang = translations[currentLang];
+            const title = headerInput.value.trim() || lang.default_header;
+            const rawLines = rawInput.value.trim().split('\n');
+            
+            // Clear previous entries and table
+            entries = [];
+            resultBody.innerHTML = '';
+            
+            rawLines.forEach((line, idx) => {
+                const text = line.trim();
+                if (!text) return;
+                
+                // Match date with flexible separators
+                const dateMatch = text.match(/^\s*(\d{1,2})[ \.,\/-](\d{1,2})\s*/);
+                
+                let dateStr;
+                let rest = text;
+                
+                if (dateMatch) {
+                    dateStr = `${parseInt(dateMatch[1])}-${parseInt(dateMatch[2])}`;
+                    rest = text.substring(dateMatch[0].length).trim();
+                } else {
+                    // Prompt for date if missing
+                    const userDate = prompt(`No date found in line: "${text}". Enter date in DD-MM format:`);
+                    if (userDate) {
+                        dateStr = userDate.replace(/[ \.,\/]/g, '-');
+                        rest = text.trim(); // Whole line is rest since no date was matched
+                    } else {
+                        return; // Skip if no date provided
+                    }
+                }
+                
+                // Try to find time range or duration
+                const timeRangeMatch = rest.match(/(\d{1,2})[ \.: ](\d{2})\s*[-–]\s*(\d{1,2})[ \.: ](\d{2})/);
+                const noDashMatch = rest.match(/(\d{1,2}[ \.:]\d{2})\s+(\d{1,2}[ \.:]\d{2})/);
+                const durationMatch = rest.match(/(\d+(?:[\., ]\d+)?(?::\d{1,2})?(?:\s*[ht])?)\s*$/i);
+                
+                let start = '';
+                let end = '';
+                let workTime = '';
+                let minutes = 0;
+                let client = rest;
+                
+                if (timeRangeMatch) {
+                    start = `${parseInt(timeRangeMatch[1])}:${timeRangeMatch[2].padStart(2, '0')}`;
+                    end = `${parseInt(timeRangeMatch[3])}:${timeRangeMatch[4].padStart(2, '0')}`;
+                    
+                    // Calculate work time
+                    workTime = calculateWorkTime(start, end);
+                    minutes = parseTimeToMinutes(workTime);
+                    
+                    // Extract client name (everything before the time range)
+                    client = rest.substring(0, timeRangeMatch.index).trim();
+                } else if (noDashMatch) {
+                    start = noDashMatch[1].replace(/[ \.]/g, ':');
+                    end = noDashMatch[2].replace(/[ \.]/g, ':');
+                    
+                    // Calculate work time
+                    workTime = calculateWorkTime(start, end);
+                    minutes = parseTimeToMinutes(workTime);
+                    
+                    // Extract client name (everything before the time notation)
+                    client = rest.substring(0, noDashMatch.index).trim();
+                } else if (durationMatch) {
+                    // Direct duration specification (e.g., "8h", "0.75", "0:45")
+                    workTime = durationMatch[1]; // Preserve original string
+                    minutes = parseWorkToMinutes(workTime);
+                    
+                    // Extract client name (everything before the duration)
+                    client = rest.substring(0, durationMatch.index).trim();
+                } else {
+                    // Prompt for time if missing
+                    const userTime = prompt(`No time found in line: "${text}". Enter time range (HH:MM-HH:MM) or duration (e.g., 8h or 0.75):`);
+                    if (userTime) {
+                        // Parse user input as duration or range
+                        const userRangeMatch = userTime.match(/(\d{1,2})[ \.: ](\d{2})\s*[-–]\s*(\d{1,2})[ \.: ](\d{2})/);
+                        const userDurationMatch = userTime.match(/(\d+(?:[\., ]\d+)?(?::\d{1,2})?(?:\s*[ht])?)/i);
+                        
+                        if (userRangeMatch) {
+                            start = `${parseInt(userRangeMatch[1])}:${userRangeMatch[2].padStart(2, '0')}`;
+                            end = `${parseInt(userRangeMatch[3])}:${userRangeMatch[4].padStart(2, '0')}`;
+                            workTime = calculateWorkTime(start, end);
+                            minutes = parseTimeToMinutes(workTime);
+                        } else if (userDurationMatch) {
+                            workTime = userDurationMatch[1];
+                            minutes = parseWorkToMinutes(workTime);
+                        }
+                    } else {
+                        workTime = '';
+                        minutes = 0;
+                    }
+                }
+                
+                // If client is empty, prompt for client
+                if (!client) {
+                    const userClient = prompt(`No client/address found in line: "${text}". Enter client/address:`);
+                    if (userClient) {
+                        client = userClient;
+                    }
+                }
+                
+                // Create entry object
+                const entry = {
+                    date: dateStr,
+                    client: client,
+                    startTime: start,
+                    endTime: end,
+                    workTime: workTime,
+                    minutes: minutes
+                };
+                
+                entries.push(entry);
+                
+                // Add row to table
+                const row = document.createElement('tr');
+                row.className = idx % 2 === 0 ? 'even-row' : 'odd-row';
+                row.innerHTML = `
+                    <td>${entry.date}</td>
+                    <td class="client-col">${entry.client}</td>
+                    <td>${entry.startTime}</td>
+                    <td>${entry.endTime}</td>
+                    <td>${entry.workTime}</td>
+                `;
+                
+                // Add double-click event for editing
+                row.addEventListener('dblclick', () => {
+                    showEditDialog(idx);
+                });
+                
+                resultBody.appendChild(row);
+            });
+            
+            // Add summary row
+            addSummaryRow();
+            
+            // Update summary label
+            updateSummaryLabel();
+            
+            // Update status bar
+            statusBar.textContent = lang.generated_rows.replace('{count}', entries.length);
+        }
+        
+        function addSummaryRow() {
+            const lang = translations[currentLang];
+            
+            let totalMinutes = 0;
+            
+            entries.forEach(entry => {
+                totalMinutes += entry.minutes;
+            });
+            
+            const totalTimeStr = minutesToTimeStr(totalMinutes);
+            
+            const summaryRow = document.createElement('tr');
+            summaryRow.className = 'summary-row';
+            summaryRow.innerHTML = `
+                <td></td>
+                <td class="client-col"></td>
+                <td></td>
+                <td>${lang.sum_total}</td>
+                <td>${totalTimeStr}</td>
+            `;
+            
+            resultBody.appendChild(summaryRow);
+        }
+        
+        function refreshTable() {
+            const lang = translations[currentLang];
+            
+            // Clear the table
+            resultBody.innerHTML = '';
+            
+            // Add entry rows
+            entries.forEach((entry, idx) => {
+                const row = document.createElement('tr');
+                row.className = idx % 2 === 0 ? 'even-row' : 'odd-row';
+                row.innerHTML = `
+                    <td>${entry.date}</td>
+                    <td class="client-col">${entry.client}</td>
+                    <td>${entry.startTime}</td>
+                    <td>${entry.endTime}</td>
+                    <td>${entry.workTime}</td>
+                `;
+                
+                // Add double-click event for editing
+                row.addEventListener('dblclick', () => {
+                    showEditDialog(idx);
+                });
+                
+                resultBody.appendChild(row);
+            });
+            
+            // Add summary row
+            addSummaryRow();
+            
+            // Update summary label
+            updateSummaryLabel();
+            
+            // Update status bar
+            if (entries.length === 0) {
+                statusBar.textContent = lang.ready_status;
+            } else {
+                statusBar.textContent = lang.generated_rows.replace('{count}', entries.length);
             }
         }
-        function resetFilter() { if(originalEntries) entries=[...originalEntries]; renderTable(); closeModal('filterModal'); }
-        function applyFilter() { let v=document.getElementById('filterClient').value; if(v && originalEntries) entries=originalEntries.filter(e=>e.client===v); renderTable(); closeModal('filterModal'); }
-        document.querySelector('[onclick="openModal(\'filterModal\')"]').addEventListener('click', ()=>{
-            const s=document.getElementById('filterClient'); s.innerHTML=`<option value="">${translations[currentLang].reset}</option>`;
-            [...new Set(entries.map(e=>e.client))].sort().forEach(c=>{let o=document.createElement('option');o.value=c;o.innerText=c;s.appendChild(o)});
-        });
-        function showStatistics() {
-            if(!entries.length) return;
-            openModal('statsModal');
-            const data={}; entries.forEach(e=>{if(e.minutes>0) data[e.client]=(data[e.client]||0)+e.minutes/60});
-            const ctx=document.getElementById('chartCanvas').getContext('2d');
-            if(myChart) myChart.destroy();
-            myChart=new Chart(ctx,{type:'pie',data:{labels:Object.keys(data),datasets:[{data:Object.values(data),backgroundColor:['#3498db','#e74c3c','#f1c40f','#2ecc71','#9b59b6']}]},options:{responsive:true,maintainAspectRatio:false}});
+        
+        function showEditDialog(index) {
+            if (index < 0 || index >= entries.length) return;
+            
+            const entry = entries[index];
+            currentEditingRow = index;
+            
+            // Set values in form
+            document.getElementById('editDate').value = entry.date;
+            document.getElementById('editClient').value = entry.client;
+            document.getElementById('editStart').value = entry.startTime;
+            document.getElementById('editEnd').value = entry.endTime;
+            document.getElementById('editWork').value = entry.workTime;
+            
+            // Show modal
+            showElement(editModal);
+            
+            // Focus on client field
+            document.getElementById('editClient').focus();
         }
+        
+        function saveEditEntry() {
+            if (currentEditingRow === null || currentEditingRow < 0 || currentEditingRow >= entries.length) {
+                hideElement(editModal);
+                return;
+            }
+            
+            const date = document.getElementById('editDate').value;
+            const client = document.getElementById('editClient').value;
+            const startTime = document.getElementById('editStart').value;
+            const endTime = document.getElementById('editEnd').value;
+            let workTime = document.getElementById('editWork').value;
+            let minutes = 0;
+            
+            // If start and end are provided, calculate work time in HH:MM
+            if (startTime && endTime) {
+                workTime = calculateWorkTime(startTime, endTime);
+                minutes = parseTimeToMinutes(workTime);
+            } else if (workTime) {
+                // If direct work time, preserve string and parse minutes
+                minutes = parseWorkToMinutes(workTime);
+            }
+            
+            // Update entry
+            entries[currentEditingRow] = {
+                date: date,
+                client: client,
+                startTime: startTime,
+                endTime: endTime,
+                workTime: workTime,
+                minutes: minutes
+            };
+            
+            // Refresh table
+            refreshTable();
+            
+            // Hide modal
+            hideElement(editModal);
+            
+            // Update status bar
+            const lang = translations[currentLang];
+            statusBar.textContent = lang.entry_updated;
+        }
+        
+        function showStatistics() {
+            const lang = translations[currentLang];
+            
+            if (entries.length === 0) {
+                alert(lang.no_data);
+                return;
+            }
+            
+            // Prepare data for charts
+            const dateData = {};
+            const clientData = {};
+            
+            entries.forEach(entry => {
+                // Skip entries without minutes
+                if (entry.minutes === 0) return;
+                
+                // Convert minutes to hours (decimal)
+                const hoursDecimal = entry.minutes / 60;
+                
+                // Aggregate by date
+                if (dateData[entry.date]) {
+                    dateData[entry.date] += hoursDecimal;
+                } else {
+                    dateData[entry.date] = hoursDecimal;
+                }
+                
+                // Aggregate by client
+                if (clientData[entry.client]) {
+                    clientData[entry.client] += hoursDecimal;
+                } else {
+                    clientData[entry.client] = hoursDecimal;
+                }
+            });
+            
+            // Sort data
+            const sortedDates = Object.keys(dateData).sort();
+            const sortedClients = Object.entries(clientData)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 10); // Limit to top 10 clients
+            
+            // Prepare chart data
+            const timeChartData = {
+                labels: sortedDates,
+                datasets: [{
+                    label: lang.hours,
+                    data: sortedDates.map(date => dateData[date]),
+                    backgroundColor: 'rgba(52, 152, 219, 0.7)',
+                    borderColor: 'rgba(40, 116, 166, 1)',
+                    borderWidth: 1
+                }]
+            };
+            
+            const clientChartData = {
+                labels: sortedClients.map(client => client[0]),
+                datasets: [{
+                    label: lang.hours,
+                    data: sortedClients.map(client => client[1]),
+                    backgroundColor: 'rgba(46, 204, 113, 0.7)',
+                    borderColor: 'rgba(30, 132, 73, 1)',
+                    borderWidth: 1
+                }]
+            };
+            
+            // Create/update charts
+            const timeChartCanvas = document.getElementById('timeChartCanvas').getContext('2d');
+            const clientChartCanvas = document.getElementById('clientChartCanvas').getContext('2d');
+            
+            // Destroy existing charts if they exist
+            if (timeChart) timeChart.destroy();
+            if (clientChart) clientChart.destroy();
+            
+            // Create new charts
+            timeChart = new Chart(timeChartCanvas, {
+                type: 'bar',
+                data: timeChartData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: lang.time_distribution
+                        },
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: lang.hours
+                            }
+                        }
+                    }
+                }
+            });
+            
+            clientChart = new Chart(clientChartCanvas, {
+                type: 'bar',
+                data: clientChartData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: lang.client_distribution
+                        },
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: lang.hours
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                callback: function(value) {
+                                    const label = this.getLabelForValue(value);
+                                    // Truncate long labels
+                                    return label.length > 12 ? label.substr(0, 10) + '...' : label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Show statistics modal
+            showElement(statisticsModal);
+        }
+        
+        function showFilterDialog() {
+            const lang = translations[currentLang];
+            
+            if (entries.length === 0) {
+                alert(lang.no_data);
+                return;
+            }
+            
+            // If not already saved, save original entries
+            if (!originalEntries) {
+                originalEntries = JSON.parse(JSON.stringify(entries));
+            }
+            
+            // Get unique clients
+            const uniqueClients = [...new Set(entries.map(entry => entry.client))].filter(client => client);
+            uniqueClients.sort();
+            
+            // Clear and rebuild client filter dropdown
+            const clientFilter = document.getElementById('clientFilter');
+            clientFilter.innerHTML = `<option value="">${lang.client_filter}</option>`;
+            
+            uniqueClients.forEach(client => {
+                const option = document.createElement('option');
+                option.value = client;
+                option.textContent = client;
+                clientFilter.appendChild(option);
+            });
+            
+            // Show filter dialog
+            showElement(filterModal);
+        }
+        
+        function applyFilter() {
+            const lang = translations[currentLang];
+            
+            const dateFrom = document.getElementById('dateFrom').value.trim();
+            const dateTo = document.getElementById('dateTo').value.trim();
+            const clientFilter = document.getElementById('clientFilter').value;
+            const minHours = parseFloat(document.getElementById('minHours').value) || 0;
+            
+            // Ensure originalEntries exists
+            if (!originalEntries) {
+                originalEntries = JSON.parse(JSON.stringify(entries));
+            }
+            
+            // Filter entries
+            const filteredEntries = originalEntries.filter(entry => {
+                // Date filter
+                let dateMatch = true;
+                
+                if (dateFrom) {
+                    try {
+                        const entryDate = new Date(`2025-${entry.date.split('-')[1]}-${entry.date.split('-')[0]}`);
+                        const fromDate = new Date(`2025-${dateFrom.split('-')[1]}-${dateFrom.split('-')[0]}`);
+                        
+                        if (entryDate < fromDate) {
+                            dateMatch = false;
+                        }
+                    } catch (e) {
+                        // Date parsing error, continue
+                    }
+                }
+                
+                if (dateTo && dateMatch) {
+                    try {
+                        const entryDate = new Date(`2025-${entry.date.split('-')[1]}-${entry.date.split('-')[0]}`);
+                        const toDate = new Date(`2025-${dateTo.split('-')[1]}-${dateTo.split('-')[0]}`);
+                        
+                        if (entryDate > toDate) {
+                            dateMatch = false;
+                        }
+                    } catch (e) {
+                        // Date parsing error, continue
+                    }
+                }
+                
+                // Client filter
+                let clientMatch = true;
+                if (clientFilter) {
+                    if (!entry.client.includes(clientFilter)) {
+                        clientMatch = false;
+                    }
+                }
+                
+                // Work time filter
+                let hoursMatch = true;
+                if (minHours > 0) {
+                    const totalHours = entry.minutes / 60;
+                    
+                    if (totalHours < minHours) {
+                        hoursMatch = false;
+                    }
+                }
+                
+                return dateMatch && clientMatch && hoursMatch;
+            });
+            
+            // Update entries and refresh table
+            entries = filteredEntries;
+            refreshTable();
+            
+            // Hide filter dialog
+            hideElement(filterModal);
+            
+            // Update status
+            statusBar.textContent = lang.filter_applied;
+        }
+        
+        function resetFilter() {
+            const lang = translations[currentLang];
+            
+            // Restore original entries if they exist
+            if (originalEntries) {
+                entries = JSON.parse(JSON.stringify(originalEntries));
+                originalEntries = null;
+                
+                // Clear filter form
+                document.getElementById('dateFrom').value = '';
+                document.getElementById('dateTo').value = '';
+                document.getElementById('clientFilter').value = '';
+                document.getElementById('minHours').value = '0';
+                
+                // Refresh table
+                refreshTable();
+                
+                // Update status
+                statusBar.textContent = lang.filter_cleared;
+                
+                // Hide filter dialog if it's open
+                hideElement(filterModal);
+            }
+        }
+        
+        function showExportLanguageDialog() {
+            const lang = translations[currentLang];
+            
+            if (entries.length === 0) {
+                alert(lang.no_data);
+                return;
+            }
+            
+            // Show export language dialog
+            showElement(exportLanguageModal);
+        }
+        
+        function exportPDF(langCode) {
+            const interfaceLang = translations[currentLang]; // Current UI language
+            const exportLang = translations[langCode]; // Export language
+            
+            if (entries.length === 0) {
+                alert(interfaceLang.no_data);
+                return;
+            }
+            
+            // Initialize jsPDF
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({
+                orientation: 'landscape',
+                unit: 'mm',
+                format: 'a4'
+            });
+            
+            // Set title and colors
+            const title = headerInput.value.trim() || exportLang.default_header;
+            const primaryColor = [26, 82, 118]; // #1A5276 in RGB
+            const secondaryColor = [40, 116, 166]; // #2874A6 in RGB
+            const alternateRowColor = [235, 245, 251]; // #EBF5FB in RGB
+            const summaryRowColor = [212, 230, 241]; // #D4E6F1 in RGB
+            
+            // Get page dimensions
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
+            
+            // Add title
+            doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+            doc.setFontSize(22);
+            doc.setFont('helvetica', 'bold');
+            doc.text(title, pageWidth / 2, 20, { align: 'center' });
+            
+            // Add date
+            const today = new Date();
+            const dateStr = today.toLocaleDateString();
+            doc.setFontSize(10);
+            doc.setTextColor(100, 100, 100);
+            doc.text(exportLang.generated_on + ': ' + dateStr, pageWidth - 20, 15, { align: 'right' });
+            
+            // Prepare table data
+            const headers = [
+                exportLang.date,
+                exportLang.client_address,
+                exportLang.start_time,
+                exportLang.end_time,
+                exportLang.work_time
+            ];
+            
+            const data = entries.map(entry => [
+                entry.date,
+                entry.client,
+                entry.startTime,
+                entry.endTime,
+                entry.workTime // Use preserved workTime string
+            ]);
+            
+            // Calculate total work time
+            let totalMinutes = 0;
+            entries.forEach(entry => {
+                totalMinutes += entry.minutes;
+            });
+            
+            // Add summary row
+            data.push([
+                '',
+                '',
+                '',
+                exportLang.sum_total,
+                minutesToTimeStr(totalMinutes)
+            ]);
+            
+            // Define table styles
+            const tableStyles = {
+                head: [
+                    { fillColor: secondaryColor, textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' }
+                ],
+                body: []
+            };
+            
+            // Add alternating row colors
+            data.forEach((row, index) => {
+                if (index === data.length - 1) {
+                    // Summary row style
+                    tableStyles.body.push({
+                        fillColor: summaryRowColor, 
+                        fontStyle: 'bold'
+                    });
+                } else if (index % 2 === 1) {
+                    // Odd rows (excluding summary)
+                    tableStyles.body.push({
+                        fillColor: alternateRowColor
+                    });
+                } else {
+                    // Even rows
+                    tableStyles.body.push({});
+                }
+            });
+            
+            // Column widths (mm) - more compact proportions
+            const columnWidths = [20, 90, 22, 22, 25];
+            
+            // Add table to PDF
+            doc.autoTable({
+                head: [headers],
+                body: data,
+                startY: 30,
+                styles: {
+                    fontSize: 9,
+                    cellPadding: 3,
+                    lineWidth: 0.1,
+                    lineColor: [80, 80, 80]
+                },
+                headStyles: {
+                    ...tableStyles.head[0],
+                    lineWidth: 0.5,
+                    fontSize: 9
+                },
+                bodyStyles: {
+                    halign: 'center',
+                    valign: 'middle',
+                    fontSize: 9
+                },
+                alternateRowStyles: {},
+                columnStyles: {
+                    1: { halign: 'left' } // Client/Address column left-aligned
+                },
+                willDrawCell: function(data) {
+                    // Apply custom styles to each row
+                    if (data.section === 'body') {
+                        const rowIndex = data.row.index;
+                        const rowStyle = tableStyles.body[rowIndex] || {};
+                        
+                        if (rowStyle.fillColor) {
+                            data.cell.styles.fillColor = rowStyle.fillColor;
+                        }
+                        
+                        if (rowStyle.fontStyle) {
+                            data.cell.styles.fontStyle = rowStyle.fontStyle;
+                        }
+                        
+                        // Add thicker border to summary row
+                        if (rowIndex === tableStyles.body.length - 1) {
+                            data.cell.styles.lineWidth = 0.5;
+                        }
+                    }
+                },
+                columnWidth: (index) => {
+                    return columnWidths[index];
+                },
+                // Make table borders visible and more pronounced
+                tableLineColor: [50, 50, 50],
+                tableLineWidth: 0.5,
+                // Draw border around whole table
+                drawCell: function(cell, data) {
+                    if (data.column.index === 0) { // First column
+                        doc.setDrawColor(50, 50, 50);
+                        doc.setLineWidth(0.5);
+                        doc.line(
+                            cell.x,
+                            cell.y,
+                            cell.x,
+                            cell.y + cell.height
+                        );
+                    }
+                    if (data.column.index === headers.length - 1) { // Last column
+                        doc.setDrawColor(50, 50, 50);
+                        doc.setLineWidth(0.5);
+                        doc.line(
+                            cell.x + cell.width,
+                            cell.y,
+                            cell.x + cell.width,
+                            cell.y + cell.height
+                        );
+                    }
+                }
+            });
+            
+            // Get table end Y position and draw border
+            const finalY = doc.previousAutoTable.finalY;
+            
+            // Add summary box below table
+            const summaryBoxY = finalY + 10;
+            const summaryBoxHeight = 12;
+            const summaryBoxWidth = 100;
+            const summaryBoxX = pageWidth - summaryBoxWidth - 20;
+            
+            // Draw summary box
+            doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+            doc.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+            doc.setLineWidth(0.5);
+            doc.roundedRect(summaryBoxX, summaryBoxY, summaryBoxWidth, summaryBoxHeight, 2, 2, 'FD');
+            
+            // Add summary text
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'bold');
+            doc.text(
+                `${exportLang.sum_total}: ${minutesToTimeStr(totalMinutes)}`,
+                summaryBoxX + summaryBoxWidth/2,
+                summaryBoxY + summaryBoxHeight/2 + 1,
+                { align: 'center', baseline: 'middle' }
+            );
+            
+            // Add footer
+            doc.setFontSize(9);
+            doc.setTextColor(100, 100, 100);
+            doc.setFont('helvetica', 'normal');
+            doc.text(exportLang.about_text, pageWidth / 2, pageHeight - 10, { align: 'center' });
+            doc.text("© Wojciech K. & Thomas O.", pageWidth / 2, pageHeight - 6, { align: 'center' });
+            
+            // Generate PDF file name
+            const now = new Date();
+            const fileName = `${title.replace(/\s+/g, '_')}_${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}.pdf`;
+            
+            // Save the PDF
+            doc.save(fileName);
+            
+            // Update status bar
+            const langName = interfaceLang[`switch_to_${langCode}`];
+            statusBar.textContent = interfaceLang.pdf_saved.replace('{filename}', fileName);
+            
+            // Store the PDF data to share if desired
+            lastExportedPdf = {
+                blob: doc.output('blob'),
+                fileName: fileName,
+                title: title
+            };
+            
+            // Hide export language dialog
+            hideElement(exportLanguageModal);
+            
+            // Show share dialog if Web Share API is available
+            if (navigator.share) {
+                showElement(shareModal);
+            }
+        }
+        
+        function shareLastExportedPdf() {
+            if (!lastExportedPdf) return;
+            
+            if (navigator.share) {
+                try {
+                    // Create a File object
+                    const pdfFile = new File([lastExportedPdf.blob], lastExportedPdf.fileName, {
+                        type: 'application/pdf'
+                    });
+                    
+                    // Use Web Share API
+                    navigator.share({
+                        files: [pdfFile],
+                        title: lastExportedPdf.title,
+                        text: translations[currentLang].export_pdf_title
+                    }).catch(err => {
+                        console.warn('Sharing failed:', err);
+                    });
+                } catch (err) {
+                    console.warn('Failed to share file:', err);
+                }
+            }
+            
+            // Hide share dialog
+            hideElement(shareModal);
+        }
+        
+        // Event Listeners
+        fileMenuBtn.addEventListener('click', () => toggleDropdown(fileMenu));
+        helpMenuBtn.addEventListener('click', () => toggleDropdown(helpMenu));
+        languageBtn.addEventListener('click', () => toggleDropdown(languageMenu));
+        
+        // Language selection
+        document.getElementById('langNO').addEventListener('click', () => {
+            updateLanguage('no');
+            hideElement(languageMenu);
+        });
+        
+        document.getElementById('langPL').addEventListener('click', () => {
+            updateLanguage('pl');
+            hideElement(languageMenu);
+        });
+        
+        document.getElementById('langEN').addEventListener('click', () => {
+            updateLanguage('en');
+            hideElement(languageMenu);
+        });
+        
+        // File menu actions
+        document.getElementById('exportPdfBtn').addEventListener('click', () => {
+            hideElement(fileMenu);
+            showExportLanguageDialog();
+        });
+        
+        document.getElementById('toggleThemeBtn').addEventListener('click', () => {
+            toggleTheme();
+            hideElement(fileMenu);
+        });
+        
+        document.getElementById('exitBtn').addEventListener('click', () => {
+            // For web, this might just show a message or close the current tab
+            if (confirm(translations[currentLang].exit_btn + '?')) {
+                // In WebIntoApp, this could be mapped to app exit
+                // For regular web, just show a message
+                window.close();
+            }
+        });
+        
+        // Help menu actions
+        document.getElementById('statisticsBtn').addEventListener('click', () => {
+            hideElement(helpMenu);
+            showStatistics();
+        });
+        
+        document.getElementById('filterBtn').addEventListener('click', () => {
+            hideElement(helpMenu);
+            showFilterDialog();
+        });
+        
+        document.getElementById('helpBtn').addEventListener('click', () => {
+            hideElement(helpMenu);
+            showElement(helpModal);
+        });
+        
+        document.getElementById('aboutBtn').addEventListener('click', () => {
+            hideElement(helpMenu);
+            showElement(aboutModal);
+        });
+        
+        // Action buttons
+        generateBtn.addEventListener('click', parseAndDisplay);
+        clearBtn.addEventListener('click', () => {
+            rawInput.value = '';
+        });
+        
+        quickHelpBtn.addEventListener('click', () => {
+            showElement(helpModal);
+        });
+        
+        quickExportBtn.addEventListener('click', () => {
+            showExportLanguageDialog();
+        });
+        
+        // Modal close buttons
+        document.getElementById('closeHelpBtn').addEventListener('click', () => hideElement(helpModal));
+        document.getElementById('closeHelpModalBtn').addEventListener('click', () => hideElement(helpModal));
+        
+        document.getElementById('closeAboutBtn').addEventListener('click', () => hideElement(aboutModal));
+        document.getElementById('closeAboutModalBtn').addEventListener('click', () => hideElement(aboutModal));
+        
+        document.getElementById('closeEditBtn').addEventListener('click', () => hideElement(editModal));
+        document.getElementById('cancelEditBtn').addEventListener('click', () => hideElement(editModal));
+        document.getElementById('saveEditBtn').addEventListener('click', saveEditEntry);
+        
+        document.getElementById('closeStatisticsBtn').addEventListener('click', () => hideElement(statisticsModal));
+        document.getElementById('closeStatisticsModalBtn').addEventListener('click', () => hideElement(statisticsModal));
+        
+        document.getElementById('closeFilterBtn').addEventListener('click', () => hideElement(filterModal));
+        document.getElementById('cancelFilterBtn').addEventListener('click', () => hideElement(filterModal));
+        document.getElementById('resetFilterBtn').addEventListener('click', resetFilter);
+        document.getElementById('applyFilterBtn').addEventListener('click', applyFilter);
+        
+        document.getElementById('closeExportLanguageBtn').addEventListener('click', () => hideElement(exportLanguageModal));
+        document.getElementById('cancelExportBtn').addEventListener('click', () => hideElement(exportLanguageModal));
+        
+        // Share dialog buttons
+        closeShareBtn.addEventListener('click', () => hideElement(shareModal));
+        cancelShareBtn.addEventListener('click', () => hideElement(shareModal));
+        confirmShareBtn.addEventListener('click', shareLastExportedPdf);
+        
+        // Export buttons
+        document.getElementById('exportNO').addEventListener('click', () => exportPDF('no'));
+        document.getElementById('exportPL').addEventListener('click', () => exportPDF('pl'));
+        document.getElementById('exportEN').addEventListener('click', () => exportPDF('en'));
+        
+        // Tab selection in statistics modal
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove active class from all tabs and content
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                // Add active class to clicked tab and corresponding content
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab).classList.add('active');
+            });
+        });
+        
+        // Auto-calculate work time in edit form if start/end changed
+        document.getElementById('editStart').addEventListener('input', updateEditWorkTime);
+        document.getElementById('editEnd').addEventListener('input', updateEditWorkTime);
+        document.getElementById('editWork').addEventListener('input', updateEditWorkTime); // Optional, but to reparse if direct edit
+        
+        function updateEditWorkTime() {
+            const start = document.getElementById('editStart').value;
+            const end = document.getElementById('editEnd').value;
+            let workTime = document.getElementById('editWork').value;
+            
+            if (start && end) {
+                workTime = calculateWorkTime(start, end);
+                document.getElementById('editWork').value = workTime;
+            }
+            // If workTime edited directly, no need to change, saveEditEntry will handle parsing
+        }
+        
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.dropdown-container')) {
+                document.querySelectorAll('.dropdown-menu').forEach(dropdown => {
+                    hideElement(dropdown);
+                });
+            }
+        });
+        
+        // Close modals when clicking outside (on the modal background)
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    hideElement(modal);
+                }
+            });
+        });
+        
+        // Initialize app with saved preferences
+        function initApp() {
+            // Load theme preference
+            const savedTheme = localStorage.getItem('wojthom-theme');
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark-theme');
+                document.getElementById('toggleThemeBtn').innerHTML = `<i class="fas fa-sun"></i> ${translations[currentLang].light_mode}`;
+            }
+            
+            // Load language preference
+            const savedLang = localStorage.getItem('wojthom-language');
+            if (savedLang && translations[savedLang]) {
+                currentLang = savedLang;
+            }
+            
+            updateLanguage(currentLang);
+            
+            // Set language checkmarks
+            document.querySelectorAll('.fa-check').forEach(check => {
+                check.style.visibility = 'hidden';
+            });
+            
+            document.querySelector(`.${currentLang}-check`).style.visibility = 'visible';
+        }
+        
+        // Call init function
+        initApp();
     </script>
+    <!-- Add Service Worker for offline support -->
+    <script>
+        // Service Worker code
+        const swCode = `// Service Worker for WojThom 3.0 Time List Generator
+const CACHE_NAME = 'wojthom-time-list-generator-v1';
+const urlsToCache = [
+    './', // Current page
+    './index.html',
+    'https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css',
+    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
+    'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/webfonts/fa-solid-900.woff2',
+    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/webfonts/fa-regular-400.woff2'
+];
+
+// Install event - cache all resources
+self.addEventListener('install', event => {
+    event.waitUntil(
+        caches.open(CACHE_NAME)
+            .then(cache => {
+                console.log('Opened cache');
+                return cache.addAll(urlsToCache);
+            })
+    );
+});
+
+// Fetch event - serve from cache, fall back to network
+self.addEventListener('fetch', event => {
+    event.respondWith(
+        caches.match(event.request)
+            .then(response => {
+                // Cache hit - return the response from cache
+                if (response) {
+                    return response;
+                }
+                
+                // Clone the request because it's a stream and can only be consumed once
+                const fetchRequest = event.request.clone();
+                
+                return fetch(fetchRequest).then(response => {
+                    // Check if valid response
+                    if (!response || response.status !== 200 || response.type !== 'basic') {
+                        return response;
+                    }
+                    
+                    // Clone the response because it's a stream and can only be consumed once
+                    const responseToCache = response.clone();
+                    
+                    caches.open(CACHE_NAME)
+                        .then(cache => {
+                            // Cache the fetched resource
+                            cache.put(event.request, responseToCache);
+                        });
+                    
+                    return response;
+                });
+            })
+    );
+});
+
+// Activate event - clean up old caches
+self.addEventListener('activate', event => {
+    const cacheWhitelist = [CACHE_NAME];
+    
+    event.waitUntil(
+        caches.keys().then(cacheNames => {
+            return Promise.all(
+                cacheNames.map(cacheName => {
+                    if (cacheWhitelist.indexOf(cacheName) === -1) {
+                        // Delete caches that aren't in the whitelist
+                        return caches.delete(cacheName);
+                    }
+                })
+            );
+        })
+    );
+});`;
+
+        // Function to register Service Worker inline
+        function registerServiceWorker() {
+            if ('serviceWorker' in navigator) {
+                // Create a Blob from the service worker code
+                const swBlob = new Blob([swCode], { type: 'application/javascript' });
+                
+                // Create a URL for the Blob
+                const swUrl = URL.createObjectURL(swBlob);
+                
+                // Register the Service Worker using the Blob URL
+                navigator.serviceWorker.register(swUrl)
+                    .then(registration => {
+                        console.log('ServiceWorker registered with scope:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.error('ServiceWorker registration failed:', error);
+                    });
+            }
+        }
+        
+        // Register Service Worker on load
+        window.addEventListener('load', registerServiceWorker);
+    </script>
+
+    <!-- Web App Manifest for PWA support -->
+    <link rel="manifest" href="data:application/manifest+json,{
+        &quot;name&quot;: &quot;WojThom Time List Generator&quot;,
+        &quot;short_name&quot;: &quot;WojThom&quot;,
+        &quot;description&quot;: &quot;Professional time tracking list generator created by Wojciech K. and Thomas O.&quot;,
+        &quot;start_url&quot;: &quot;./index.html&quot;,
+        &quot;display&quot;: &quot;standalone&quot;,
+        &quot;background_color&quot;: &quot;#ffffff&quot;,
+        &quot;theme_color&quot;: &quot;#1A5276&quot;,
+        &quot;icons&quot;: [{
+            &quot;src&quot;: &quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' fill='%231A5276' rx='64' /%3E%3Ctext x='50%25' y='50%25' font-family='Arial' font-size='220' fill='white' text-anchor='middle' dominant-baseline='middle'%3EWT%3C/text%3E%3C/svg%3E&quot;,
+            &quot;sizes&quot;: &quot;512x512&quot;,
+            &quot;type&quot;: &quot;image/svg+xml&quot;,
+            &quot;purpose&quot;: &quot;any maskable&quot;
+        }]
+    }">
 </body>
 </html>
