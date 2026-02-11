@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="pl">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>WojThom 4.0 Mobile - Time List</title>
+    <title>WojThom 6.0 - Time Report</title>
     
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
@@ -13,256 +13,165 @@
     <style>
         :root {
             --primary: #2c3e50;
-            --secondary: #3498db;
-            --success: #27ae60;
-            --danger: #e74c3c;
-            --bg: #f4f7f6;
+            --secondary: #34495e;
+            --highlight: #2980b9;
+            --bg: #f4f6f8;
             --card: #ffffff;
-            --text: #333333;
-            --border: #dddddd;
-            --shadow: 0 2px 5px rgba(0,0,0,0.1);
+            --text: #2c3e50;
+            --border: #dfe6e9;
+            --danger: #c0392b;
+            --success: #27ae60;
         }
 
         body.dark-mode {
-            --primary: #1a1a1a;
-            --secondary: #2980b9;
+            --primary: #ecf0f1;
+            --secondary: #bdc3c7;
+            --highlight: #3498db;
             --bg: #121212;
             --card: #1e1e1e;
-            --text: #e0e0e0;
+            --text: #ecf0f1;
             --border: #333;
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
         
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
             background-color: var(--bg);
             color: var(--text);
             margin: 0;
             padding: 0;
-            padding-bottom: 80px; /* Miejsce na stopkę/toast */
+            padding-bottom: 50px;
             transition: background 0.3s, color 0.3s;
         }
 
-        /* Toolbar / Nawigacja */
+        /* Top Navigation */
         .navbar {
-            background: var(--primary);
-            color: white;
-            padding: 10px 15px;
+            background: #ffffff;
+            color: var(--primary);
+            padding: 15px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             position: sticky;
             top: 0;
             z-index: 100;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            border-bottom: 1px solid var(--border);
         }
+        body.dark-mode .navbar { background: #1e1e1e; border-bottom: 1px solid #333; }
 
-        .app-title { font-weight: bold; font-size: 1.1rem; }
-        
-        .menu-btn {
-            background: none;
-            border: none;
-            color: white;
-            font-size: 1.5rem;
-            padding: 5px;
-            cursor: pointer;
-        }
+        .app-title { font-weight: 700; font-size: 1.1rem; letter-spacing: 0.5px; color: var(--highlight); }
+        .menu-btn { background: none; border: none; color: var(--text); font-size: 1.4rem; padding: 5px; cursor: pointer; }
 
-        /* Menu rozwijane */
-        .dropdown-overlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.5);
-            z-index: 998;
-        }
-        
+        /* Side Menu */
+        .dropdown-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 998; backdrop-filter: blur(2px); }
         .main-menu {
-            position: fixed;
-            top: 0;
-            right: -260px;
-            width: 260px;
-            height: 100%;
-            background: var(--card);
-            z-index: 999;
-            transition: right 0.3s ease;
-            box-shadow: -2px 0 10px rgba(0,0,0,0.2);
-            padding-top: 60px;
-            overflow-y: auto;
+            position: fixed; top: 0; right: -280px; width: 280px; height: 100%;
+            background: var(--card); z-index: 999; transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: -5px 0 15px rgba(0,0,0,0.1); padding-top: 60px;
         }
-
         .main-menu.open { right: 0; }
-        .menu-close { position: absolute; top: 15px; right: 15px; font-size: 1.5rem; background:none; border:none; color: var(--text); }
+        .menu-close { position: absolute; top: 15px; right: 20px; font-size: 1.5rem; background:none; border:none; color: var(--text); cursor: pointer; }
 
         .menu-item {
-            display: block;
-            width: 100%;
-            padding: 15px 20px;
-            text-align: left;
-            background: none;
-            border: none;
-            border-bottom: 1px solid var(--border);
-            color: var(--text);
-            font-size: 1rem;
+            display: flex; align-items: center; width: 100%; padding: 15px 25px;
+            text-align: left; background: none; border: none; border-bottom: 1px solid var(--border);
+            color: var(--text); font-size: 0.95rem; cursor: pointer;
         }
-        .menu-item i { margin-right: 10px; width: 25px; text-align: center; color: var(--secondary); }
-        .menu-header { padding: 10px 20px; font-weight: bold; color: var(--secondary); background: rgba(0,0,0,0.03); }
+        .menu-item:active { background: rgba(0,0,0,0.05); }
+        .menu-item i { margin-right: 15px; width: 20px; text-align: center; color: var(--highlight); opacity: 0.8; }
+        .menu-header { padding: 15px 25px 5px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; color: var(--secondary); letter-spacing: 1px; margin-top: 10px; opacity: 0.7; }
 
-        /* Kontener główny */
-        .container { padding: 15px; max-width: 800px; margin: 0 auto; }
-
+        /* Main Container */
+        .container { padding: 20px; max-width: 800px; margin: 0 auto; }
+        
         .card {
-            background: var(--card);
-            border-radius: 12px;
-            padding: 15px;
-            margin-bottom: 20px;
-            box-shadow: var(--shadow);
+            background: var(--card); border-radius: 12px; padding: 25px;
+            margin-bottom: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.03); border: 1px solid var(--border);
         }
 
-        /* Formularze */
-        label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9rem; }
-        
+        /* Inputs */
+        label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.85rem; color: var(--secondary); text-transform: uppercase; letter-spacing: 0.5px; }
         input, textarea, select {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            background: var(--bg);
-            color: var(--text);
-            font-size: 16px; /* Zapobiega zoomowaniu na iPhone */
-            margin-bottom: 15px;
+            width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px;
+            background: var(--bg); color: var(--text); font-size: 16px; margin-bottom: 20px;
+            font-family: inherit; transition: border-color 0.2s;
         }
+        input:focus, textarea:focus { border-color: var(--highlight); }
+        textarea { height: 120px; font-family: 'Monaco', 'Consolas', monospace; line-height: 1.5; resize: vertical; }
 
-        textarea { height: 100px; font-family: monospace; resize: vertical; }
-
-        /* Przyciski Główne - Duże i wygodne */
-        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
-        .btn-full { width: 100%; }
-
+        /* Buttons */
         .btn {
-            border: none;
-            border-radius: 8px;
-            padding: 12px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            transition: transform 0.1s;
+            border: none; border-radius: 8px; padding: 14px; font-size: 0.95rem; font-weight: 600;
+            cursor: pointer; color: white; display: flex; align-items: center; justify-content: center;
+            gap: 10px; transition: opacity 0.2s; width: 100%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        .btn:active { transform: scale(0.98); }
-
-        .btn-primary { background: var(--secondary); }
+        .btn:active { transform: translateY(1px); box-shadow: none; }
+        .btn-primary { background: var(--highlight); }
         .btn-danger { background: var(--danger); }
-        .btn-success { background: var(--success); }
-        .btn-neutral { background: #7f8c8d; }
+        .btn-neutral { background: #95a5a6; }
+        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
 
-        /* Tabela */
-        .table-container {
-            overflow-x: auto;
-            border-radius: 8px;
-            border: 1px solid var(--border);
-        }
-
-        table { width: 100%; border-collapse: collapse; min-width: 500px; }
+        /* Table */
+        .table-container { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border); margin-top: 10px; }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: #f8f9fa; color: var(--secondary); padding: 12px 15px; text-align: left; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; border-bottom: 2px solid var(--border); white-space: nowrap; }
+        body.dark-mode th { background: #2c2c2c; }
         
-        th { background: var(--primary); color: white; padding: 12px; text-align: left; }
+        td { padding: 14px 15px; border-bottom: 1px solid var(--border); color: var(--text); font-size: 0.95rem; vertical-align: middle; }
         
-        td {
-            padding: 12px;
-            border-bottom: 1px solid var(--border);
-            color: var(--text);
-        }
-
-        /* Styl wiersza do klikania */
-        tbody tr { cursor: pointer; }
-        tbody tr:active { background-color: rgba(52, 152, 219, 0.1); }
+        /* Row Styling */
+        tbody tr:last-child td { border-bottom: none; }
+        tbody tr { cursor: pointer; transition: background 0.1s; }
+        tbody tr:hover { background-color: rgba(0,0,0,0.02); }
         
-        /* Błędy */
-        tr.error-row { background-color: rgba(231, 76, 60, 0.15); }
+        tr.error-row { background-color: rgba(192, 57, 43, 0.08); }
         tr.error-row td:first-child { border-left: 4px solid var(--danger); }
 
-        .edit-icon { color: var(--secondary); opacity: 0.5; float: right; }
+        .client-col { font-weight: 500; }
+        .time-col { font-family: 'Monaco', monospace; font-weight: 600; text-align: right; color: var(--highlight); }
 
-        /* Podsumowanie */
-        .summary-box {
-            text-align: right;
-            font-size: 1.1rem;
-            font-weight: bold;
-            color: var(--secondary);
-            margin-top: 10px;
-            padding: 10px;
-            border-top: 2px solid var(--border);
+        /* Summary */
+        .summary-row {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-top: 20px; padding-top: 20px; border-top: 1px dashed var(--border);
         }
+        .summary-label { font-size: 0.9rem; color: var(--secondary); font-weight: 600; text-transform: uppercase; }
+        .summary-value { font-size: 1.5rem; color: var(--text); font-weight: 700; font-family: 'Monaco', monospace; }
 
-        /* Modale */
+        /* Modals */
         .modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6);
-            z-index: 2000;
-            justify-content: center;
-            align-items: flex-end; /* Mobile: slide from bottom */
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); z-index: 2000; justify-content: center; align-items: flex-end;
+            backdrop-filter: blur(2px);
         }
-        
         .modal.open { display: flex; }
-
         .modal-content {
-            background: var(--card);
-            width: 100%;
-            max-width: 600px;
-            max-height: 90vh;
-            border-radius: 15px 15px 0 0;
-            padding: 20px;
-            overflow-y: auto;
-            animation: slideUp 0.3s ease;
+            background: var(--card); width: 100%; max-width: 600px;
+            border-radius: 20px 20px 0 0; padding: 30px;
+            animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
-
-        @media (min-width: 768px) {
-            .modal { align-items: center; }
-            .modal-content { border-radius: 12px; width: 90%; }
-        }
-
+        @media (min-width: 768px) { .modal { align-items: center; } .modal-content { border-radius: 12px; width: 90%; } }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; font-size: 1.2rem; font-weight: 700; }
 
-        .modal-header { display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 1.2rem; font-weight: bold; }
-
-        /* Toast Notifications */
+        /* Toast */
         .toast {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%) translateY(100px);
-            background: #333;
-            color: white;
-            padding: 12px 24px;
-            border-radius: 25px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            z-index: 3000;
-            opacity: 0;
-            transition: all 0.3s;
-            white-space: nowrap;
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px);
+            background: #333; color: white; padding: 12px 24px; border-radius: 50px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2); z-index: 3000; opacity: 0; transition: all 0.4s;
+            font-weight: 500; font-size: 0.9rem; display: flex; align-items: center; gap: 8px;
         }
         .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
-
-        /* Tabs for Stats */
-        .tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 15px; }
-        .tab { flex: 1; text-align: center; padding: 10px; cursor: pointer; border-bottom: 3px solid transparent; }
-        .tab.active { border-bottom-color: var(--secondary); font-weight: bold; color: var(--secondary); }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-
     </style>
 </head>
 <body>
 
     <nav class="navbar">
-        <div class="app-title">WojThom 4.0</div>
+        <div class="app-title">WojThom 6.0</div>
         <button class="menu-btn" id="menuToggle"><i class="fas fa-bars"></i></button>
     </nav>
 
@@ -270,60 +179,61 @@
     <div class="main-menu" id="mainMenu">
         <button class="menu-close" id="menuClose">&times;</button>
         
-        <div class="menu-header" id="txt_menu_file">Plik</div>
-        <button class="menu-item" onclick="openModal('exportModal')"><i class="fas fa-file-pdf"></i> <span id="txt_export">Eksportuj PDF</span></button>
-        <button class="menu-item" onclick="toggleTheme()"><i class="fas fa-moon"></i> <span id="txt_theme">Tryb Ciemny</span></button>
+        <div class="menu-header" id="txt_menu_file">File</div>
+        <button class="menu-item" onclick="openModal('exportModal')"><i class="fas fa-file-pdf"></i> <span id="txt_export">Export PDF</span></button>
+        <button class="menu-item" onclick="clearData()"><i class="fas fa-trash"></i> <span id="txt_clear">Clear Data</span></button>
         
-        <div class="menu-header" id="txt_menu_tools">Narzędzia</div>
-        <button class="menu-item" onclick="showStatistics()"><i class="fas fa-chart-pie"></i> <span id="txt_stats">Statystyki</span></button>
-        <button class="menu-item" onclick="openModal('filterModal')"><i class="fas fa-filter"></i> <span id="txt_filter">Filtruj</span></button>
-        <button class="menu-item" onclick="clearData()"><i class="fas fa-trash"></i> <span id="txt_clear">Wyczyść</span></button>
+        <div class="menu-header" id="txt_menu_tools">Tools</div>
+        <button class="menu-item" onclick="showStatistics()"><i class="fas fa-chart-pie"></i> <span id="txt_stats">Statistics</span></button>
+        <button class="menu-item" onclick="openModal('filterModal')"><i class="fas fa-filter"></i> <span id="txt_filter">Filter</span></button>
         
-        <div class="menu-header" id="txt_menu_lang">Język</div>
+        <div class="menu-header" id="txt_menu_settings">Settings</div>
+        <button class="menu-item" onclick="toggleTheme()"><i class="fas fa-adjust"></i> <span id="txt_theme">Dark Mode</span></button>
+        <button class="menu-item" onclick="setLanguage('en')">🇬🇧 English</button>
         <button class="menu-item" onclick="setLanguage('no')">🇳🇴 Norsk</button>
         <button class="menu-item" onclick="setLanguage('pl')">🇵🇱 Polski</button>
-        <button class="menu-item" onclick="setLanguage('en')">🇬🇧 English</button>
     </div>
 
     <div class="container">
         
         <div class="card">
-            <label for="headerInput" id="lbl_header">Nagłówek listy:</label>
-            <input type="text" id="headerInput" value="Tidsliste">
+            <label for="headerInput" id="lbl_header">Report Title</label>
+            <input type="text" id="headerInput" value="Time Report">
             
-            <label for="rawInput" id="lbl_input">Wklej dane (Data Klient Czas):</label>
-            <textarea id="rawInput" placeholder="np. 12.05 Firma ABC 08:00-16:00"></textarea>
+            <label for="rawInput" id="lbl_input">Paste Data (Date | Client | Hours)</label>
+            <textarea id="rawInput" placeholder="Examples:&#10;12.05 Client A 08:00-16:00&#10;13.05 Client B 0.75&#10;14.05 Client C 8h"></textarea>
             
-            <button class="btn btn-primary btn-full" onclick="processData()">
-                <i class="fas fa-play"></i> <span id="btn_generate">Generuj Listę</span>
+            <button class="btn btn-primary" onclick="processData()">
+                <i class="fas fa-check"></i> <span id="btn_generate">Generate List</span>
             </button>
         </div>
 
         <div class="card" id="resultCard" style="display:none;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                <h3 style="margin:0; font-size:1.1rem; color:var(--secondary);" id="lbl_result">Wynik:</h3>
-                <small style="color:var(--text); opacity:0.7;">(Kliknij wiersz aby edytować)</small>
+            <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
+                <label id="lbl_result">Result</label>
             </div>
 
             <div class="table-container">
                 <table id="resultTable">
                     <thead>
                         <tr>
-                            <th id="th_date">Data</th>
-                            <th id="th_client">Klient</th>
-                            <th id="th_hours">Godziny</th>
-                            <th id="th_time">Czas</th>
+                            <th id="th_date">Date</th>
+                            <th id="th_client">Client / Note</th>
+                            <th id="th_time" style="text-align:right">Time Entered</th>
                         </tr>
                     </thead>
                     <tbody id="tableBody"></tbody>
                 </table>
             </div>
             
-            <div class="summary-box" id="summaryBox">Suma: 0:00</div>
+            <div class="summary-row">
+                <div class="summary-label" id="lbl_total">Total Hours</div>
+                <div class="summary-value" id="summaryValue">0:00</div>
+            </div>
             
-            <div style="margin-top:15px;">
-                <button class="btn btn-danger btn-full" onclick="openModal('exportModal')">
-                    <i class="fas fa-file-pdf"></i> <span id="btn_export_bottom">Pobierz PDF</span>
+            <div class="btn-group">
+                <button class="btn btn-danger" onclick="openModal('exportModal')">
+                    <i class="fas fa-file-pdf"></i> PDF
                 </button>
             </div>
         </div>
@@ -332,193 +242,183 @@
     <div id="editModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <span id="modal_edit_title">Edytuj Wpis</span>
+                <span id="modal_edit_title">Edit Entry</span>
                 <span onclick="closeModal('editModal')" style="cursor:pointer">&times;</span>
             </div>
             <input type="hidden" id="editIndex">
             
-            <label id="lbl_edit_date">Data</label>
+            <label id="lbl_edit_date">Date</label>
             <input type="text" id="editDate">
             
-            <label id="lbl_edit_client">Klient</label>
+            <label id="lbl_edit_client">Client</label>
             <input type="text" id="editClient">
             
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                <div>
-                    <label id="lbl_edit_start">Start</label>
-                    <input type="text" id="editStart">
-                </div>
-                <div>
-                    <label id="lbl_edit_end">Koniec</label>
-                    <input type="text" id="editEnd">
-                </div>
-            </div>
-            
-            <label id="lbl_edit_work">Czas pracy (opcjonalnie)</label>
-            <input type="text" id="editWork">
+            <label id="lbl_edit_display">Display Time (Exact text on PDF)</label>
+            <input type="text" id="editDisplayTime" placeholder="e.g. 0.75 or 08:00-16:00">
+            <small style="color:#7f8c8d; display:block; margin-top:-15px; margin-bottom:15px;">The system calculates math from this automatically.</small>
 
             <div class="btn-group">
-                <button class="btn btn-neutral" onclick="closeModal('editModal')" id="btn_cancel">Anuluj</button>
-                <button class="btn btn-success" onclick="saveEdit()" id="btn_save">Zapisz</button>
+                <button class="btn btn-neutral" onclick="closeModal('editModal')" id="btn_cancel">Cancel</button>
+                <button class="btn btn-primary" onclick="saveEdit()" id="btn_save">Save</button>
             </div>
-            <button class="btn btn-danger btn-full" onclick="deleteEntry()" style="margin-top:10px;" id="btn_delete">Usuń wiersz</button>
-        </div>
-    </div>
-
-    <div id="filterModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <span id="modal_filter_title">Filtrowanie</span>
-                <span onclick="closeModal('filterModal')" style="cursor:pointer">&times;</span>
-            </div>
-            <label id="lbl_filter_client">Klient:</label>
-            <select id="filterClient"><option value="">Wszyscy</option></select>
-            
-            <div class="btn-group" style="margin-top:20px;">
-                <button class="btn btn-neutral" onclick="resetFilter()" id="btn_reset">Reset</button>
-                <button class="btn btn-primary" onclick="applyFilter()" id="btn_apply">Filtruj</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="statsModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <span id="modal_stats_title">Statystyki</span>
-                <span onclick="closeModal('statsModal')" style="cursor:pointer">&times;</span>
-            </div>
-            
-            <div class="tabs">
-                <div class="tab active" onclick="switchTab('timeChartTab')" id="tab_date">Wg Daty</div>
-                <div class="tab" onclick="switchTab('clientChartTab')" id="tab_client">Wg Klienta</div>
-            </div>
-            
-            <div id="timeChartTab" class="tab-content active" style="height:300px; position:relative;">
-                <canvas id="timeChartCanvas"></canvas>
-            </div>
-            <div id="clientChartTab" class="tab-content" style="height:300px; position:relative;">
-                <canvas id="clientChartCanvas"></canvas>
-            </div>
-            
-            <button class="btn btn-neutral btn-full" onclick="closeModal('statsModal')" style="margin-top:15px;">Zamknij</button>
+            <button class="btn btn-danger" onclick="deleteEntry()" style="margin-top:15px;" id="btn_delete">Delete</button>
         </div>
     </div>
 
     <div id="exportModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <span id="modal_export_title">Wybierz język PDF</span>
+                <span id="modal_export_title">Select Language</span>
                 <span onclick="closeModal('exportModal')" style="cursor:pointer">&times;</span>
             </div>
-            <p id="lbl_export_desc">W jakim języku wygenerować dokument?</p>
-            <button class="btn btn-primary btn-full" onclick="generatePDF('no')" style="margin-bottom:10px;">🇳🇴 Norsk</button>
-            <button class="btn btn-primary btn-full" onclick="generatePDF('pl')" style="margin-bottom:10px;">🇵🇱 Polski</button>
-            <button class="btn btn-primary btn-full" onclick="generatePDF('en')">🇬🇧 English</button>
+            <button class="btn btn-primary" onclick="generatePDF('en')" style="margin-bottom:10px;">🇬🇧 English</button>
+            <button class="btn btn-primary" onclick="generatePDF('no')" style="margin-bottom:10px;">🇳🇴 Norsk</button>
+            <button class="btn btn-primary" onclick="generatePDF('pl')">🇵🇱 Polski</button>
         </div>
     </div>
 
-    <div id="toast" class="toast">Powiadomienie</div>
+    <div id="filterModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span id="modal_filter_title">Filter</span>
+                <span onclick="closeModal('filterModal')" style="cursor:pointer">&times;</span>
+            </div>
+            <select id="filterClient"><option value="">All Clients</option></select>
+            <div class="btn-group">
+                <button class="btn btn-neutral" onclick="resetFilter()" id="btn_reset">Reset</button>
+                <button class="btn btn-primary" onclick="applyFilter()" id="btn_apply">Apply</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="statsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span id="txt_stats_title">Statistics</span>
+                <span onclick="closeModal('statsModal')" style="cursor:pointer">&times;</span>
+            </div>
+            <div style="height:300px;"><canvas id="chartCanvas"></canvas></div>
+            <button class="btn btn-neutral" onclick="closeModal('statsModal')" style="margin-top:20px;">Close</button>
+        </div>
+    </div>
+
+    <div id="toast" class="toast">Message</div>
 
     <script>
-        // --- Konfiguracja i Języki ---
+        // --- DATA & CONFIG ---
         const translations = {
+            en: {
+                header: "Report Title", input: "Paste Data (Date | Client | Hours)", generate: "Generate List",
+                result: "Result", date: "Date", client: "Client / Note", time: "Time Entered", total: "Total Hours",
+                file: "File", tools: "Tools", settings: "Settings", export: "Export PDF", clear: "Clear Data",
+                stats: "Statistics", filter: "Filter", theme: "Dark Mode",
+                edit_title: "Edit Entry", display_time: "Display Time (Exact text)", 
+                save: "Save", cancel: "Cancel", delete: "Delete",
+                export_title: "Select Language", filter_title: "Filter", reset: "Reset", apply: "Apply",
+                toast_gen: "List generated!", toast_err: "Check red highlighted rows",
+                pdf_gen: "Generated on", pdf_page: "Page", sum: "Total"
+            },
             pl: {
-                header: "Nagłówek:", input: "Dane wejściowe:", generate: "Generuj", result: "Wynik:",
-                date: "Data", client: "Klient", hours: "Godz. pracy", time: "Czas",
-                sum: "Suma całkowita", file: "Plik", tools: "Narzędzia", lang: "Język",
-                export: "Eksportuj PDF", theme: "Tryb Ciemny", stats: "Statystyki", filter: "Filtruj", clear: "Wyczyść",
-                edit_title: "Edycja", save: "Zapisz", cancel: "Anuluj", delete: "Usuń",
-                toast_gen: "Wygenerowano listę!", toast_save: "Zapisano zmiany", toast_err: "Sprawdź błędy (czerwone)",
-                filter_title: "Filtruj", filter_client: "Wybierz klienta", reset: "Resetuj", apply: "Zastosuj",
-                export_title: "Eksport PDF", export_desc: "Wybierz język dokumentu:",
-                tab_date: "Wg Daty", tab_client: "Wg Klienta"
+                header: "Tytuł Raportu", input: "Wklej Dane (Data | Klient | Godziny)", generate: "Generuj Listę",
+                result: "Wynik", date: "Data", client: "Klient / Opis", time: "Wpisany Czas", total: "Suma Godzin",
+                file: "Plik", tools: "Narzędzia", settings: "Ustawienia", export: "Eksport PDF", clear: "Wyczyść",
+                stats: "Statystyki", filter: "Filtruj", theme: "Tryb Ciemny",
+                edit_title: "Edycja Wpisu", display_time: "Wyświetlany Czas (Dokładny tekst)", 
+                save: "Zapisz", cancel: "Anuluj", delete: "Usuń",
+                export_title: "Wybierz Język", filter_title: "Filtrowanie", reset: "Reset", apply: "Zastosuj",
+                toast_gen: "Lista wygenerowana!", toast_err: "Sprawdź błędy (na czerwono)",
+                pdf_gen: "Wygenerowano", pdf_page: "Strona", sum: "Razem"
             },
             no: {
-                header: "Overskrift:", input: "Lim inn data:", generate: "Generer", result: "Resultat:",
-                date: "Dato", client: "Kunde", hours: "Tidspunkt", time: "Tid",
-                sum: "Sum totalt", file: "Fil", tools: "Verktøy", lang: "Språk",
-                export: "Eksporter PDF", theme: "Mørk modus", stats: "Statistikk", filter: "Filter", clear: "Tøm",
-                edit_title: "Rediger", save: "Lagre", cancel: "Avbryt", delete: "Slett",
-                toast_gen: "Liste generert!", toast_save: "Lagret", toast_err: "Sjekk feil (rød)",
-                filter_title: "Filter", filter_client: "Velg kunde", reset: "Tilbakestill", apply: "Bruk",
-                export_title: "Eksport PDF", export_desc: "Velg dokumentspråk:",
-                tab_date: "Etter Dato", tab_client: "Etter Kunde"
-            },
-            en: {
-                header: "Header:", input: "Paste data:", generate: "Generate", result: "Result:",
-                date: "Date", client: "Client", hours: "Hours", time: "Time",
-                sum: "Total Sum", file: "File", tools: "Tools", lang: "Language",
-                export: "Export PDF", theme: "Dark Mode", stats: "Statistics", filter: "Filter", clear: "Clear",
-                edit_title: "Edit", save: "Save", cancel: "Cancel", delete: "Delete",
-                toast_gen: "List generated!", toast_save: "Saved", toast_err: "Check errors (red)",
-                filter_title: "Filter", filter_client: "Select client", reset: "Reset", apply: "Apply",
-                export_title: "Export PDF", export_desc: "Select document language:",
-                tab_date: "By Date", tab_client: "By Client"
+                header: "Rapporttittel", input: "Lim inn data (Dato | Kunde | Timer)", generate: "Generer Liste",
+                result: "Resultat", date: "Dato", client: "Kunde / Notat", time: "Tid Skrevet", total: "Totalt Timer",
+                file: "Fil", tools: "Verktøy", settings: "Innstillinger", export: "Eksport PDF", clear: "Tøm Data",
+                stats: "Statistikk", filter: "Filter", theme: "Mørk Modus",
+                edit_title: "Rediger Oppføring", display_time: "Vist Tid (Eksakt tekst)", 
+                save: "Lagre", cancel: "Avbryt", delete: "Slett",
+                export_title: "Velg Språk", filter_title: "Filter", reset: "Tilbakestill", apply: "Bruk",
+                toast_gen: "Liste generert!", toast_err: "Sjekk røde feil",
+                pdf_gen: "Generert", pdf_page: "Side", sum: "Totalt"
             }
         };
 
-        let currentLang = localStorage.getItem('wt_lang') || 'pl';
+        let currentLang = localStorage.getItem('wt6_lang') || 'en';
         let entries = [];
-        let originalEntries = null; // Do filtrowania
-        let charts = {};
+        let originalEntries = null;
+        let myChart = null;
 
-        // --- Inicjalizacja ---
+        // --- INIT ---
         document.addEventListener('DOMContentLoaded', () => {
-            loadFromStorage();
-            applyLanguage(currentLang);
+            loadStorage();
+            setLanguage(currentLang);
             if(document.getElementById('rawInput').value.trim()) processData();
-            
-            // Obsługa Menu
+
             document.getElementById('menuToggle').onclick = () => {
                 document.getElementById('mainMenu').classList.add('open');
                 document.getElementById('menuOverlay').style.display = 'block';
             };
-            
             const closeMenu = () => {
                 document.getElementById('mainMenu').classList.remove('open');
                 document.getElementById('menuOverlay').style.display = 'none';
             };
-            
             document.getElementById('menuClose').onclick = closeMenu;
             document.getElementById('menuOverlay').onclick = closeMenu;
-            
-            // Auto-save input
-            document.getElementById('rawInput').addEventListener('input', () => {
-                localStorage.setItem('wt_input', document.getElementById('rawInput').value);
-            });
-            document.getElementById('headerInput').addEventListener('input', () => {
-                localStorage.setItem('wt_header', document.getElementById('headerInput').value);
+
+            ['rawInput', 'headerInput'].forEach(id => {
+                document.getElementById(id).addEventListener('input', () => {
+                    localStorage.setItem('wt6_' + id, document.getElementById(id).value);
+                });
             });
         });
 
-        function loadFromStorage() {
-            const savedInput = localStorage.getItem('wt_input');
-            const savedHeader = localStorage.getItem('wt_header');
-            const savedTheme = localStorage.getItem('wt_theme');
-            
+        function loadStorage() {
+            const savedInput = localStorage.getItem('wt6_rawInput');
+            const savedHeader = localStorage.getItem('wt6_headerInput');
+            const savedTheme = localStorage.getItem('wt6_theme');
             if(savedInput) document.getElementById('rawInput').value = savedInput;
             if(savedHeader) document.getElementById('headerInput').value = savedHeader;
             if(savedTheme === 'dark') document.body.classList.add('dark-mode');
         }
 
-        // --- Logika Biznesowa ---
-        function parseTime(str) {
+        // --- CORE LOGIC ---
+        function calculateMinutes(str) {
             if(!str) return 0;
-            str = str.replace(/[.,]/g, ':').replace(/[ht\s]/gi, ''); // clean
-            let parts = str.split(':');
-            let m = 0;
-            if (parts.length === 2) {
-                m = parseInt(parts[0])*60 + parseInt(parts[1]);
-            } else if (parts.length === 1 && !isNaN(parseFloat(parts[0]))) {
-                // decimal hours ex. 1.5
-                m = Math.round(parseFloat(parts[0]) * 60);
+            str = str.trim();
+            
+            // 1. Check Range (HH:MM - HH:MM)
+            let rangeMatch = str.match(/(\d{1,2}[:.]\d{2})\s*[-–]\s*(\d{1,2}[:.]\d{2})/);
+            if(rangeMatch) {
+                let s = parseToMins(rangeMatch[1]);
+                let e = parseToMins(rangeMatch[2]);
+                return e - s;
             }
-            return isNaN(m) ? 0 : m;
+
+            // 2. Check Explicit Duration (e.g., 8h, 30m)
+            if(str.match(/\dh/i) || str.match(/\dm/i)) {
+                 let h = parseInt(str.match(/(\d+)h/i)?.[1] || 0);
+                 let m = parseInt(str.match(/(\d+)m/i)?.[1] || 0);
+                 return (h * 60) + m;
+            }
+
+            // 3. Check Decimal or Clean Number (0.75 or 8)
+            // Replace comma with dot
+            let clean = str.replace(',', '.').replace(/[^\d.]/g, '');
+            if(!isNaN(parseFloat(clean))) {
+                return Math.round(parseFloat(clean) * 60);
+            }
+
+            return 0;
         }
 
-        function minsToStr(mins) {
+        function parseToMins(timeStr) {
+            timeStr = timeStr.replace('.', ':');
+            let [h, m] = timeStr.split(':').map(Number);
+            return (h * 60) + (m || 0);
+        }
+
+        function minsToTotalStr(mins) {
             let h = Math.floor(mins / 60);
-            let m = mins % 60;
+            let m = Math.round(mins % 60);
             return `${h}:${m.toString().padStart(2,'0')}`;
         }
 
@@ -526,70 +426,57 @@
             const raw = document.getElementById('rawInput').value;
             const lines = raw.split('\n');
             entries = [];
-            let hasError = false;
+            let hasErr = false;
 
             lines.forEach(line => {
                 if(!line.trim()) return;
                 
-                let entry = {
-                    original: line,
-                    date: '', client: '', start: '', end: '', workStr: '', mins: 0,
-                    error: false
-                };
+                let e = { original: line, date: '', client: '', displayTime: '', minutes: 0, error: false };
 
-                // Regex do parsowania
-                // 1. Data (DD.MM lub DD-MM)
+                // 1. Date (Start of line)
                 let dateMatch = line.match(/^(\d{1,2}[.,/-]\d{1,2})/);
                 let rest = line;
                 
                 if(dateMatch) {
-                    entry.date = dateMatch[1].replace(/[.,/]/, '-');
+                    e.date = dateMatch[1].replace(/[.,/]/, '-');
                     rest = line.substring(dateMatch[0].length).trim();
                 } else {
-                    entry.error = true;
-                    entry.client = line; // Cała linia jako klient jeśli brak daty
+                    e.error = true;
+                    e.client = line; // Fail safe
                 }
 
-                // 2. Czas (HH:MM-HH:MM lub Xh)
+                // 2. Extract Time String (End of line usually)
+                // Look for Range first
                 let rangeMatch = rest.match(/(\d{1,2}[:.]\d{2})\s*[-–]\s*(\d{1,2}[:.]\d{2})/);
-                let durMatch = rest.match(/(\d+([.,]\d+)?)\s*[ht](?!\w)/i) || rest.match(/\s(\d+([.,]\d+)?)$/);
-
+                // Look for Decimal/Hours at end
+                let decimalMatch = rest.match(/(\d+([.,]\d+)?\s*[h]?)$/i);
+                
                 if(rangeMatch) {
-                    entry.start = rangeMatch[1].replace('.',':');
-                    entry.end = rangeMatch[2].replace('.',':');
-                    let startM = parseTime(entry.start);
-                    let endM = parseTime(entry.end);
-                    entry.mins = endM - startM;
-                    entry.workStr = minsToStr(entry.mins);
-                    // Klient to co jest przed czasem
-                    entry.client = rest.substring(0, rangeMatch.index).trim();
-                } else if (durMatch) {
-                    entry.workStr = durMatch[1];
-                    entry.mins = parseTime(durMatch[1]);
-                    entry.client = rest.substring(0, durMatch.index).trim();
+                    e.displayTime = rangeMatch[0]; // Exact text
+                    e.minutes = calculateMinutes(e.displayTime);
+                    e.client = rest.replace(e.displayTime, '').trim();
+                } else if(decimalMatch) {
+                    e.displayTime = decimalMatch[0].trim(); // Exact text (e.g. 0.75)
+                    e.minutes = calculateMinutes(e.displayTime);
+                    e.client = rest.substring(0, decimalMatch.index).trim();
                 } else {
-                    if(!entry.error) entry.error = true; // Brak czasu
-                    entry.client = rest;
+                    // Fallback: try to find anything looking like time
+                    e.error = true;
+                    e.client = rest;
                 }
 
-                if(!entry.client) entry.client = "?";
-                if(entry.mins <= 0 && !entry.error) { entry.error = true; entry.mins = 0; }
+                if(!e.client) e.client = "?";
+                if(e.minutes <= 0 && !e.error) { e.error = true; } // Flag if calc failed
 
-                entries.push(entry);
-                if(entry.error) hasError = true;
+                entries.push(e);
+                if(e.error) hasErr = true;
             });
 
-            originalEntries = [...entries]; // Kopia do filtra
+            originalEntries = [...entries];
             renderTable();
             document.getElementById('resultCard').style.display = 'block';
-            
-            if(hasError) showToast(translations[currentLang].toast_err, true);
-            else showToast(translations[currentLang].toast_gen);
-            
-            // Scroll to result on mobile
-            if(window.innerWidth < 768) {
-                document.getElementById('resultCard').scrollIntoView({behavior: 'smooth'});
-            }
+            if(window.innerWidth < 768) document.getElementById('resultCard').scrollIntoView({behavior:'smooth'});
+            showToast(hasErr ? translations[currentLang].toast_err : translations[currentLang].toast_gen, hasErr);
         }
 
         function renderTable() {
@@ -597,301 +484,183 @@
             tbody.innerHTML = '';
             let totalMins = 0;
 
-            entries.forEach((e, idx) => {
+            entries.forEach((e, i) => {
                 let tr = document.createElement('tr');
                 if(e.error) tr.className = 'error-row';
-                tr.onclick = () => openEdit(idx);
-                
-                // Dla mobile: dodaj ikonkę ołówka w ostatniej kolumnie lub przy kliencie
+                tr.onclick = () => openEdit(i);
+
                 tr.innerHTML = `
-                    <td>${e.date}</td>
-                    <td>
-                        <div style="font-weight:500">${e.client}</div>
-                        ${window.innerWidth < 600 ? `<small style="opacity:0.7">${e.start ? e.start + '-' + e.end : ''}</small>` : ''}
-                    </td>
-                    ${window.innerWidth >= 600 ? `<td>${e.start} - ${e.end}</td>` : ''} <td>
-                        <strong>${e.workStr}</strong>
-                        <i class="fas fa-pen edit-icon"></i>
-                    </td>
+                    <td style="width:20%">${e.date}</td>
+                    <td class="client-col">${e.client}</td>
+                    <td class="time-col">${e.displayTime || '?'}</td>
                 `;
-                
-                if(!e.error) totalMins += e.mins;
+                if(!e.error) totalMins += e.minutes;
                 tbody.appendChild(tr);
             });
-
-            document.getElementById('summaryBox').innerText = `${translations[currentLang].sum}: ${minsToStr(totalMins)}`;
+            
+            document.getElementById('summaryValue').innerText = minsToTotalStr(totalMins);
         }
 
-        // --- Edycja ---
-        function openEdit(idx) {
-            // Jeśli jest filtrowanie, musimy znaleźć oryginalny indeks, ale uprośćmy:
-            // Edycja działa na aktualnie wyświetlanej tablicy 'entries'.
-            // Jeśli filtrowanie jest aktywne, edycja zmienia tylko widok? Nie, powinno zmieniać oryginał.
-            // Dla uproszczenia w wersji 4.0: Edycja działa na 'entries'. 
-            // Przy resecie filtra zmiany mogą zostać nadpisane jeśli nie zsynchronizujemy.
-            // Szybki fix: Edytujemy obiekt referencyjny.
-            
-            let e = entries[idx];
-            document.getElementById('editIndex').value = idx;
+        // --- EDITING ---
+        function openEdit(i) {
+            let e = entries[i];
+            document.getElementById('editIndex').value = i;
             document.getElementById('editDate').value = e.date;
             document.getElementById('editClient').value = e.client;
-            document.getElementById('editStart').value = e.start;
-            document.getElementById('editEnd').value = e.end;
-            document.getElementById('editWork').value = e.mins > 0 ? e.workStr : '';
-            
+            document.getElementById('editDisplayTime').value = e.displayTime;
             openModal('editModal');
         }
 
         function saveEdit() {
-            let idx = document.getElementById('editIndex').value;
-            let e = entries[idx];
-            
+            let i = document.getElementById('editIndex').value;
+            let e = entries[i];
             e.date = document.getElementById('editDate').value;
             e.client = document.getElementById('editClient').value;
-            e.start = document.getElementById('editStart').value;
-            e.end = document.getElementById('editEnd').value;
+            e.displayTime = document.getElementById('editDisplayTime').value;
             
-            let manualWork = document.getElementById('editWork').value;
-            
-            // Przelicz
-            if(e.start && e.end) {
-                let s = parseTime(e.start);
-                let end = parseTime(e.end);
-                e.mins = end - s;
-                e.workStr = minsToStr(e.mins);
-                e.error = false;
-            } else if (manualWork) {
-                e.mins = parseTime(manualWork);
-                e.workStr = minsToStr(e.mins);
-                e.error = false;
-            }
-            
-            if(e.mins <= 0) e.error = true;
+            // Recalculate logic based on new display string
+            e.minutes = calculateMinutes(e.displayTime);
+            e.error = (e.minutes <= 0);
 
             renderTable();
             closeModal('editModal');
-            showToast(translations[currentLang].toast_save);
         }
 
         function deleteEntry() {
-            let idx = document.getElementById('editIndex').value;
-            entries.splice(idx, 1);
-            // Synchronize original if filtered? (Advanced feature omitted for stability)
-            if(originalEntries) {
-                 // Simple approach: reset filter data to match
-                 originalEntries = [...entries];
-            }
-            renderTable();
-            closeModal('editModal');
+            entries.splice(document.getElementById('editIndex').value, 1);
+            if(originalEntries) originalEntries = [...entries];
+            renderTable(); closeModal('editModal');
         }
 
-        // --- Funkcje Pomocnicze UI ---
-        function openModal(id) {
-            document.getElementById(id).classList.add('open');
-            // Zamykanie menu jeśli otwarte
-            document.getElementById('mainMenu').classList.remove('open');
-            document.getElementById('menuOverlay').style.display = 'none';
-        }
-
-        function closeModal(id) {
-            document.getElementById(id).classList.remove('open');
-        }
-        
-        // Zamykanie modali klikając w tło
-        window.onclick = function(event) {
-            if (event.target.classList.contains('modal')) {
-                event.target.classList.remove('open');
-            }
-        }
-
-        function showToast(msg, isError = false) {
-            const t = document.getElementById('toast');
-            t.innerText = msg;
-            t.style.background = isError ? 'var(--danger)' : '#333';
-            t.classList.add('show');
-            setTimeout(() => t.classList.remove('show'), 3000);
-        }
-
-        function toggleTheme() {
-            document.body.classList.toggle('dark-mode');
-            let theme = document.body.classList.contains('dark-mode') ? 'dark' : 'light';
-            localStorage.setItem('wt_theme', theme);
-            // Close menu
-            document.getElementById('mainMenu').classList.remove('open');
-            document.getElementById('menuOverlay').style.display = 'none';
-        }
-
-        function clearData() {
-            if(confirm('Na pewno wyczyścić wszystko?')) {
-                document.getElementById('rawInput').value = '';
-                localStorage.setItem('wt_input', '');
-                document.getElementById('resultCard').style.display = 'none';
-                entries = [];
-                document.getElementById('mainMenu').classList.remove('open');
-                document.getElementById('menuOverlay').style.display = 'none';
-            }
-        }
-
-        // --- Tłumaczenia ---
-        function setLanguage(lang) {
-            currentLang = lang;
-            localStorage.setItem('wt_lang', lang);
-            applyLanguage(lang);
-            // Re-render table to update headers/sum
-            if(entries.length > 0) renderTable();
-            document.getElementById('mainMenu').classList.remove('open');
-            document.getElementById('menuOverlay').style.display = 'none';
-        }
-
-        function applyLanguage(lang) {
-            const t = translations[lang];
-            // Mapowanie ID do tekstów
-            const ids = {
-                'lbl_header': t.header, 'lbl_input': t.input, 'btn_generate': t.generate, 'lbl_result': t.result,
-                'th_date': t.date, 'th_client': t.client, 'th_hours': t.hours, 'th_time': t.time,
-                'txt_menu_file': t.file, 'txt_menu_tools': t.tools, 'txt_menu_lang': t.lang,
-                'txt_export': t.export, 'txt_theme': t.theme, 'txt_stats': t.stats, 'txt_filter': t.filter, 'txt_clear': t.clear,
-                'modal_edit_title': t.edit_title, 'btn_save': t.save, 'btn_cancel': t.cancel, 'btn_delete': t.delete,
-                'modal_filter_title': t.filter_title, 'lbl_filter_client': t.filter_client, 'btn_reset': t.reset, 'btn_apply': t.apply,
-                'modal_export_title': t.export_title, 'lbl_export_desc': t.export_desc, 'btn_export_bottom': t.export,
-                'tab_date': t.tab_date, 'tab_client': t.tab_client,
-                'lbl_edit_date': t.date, 'lbl_edit_client': t.client, 'lbl_edit_start': t.hours, 'lbl_edit_end': t.hours, 'lbl_edit_work': t.time
-            };
-
-            for(let id in ids) {
-                let el = document.getElementById(id);
-                if(el) el.innerText = ids[id];
-            }
-        }
-
-        // --- Filtrowanie ---
-        function resetFilter() {
-            if(originalEntries) entries = [...originalEntries];
-            renderTable();
-            closeModal('filterModal');
-        }
-
-        function applyFilter() {
-            const clientVal = document.getElementById('filterClient').value;
-            if(originalEntries && clientVal) {
-                entries = originalEntries.filter(e => e.client === clientVal);
-            } else if (originalEntries) {
-                entries = [...originalEntries];
-            }
-            renderTable();
-            closeModal('filterModal');
-        }
-        
-        // Populate filter dropdown on modal open
-        document.querySelector('[onclick="openModal(\'filterModal\')"]').addEventListener('click', () => {
-            const sel = document.getElementById('filterClient');
-            sel.innerHTML = `<option value="">${translations[currentLang].reset}</option>`;
-            const clients = [...new Set(entries.map(e => e.client))].sort();
-            clients.forEach(c => {
-                let opt = document.createElement('option');
-                opt.value = c;
-                opt.innerText = c;
-                sel.appendChild(opt);
-            });
-        });
-
-        // --- Statystyki ---
-        function showStatistics() {
-            if(entries.length === 0) return alert('Brak danych');
-            openModal('statsModal');
-            
-            // Prepare Data
-            const byDate = {};
-            const byClient = {};
-            
-            entries.forEach(e => {
-                if(e.mins <= 0) return;
-                let h = e.mins / 60;
-                byDate[e.date] = (byDate[e.date] || 0) + h;
-                byClient[e.client] = (byClient[e.client] || 0) + h;
-            });
-            
-            renderChart('timeChartCanvas', Object.keys(byDate), Object.values(byDate), 'bar', '#3498db');
-            renderChart('clientChartCanvas', Object.keys(byClient), Object.values(byClient), 'pie', ['#2ecc71', '#3498db', '#9b59b6', '#f1c40f', '#e74c3c']);
-        }
-        
-        function renderChart(canvasId, labels, data, type, color) {
-            const ctx = document.getElementById(canvasId).getContext('2d');
-            if(charts[canvasId]) charts[canvasId].destroy();
-            
-            charts[canvasId] = new Chart(ctx, {
-                type: type,
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Godziny',
-                        data: data,
-                        backgroundColor: color,
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: type === 'pie' } }
-                }
-            });
-        }
-        
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-            if(tabId === 'timeChartTab') document.getElementById('tab_date').classList.add('active');
-            else document.getElementById('tab_client').classList.add('active');
-        }
-
-        // --- PDF Export ---
+        // --- PDF ---
         function generatePDF(langCode) {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             const t = translations[langCode];
             
-            const title = document.getElementById('headerInput').value;
-            
-            doc.setFontSize(18);
-            doc.text(title, 14, 20);
-            
+            // Modern Corporate Styling
+            const colHeader = [245, 247, 250]; // Light grey bg
+            const colText = [44, 62, 80]; // Dark blue text
+            const colLine = [189, 195, 199];
+
+            // Header Section
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(20);
+            doc.setTextColor(...colText);
+            doc.text(document.getElementById('headerInput').value.toUpperCase(), 14, 20);
+
+            doc.setLineWidth(0.5);
+            doc.setDrawColor(...colLine);
+            doc.line(14, 25, 196, 25);
+
+            // Metadata
             doc.setFontSize(10);
-            doc.text(`${t.date}: ${new Date().toLocaleDateString()}`, 14, 28);
-            
-            let tableData = entries.map(e => [e.date, e.client, e.start ? `${e.start}-${e.end}` : '-', e.workStr]);
-            
-            // Add Sum row
-            let totalMins = entries.reduce((acc, e) => acc + e.mins, 0);
-            tableData.push(['', '', t.sum, minsToStr(totalMins)]);
+            doc.setFont("helvetica", "normal");
+            doc.setTextColor(100);
+            doc.text(`${t.pdf_gen}: ${new Date().toLocaleDateString()}`, 196, 20, { align: 'right' });
+
+            // Table Data
+            let body = entries.map(e => [e.date, e.client, e.displayTime]);
+            let totalMins = entries.reduce((acc, e) => acc + e.minutes, 0);
+
+            // Total Row (Styled differently)
+            body.push(['', '', { content: `${t.sum}: ${minsToTotalStr(totalMins)}`, styles: { fontStyle: 'bold', halign: 'right', fillColor: [240, 240, 240], textColor: colText } }]);
 
             doc.autoTable({
                 startY: 35,
-                head: [[t.date, t.client, t.hours, t.time]],
-                body: tableData,
-                theme: 'striped',
-                headStyles: { fillColor: [44, 62, 80] },
-                styles: { fontSize: 10 },
-                columnStyles: { 
-                    0: { cellWidth: 25 }, 
-                    1: { cellWidth: 'auto' },
-                    2: { cellWidth: 30 },
-                    3: { cellWidth: 25, fontStyle: 'bold' }
+                head: [[t.date.toUpperCase(), t.client.toUpperCase(), t.time.toUpperCase()]],
+                body: body,
+                theme: 'plain', // Clean modern look
+                headStyles: { 
+                    fillColor: colHeader, 
+                    textColor: colText, 
+                    fontStyle: 'bold',
+                    lineWidth: { bottom: 0.5 },
+                    lineColor: colLine
                 },
-                didParseCell: function(data) {
-                    // Bold sum row
-                    if (data.row.index === tableData.length - 1) {
-                        data.cell.styles.fontStyle = 'bold';
-                        data.cell.styles.fillColor = [220, 220, 220];
-                    }
+                styles: { 
+                    fontSize: 10, 
+                    cellPadding: 4, 
+                    textColor: colText,
+                    lineColor: [240, 240, 240],
+                    lineWidth: { bottom: 0.1 }
+                },
+                columnStyles: { 
+                    0: { cellWidth: 30 }, 
+                    1: { cellWidth: 'auto' }, 
+                    2: { cellWidth: 40, halign: 'right', fontStyle: 'bold' } 
+                },
+                didDrawPage: function (data) {
+                    // Footer
+                    let pageStr = `${t.pdf_page} ${doc.internal.getNumberOfPages()}`;
+                    doc.setFontSize(8);
+                    doc.setTextColor(150);
+                    doc.text(pageStr, 196, 290, { align: 'right' });
                 }
             });
-            
-            doc.save('TimeList.pdf');
+
+            doc.save('TimeReport_WojThom.pdf');
             closeModal('exportModal');
         }
 
+        // --- UTILS ---
+        function setLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('wt6_lang', lang);
+            const t = translations[lang];
+            
+            const ids = {
+                'lbl_header': t.header, 'lbl_input': t.input, 'btn_generate': t.generate, 'lbl_result': t.result,
+                'th_date': t.date, 'th_client': t.client, 'th_time': t.time, 'lbl_total': t.total,
+                'txt_menu_file': t.file, 'txt_menu_tools': t.tools, 'txt_menu_settings': t.settings,
+                'txt_export': t.export, 'txt_clear': t.clear, 'txt_stats': t.stats, 'txt_filter': t.filter, 'txt_theme': t.theme,
+                'modal_edit_title': t.edit_title, 'lbl_edit_date': t.date, 'lbl_edit_client': t.client, 'lbl_edit_display': t.display_time,
+                'btn_save': t.save, 'btn_cancel': t.cancel, 'btn_delete': t.delete, 'modal_export_title': t.export_title,
+                'modal_filter_title': t.filter_title, 'btn_reset': t.reset, 'btn_apply': t.apply, 'txt_stats_title': t.stats
+            };
+            for(let id in ids) { let el = document.getElementById(id); if(el) el.innerText = ids[id]; }
+            if(entries.length) renderTable();
+            document.getElementById('mainMenu').classList.remove('open');
+            document.getElementById('menuOverlay').style.display = 'none';
+        }
+
+        function openModal(id) { document.getElementById(id).classList.add('open'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+        function showToast(msg, err=false) {
+            let t = document.getElementById('toast');
+            t.innerHTML = (err ? '<i class="fas fa-exclamation-circle"></i> ' : '<i class="fas fa-check"></i> ') + msg;
+            t.style.background = err ? 'var(--danger)' : '#333';
+            t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 3000);
+        }
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+            localStorage.setItem('wt6_theme', document.body.classList.contains('dark-mode')?'dark':'light');
+            document.getElementById('mainMenu').classList.remove('open');
+            document.getElementById('menuOverlay').style.display = 'none';
+        }
+        function clearData() {
+            if(confirm("Are you sure?")) {
+                document.getElementById('rawInput').value=''; entries=[]; 
+                localStorage.setItem('wt6_rawInput','');
+                document.getElementById('resultCard').style.display='none';
+                document.getElementById('mainMenu').classList.remove('open');
+                document.getElementById('menuOverlay').style.display = 'none';
+            }
+        }
+        function resetFilter() { if(originalEntries) entries=[...originalEntries]; renderTable(); closeModal('filterModal'); }
+        function applyFilter() { let v=document.getElementById('filterClient').value; if(v && originalEntries) entries=originalEntries.filter(e=>e.client===v); renderTable(); closeModal('filterModal'); }
+        document.querySelector('[onclick="openModal(\'filterModal\')"]').addEventListener('click', ()=>{
+            const s=document.getElementById('filterClient'); s.innerHTML=`<option value="">${translations[currentLang].reset}</option>`;
+            [...new Set(entries.map(e=>e.client))].sort().forEach(c=>{let o=document.createElement('option');o.value=c;o.innerText=c;s.appendChild(o)});
+        });
+        function showStatistics() {
+            if(!entries.length) return;
+            openModal('statsModal');
+            const data={}; entries.forEach(e=>{if(e.minutes>0) data[e.client]=(data[e.client]||0)+e.minutes/60});
+            const ctx=document.getElementById('chartCanvas').getContext('2d');
+            if(myChart) myChart.destroy();
+            myChart=new Chart(ctx,{type:'pie',data:{labels:Object.keys(data),datasets:[{data:Object.values(data),backgroundColor:['#3498db','#e74c3c','#f1c40f','#2ecc71','#9b59b6']}]},options:{responsive:true,maintainAspectRatio:false}});
+        }
     </script>
 </body>
 </html>
