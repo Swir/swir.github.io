@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WojThom App Web</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        /* Ciemny, gamingowy styl z niebieskimi akcentami */
+        :root {
+            --bg-color: #121212;
+            --surface-color: #1e1e24;
+            --primary-color: #007bff;
+            --text-color: #e0e0e0;
+            --border-color: #333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: var(--surface-color);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        h1, h2 {
+            text-align: center;
+            color: var(--primary-color);
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        input {
+            padding: 12px;
+            background-color: #2a2a35;
+            border: 1px solid var(--border-color);
+            color: white;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        button {
+            padding: 12px 20px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+            margin-top: 10px;
+            width: 100%;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .btn-pdf {
+            background-color: #28a745;
+        }
+
+        .btn-pdf:hover {
+            background-color: #218838;
+        }
+
+        /* Tabela wpisów */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #2a2a35;
+            color: var(--primary-color);
+        }
+
+        .summary {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: right;
+            color: var(--primary-color);
+        }
+
+        /* Sekcja do druku (ukrywamy przyciski na PDFie) */
+        #pdf-content {
+            padding: 20px;
+            background-color: var(--surface-color);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>WojThom APEX</h1>
+    
+    <div class="input-group">
+        <input type="date" id="dateInput" placeholder="Data">
+        <input type="text" id="clientInput" placeholder="Klient / Zlecenie">
+        <div style="display: flex; gap: 10px;">
+            <input type="time" id="startInput" style="flex: 1;" placeholder="Start (np. 08:00)">
+            <input type="time" id="endInput" style="flex: 1;" placeholder="Koniec (np. 16:00)">
+        </div>
+        <input type="text" id="workInput" placeholder="Wykonana praca">
+        <button onclick="addEntry()">Dodaj Wpis</button>
+    </div>
+
+    <div id="pdf-content">
+        <h2>Lista Czasu</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Klient</th>
+                    <th>Start</th>
+                    <th>Koniec</th>
+                    <th>Praca</th>
+                    <th>Minuty</th>
+                    <th>Akcja</th>
+                </tr>
+            </thead>
+            <tbody id="entriesTableBody">
+                </tbody>
+        </table>
+        <div class="summary" id="totalSummary">Suma minut: 0</div>
+    </div>
+
+    <button class="btn-pdf" onclick="generatePDF()">Zapisz do PDF</button>
+</div>
+
+<script>
+    // Tablica przechowująca nasze wpisy (odpowiednik entriesList w Kotlinie)
+    let entriesList = [];
+
+    // Funkcja ładująca zapisane dane przy starcie
+    window.onload = function() {
+        const savedData = localStorage.getItem('wojthom_entries');
+        if (savedData) {
+            entriesList = JSON.parse(savedData);
+            updateUI();
+        }
+        // Ustawianie dzisiejszej daty jako domyślnej
+        document.getElementById('dateInput').valueAsDate = new Date();
+    };
+
+    // Zapisywanie do pamięci przeglądarki (odpowiednik saveMemory())
+    function saveMemory() {
+        localStorage.setItem('wojthom_entries', JSON.stringify(entriesList));
+    }
+
+    // Obliczanie różnicy czasu w minutach
+    function calculateMinutes(start, end) {
+        if (!start || !end) return 0;
+        const [startH, startM] = start.split(':').map(Number);
+        const [endH, endM] = end.split(':').map(Number);
+        
+        let startTotal = startH * 60 + startM;
+        let endTotal = endH * 60 + endM;
+        
+        if (endTotal < startTotal) {
+            endTotal += 24 * 60; // uwzględnienie pracy przez północ
+        }
+        return endTotal - startTotal;
+    }
+
+    // Dodawanie nowego wpisu
+    function addEntry() {
+        const date = document.getElementById('dateInput').value;
+        const client = document.getElementById('clientInput').value;
+        const start = document.getElementById('startInput').value;
+        const end = document.getElementById('endInput').value;
+        const work = document.getElementById('workInput').value;
+
+        if (!date || !client || !start || !end || !work) {
+            alert("Uzupełnij wszystkie pola!");
+            return;
+        }
+
+        const minutes = calculateMinutes(start, end);
+
+        const newEntry = {
+            id: Date.now(), // Unikalny ID dla łatwego usuwania
+            date, client, start, end, work, minutes
+        };
+
+        entriesList.push(newEntry);
+        saveMemory();
+        updateUI();
+        
+        // Czyszczenie pół roboczych (zostawiamy datę i klienta dla wygody)
+        document.getElementById('startInput').value = '';
+        document.getElementById('endInput').value = '';
+        document.getElementById('workInput').value = '';
+    }
+
+    // Usuwanie wpisu z prośbą o potwierdzenie
+    function removeEntry(id) {
+        if (confirm("Czy na pewno chcesz usunąć ten wpis?")) {
+            entriesList = entriesList.filter(entry => entry.id !== id);
+            saveMemory();
+            updateUI();
+        }
+    }
+
+    // Odświeżanie tabeli
+    function updateUI() {
+        const tbody = document.getElementById('entriesTableBody');
+        tbody.innerHTML = '';
+        let totalMinutes = 0;
+
+        entriesList.forEach(entry => {
+            totalMinutes += entry.minutes;
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${entry.date}</td>
+                <td>${entry.client}</td>
+                <td>${entry.start}</td>
+                <td>${entry.end}</td>
+                <td>${entry.work}</td>
+                <td>${entry.minutes}</td>
+                <td data-html2canvas-ignore="true"><button onclick="removeEntry(${entry.id})" style="background: #dc3545; padding: 5px; margin: 0;">X</button></td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        document.getElementById('totalSummary').innerText = `Suma minut: ${totalMinutes} (Godzin: ${(totalMinutes/60).toFixed(2)})`;
+    }
+
+    // Generowanie PDF
+    function generatePDF() {
+        const element = document.getElementById('pdf-content');
+        
+        const opt = {
+            margin:       10,
+            filename:     'WojThom_Lista_Czasu.pdf',
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2 },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        html2pdf().set(opt).from(element).save();
+    }
+</script>
+
+</body>
+</html>
