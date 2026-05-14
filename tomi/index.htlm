@@ -3,270 +3,398 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WojThom App Web</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <title>WojThom APEX Web</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <style>
-        /* Ciemny, gamingowy styl z niebieskimi akcentami */
         :root {
-            --bg-color: #121212;
-            --surface-color: #1e1e24;
-            --primary-color: #007bff;
-            --text-color: #e0e0e0;
-            --border-color: #333;
+            /* Tryb standardowy (Ciemny) */
+            --bg: #07080d;
+            --panel: #0f1219;
+            --primary: #00f0ff;
+            --primary-shadow: #007a80;
+            --second: #ff0055;
+            --second-shadow: #80002a;
+            --text: #e0e6ed;
+            --muted: #6b7d99;
+            --input-bg: #050608;
+            --input-border: #1e3a8a;
         }
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            padding: 20px;
+        body.gaming {
+            /* Tryb Gamingowy (Szaro-niebieski) */
+            --bg: #B3BCC5;
+            --panel: #C5CDD5;
+            --primary: #0099FF;
+            --primary-shadow: #0073CC;
+            --second: #EF4444;
+            --second-shadow: #B91C1C;
+            --text: #1E252B;
+            --muted: #5C6B79;
+            --input-bg: #DFE4EA;
+            --input-border: #8A99A8;
         }
 
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background-color: var(--surface-color);
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-        }
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; transition: all 0.3s; }
+        
+        /* Layout */
+        .container { max-width: 1000px; margin: 0 auto; }
+        .toolbar { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background-color: var(--panel); border: 2px solid var(--primary); border-radius: 15px; margin-bottom: 20px; }
+        .brand { font-size: 20px; font-weight: bold; }
+        .panel { background-color: var(--panel); border: 2px solid var(--primary); border-radius: 15px; padding: 20px; margin-bottom: 20px; }
+        
+        /* Formularze i Wejścia */
+        label { font-size: 12px; font-weight: bold; display: block; margin-bottom: 5px; margin-top: 15px; color: var(--text); }
+        input[type="text"], textarea { width: 100%; background-color: var(--input-bg); color: var(--text); border: 2px solid var(--input-border); border-radius: 8px; padding: 12px; font-size: 14px; outline: none; }
+        textarea { resize: vertical; min-height: 120px; font-family: monospace; }
+        
+        /* Przyciski 3D */
+        .btn { padding: 10px 15px; font-weight: bold; text-transform: uppercase; border-radius: 8px; cursor: pointer; border: none; color: white; display: inline-block; text-align: center; transition: transform 0.1s; margin-right: 5px; margin-top: 10px; }
+        .btn:active { transform: translateY(4px); box-shadow: none !important; }
+        .btn-primary { background-color: var(--primary); box-shadow: 0 5px 0 var(--primary-shadow); color: #000; }
+        .btn-second { background-color: var(--second); box-shadow: 0 5px 0 var(--second-shadow); }
+        .btn-sm { padding: 6px 10px; font-size: 12px; }
 
-        h1, h2 {
-            text-align: center;
-            color: var(--primary-color);
-        }
+        /* Tabela z wynikami */
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
+        th, td { border: 1px solid var(--input-border); padding: 8px; text-align: left; }
+        th { background-color: var(--primary-shadow); color: white; }
+        tr:nth-child(even) { background-color: rgba(0,0,0,0.1); }
+        .error-row { background-color: rgba(255, 0, 0, 0.2) !important; }
 
-        .input-group {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        input {
-            padding: 12px;
-            background-color: #2a2a35;
-            border: 1px solid var(--border-color);
-            color: white;
-            border-radius: 8px;
-            font-size: 16px;
-        }
-
-        input:focus {
-            outline: none;
-            border-color: var(--primary-color);
-        }
-
-        button {
-            padding: 12px 20px;
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: background 0.3s;
-            margin-top: 10px;
-            width: 100%;
-        }
-
-        button:hover {
-            background-color: #0056b3;
-        }
-
-        .btn-pdf {
-            background-color: #28a745;
-        }
-
-        .btn-pdf:hover {
-            background-color: #218838;
-        }
-
-        /* Tabela wpisów */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-
-        th, td {
-            border: 1px solid var(--border-color);
-            padding: 10px;
-            text-align: center;
-        }
-
-        th {
-            background-color: #2a2a35;
-            color: var(--primary-color);
-        }
-
-        .summary {
-            margin-top: 20px;
-            font-size: 18px;
-            font-weight: bold;
-            text-align: right;
-            color: var(--primary-color);
-        }
-
-        /* Sekcja do druku (ukrywamy przyciski na PDFie) */
-        #pdf-content {
-            padding: 20px;
-            background-color: var(--surface-color);
-        }
+        /* Statystyki Accordion */
+        .stats-week { margin: 10px 0; padding: 10px; background-color: var(--input-bg); border-radius: 5px; border-left: 4px solid var(--primary); font-family: monospace; white-space: pre-wrap; }
+        .bar-bg { width: 100%; background: #333; border-radius: 5px; overflow: hidden; margin-top: 5px; height: 10px; }
+        .bar-fill { height: 100%; background: var(--primary); width: 0%; }
+        
+        /* Modale */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center; }
+        .modal { background: var(--panel); border: 2px solid var(--primary); border-radius: 15px; padding: 20px; width: 90%; max-width: 600px; max-height: 80vh; overflow-y: auto; }
+        .modal-header { font-size: 18px; font-weight: bold; margin-bottom: 15px; border-bottom: 1px solid var(--muted); padding-bottom: 10px; }
+        .close-btn { float: right; background: none; border: none; color: var(--text); font-size: 20px; cursor: pointer; }
     </style>
 </head>
-<body>
+<body class="gaming">
 
 <div class="container">
-    <h1>WojThom APEX</h1>
-    
-    <div class="input-group">
-        <input type="date" id="dateInput" placeholder="Data">
-        <input type="text" id="clientInput" placeholder="Klient / Zlecenie">
-        <div style="display: flex; gap: 10px;">
-            <input type="time" id="startInput" style="flex: 1;" placeholder="Start (np. 08:00)">
-            <input type="time" id="endInput" style="flex: 1;" placeholder="Koniec (np. 16:00)">
+    <div class="toolbar">
+        <div class="brand">🎮 WOJTHOM APEX</div>
+        <div>
+            <button class="btn btn-primary btn-sm" onclick="toggleTheme()">🌓 Motyw</button>
+            <button class="btn btn-primary btn-sm" onclick="openStats()">📊 Statystyki</button>
+            <button class="btn btn-primary btn-sm" onclick="openHistory()">🗄️ Historia</button>
         </div>
-        <input type="text" id="workInput" placeholder="Wykonana praca">
-        <button onclick="addEntry()">Dodaj Wpis</button>
     </div>
 
-    <div id="pdf-content">
-        <h2>Lista Czasu</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Data</th>
-                    <th>Klient</th>
-                    <th>Start</th>
-                    <th>Koniec</th>
-                    <th>Praca</th>
-                    <th>Minuty</th>
-                    <th>Akcja</th>
-                </tr>
-            </thead>
-            <tbody id="entriesTableBody">
-                </tbody>
-        </table>
-        <div class="summary" id="totalSummary">Suma minut: 0</div>
+    <div class="panel">
+        <label>NAGŁÓWEK:</label>
+        <input type="text" id="headerInput" value="Lista Czasu Pracy">
+
+        <label>WKLEJ LOGI SYSTEMOWE (np. 15.02 Firma A 08:00 - 16:00 lub 16.02 Firma B 7.5h):</label>
+        <textarea id="logsInput" placeholder="Przykładowe formaty wpisów:&#10;15.02 Firma A 08:00 - 16:00&#10;16.02 Firma B 7.5h"></textarea>
+
+        <div style="display: flex; gap: 10px;">
+            <button class="btn btn-primary" style="flex: 2;" onclick="generateList()">⚡ Generuj Listę</button>
+            <button class="btn btn-second" style="flex: 1;" onclick="clearLogs()">🗑 Wyczyść</button>
+            <button class="btn btn-primary" style="flex: 1;" onclick="exportPDF()">📄 Eksport PDF</button>
+        </div>
     </div>
 
-    <button class="btn-pdf" onclick="generatePDF()">Zapisz do PDF</button>
+    <div class="panel" id="resultsPanel" style="display: none;">
+        <h3 style="margin-top:0;">BAZA DANYCH - CZAS PRACY</h3>
+        <div id="tableContainer"></div>
+        <h3 id="sumLabel" style="margin-top: 15px;">Suma całkowita: 0h 0m</h3>
+    </div>
+</div>
+
+<div class="modal-overlay" id="statsModal">
+    <div class="modal">
+        <button class="close-btn" onclick="closeModal('statsModal')">✖</button>
+        <div class="modal-header">📈 INTELIGENTNY AUDYTOR (Norma 37.5h)</div>
+        <button class="btn btn-second btn-sm" onclick="clearData('stats')">🗑 Wyczyść Statystyki</button>
+        <div id="statsContent" style="margin-top: 15px;"></div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="historyModal">
+    <div class="modal">
+        <button class="close-btn" onclick="closeModal('historyModal')">✖</button>
+        <div class="modal-header">🗄️ HISTORIA EKSPORTÓW</div>
+        <button class="btn btn-second btn-sm" onclick="clearData('history')">🗑 Wyczyść całą historię</button>
+        <div id="historyContent" style="margin-top: 15px;"></div>
+    </div>
 </div>
 
 <script>
-    // Tablica przechowująca nasze wpisy (odpowiednik entriesList w Kotlinie)
-    let entriesList = [];
+    let entries = [];
+    let statsData = JSON.parse(localStorage.getItem('wojthom_stats')) || [];
+    let historyData = JSON.parse(localStorage.getItem('wojthom_history')) || [];
+    const NORM_MINUTES = 37.5 * 60; // 2250 minut tygodniowo
 
-    // Funkcja ładująca zapisane dane przy starcie
+    // Generowanie konfigu przy pierwszym uruchomieniu
     window.onload = function() {
-        const savedData = localStorage.getItem('wojthom_entries');
-        if (savedData) {
-            entriesList = JSON.parse(savedData);
-            updateUI();
+        if (!localStorage.getItem('wojthom_apex_config')) {
+            const config = { app: "WojThom", version: "APEX", theme: "gaming", defaultNormHours: 37.5 };
+            localStorage.setItem('wojthom_apex_config', JSON.stringify(config));
+            
+            const blob = new Blob([JSON.stringify(config, null, 2)], {type: "application/json"});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "wojthom_apex_config.json";
+            a.click();
+            URL.revokeObjectURL(url);
+            alert("To pierwsze uruchomienie. Wygenerowano i pobrano plik wojthom_apex_config.json");
         }
-        // Ustawianie dzisiejszej daty jako domyślnej
-        document.getElementById('dateInput').valueAsDate = new Date();
+        
+        const config = JSON.parse(localStorage.getItem('wojthom_apex_config'));
+        if(config.theme === "dark") {
+            document.body.classList.remove("gaming");
+        }
     };
 
-    // Zapisywanie do pamięci przeglądarki (odpowiednik saveMemory())
-    function saveMemory() {
-        localStorage.setItem('wojthom_entries', JSON.stringify(entriesList));
+    function toggleTheme() {
+        document.body.classList.toggle("gaming");
+        const isGaming = document.body.classList.contains("gaming");
+        let config = JSON.parse(localStorage.getItem('wojthom_apex_config')) || {};
+        config.theme = isGaming ? "gaming" : "dark";
+        localStorage.setItem('wojthom_apex_config', JSON.stringify(config));
     }
 
-    // Obliczanie różnicy czasu w minutach
-    function calculateMinutes(start, end) {
-        if (!start || !end) return 0;
-        const [startH, startM] = start.split(':').map(Number);
-        const [endH, endM] = end.split(':').map(Number);
-        
-        let startTotal = startH * 60 + startM;
-        let endTotal = endH * 60 + endM;
-        
-        if (endTotal < startTotal) {
-            endTotal += 24 * 60; // uwzględnienie pracy przez północ
+    function clearLogs() {
+        if(confirm("Czy na pewno chcesz wyczyścić obecną listę w edytorze? (Potwierdzenie akcji)")) {
+            document.getElementById('logsInput').value = "";
+            document.getElementById('resultsPanel').style.display = "none";
+            entries = [];
         }
-        return endTotal - startTotal;
     }
 
-    // Dodawanie nowego wpisu
-    function addEntry() {
-        const date = document.getElementById('dateInput').value;
-        const client = document.getElementById('clientInput').value;
-        const start = document.getElementById('startInput').value;
-        const end = document.getElementById('endInput').value;
-        const work = document.getElementById('workInput').value;
+    function clearData(type) {
+        if(confirm(`Czy na pewno chcesz trwale skasować ten folder / te dane? Ta akcja jest nieodwracalna.`)) {
+            if(type === 'stats') {
+                statsData = [];
+                localStorage.setItem('wojthom_stats', JSON.stringify(statsData));
+                openStats();
+            } else {
+                historyData = [];
+                localStorage.setItem('wojthom_history', JSON.stringify(historyData));
+                openHistory();
+            }
+        }
+    }
 
-        if (!date || !client || !start || !end || !work) {
-            alert("Uzupełnij wszystkie pola!");
+    function timeToMinutes(timeStr) {
+        if(!timeStr || !timeStr.includes(':')) return 0;
+        const parts = timeStr.split(':');
+        return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+    }
+
+    function generateList() {
+        const raw = document.getElementById('logsInput').value;
+        const lines = raw.split('\n');
+        entries = [];
+        let totalMins = 0;
+
+        lines.forEach(line => {
+            line = line.trim();
+            if (!line) return;
+
+            // Szukanie daty np. 15.02 lub 15.02.2026
+            const dateMatch = line.match(/^(\d{1,2}\.\d{1,2}(?:\.\d{2,4})?)/);
+            if (!dateMatch) return;
+            const date = dateMatch[1];
+            let rest = line.substring(date.length).trim();
+
+            let start = "", end = "", work = "", mins = 0;
+            let client = rest;
+
+            // Szukanie formatu 08:00 - 16:00
+            const timeMatch = rest.match(/(\d{1,2}:\d{2})\s*(?:-|do)?\s*(\d{1,2}:\d{2})/);
+            // Szukanie formatu 7.5h lub 8h
+            const durMatch = rest.match(/(\d+(?:\.\d+)?)\s*h/i);
+
+            if (timeMatch) {
+                start = timeMatch[1];
+                end = timeMatch[2];
+                client = client.replace(timeMatch[0], "").trim();
+                let sm = timeToMinutes(start);
+                let em = timeToMinutes(end);
+                if (em < sm) em += 24 * 60; // obsługa zmiany doby
+                mins = em - sm;
+                work = `${Math.floor(mins/60)}:${(mins%60).toString().padStart(2,'0')}`;
+            } else if (durMatch) {
+                mins = Math.round(parseFloat(durMatch[1]) * 60);
+                work = durMatch[1] + "h";
+                client = client.replace(durMatch[0], "").trim();
+            }
+
+            entries.push({ date, client, start, end, work, minutes: mins });
+            totalMins += mins;
+        });
+
+        renderTable();
+        document.getElementById('sumLabel').innerText = `Suma całkowita: ${Math.floor(totalMins/60)}h ${totalMins%60}m`;
+        document.getElementById('resultsPanel').style.display = "block";
+    }
+
+    function renderTable() {
+        let html = `<table><tr><th>Data</th><th>Klient</th><th>Start</th><th>Koniec</th><th>Czas</th></tr>`;
+        entries.forEach(e => {
+            const isErr = e.minutes <= 0;
+            html += `<tr class="${isErr ? 'error-row' : ''}">
+                <td>${e.date}</td><td>${e.client}</td><td>${e.start || '-'}</td><td>${e.end || '-'}</td><td>${e.work || 'BRAK'}</td>
+            </tr>`;
+        });
+        html += `</table>`;
+        document.getElementById('tableContainer').innerHTML = html;
+    }
+
+    function exportPDF() {
+        if(entries.length === 0) {
+            alert("Brak wpisów do eksportu!");
+            return;
+        }
+        if(entries.some(e => e.minutes <= 0)) {
+            alert("🛑 Eksport Zablokowany!\nPopraw błędne/czerwone wpisy (brak czasu).");
             return;
         }
 
-        const minutes = calculateMinutes(start, end);
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        const headerText = document.getElementById('headerInput').value;
 
-        const newEntry = {
-            id: Date.now(), // Unikalny ID dla łatwego usuwania
-            date, client, start, end, work, minutes
-        };
-
-        entriesList.push(newEntry);
-        saveMemory();
-        updateUI();
+        doc.setFontSize(18);
+        doc.text(headerText, 14, 20);
         
-        // Czyszczenie pół roboczych (zostawiamy datę i klienta dla wygody)
-        document.getElementById('startInput').value = '';
-        document.getElementById('endInput').value = '';
-        document.getElementById('workInput').value = '';
+        let totalMins = entries.reduce((acc, curr) => acc + curr.minutes, 0);
+
+        const tableData = entries.map(e => [e.date, e.client, e.start, e.end, e.work]);
+        doc.autoTable({
+            startY: 30,
+            head: [['Data', 'Klient', 'Start', 'Koniec', 'Czas']],
+            body: tableData,
+            theme: 'grid',
+            headStyles: { fillColor: [0, 240, 255], textColor: [0,0,0] }
+        });
+
+        doc.setFontSize(12);
+        doc.text(`Suma godzin: ${Math.floor(totalMins/60)}h ${totalMins%60}m`, 14, doc.lastAutoTable.finalY + 10);
+        doc.setFontSize(9);
+        doc.text(`Wygenerowane Aplikacją WojThom`, 14, 290);
+
+        doc.save(`${headerText.replace(/\s+/g, '_')}.pdf`);
+
+        // Zapis do historii i statystyk po udanym pobraniu
+        const snapshot = {
+            id: Date.now(),
+            dateSaved: new Date().toLocaleString(),
+            header: headerText,
+            totalMinutes: totalMins,
+            data: [...entries]
+        };
+        historyData.push(snapshot);
+        localStorage.setItem('wojthom_history', JSON.stringify(historyData));
+
+        entries.forEach(e => {
+            const exists = statsData.some(s => s.date === e.date && s.client === e.client && s.minutes === e.minutes);
+            if(!exists) statsData.push(e);
+        });
+        localStorage.setItem('wojthom_stats', JSON.stringify(statsData));
+        
+        alert("ZAPISANO PDF W POBRANYCH!\nDane zostały dodane do bazy statystyk.");
     }
 
-    // Usuwanie wpisu z prośbą o potwierdzenie
-    function removeEntry(id) {
-        if (confirm("Czy na pewno chcesz usunąć ten wpis?")) {
-            entriesList = entriesList.filter(entry => entry.id !== id);
-            saveMemory();
-            updateUI();
+    function openStats() {
+        const container = document.getElementById('statsContent');
+        if(statsData.length === 0) {
+            container.innerHTML = "Brak danych statystycznych.";
+            document.getElementById('statsModal').style.display = 'flex';
+            return;
+        }
+
+        // Proste grupowanie tygodniowe (uproszczone: grupowanie po pierwszych 2 znakach daty lub całości)
+        let weeks = {};
+        statsData.forEach(e => {
+            // Symulacja grupowania - w pełnej apce to by leciało wg kalendarza
+            let wKey = "Wpisy: " + e.date.substring(3); // Grupowanie po miesiącu dla demonstracji
+            if(!weeks[wKey]) weeks[wKey] = 0;
+            weeks[wKey] += e.minutes;
+        });
+
+        let html = "";
+        for(let w in weeks) {
+            let mins = weeks[w];
+            let hrsStr = `${Math.floor(mins/60)}h ${(mins%60).toString().padStart(2,'0')}m`;
+            let percent = Math.min(100, Math.round((mins / NORM_MINUTES) * 100));
+            
+            let status = "";
+            if (mins > NORM_MINUTES) {
+                let over = mins - NORM_MINUTES;
+                status = `Nadgodziny: +${Math.floor(over/60)}h ${over%60}m`;
+            } else if (mins < NORM_MINUTES) {
+                let def = NORM_MINUTES - mins;
+                status = `Braki: -${Math.floor(def/60)}h ${def%60}m`;
+            } else {
+                status = "Norma OK (37.5h)";
+            }
+
+            html += `
+            <div class="stats-week">
+                <strong>${w}</strong><br>
+                Suma: ${hrsStr}<br>
+                ↳ ${percent}% Normy<br>
+                ↳ ${status}
+                <div class="bar-bg"><div class="bar-fill" style="width: ${percent}%;"></div></div>
+            </div>`;
+        }
+        
+        container.innerHTML = html;
+        document.getElementById('statsModal').style.display = 'flex';
+    }
+
+    function openHistory() {
+        const container = document.getElementById('historyContent');
+        if(historyData.length === 0) {
+            container.innerHTML = "Historia jest pusta.";
+            document.getElementById('historyModal').style.display = 'flex';
+            return;
+        }
+
+        let html = "";
+        historyData.forEach(h => {
+            html += `
+            <div style="border: 1px solid var(--muted); padding: 10px; margin-bottom: 10px; border-radius: 8px;">
+                <strong>${h.header}</strong> (${h.dateSaved})<br>
+                Suma: ${Math.floor(h.totalMinutes/60)}h ${h.totalMinutes%60}m<br>
+                <button class="btn btn-second btn-sm" onclick="loadFromHistory(${h.id})">Wczytaj do edytora</button>
+            </div>`;
+        });
+        container.innerHTML = html;
+        document.getElementById('historyModal').style.display = 'flex';
+    }
+
+    function loadFromHistory(id) {
+        if(confirm("Wczytanie z historii nadpisze obecną listę. Kontynuować? (Wymaga potwierdzenia)")) {
+            const snap = historyData.find(h => h.id === id);
+            if(snap) {
+                entries = [...snap.data];
+                document.getElementById('headerInput').value = snap.header;
+                // Odtwarzanie surowego logu dla podglądu
+                let raw = entries.map(e => `${e.date} ${e.client} ${e.start ? e.start + ' - ' + e.end : e.work}`).join('\n');
+                document.getElementById('logsInput').value = raw;
+                
+                renderTable();
+                document.getElementById('sumLabel').innerText = `Suma całkowita: ${Math.floor(snap.totalMinutes/60)}h ${snap.totalMinutes%60}m`;
+                document.getElementById('resultsPanel').style.display = "block";
+                closeModal('historyModal');
+                alert("Wczytano z Historii!");
+            }
         }
     }
 
-    // Odświeżanie tabeli
-    function updateUI() {
-        const tbody = document.getElementById('entriesTableBody');
-        tbody.innerHTML = '';
-        let totalMinutes = 0;
-
-        entriesList.forEach(entry => {
-            totalMinutes += entry.minutes;
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${entry.date}</td>
-                <td>${entry.client}</td>
-                <td>${entry.start}</td>
-                <td>${entry.end}</td>
-                <td>${entry.work}</td>
-                <td>${entry.minutes}</td>
-                <td data-html2canvas-ignore="true"><button onclick="removeEntry(${entry.id})" style="background: #dc3545; padding: 5px; margin: 0;">X</button></td>
-            `;
-            tbody.appendChild(tr);
-        });
-
-        document.getElementById('totalSummary').innerText = `Suma minut: ${totalMinutes} (Godzin: ${(totalMinutes/60).toFixed(2)})`;
-    }
-
-    // Generowanie PDF
-    function generatePDF() {
-        const element = document.getElementById('pdf-content');
-        
-        const opt = {
-            margin:       10,
-            filename:     'WojThom_Lista_Czasu.pdf',
-            image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2 },
-            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        };
-
-        html2pdf().set(opt).from(element).save();
+    function closeModal(id) {
+        document.getElementById(id).style.display = 'none';
     }
 </script>
 
