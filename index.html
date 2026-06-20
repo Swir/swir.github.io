@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Windows 3.11 - Swir Edition</title>
-    <!-- Font Awesome dla ikon plików -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* --- Zmienne CSS - Autentyczna paleta Windows 3.11 --- */
@@ -56,7 +55,7 @@
             overflow: hidden; /* Prevent body scroll, act like desktop */
             height: 100vh;
             width: 100vw;
-            cursor: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA8AAAAPCAYAAAA71pVKAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAVUlEQVQoz2NgoAAwMjAwMDExMf1nYGB4RIph////ZwQZ9h8JUzR8//79jIyMjP+RMHmGIxv8+vVrBSYmJlQDSTP4////ZYyMjJgGkWQ4sgvINxybIQCYCUc1hCDRYQAAAABJRU5ErkJggg=='), default;
+            cursor: default; /* POPRAWKA: Usunięto zbugowany kursor base64 */
         }
 
         /* --- 3D Windows 3.11 Style --- */
@@ -91,7 +90,7 @@
             justify-content: space-between;
             align-items: center;
             margin: 2px 2px 0 2px;
-            cursor: move;
+            cursor: default;
             user-select: none;
             height: 19px;
         }
@@ -463,18 +462,15 @@
 </head>
 <body>
 
-    <!-- Dźwięki -->
     <audio id="snd-start" src="https://archive.org/download/WindowsStartupSounds/Windows%203.1.mp3" preload="auto"></audio>
     <audio id="snd-chord" src="https://archive.org/download/WindowsXpSoundEffects/Windows%20XP%20Error.mp3" preload="auto"></audio>
     <audio id="snd-click" src="https://archive.org/download/WindowsXpSoundEffects/Windows%20XP%20Navigation%20Start.mp3" preload="auto"></audio>
 
-    <!-- DOS Boot Screen -->
     <div id="dos-screen" class="win-dos-screen">
         <div id="dos-text"></div>
         <div><span id="dos-prompt" class="hidden">C:\><span class="win-cursor">_</span></span></div>
     </div>
 
-    <!-- Windows Logo Boot Screen -->
     <div id="boot-screen" class="win-boot-screen">
         <div class="boot-logo-box">
             <div class="boot-title">MICROSOFT WINDOWS</div>
@@ -483,10 +479,8 @@
         </div>
     </div>
 
-    <!-- Pulpit na zminimalizowane okna -->
     <div id="desktop-icons"></div>
 
-    <!-- Główne Okno: Program Manager -->
     <div id="progman" class="win-window active hidden" style="width: 500px; height: 350px; top: 50px; left: 50px;">
         <div class="win-title-bar" onmousedown="dragWindow(event, 'progman')">
             <div class="win-title">Program Manager - Swir GitHub</div>
@@ -524,9 +518,7 @@
         </div>
         
         <div class="win-content" id="progman-content">
-            <!-- Grupy ładują się tutaj -->
             <div id="repo-groups" class="win-group-container"></div>
-            <!-- Repozytoria ładują się tutaj (domyślnie ukryte) -->
             <div id="repo-list" class="win-group-container hidden"></div>
         </div>
         
@@ -536,7 +528,6 @@
         </div>
     </div>
 
-    <!-- Okno Detali Repo (Modal) -->
     <div id="modal-overlay" class="win-modal-overlay">
         <div id="repo-modal" class="win-window active win-dialog">
             <div class="win-title-bar" onmousedown="dragWindow(event, 'repo-modal')">
@@ -568,7 +559,6 @@
         </div>
     </div>
 
-    <!-- Okno About -->
     <div id="about-overlay" class="win-modal-overlay">
         <div id="about-modal" class="win-window active win-dialog" style="width: 320px;">
             <div class="win-title-bar" onmousedown="dragWindow(event, 'about-modal')">
@@ -673,9 +663,11 @@
                 document.getElementById('status-text').innerText = `${allRepos.length} object(s)`;
                 showGroups();
             } catch (error) {
+                // POPRAWKA: Lepsza obsługa błędu bez blokującego okienka alert(), które zawiesza kursor.
                 playSound('snd-chord');
-                document.getElementById('status-text').innerText = "Network Error!";
-                alert("Windows System Error: Cannot connect to GitHub API.");
+                document.getElementById('status-text').innerText = "API Error (Rate Limit?)";
+                const contentDiv = document.getElementById('progman-content');
+                contentDiv.innerHTML = '<div style="padding: 10px; color: red; font-weight: bold;">Błąd połączenia z GitHub API.<br>Prawdopodobnie przekroczono limit zapytań.<br>Spróbuj ponownie za godzinę.</div>';
             } finally {
                 document.body.classList.remove('wait-cursor');
             }
@@ -828,6 +820,10 @@
         function dragWindow(e, windowId) {
             if(e.target.classList.contains('win-button-control')) return;
             
+            // POPRAWKA: Zapobiega zaznaczaniu tekstu i znikaniu kursora podczas ciągnięcia
+            e.preventDefault(); 
+            document.body.style.userSelect = 'none';
+
             const win = document.getElementById(windowId);
             win.style.zIndex = ++zIndexCounter;
             
@@ -857,12 +853,14 @@
             }
 
             function onMouseMove(event) {
-                moveAt(event.pageX, event.pageY);
+                moveAt(event.clientX, event.clientY);
             }
 
             document.addEventListener('mousemove', onMouseMove);
             document.addEventListener('mouseup', function() {
                 document.removeEventListener('mousemove', onMouseMove);
+                // POPRAWKA: Przywracamy normalne zachowanie po puszczeniu myszki
+                document.body.style.userSelect = '';
             }, { once: true });
         }
 
