@@ -2,36 +2,45 @@
 
 # 🖥️ Swir GitHub Pages
 
-**Retro web experiments, tools & interfaces**  
-**Retro eksperymenty webowe, narzędzia i interfejsy**
+### Retro Web Experiments Inspired by Classic Computers & Operating Systems
 
-![HTML](https://img.shields.io/badge/HTML-Web-E34F26?logo=html5&logoColor=white)
-![GitHub Pages](https://img.shields.io/badge/GitHub-Pages-222222?logo=github&logoColor=white)
+**HTML • CSS • JavaScript • GitHub Pages • Windows 3.11 • Atari • C64 • Classic Mac • Winamp**
+
+![HTML5](https://img.shields.io/badge/HTML5-Web-E34F26?logo=html5&logoColor=white)
+![CSS3](https://img.shields.io/badge/CSS3-Retro%20UI-1572B6?logo=css3&logoColor=white)
+![JavaScript](https://img.shields.io/badge/JavaScript-Interactive-F7DF1E?logo=javascript&logoColor=black)
+![GitHub Pages](https://img.shields.io/badge/Hosting-GitHub%20Pages-222222?logo=github&logoColor=white)
 
 </div>
 
 ---
 
-## 🇵🇱 Polski
+## 🚀 About
 
-**swir.github.io** to repozytorium strony GitHub Pages oraz kolekcja webowych eksperymentów tworzonych i rozwijanych przez Swir. Projekt łączy klasyczne stylistyki komputerowe z prostymi aplikacjami i interfejsami uruchamianymi bezpośrednio w przeglądarce.
+**swir.github.io** is a GitHub Pages site and evolving collection of browser-based retro UI experiments created by Swir. The repository combines classic computer aesthetics with interactive web pages and small browser tools that can run without a build system.
 
-Aktualna strona główna korzysta ze stylistyki inspirowanej **Windows 3.11 — Swir Edition**.
+The current landing page uses a **Windows 3.11 — Swir Edition** inspired interface, while subdirectories explore Atari, Commodore 64, classic Macintosh, Matrix, Winamp and other nostalgic UI styles.
 
-### 📂 Wybrane katalogi
+It is designed for users searching for **retro web UI**, **Windows 3.11 HTML**, **classic computer CSS**, **Atari web design**, **Commodore 64 browser UI** or vintage-interface frontend experiments.
 
-- `Atari/` — projekty i eksperymenty w stylistyce retro Atari,
-- `C64/` — materiały inspirowane Commodore 64,
-- `Mac/` — interfejsy inspirowane klasycznymi komputerami Mac,
-- `czateria/` — eksperymenty związane z czatem,
-- `matrix/` — projekty w stylistyce Matrix,
-- `time/` i `time2/` — projekty związane z czasem,
-- `winamp/` — eksperymenty inspirowane klasycznym Winampem,
-- `test/` i `testy/` — obszary robocze/testowe.
+---
 
-### 🚀 Uruchomienie lokalne
+## 🕹️ Featured Areas
 
-Repozytorium składa się głównie ze statycznych zasobów webowych. Możesz uruchomić prosty lokalny serwer:
+| Directory | Theme / Purpose |
+|---|---|
+| `Atari/` | Atari-inspired retro experiments |
+| `C64/` | Commodore 64-inspired interfaces |
+| `Mac/` | Classic Macintosh-inspired UI |
+| `czateria/` | Chat-related experiments |
+| `matrix/` | Matrix-themed pages |
+| `time/`, `time2/` | Time-related mini projects |
+| `winamp/` | Classic Winamp-inspired experiments |
+| `test/`, `testy/` | Development / testing areas |
+
+---
+
+## 🚀 Run Locally
 
 ```bash
 git clone https://github.com/Swir/swir.github.io.git
@@ -39,49 +48,34 @@ cd swir.github.io
 python -m http.server 8000
 ```
 
-Następnie otwórz `http://localhost:8000` w przeglądarce.
+Open:
 
-### 🧪 Charakter projektu
-
-To repozytorium ma charakter rozwojowy i eksperymentalny — poszczególne katalogi mogą reprezentować niezależne prototypy, wersje testowe lub osobne mini-projekty.
-
----
-
-## 🇬🇧 English
-
-**swir.github.io** is a GitHub Pages repository and a collection of browser-based experiments created and developed by Swir. It combines classic computer-inspired visual styles with small applications and interfaces that run directly in a web browser.
-
-The current landing page uses a **Windows 3.11 — Swir Edition** inspired interface.
-
-### 📂 Selected directories
-
-- `Atari/` — Atari-inspired retro experiments,
-- `C64/` — Commodore 64-inspired material,
-- `Mac/` — classic Mac-inspired interfaces,
-- `czateria/` — chat-related experiments,
-- `matrix/` — Matrix-themed projects,
-- `time/` and `time2/` — time-related projects,
-- `winamp/` — experiments inspired by classic Winamp,
-- `test/` and `testy/` — development and testing areas.
-
-### 🚀 Run locally
-
-The repository consists primarily of static web assets. A simple local server can be started with:
-
-```bash
-git clone https://github.com/Swir/swir.github.io.git
-cd swir.github.io
-python -m http.server 8000
+```text
+http://localhost:8000
 ```
 
-Then open `http://localhost:8000` in your browser.
+---
 
-### 🧪 Project nature
+## 🔍 Discoverability
 
-This is an experimental and evolving repository. Individual directories may represent independent prototypes, test versions or separate mini-projects.
+`retro web ui` • `windows 3.11 html` • `classic computer website` • `atari web interface` • `commodore 64 html` • `classic mac web ui` • `winamp html ui` • `github pages retro design` • `vintage css interface`
 
 ---
 
-## 👤 Author / Autor
+## 🧪 Project Nature
 
-Created and maintained by **Swir**.
+This repository is intentionally experimental. Individual directories may represent independent prototypes, visual experiments or mini-projects at different stages of development.
+
+---
+
+## 👨‍💻 Author
+
+Created and maintained by **Swir** — [@Swir](https://github.com/Swir)
+
+<div align="center">
+
+### 🖥️ Old-school computer vibes rebuilt for the modern browser
+
+⭐ **Star the repository if you enjoy retro interfaces!**
+
+</div>
