@@ -1,4 +1,4 @@
-/* SWIR OS 1.7 — Files, Associations, Notifications & Package Trust integration */
+/* SWIR OS 1.7 — Files, Associations, Notifications & Secure Package Pipeline integration */
 (() => {
   'use strict';
   const $=(s,r=document)=>r.querySelector(s);
@@ -7,21 +7,22 @@
   let trustLoading=false;
 
   function loadTrustCore(){
-    if((window.SwirTrustedKeys&&window.SwirPackageIntegrity)||trustLoading)return;
+    if((window.SwirTrustedKeys&&window.SwirPackageIntegrity&&window.SwirInstallPipeline)||trustLoading)return;
     trustLoading=true;
     const load=(src)=>new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.async=false;s.onload=resolve;s.onerror=reject;document.head.appendChild(s)});
     (async()=>{
       try{
         if(!window.SwirTrustedKeys)await load('./swir-trusted-keys.js');
         if(!window.SwirPackageIntegrity)await load('./swir-package-integrity.js');
-      }catch(error){console.error('SWIR Package Trust Core failed to load',error)}finally{trustLoading=false}
+        if(!window.SwirInstallPipeline)await load('./swir-install-pipeline.js');
+      }catch(error){console.error('SWIR Package Security Core failed to load',error)}finally{trustLoading=false}
     })();
   }
 
   function updateLabels(){
     document.title='SWIR OS 1.7 — Neon Core';
     document.querySelectorAll('.boot-subtitle,.topbar-brand span:last-child,.launcher-brand span,.widget-subtitle,.lock-session').forEach(n=>{
-      n.innerHTML=n.innerHTML.replace(/1\.6/g,'1.7').replace(/APP SDK: 1\.3/g,'APP SDK: 1.5').replace(/APP SDK: 1\.4/g,'APP SDK: 1.5').replace(/App SDK 1\.3/g,'App SDK 1.5').replace(/App SDK 1\.4/g,'App SDK 1.5');
+      n.innerHTML=n.innerHTML.replace(/1\.6/g,'1.7').replace(/APP SDK: 1\.[345]/g,'APP SDK: 1.6').replace(/App SDK 1\.[345]/g,'App SDK 1.6');
     });
   }
 
@@ -37,7 +38,7 @@
     document.addEventListener('keydown',async e=>{
       const input=e.target;if(!(input instanceof HTMLInputElement)||input.id!=='terminal-input'||e.key!=='Enter')return;
       const raw=input.value.trim(),parts=raw.toLowerCase().split(/\s+/),cmd=parts[0];
-      if(!['assoc','defaults','openwith','appdata','filetypes','notifytest','notifications','integrity','trust'].includes(cmd))return;
+      if(!['assoc','defaults','openwith','appdata','filetypes','notifytest','notifications','integrity','trust','installflow'].includes(cmd))return;
       e.preventDefault();e.stopImmediatePropagation();input.value='';line(`swir@neon-core:~$ ${raw}`,'term-ok');
       const svc=window.SwirAssociations;
       if(cmd==='assoc'||cmd==='filetypes'){
@@ -58,6 +59,9 @@
       if(cmd==='trust'){
         const info=window.SwirTrustedKeys?.info?.();line(info?`TRUSTED KEY STORE • ${info.total} keys (${info.systemKeys} system / ${info.userKeys} user)`:'Trusted Key Store unavailable.',info?'term-accent':'term-error');return;
       }
+      if(cmd==='installflow'){
+        const info=window.SwirInstallPipeline?.info?.();line(info?`INSTALL PIPELINE ${info.version} • ${info.stages.join(' -> ')}`:'Install Pipeline unavailable.',info?'term-accent':'term-error');return;
+      }
       line('Opening Default Apps...','term-accent');open('defaults');
     },true);
   }
@@ -66,17 +70,18 @@
     const shell=$('#os-shell');if(!shell||$('#v17-assoc-pill'))return;
     const svc=window.SwirAssociations,total=svc?.allExtensions?.().filter(e=>svc.handlersFor(e).length).length||0;
     const trust=window.SwirTrustedKeys?.info?.();
+    const pipe=window.SwirInstallPipeline?.info?.();
     const el=document.createElement('aside');el.id='v17-assoc-pill';el.className='v16-package-pill';
     el.style.bottom='86px';
-    el.innerHTML=`<strong>PACKAGE TRUST CORE</strong><span>${total} FILE TYPES • SDK 1.5 • ED25519 • ${trust?.total||0} KEYS</span>`;
+    el.innerHTML=`<strong>SECURE PACKAGE CORE</strong><span>${total} FILE TYPES • SDK 1.6 • ${pipe?'PIPELINE READY':'PIPELINE WAIT'} • ${trust?.total||0} KEYS</span>`;
     el.addEventListener('click',()=>open('store'));shell.appendChild(el);
   }
 
   function init(){
     loadTrustCore();
-    if(!window.SwirOS||!window.SwirAssociations||!window.SwirNotifications||!window.SwirAppSDK||!window.SwirPackageResolver||!window.SwirTrustedKeys||!window.SwirPackageIntegrity){setTimeout(init,60);return}
+    if(!window.SwirOS||!window.SwirAssociations||!window.SwirNotifications||!window.SwirAppSDK||!window.SwirPackageResolver||!window.SwirTrustedKeys||!window.SwirPackageIntegrity||!window.SwirInstallPipeline){setTimeout(init,60);return}
     updateLabels();addQuickTile();wireTerminal();showStatus();
-    setTimeout(()=>toast('SWIR OS 1.7','Publisher trust, package integrity, files, notifications and dependency services are online.'),1300);
+    setTimeout(()=>toast('SWIR OS 1.7','Secure install pipeline, publisher trust, integrity, files and dependency services are online.'),1300);
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
