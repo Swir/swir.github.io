@@ -1,4 +1,4 @@
-/* SWIR OS v1.0 — application registry
+/* SWIR OS v1.1 — application registry
    Existing folders are referenced only; their contents are not modified. */
 
 window.SWIR_APPS = [
@@ -10,6 +10,17 @@ window.SWIR_APPS = [
     category: "System",
     type: "internal",
     accent: "#00c8ff",
+    desktop: true
+  },
+  {
+    id: "store",
+    title: "SWIR Store",
+    subtitle: "Install desktop shortcuts",
+    icon: "S+",
+    category: "System",
+    type: "iframe",
+    url: "./swir-store.html",
+    accent: "#00d8ff",
     desktop: true
   },
   {
