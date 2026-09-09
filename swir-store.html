@@ -7,8 +7,8 @@
   <style>
     :root{color-scheme:dark;--bg:#06101d;--panel:#0a1728;--line:rgba(115,201,255,.18);--muted:#7e9eb4;--accent:#00a6ff;--accent2:#00d8ff;--ok:#50e3a4}
     *{box-sizing:border-box} body{margin:0;background:linear-gradient(145deg,#040b14,#07182a 55%,#03101c);color:#eef8ff;font-family:Inter,Segoe UI,Arial,sans-serif;min-height:100vh}
-    .wrap{padding:22px;max-width:1000px;margin:auto}.kicker{font:800 11px ui-monospace,Consolas,monospace;letter-spacing:.16em;color:var(--accent2)}
-    h1{margin:7px 0 4px;font-size:clamp(30px,5vw,54px);letter-spacing:-.04em}.lead{max-width:760px;color:#90aec2;line-height:1.6;font-size:13px}
+    .wrap{padding:22px;max-width:1100px;margin:auto}.kicker{font:800 11px ui-monospace,Consolas,monospace;letter-spacing:.16em;color:var(--accent2)}
+    h1{margin:7px 0 4px;font-size:clamp(30px,5vw,54px);letter-spacing:-.04em}.lead{max-width:800px;color:#90aec2;line-height:1.6;font-size:13px}
     .status{display:inline-flex;margin-top:12px;padding:7px 10px;border:1px solid var(--line);border-radius:999px;color:#9fc0d5;background:rgba(255,255,255,.025);font:700 10px ui-monospace,Consolas,monospace}
     .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:22px}.card{padding:16px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(145deg,rgba(12,31,52,.82),rgba(5,17,31,.72));box-shadow:0 18px 40px rgba(0,0,0,.18)}
     .top{display:flex;align-items:center;gap:11px}.icon{width:46px;height:46px;display:grid;place-items:center;border:1px solid var(--line);border-radius:14px;color:var(--accent2);background:rgba(0,166,255,.07);font:900 13px ui-monospace,Consolas,monospace}.card strong{display:block;font-size:14px}.card small{display:block;margin-top:4px;color:var(--muted);line-height:1.4}.actions{display:flex;gap:8px;margin-top:16px}.btn{flex:1;padding:9px 10px;border:1px solid rgba(255,255,255,.08);border-radius:10px;color:#dff5ff;background:rgba(255,255,255,.035);font:800 10px ui-monospace,Consolas,monospace;cursor:pointer}.btn:hover{border-color:rgba(0,200,255,.45);background:rgba(0,166,255,.08)}.btn.installed{color:var(--ok);border-color:rgba(80,227,164,.25)}
@@ -17,17 +17,21 @@
 </head>
 <body>
   <main class="wrap">
-    <div class="kicker">SWIR OS // SOFTWARE CHANNEL</div>
+    <div class="kicker">SWIR OS 1.2 // SOFTWARE CHANNEL</div>
     <h1>SWIR Store</h1>
-    <p class="lead">Install shortcuts for preserved SWIR projects onto the desktop. Installing here does not copy or change any original folder — it only adds a launcher icon inside SWIR OS.</p>
+    <p class="lead">Install shortcuts onto the desktop. Installing here never changes the original project folders — it only adds a launcher icon inside SWIR OS and stores that choice in your browser.</p>
     <div class="status">NEON CORE STORE // LOCAL INSTALLS</div>
     <section id="store-grid" class="grid"></section>
-    <div class="footer">SWIR Store v1.1 • Shortcut installation is stored in this browser using localStorage.</div>
+    <div class="footer">SWIR Store v1.2 • Shortcut installation is stored in this browser using localStorage.</div>
   </main>
   <div id="toast" class="toast"></div>
-
   <script>
     const apps = [
+      {id:'files',icon:'▤',title:'File Explorer',desc:'Virtual documents, preserved folders and Trash'},
+      {id:'notes',icon:'N',title:'Notes',desc:'Autosaving local notes'},
+      {id:'calc',icon:'±',title:'Calculator',desc:'Quick arithmetic calculator'},
+      {id:'player',icon:'▶',title:'SWIR Player',desc:'System chime and local audio'},
+      {id:'monitor',icon:'▥',title:'System Monitor',desc:'Browser, network and storage telemetry'},
       {id:'atari',icon:'A',title:'Atari',desc:'Retro Atari zone'},
       {id:'c64',icon:'64',title:'Commodore 64',desc:'C64 retro zone'},
       {id:'mac',icon:'M',title:'Classic Mac',desc:'Classic Macintosh zone'},
@@ -40,41 +44,12 @@
       {id:'browser',icon:'◎',title:'SWIR Browser',desc:'Quick web launcher'},
       {id:'about',icon:'i',title:'About SWIR OS',desc:'System build information'}
     ];
-
-    const readInstalled = () => {
-      try { return JSON.parse(localStorage.getItem('swir-installed-apps') || '[]'); }
-      catch { return []; }
-    };
-
-    function notify(text){
-      const el=document.getElementById('toast'); el.textContent=text; el.classList.add('show');
-      clearTimeout(notify.t); notify.t=setTimeout(()=>el.classList.remove('show'),1800);
-    }
-
-    function send(type,id){
-      window.parent.postMessage({type,id}, location.origin);
-    }
-
-    function toggle(id){
-      const installed=readInstalled();
-      const exists=installed.includes(id);
-      const next=exists?installed.filter(x=>x!==id):[...installed,id];
-      localStorage.setItem('swir-installed-apps',JSON.stringify(next));
-      send(exists?'SWIR_STORE_REMOVE':'SWIR_STORE_INSTALL',id);
-      notify(exists?'Shortcut removed':'Shortcut installed');
-      render();
-    }
-
-    function render(){
-      const installed=readInstalled();
-      document.getElementById('store-grid').innerHTML=apps.map(app=>{
-        const on=installed.includes(app.id);
-        return `<article class="card"><div class="top"><div class="icon">${app.icon}</div><div><strong>${app.title}</strong><small>${app.desc}</small></div></div><div class="actions"><button class="btn ${on?'installed':''}" onclick="toggle('${app.id}')">${on?'REMOVE':'INSTALL'}</button><button class="btn" onclick="send('SWIR_STORE_OPEN','${app.id}')">OPEN</button></div></article>`;
-      }).join('');
-    }
-
-    render();
-    window.addEventListener('storage',render);
+    const readInstalled=()=>{try{return JSON.parse(localStorage.getItem('swir-installed-apps')||'[]')}catch{return[]}};
+    function notify(text){const el=document.getElementById('toast');el.textContent=text;el.classList.add('show');clearTimeout(notify.t);notify.t=setTimeout(()=>el.classList.remove('show'),1800)}
+    function send(type,id){window.parent.postMessage({type,id},location.origin)}
+    function toggle(id){const installed=readInstalled();const exists=installed.includes(id);const next=exists?installed.filter(x=>x!==id):[...installed,id];localStorage.setItem('swir-installed-apps',JSON.stringify(next));send(exists?'SWIR_STORE_REMOVE':'SWIR_STORE_INSTALL',id);notify(exists?'Shortcut removed':'Shortcut installed');render()}
+    function render(){const installed=readInstalled();document.getElementById('store-grid').innerHTML=apps.map(app=>{const on=installed.includes(app.id);return `<article class="card"><div class="top"><div class="icon">${app.icon}</div><div><strong>${app.title}</strong><small>${app.desc}</small></div></div><div class="actions"><button class="btn ${on?'installed':''}" onclick="toggle('${app.id}')">${on?'REMOVE':'INSTALL'}</button><button class="btn" onclick="send('SWIR_STORE_OPEN','${app.id}')">OPEN</button></div></article>`}).join('')}
+    render();window.addEventListener('storage',render);
   </script>
 </body>
 </html>
