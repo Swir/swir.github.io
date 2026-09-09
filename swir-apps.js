@@ -6,6 +6,7 @@ window.SWIR_APPS = [
   { id:"store", title:"SWIR Store", subtitle:"Install SWIR packages and shortcuts", icon:"S+", category:"System", type:"iframe", url:"./swir-store.html", accent:"#00d8ff", desktop:true },
   { id:"files", title:"File Explorer", subtitle:"Virtual files, system apps and Trash", icon:"▤", category:"System", type:"iframe", url:"./swir-files.html", accent:"#53c7ff", desktop:true },
   { id:"chat", title:"SWIR Chat", subtitle:"Live chat through your own API server", icon:"CH", category:"Communication", type:"iframe", url:"./swir-chat.html", accent:"#35e6ff", desktop:true },
+  { id:"chatkit", title:"Chat Server Kit", subtitle:"Download API backend and install guide", icon:"API", category:"Communication", type:"iframe", url:"./swir-chat-kit.html", accent:"#66f0ff", desktop:false },
   { id:"notes", title:"Notes", subtitle:"Autosaving local notes", icon:"N", category:"Productivity", type:"iframe", url:"./swir-notes.html", accent:"#55e6c1", desktop:true },
   { id:"calc", title:"Calculator", subtitle:"Scientific-style quick calculator", icon:"±", category:"Productivity", type:"iframe", url:"./swir-calc.html", accent:"#74b9ff", desktop:true },
   { id:"player", title:"SWIR Player", subtitle:"Local audio and system sounds", icon:"▶", category:"Media", type:"iframe", url:"./swir-player.html", accent:"#ff8fd8", desktop:true },
