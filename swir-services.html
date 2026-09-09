@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SWIR Services</title>
+<style>
+:root{color-scheme:dark;--line:rgba(86,205,255,.18);--accent:#35e6ff;--ok:#50e3a4;--warn:#ffca72;--bad:#ff718c;--muted:#7899ad}*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:radial-gradient(circle at 80% 0,#102a42,transparent 32%),linear-gradient(145deg,#020812,#071522 55%,#020a13);color:#eefaff;font-family:Inter,Segoe UI,Arial,sans-serif}body{padding:18px}.head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:16px}.k{font:900 9px ui-monospace,Consolas,monospace;letter-spacing:.16em;color:var(--accent)}h1{margin:5px 0 0;font-size:clamp(28px,5vw,48px);letter-spacing:-.04em}.btn{border:1px solid var(--line);border-radius:10px;background:#ffffff07;color:white;padding:9px 11px;cursor:pointer;font:900 9px ui-monospace,Consolas,monospace}.btn:hover{border-color:#35e6ff77}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}.service{padding:14px;border:1px solid var(--line);border-radius:16px;background:linear-gradient(145deg,#0b1f34c8,#05111fba)}.top{display:flex;align-items:center;gap:10px}.ico{width:40px;height:40px;display:grid;place-items:center;border:1px solid var(--line);border-radius:12px;color:var(--accent);font:900 10px ui-monospace,Consolas,monospace}.name{min-width:0;flex:1}.name strong{display:block;font-size:12px}.name span{display:block;color:var(--muted);font:9px ui-monospace,Consolas,monospace;margin-top:4px}.state{font:900 8px ui-monospace,Consolas,monospace;padding:5px 7px;border:1px solid var(--line);border-radius:999px;color:#90aebb}.state.ok{color:var(--ok);border-color:#50e3a444}.state.warn{color:var(--warn);border-color:#ffca7244}.state.bad{color:var(--bad);border-color:#ff718c44}.meta{margin-top:12px;color:#7697aa;font:9px/1.6 ui-monospace,Consolas,monospace;min-height:30px}.actions{display:flex;gap:7px;margin-top:10px}.actions .btn{flex:1}.foot{margin-top:13px;color:#55778b;font:9px/1.6 ui-monospace,Consolas,monospace}@media(max-width:560px){body{padding:10px}.head{align-items:flex-start;flex-direction:column}.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header class="head"><div><div class="k">SWIR OS // SYSTEM SERVICE LAYER</div><h1>SWIR Services</h1></div><button id="refresh" class="btn">REFRESH</button></header>
+<section id="grid" class="grid"></section>
+<div class="foot">WEB EDITION: these services represent browser/platform adapters. Desktop and System editions can replace them with native daemons and background services.</div>
+<script>
+(() => {
+  'use strict';
+  const grid=document.getElementById('grid');
+  function parentApi(){try{return parent.SwirPlatform}catch{return null}}
+  function parentOs(){try{return parent.SwirOS}catch{return null}}
+  function configuredChat(){try{const c=JSON.parse(localStorage.getItem('swir-chat-config-v1')||'null');return !!(c&&c.url&&c.key&&c.nickname)}catch{return false}}
+  function open(id){parent.postMessage({type:'SWIR_NATIVE_OPEN',id},location.origin)}
+  function card(service){
+    const el=document.createElement('article');el.className='service';
+    el.innerHTML=`<div class="top"><div class="ico">${service.icon}</div><div class="name"><strong>${service.name}</strong><span>${service.adapter}</span></div><div class="state ${service.cls}">${service.state}</div></div><div class="meta">${service.meta}</div>${service.open?`<div class="actions"><button class="btn" data-open="${service.open}">OPEN CONTROL</button></div>`:''}`;
+    return el;
+  }
+  async function snapshot(){
+    const api=parentApi(),os=parentOs();
+    let sw=false;try{sw=!!navigator.serviceWorker?.controller}catch{}
+    let storage='LOCAL';try{if(navigator.storage?.estimate){const e=await navigator.storage.estimate();storage=`${Math.round((e.usage||0)/1024)} KB USED`}}catch{}
+    return [
+      {icon:'WM',name:'Window Manager',adapter:'SWIR SHELL',state:os?'RUNNING':'OFFLINE',cls:os?'ok':'bad',meta:os?`${os.apps?.length||0} registered applications`:'Shell API unavailable'},
+      {icon:'FS',name:'Storage Service',adapter:'SWIR PLATFORM',state:api?'RUNNING':'WAITING',cls:api?'ok':'warn',meta:`IndexedDB/local adapter • ${storage}`,open:'files'},
+      {icon:'NET',name:'Network Service',adapter:'BROWSER NETWORK',state:navigator.onLine?'ONLINE':'OFFLINE',cls:navigator.onLine?'ok':'bad',meta:navigator.onLine?'Network adapter reports connectivity':'Offline mode active'},
+      {icon:'CH',name:'Chat Service',adapter:'REMOTE API CLIENT',state:configuredChat()?'CONFIGURED':'NOT SET',cls:configuredChat()?'ok':'warn',meta:configuredChat()?'External SWIR Chat API configured':'Download Server Kit and configure an API endpoint',open:'chat'},
+      {icon:'PWA',name:'Cache Service',adapter:'SERVICE WORKER',state:sw?'ACTIVE':'STANDBY',cls:sw?'ok':'warn',meta:sw?'Offline application cache controlled':'Service worker may activate after reload',open:'updates'},
+      {icon:'UP',name:'Update Service',adapter:'GITHUB CHANNEL',state:navigator.onLine?'READY':'OFFLINE',cls:navigator.onLine?'ok':'warn',meta:'Update Center checks repository/runtime state',open:'updates'},
+      {icon:'SEC',name:'Permission Service',adapter:'PLATFORM CONTROL',state:api?'ACTIVE':'WAITING',cls:api?'ok':'warn',meta:'Application permissions and package metadata',open:'control'},
+      {icon:'SES',name:'Session Service',adapter:'WEB SESSION',state:'CREATOR',cls:'ok',meta:'Local SWIR OS Web Edition session'}
+    ];
+  }
+  async function render(){const list=await snapshot();grid.innerHTML='';list.forEach(s=>grid.appendChild(card(s)))}
+  document.addEventListener('click',e=>{const b=e.target.closest('[data-open]');if(b)open(b.dataset.open)});
+  document.getElementById('refresh').addEventListener('click',render);
+  addEventListener('online',render);addEventListener('offline',render);render();setInterval(render,5000);
+})();
+</script>
+</body>
+</html>
