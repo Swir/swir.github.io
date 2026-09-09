@@ -6,15 +6,15 @@
 (() => {
   'use strict';
   const $=(s,r=document)=>r.querySelector(s);const $$=(s,r=document)=>[...r.querySelectorAll(s)];
-  const VFS_KEY='swir-vfs-v12';
+  const VFS_KEY='swir-vfs-v12';const NOTES_KEY='swir-notes-v12';
   let context=null;
   function app(id){return window.SwirOS?.apps?.find(x=>x.id===id)}
   function open(id){window.SwirOS?.open?.(id)}
   function toast(title,msg){window.SwirOS?.toast?.(title,msg)}
-  function esc(v=''){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-  function readVFS(){try{const v=JSON.parse(localStorage.getItem(VFS_KEY)||'[]');return Array.isArray(v)?v:[]}catch{return[]}}
+  function readJSON(key,fallback=[]){try{const v=JSON.parse(localStorage.getItem(key)||'null');return v??fallback}catch{return fallback}}
+  function readVFS(){const v=readJSON(VFS_KEY,[]);return Array.isArray(v)?v:[]}
   function writeVFS(v){localStorage.setItem(VFS_KEY,JSON.stringify(v))}
-  function uid(){return 'f-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7)}
+  function uid(prefix='f'){return prefix+'-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7)}
 
   function createContextMenu(){
     const el=document.createElement('div');el.id='swir-context-menu';el.setAttribute('role','menu');
@@ -37,8 +37,10 @@
   function showContext(x,y){if(!context)return;context.classList.add('open');const r=context.getBoundingClientRect();context.style.left=Math.max(8,Math.min(x,innerWidth-r.width-8))+'px';context.style.top=Math.max(8,Math.min(y,innerHeight-r.height-8))+'px'}
   function hideContext(){context?.classList.remove('open')}
   function newFolder(){const name=prompt('Virtual folder name:','New Folder');if(!name?.trim())return;const items=readVFS();items.push({id:uid(),type:'folder',name:name.trim(),parent:'root',trashed:false,created:Date.now()});writeVFS(items);toast('File Explorer',`Folder “${name.trim()}” created in Documents.`);open('files')}
+  function newNote(){let notes=readJSON(NOTES_KEY,[]);if(!Array.isArray(notes))notes=[];const n={id:uid('n'),title:'Untitled',body:'',created:Date.now(),updated:Date.now()};notes.unshift(n);localStorage.setItem(NOTES_KEY,JSON.stringify(notes));localStorage.setItem('swir-notes-open',n.id);toast('Notes','New note created.');open('notes')}
   function handleContext(action){
-    const map={files:'files',notes:'notes',calc:'calc',player:'player',monitor:'monitor',personalize:'settings'};
+    if(action==='notes')return newNote();
+    const map={files:'files',calc:'calc',player:'player',monitor:'monitor',personalize:'settings'};
     if(map[action])return open(map[action]);if(action==='folder')return newFolder();if(action==='arrange'){localStorage.removeItem('swir-icon-positions');toast('Desktop','Icon layout reset. Reloading desktop...');setTimeout(()=>location.reload(),350)}if(action==='refresh')location.reload();if(action==='lock')$('#quick-lock')?.click();
   }
 
@@ -58,7 +60,12 @@
   }
   function updateNetworkStatus(announce=true){const online=navigator.onLine;const text=$('#v12-net-text'),dot=$('#v12-net-dot');if(text)text.textContent=`NETWORK: ${online?'ONLINE':'OFFLINE'} • STORAGE: LOCAL`;dot?.classList.toggle('offline',!online);if(announce)toast('Network',online?'Connection restored.':'You are offline. Cached SWIR OS modules may still work.')}
 
-  function addQuickTiles(){const grid=$('#quick-center .quick-grid');if(!grid||grid.dataset.v12==='1')return;grid.dataset.v12='1';const html=`<button class="quick-tile" data-v12-open="files" type="button"><strong>FILE EXPLORER</strong><span>Virtual files & Trash</span></button><button class="quick-tile" data-v12-open="notes" type="button"><strong>NOTES</strong><span>Autosaving local notes</span></button><button class="quick-tile" data-v12-open="player" type="button"><strong>SWIR PLAYER</strong><span>Local audio player</span></button><button class="quick-tile" data-v12-open="monitor" type="button"><strong>MONITOR</strong><span>Browser telemetry</span></button>`;grid.insertAdjacentHTML('beforeend',html)}
+  function addQuickTiles(){
+    const grid=$('#quick-center .quick-grid');if(!grid||grid.dataset.v12==='1')return;grid.dataset.v12='1';
+    const html=`<button class="quick-tile" data-v12-open="files" type="button"><strong>FILE EXPLORER</strong><span>Virtual files & Trash</span></button><button class="quick-tile" data-v12-open="notes" type="button"><strong>NOTES</strong><span>Autosaving local notes</span></button><button class="quick-tile" data-v12-open="player" type="button"><strong>SWIR PLAYER</strong><span>Local audio player</span></button><button class="quick-tile" data-v12-open="monitor" type="button"><strong>MONITOR</strong><span>Browser telemetry</span></button>`;
+    grid.insertAdjacentHTML('beforeend',html);
+    grid.addEventListener('click',e=>{const b=e.target.closest('[data-v12-open]');if(!b)return;open(b.dataset.v12Open);$('#quick-button')?.click()});
+  }
 
   function wireMessages(){window.addEventListener('message',e=>{if(e.origin!==location.origin||!e.data)return;if(e.data.type==='SWIR_V12_OPEN_APP'&&app(e.data.id))open(e.data.id)})}
 
