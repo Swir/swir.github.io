@@ -74,60 +74,19 @@ Web Edition exposes online/offline state and connection metrics when supported, 
 
 Browsers do not allow arbitrary scanning/connecting to real Wi-Fi networks. Future native editions can map the same UI to native networking / NetworkManager.
 
-```text
-SWIR Network Center
-        |
-        v
-Network Adapter Contract
-        |
-   +----+----------------+
-   |                     |
-Desktop               System
-Native API            NetworkManager
-```
-
 ---
 
 ## App SDK & Package Core — 1.6
 
-SWIR OS 1.6 introduced **SWIR App SDK 1.0** and **SWIR App Package 1.0**.
-
-Official package schema:
-
-```text
-swir.app/1.0
-```
+SWIR OS 1.6 introduced **SWIR App SDK 1.0** and **SWIR App Package 1.0** using schema `swir.app/1.0`.
 
 The specification lives in `SWIR-APP-PACKAGE-1.0.md`.
 
-### Web Edition install lifecycle
-
-```text
-SWIR Store
-      |
-      v
-Package manifest
-      |
-      v
-Permission review
-      |
-      v
-SwirPlatform.packages.install()
-      |
-      +--> SwirPlatform.permissions
-      +--> launcher registry mirror
-      |
-      v
-Apply / rebuild shell registry
-```
-
-Web Edition registers package state and permissions while the actual HTML/JS source ships with the static SWIR OS build.
-
 ---
 
-## Files, Associations & App Notifications — 1.7
+## Files, Associations, Notifications & Dependency Core — 1.7
 
-SWIR OS 1.7 extends the SDK through **SWIR App SDK 1.2** and adds portable file-association, app-data and notification contracts.
+SWIR OS 1.7 now reaches **SWIR App SDK 1.3**. The 1.7 line adds portable file-association, app-data, application-notification and package dependency contracts.
 
 ### File handoff
 
@@ -150,7 +109,7 @@ SwirAppSDK.files.open(...)
 application receives SWIR_OPEN_FILE payload
 ```
 
-The initial package handlers are:
+Initial handlers:
 
 ```text
 swir.code          -> .txt .html .htm .css .js .json .md .log
@@ -159,11 +118,9 @@ swir.archive       -> .zip
 swir.pdf-viewer    -> .pdf
 ```
 
-`Default Apps` stores the selected default handler locally in Web Edition. Desktop/System editions can map the same manifest contract to native MIME/file association systems.
-
 ### App Data
 
-Every installable package can declare a logical private data path:
+Every installable package can declare a logical private data path such as:
 
 ```text
 SWIR://APPDATA/CODE
@@ -175,25 +132,9 @@ SWIR://APPDATA/CHAT
 
 Web Edition maps this to namespaced SWIR Platform storage. Desktop Edition can map it to a native application-data directory. System Edition can map it to the native user/application filesystem.
 
-### File Explorer 1.7
-
-The Web Explorer now supports:
-
-- virtual folders and files
-- text-file creation/editing
-- importing small local files into the Web VFS
-- MIME/type metadata
-- double-click default open
-- `Open With…`
-- file export
-- App Data view
-- Trash
-
-Web VFS binary imports are deliberately size-limited because browser-local storage is not a native disk. Desktop/System editions will remove this limitation by using native filesystem adapters.
-
 ### Application Notification Service
 
-Applications with the `notifications` permission can publish portable notifications through the SDK. The Web Edition maps them to the SWIR shell toast/notification center and keeps a bounded application notification history. Desktop/System editions can later map the same contract to native notification daemons.
+Applications with the `notifications` permission can publish portable notifications through the SDK. The Web Edition maps them to the SWIR shell toast/notification center and keeps a bounded application notification history.
 
 ```text
 SWIR App
@@ -207,34 +148,50 @@ SwirAppSDK.notifications.send(appId, options)
    |
    v
 SWIR Notification Service
-   |
-   +--> shell toast / notification center
-   +--> bounded app notification history
 ```
 
-Supported SDK calls:
+### Package Dependency Core
+
+The package resolver implements `swir.dependencies/1.0` and is intentionally independent from the web Store UI.
 
 ```text
-SwirAppSDK.notifications.send(appId, options)
-SwirAppSDK.notifications.history(appId?)
-SwirAppSDK.notifications.clear(appId?)
+SWIR App Package
+      |
+      v
+SWIR Package Resolver
+      |
+      +--> min SWIR OS version
+      +--> min App SDK version
+      +--> min Platform API
+      +--> supported editions
+      +--> required package versions
+      +--> optional dependency warnings
+      |
+      v
+INSTALL / REMOVE PLAN
 ```
 
-Notification options currently support `title`, `message`, `tag`, `priority`, `silent` and `openApp`. Tagged notifications replace older entries from the same application instead of growing history indefinitely.
+Supported portable package APIs:
+
+```text
+SwirAppSDK.packages.check(id)
+SwirAppSDK.packages.planInstall(id)
+SwirAppSDK.packages.planRemove(id)
+SwirAppSDK.packages.audit()
+SwirAppSDK.packages.runtime()
+SwirAppSDK.packages.compareVersions(a, b)
+```
+
+**SWIR Store 2.2** enforces resolver results before install and remove actions. A package that requires a newer OS/SDK/API, unsupported edition, or missing dependency is blocked. Removal is blocked if an installed dependent package would break.
+
+Desktop/System editions can reuse the resolver before native payload download/unpack, signature verification and service/file-association registration.
 
 ### SDK additions available in 1.7
 
 ```text
-SwirAppSDK.files.open(file, appId?)
-SwirAppSDK.files.consumeOpen(appId)
-SwirAppSDK.files.handlersFor(name)
-SwirAppSDK.files.defaultFor(name)
-SwirAppSDK.files.setDefault(extension, appId)
-SwirAppSDK.files.extension(name)
-SwirAppSDK.files.appData(appId)
-SwirAppSDK.notifications.send(appId, options)
-SwirAppSDK.notifications.history(appId?)
-SwirAppSDK.notifications.clear(appId?)
+SwirAppSDK.files.*
+SwirAppSDK.notifications.*
+SwirAppSDK.packages.*
 ```
 
 ---
@@ -250,6 +207,7 @@ Current Web service/status model includes:
 - Identity Service
 - Session Service
 - Package Service
+- **Package Resolver**
 - File Association Service
 - App Data Service
 - Notification Service
@@ -294,20 +252,21 @@ The Web client lives in SWIR OS. Chat Server Kit supplies the downloadable PHP b
 - SWIR Chat + downloadable backend
 - Task Manager / SWIR Services
 - permissions / clipboard / Update Center
-- **SWIR App SDK 1.2**
+- **SWIR App SDK 1.3**
 - **SWIR App Package 1.0**
-- **SWIR Store 2.1 install/remove lifecycle**
+- **SWIR Store 2.2 dependency-aware lifecycle**
+- **package compatibility + dependency resolver**
 - **file associations / Default Apps / Open With**
 - **App Data namespaces**
 - **permission-aware application notification API**
 
 ### Next Web Edition work
 
-- package dependency model
+- signed catalog metadata prototype
 - widgets as installable packages
 - application developer template / SDK examples
-- signed catalog metadata prototype
 - larger binary/file storage on IndexedDB instead of localStorage mirror
+- package update transactions / rollback metadata
 - native-ready notification actions and persistence adapter
 
 ### Desktop Edition 2.x
@@ -322,6 +281,8 @@ Planned:
 - native clipboard and tray
 - global shortcuts and native file associations
 - `.swirapp` payload installer/updater
+- package dependency resolver shared with Web Edition
+- package signatures and integrity verification
 - sandboxed permissions
 - native notification adapter
 
@@ -335,7 +296,7 @@ Planned:
 - SWIR desktop shell
 - NetworkManager/hardware integration
 - system services
-- package manager/updater
+- dependency-aware package manager/updater
 - filesystem integration
 - recovery mode
 
