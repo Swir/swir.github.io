@@ -48,14 +48,14 @@
     const svc=window.SwirAssociations,total=svc?.allExtensions?.().filter(e=>svc.handlersFor(e).length).length||0;
     const el=document.createElement('aside');el.id='v17-assoc-pill';el.className='v16-package-pill';
     el.style.bottom='86px';
-    el.innerHTML=`<strong>FILES + NOTIFICATIONS</strong><span>${total} FILE TYPES • APP SDK 1.2</span>`;
+    el.innerHTML=`<strong>FILES + NOTIFICATIONS</strong><span>${total} FILE TYPES • APP SDK 1.3</span>`;
     el.addEventListener('click',()=>open('defaults'));shell.appendChild(el);
   }
 
   function init(){
-    if(!window.SwirOS||!window.SwirAssociations||!window.SwirNotifications||!window.SwirAppSDK){setTimeout(init,60);return}
+    if(!window.SwirOS||!window.SwirAssociations||!window.SwirNotifications||!window.SwirAppSDK||!window.SwirPackageResolver){setTimeout(init,60);return}
     updateLabels();addQuickTile();wireTerminal();showStatus();
-    setTimeout(()=>toast('SWIR OS 1.7','Files, associations and App Notification API are online.'),1300);
+    setTimeout(()=>toast('SWIR OS 1.7','Files, notifications and dependency-aware package services are online.'),1300);
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
