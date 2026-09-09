@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SWIR Task Manager</title>
+<style>
+:root{color-scheme:dark;--bg:#050c16;--panel:#081626;--line:rgba(105,201,255,.18);--text:#edf8ff;--muted:#7f9db2;--accent:#00c8ff;--danger:#ff6b81;--ok:#50e3a4}*{box-sizing:border-box}html,body{margin:0;height:100%;background:linear-gradient(145deg,#030914,#071525 55%,#03101b);color:var(--text);font-family:Inter,Segoe UI,Arial,sans-serif}.app{height:100%;display:grid;grid-template-rows:auto 1fr auto}.head{display:flex;justify-content:space-between;align-items:center;padding:15px 17px;border-bottom:1px solid var(--line);background:rgba(3,11,20,.86)}.title small{display:block;color:var(--accent);font:800 10px ui-monospace,Consolas,monospace;letter-spacing:.14em}.title strong{display:block;margin-top:5px;font-size:22px}.btn{border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.035);color:#e7f7ff;padding:8px 11px;cursor:pointer;font:800 10px ui-monospace,Consolas,monospace}.btn:hover{border-color:rgba(0,200,255,.5);background:rgba(0,166,255,.08)}.content{padding:14px;overflow:auto}.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}.stat{padding:12px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.025)}.stat b{display:block;color:var(--accent);font:900 16px ui-monospace,Consolas,monospace}.stat span{display:block;margin-top:4px;color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.08em}.table{border:1px solid var(--line);border-radius:15px;overflow:hidden;background:rgba(6,18,32,.7)}.row{display:grid;grid-template-columns:72px 1.5fr 1fr 1fr 90px;gap:8px;align-items:center;padding:11px 12px;border-bottom:1px solid rgba(255,255,255,.045);font-size:11px}.row:last-child{border-bottom:0}.row.headrow{background:rgba(255,255,255,.028);color:#7193aa;font:800 9px ui-monospace,Consolas,monospace;letter-spacing:.08em}.name b{display:block}.name span{display:block;color:var(--muted);font-size:9px;margin-top:3px}.state{font:800 9px ui-monospace,Consolas,monospace;color:var(--ok)}.state.sleeping{color:#f6c85f}.state.background{color:#8aa8bc}.kill{border:1px solid rgba(255,107,129,.25);border-radius:8px;background:rgba(255,107,129,.06);color:#ff9cab;padding:6px 8px;cursor:pointer;font:800 9px ui-monospace,Consolas,monospace}.empty{padding:36px;text-align:center;color:var(--muted)}.foot{display:flex;justify-content:space-between;padding:8px 12px;border-top:1px solid var(--line);color:#63849a;font:9px ui-monospace,Consolas,monospace;background:#040c16}@media(max-width:680px){.summary{grid-template-columns:repeat(2,1fr)}.row{grid-template-columns:60px 1fr 1fr 72px}.type{display:none}.content{padding:10px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="head"><div class="title"><small>SWIR OS // PROCESS SERVICE</small><strong>Task Manager</strong></div><button id="refresh" class="btn">REFRESH</button></header>
+  <main class="content">
+    <section class="summary"><div class="stat"><b id="count">0</b><span>Processes</span></div><div class="stat"><b id="active">0</b><span>Active</span></div><div class="stat"><b id="cores">—</b><span>Logical cores</span></div><div class="stat"><b id="memory">—</b><span>Memory hint</span></div></section>
+    <section class="table"><div class="row headrow"><span>PID</span><span>PROCESS</span><span>STATE</span><span class="type">TYPE</span><span>ACTION</span></div><div id="rows"></div></section>
+  </main>
+  <footer class="foot"><span>NEON CORE PROCESS MANAGER</span><span id="updated">READY</span></footer>
+</div>
+<script>
+const $=s=>document.querySelector(s);
+function api(){try{return parent.SwirPlatform}catch{return null}}
+function esc(v=''){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function render(){const p=api();const list=p?.processes?.list?.()||[];$('#count').textContent=list.length;$('#active').textContent=list.filter(x=>x.state==='active').length;$('#cores').textContent=navigator.hardwareConcurrency||'—';$('#memory').textContent=navigator.deviceMemory?`${navigator.deviceMemory} GB`:'browser';$('#updated').textContent=new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});$('#rows').innerHTML=list.length?list.map(x=>`<div class="row"><span>${x.pid}</span><div class="name"><b>${esc(x.title)}</b><span>${esc(x.id)}</span></div><span class="state ${esc(x.state)}">${esc(x.state.toUpperCase())}</span><span class="type">${esc(x.type)}</span><button class="kill" data-kill="${esc(x.id)}">END</button></div>`).join(''):'<div class="empty">No application processes are running.</div>'}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-kill]');if(!b)return;api()?.processes?.kill?.(b.dataset.kill);setTimeout(render,100)});$('#refresh').onclick=render;setInterval(render,1200);render();
+</script>
+</body></html>
