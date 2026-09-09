@@ -90,7 +90,7 @@ Native API            NetworkManager
 
 ## App SDK & Package Core — 1.6
 
-SWIR OS 1.6 introduces **SWIR App SDK 1.0** and **SWIR App Package 1.0**.
+SWIR OS 1.6 introduced **SWIR App SDK 1.0** and **SWIR App Package 1.0**.
 
 Official package schema:
 
@@ -103,7 +103,7 @@ The specification lives in `SWIR-APP-PACKAGE-1.0.md`.
 ### Web Edition install lifecycle
 
 ```text
-SWIR Store 2.0
+SWIR Store
       |
       v
 Package manifest
@@ -123,43 +123,85 @@ Apply / rebuild shell registry
 
 Web Edition registers package state and permissions while the actual HTML/JS source ships with the static SWIR OS build.
 
-Desktop/System target lifecycle:
+---
+
+## Files & Associations Core — 1.7
+
+SWIR OS 1.7 extends the SDK to **SWIR App SDK 1.1** and adds a portable file association layer.
+
+### File handoff
 
 ```text
-DOWNLOAD .swirapp
-      -> VERIFY MANIFEST
-      -> VERIFY SIGNATURE
-      -> CHECK COMPATIBILITY
-      -> DISPLAY PERMISSIONS
-      -> INSTALL PAYLOAD
-      -> REGISTER APP / FILE TYPES
-      -> LAUNCH
+SWIR File Explorer
+       |
+       v
+extension / MIME lookup
+       |
+       v
+SWIR File Association Service
+       |
+       +--> saved default handler
+       +--> first installed compatible package
+       |
+       v
+SwirAppSDK.files.open(...)
+       |
+       v
+application receives SWIR_OPEN_FILE payload
 ```
 
-### Initial installable package catalog
-
-- `swir.code` — SWIR Code
-- `swir.image-studio` — Image Studio
-- `swir.archive` — Archive Manager
-- `swir.pdf-viewer` — PDF Viewer
-- `swir.chat` — SWIR Chat
-
-Core system components such as Store, File Explorer, Settings, User Manager, Device Manager, Network Center, Task Manager, Services, Update Center, Platform Control and Terminal stay outside the uninstallable catalog.
-
-### Initial permission vocabulary
+The initial package handlers are:
 
 ```text
-files.read
-files.write
-clipboard
-downloads
-network
-storage
-identity.basic
-notifications
+swir.code          -> .txt .html .htm .css .js .json .md .log
+swir.image-studio  -> .png .jpg .jpeg .webp .gif
+swir.archive       -> .zip
+swir.pdf-viewer    -> .pdf
 ```
 
-A manifest requesting a permission does not automatically grant authority. Platform adapters are responsible for enforcing granted capabilities.
+`Default Apps` stores the selected default handler locally in Web Edition. Desktop/System editions can map the same manifest contract to native MIME/file association systems.
+
+### App Data
+
+Every installable package can declare a logical private data path:
+
+```text
+SWIR://APPDATA/CODE
+SWIR://APPDATA/IMAGE
+SWIR://APPDATA/ARCHIVE
+SWIR://APPDATA/PDF
+SWIR://APPDATA/CHAT
+```
+
+Web Edition maps this to namespaced SWIR Platform storage. Desktop Edition can map it to a native application-data directory. System Edition can map it to the native user/application filesystem.
+
+### File Explorer 1.7
+
+The Web Explorer now supports:
+
+- virtual folders and files
+- text-file creation/editing
+- importing small local files into the Web VFS
+- MIME/type metadata
+- double-click default open
+- `Open With…`
+- file export
+- App Data view
+- Trash
+
+Web VFS binary imports are deliberately size-limited because browser-local storage is not a native disk. Desktop/System editions will remove this limitation by using native filesystem adapters.
+
+### SDK additions
+
+```text
+SwirAppSDK.files.open(file, appId?)
+SwirAppSDK.files.consumeOpen(appId)
+SwirAppSDK.files.handlersFor(name)
+SwirAppSDK.files.defaultFor(name)
+SwirAppSDK.files.setDefault(extension, appId)
+SwirAppSDK.files.extension(name)
+SwirAppSDK.files.appData(appId)
+```
 
 ---
 
@@ -173,6 +215,9 @@ Current Web service/status model includes:
 - Storage Service
 - Identity Service
 - Session Service
+- Package Service
+- File Association Service
+- App Data Service
 - Chat Service
 - Cache Service
 - Update Service
@@ -214,20 +259,21 @@ The Web client lives in SWIR OS. Chat Server Kit supplies the downloadable PHP b
 - SWIR Chat + downloadable backend
 - Task Manager / SWIR Services
 - permissions / clipboard / Update Center
-- **SWIR App SDK 1.0**
+- **SWIR App SDK 1.1**
 - **SWIR App Package 1.0**
-- **SWIR Store 2.0 install/remove lifecycle**
+- **SWIR Store 2.1 install/remove lifecycle**
+- **file associations / Default Apps / Open With**
+- **App Data namespaces**
 
 ### Next Web Edition work
 
-- app-specific data directories
-- file associations and “Open with”
 - package update/version comparison
 - package dependency model
 - notification API for applications
 - widgets as installable packages
 - application developer template / SDK examples
 - signed catalog metadata prototype
+- larger binary/file storage on IndexedDB instead of localStorage mirror
 
 ### Desktop Edition 2.x
 
@@ -239,7 +285,7 @@ Planned:
 - native account/session backend
 - process/service manager
 - native clipboard and tray
-- global shortcuts and file associations
+- global shortcuts and native file associations
 - `.swirapp` payload installer/updater
 - sandboxed permissions
 
