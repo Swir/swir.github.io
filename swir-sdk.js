@@ -1,4 +1,4 @@
-/* SWIR App SDK 1.3 — Web Edition bridge */
+/* SWIR App SDK 1.4 — Web Edition bridge */
 (() => {
   'use strict';
   const catalog = () => Array.isArray(window.SWIR_PACKAGE_CATALOG) ? window.SWIR_PACKAGE_CATALOG : [];
@@ -54,9 +54,15 @@
   async function packageAudit(){const svc=packageResolver();if(!svc)throw new Error('Package resolver unavailable');return svc.audit()}
   function packageRuntime(){return packageResolver()?.runtime?.()||null}
   function compareVersions(a,b){const svc=packageResolver();return svc?svc.compareVersions(a,b):0}
+  function integrityService(){return window.SwirPackageIntegrity||null}
+  async function packageFingerprint(value){const svc=integrityService();if(!svc)throw new Error('Package integrity service unavailable');const m=typeof value==='string'?manifest(value):value;if(!m)throw new Error('Package manifest not found');return svc.fingerprintManifest(m)}
+  async function verifyManifest(value,expected=null){const svc=integrityService();if(!svc)throw new Error('Package integrity service unavailable');const m=typeof value==='string'?manifest(value):value;if(!m)throw new Error('Package manifest not found');return svc.verifyManifest(m,expected)}
+  async function verifyEntry(value){const svc=integrityService();if(!svc)throw new Error('Package integrity service unavailable');const m=typeof value==='string'?manifest(value):value;if(!m)throw new Error('Package manifest not found');return svc.verifyEntry(m)}
+  async function integrityPlan(value,options={}){const svc=integrityService();if(!svc)throw new Error('Package integrity service unavailable');const m=typeof value==='string'?manifest(value):value;if(!m)throw new Error('Package manifest not found');return svc.plan(m,options)}
+  function validateSignatureDescriptor(signature){const svc=integrityService();if(!svc)throw new Error('Package integrity service unavailable');return svc.validateSignatureDescriptor(signature)}
 
   window.SwirAppSDK = Object.freeze({
-    meta: Object.freeze({ name: 'SWIR App SDK', version: '1.3.0', schema: 'swir.app/1.0', os: 'SWIR OS 1.7', edition: 'WEB' }),
+    meta: Object.freeze({ name: 'SWIR App SDK', version: '1.4.0', schema: 'swir.app/1.0', os: 'SWIR OS 1.7', edition: 'WEB' }),
     catalog,
     manifest,
     installed,
@@ -66,7 +72,7 @@
     identity: Object.freeze({ active: activeIdentity }),
     files: Object.freeze({ open:openFile, consumeOpen, handlersFor, defaultFor, setDefault, extension, appData }),
     notifications: Object.freeze({ send:sendNotification, history:notificationHistory, clear:clearNotifications }),
-    packages: Object.freeze({ check:checkPackage, planInstall, planRemove, audit:packageAudit, runtime:packageRuntime, compareVersions }),
+    packages: Object.freeze({ check:checkPackage, planInstall, planRemove, audit:packageAudit, runtime:packageRuntime, compareVersions, fingerprint:packageFingerprint, verifyManifest, verifyEntry, integrityPlan, validateSignatureDescriptor }),
     system: Object.freeze({ info: systemInfo }),
     shell: Object.freeze({ open, notify })
   });
