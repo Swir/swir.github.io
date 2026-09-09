@@ -3,6 +3,7 @@
   'use strict';
 
   const LEGACY_IDS = ['winamp','time','time2','tomi','test','testy','retro','atari','c64','mac','swiramp'];
+  const RAW_BASE = 'https://raw.githubusercontent.com/Swir/swir.github.io/main/';
 
   function cleanLegacyShortcuts() {
     try {
@@ -123,15 +124,15 @@
       grid.appendChild(kit);
 
       const api = systemCard(doc, 'PHP', 'swir-chat-api.php', 'Self-installing PHP + MySQL/MariaDB backend for SWIR Chat.');
-      api.addEventListener('click', () => downloadStatic('./swir-chat-api.php', 'swir-chat-api.php'));
+      api.addEventListener('click', () => downloadStatic(RAW_BASE + 'swir-chat-api.php', 'swir-chat-api.php'));
       grid.appendChild(api);
 
       const guide = systemCard(doc, 'MD', 'SWIR-CHAT-SERVER.md', 'Chat server installation and configuration guide.');
-      guide.addEventListener('click', () => downloadStatic('./SWIR-CHAT-SERVER.md', 'SWIR-CHAT-SERVER.md'));
+      guide.addEventListener('click', () => downloadStatic(RAW_BASE + 'SWIR-CHAT-SERVER.md', 'SWIR-CHAT-SERVER.md'));
       grid.appendChild(guide);
 
       const arch = systemCard(doc, 'SYS', 'SWIR-OS-ARCHITECTURE.md', 'Web → Desktop → System architecture roadmap.');
-      arch.addEventListener('click', () => downloadStatic('./SWIR-OS-ARCHITECTURE.md', 'SWIR-OS-ARCHITECTURE.md'));
+      arch.addEventListener('click', () => downloadStatic(RAW_BASE + 'SWIR-OS-ARCHITECTURE.md', 'SWIR-OS-ARCHITECTURE.md'));
       grid.appendChild(arch);
     });
   }
