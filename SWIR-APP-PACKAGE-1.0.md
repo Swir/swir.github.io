@@ -15,7 +15,7 @@ app manifest (swir.app/1.0)
       +--> System Edition: packaged application + Linux/SWIR adapter
 ```
 
-The Web Edition does not pretend to install native binaries. Installation registers an official application manifest, permissions, file associations and package state in the SWIR Platform package layer. Desktop/System editions can later use the same manifest inside a real `.swirapp` archive.
+The Web Edition does not pretend to install native binaries. Installation registers an official application manifest, compatibility requirements, dependencies, permissions, file associations and package state in the SWIR Platform package layer. Desktop/System editions can later use the same manifest inside a real `.swirapp` archive.
 
 ## Manifest
 
@@ -38,13 +38,77 @@ Example:
   "desktop": true,
   "permissions": ["files.read", "files.write", "clipboard", "downloads"],
   "associations": [".txt", ".html", ".css", ".js", ".json", ".md"],
-  "appData": "SWIR://APPDATA/CODE"
+  "appData": "SWIR://APPDATA/CODE",
+  "compatibility": {
+    "minOS": "1.7.0",
+    "minSDK": "1.2.0",
+    "platformApi": 2,
+    "editions": ["WEB", "DESKTOP", "SYSTEM"]
+  },
+  "dependencies": [],
+  "optionalDependencies": []
 }
 ```
 
 Required fields: `schema`, `id`, `packageId`, `name`, `version`, `author`, `type`, `entry`.
 
 Package IDs must be unique. Official SWIR packages use the `swir.*` namespace.
+
+## Compatibility & dependency model — SWIR OS 1.7 / App SDK 1.3
+
+The package resolver implements `swir.dependencies/1.0`.
+
+`compatibility` can declare:
+
+- `minOS` — minimum SWIR OS version.
+- `minSDK` — minimum SWIR App SDK version.
+- `platformApi` — minimum SWIR Platform API revision.
+- `editions` — allowed runtime editions such as `WEB`, `DESKTOP`, `SYSTEM`.
+
+`dependencies` contains required packages. A dependency entry may reference an official package and a minimum version:
+
+```json
+{
+  "packageId": "swir.example-runtime",
+  "minVersion": "1.4.0"
+}
+```
+
+`optionalDependencies` uses the same shape but produces a warning instead of blocking installation.
+
+Before installation SWIR Store asks the resolver for an install plan:
+
+```text
+PACKAGE MANIFEST
+      |
+      v
+SWIR Package Resolver
+      |
+      +--> OS version
+      +--> App SDK version
+      +--> Platform API
+      +--> Edition
+      +--> required packages + versions
+      |
+      v
+COMPATIBLE ?
+  YES -> permission review -> install
+  NO  -> block install + diagnostics
+```
+
+Removal is also dependency-aware. If another installed package declares the target as a required dependency, Store refuses removal until dependent packages are removed or upgraded.
+
+Portable resolver API:
+
+```text
+SwirAppSDK.packages.check(id)
+SwirAppSDK.packages.planInstall(id)
+SwirAppSDK.packages.planRemove(id)
+SwirAppSDK.packages.audit()
+SwirAppSDK.packages.runtime()
+```
+
+This contract is intentionally edition-neutral. Desktop/System installers can reuse the same planning phase before downloading, verifying and unpacking native payloads.
 
 ## File associations — SWIR OS 1.7
 
@@ -83,7 +147,10 @@ Desktop Edition can map this to an application-specific data directory. System E
 Store catalog
     |
     v
-Show manifest + permissions + file associations
+Show compatibility + dependencies + permissions + file associations
+    |
+    v
+Package Resolver approves install plan
     |
     v
 User confirms INSTALL
@@ -121,13 +188,14 @@ If no compatible package is installed, File Explorer can offer SWIR Store or use
 
 ## Uninstall
 
-Uninstall removes package registration and disables granted package permissions. Its file associations stop being active immediately after the shell rebuild. Application source remains part of the Web build/cache because GitHub Pages is a static deployment. Desktop/System editions can physically remove package payloads.
+Uninstall removes package registration and disables granted package permissions only after dependency protection confirms that no installed package requires the target. Its file associations stop being active immediately after the shell rebuild. Application source remains part of the Web build/cache because GitHub Pages is a static deployment. Desktop/System editions can physically remove package payloads.
 
 Future uninstall flow:
 
 ```text
 REMOVE APP
   |
+  +--> CHECK DEPENDENTS
   +--> Remove program only
   +--> Remove program + user data
 ```
@@ -188,20 +256,21 @@ Example.swirapp
 └── signature.json
 ```
 
-Planned install pipeline:
+Target install pipeline:
 
 ```text
-DOWNLOAD
+DOWNLOAD / SELECT .swirapp
   -> VERIFY MANIFEST
+  -> RESOLVE OS / SDK / API / PACKAGE DEPENDENCIES
   -> VERIFY SIGNATURE
-  -> CHECK COMPATIBILITY
   -> DISPLAY PERMISSIONS
   -> REGISTER FILE TYPES
   -> CREATE APP DATA DIRECTORY
   -> INSTALL PAYLOAD
+  -> REGISTER PACKAGE VERSION
   -> LAUNCH
 ```
 
 ## Security rule
 
-A package manifest is metadata, not authority. Applications must not gain a capability merely because they list it in `permissions`. The platform adapter/service is responsible for checking granted permissions before sensitive operations. File associations likewise do not grant file access by themselves; an application still requires the relevant file permission and a file handoff selected by the user or operating system.
+A package manifest is metadata, not authority. Applications must not gain a capability merely because they list it in `permissions`. The platform adapter/service is responsible for checking granted permissions before sensitive operations. File associations likewise do not grant file access by themselves; an application still requires the relevant file permission and a file handoff selected by the user or operating system. Compatibility and dependency fields are validated by the resolver, but native editions must additionally verify package signatures and payload integrity before installation.
