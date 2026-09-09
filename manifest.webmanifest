@@ -1,14 +1,13 @@
 {
-  "id": "./",
-  "name": "SWIR OS 1.1 — Neon Core",
+  "name": "SWIR OS 1.2 — Neon Core",
   "short_name": "SWIR OS",
-  "description": "SWIR OS web desktop — lock screen, Store, retro vault, terminal, experiments and GitHub projects.",
+  "description": "SWIR OS web desktop with File Explorer, Notes, Calculator, Music Player, System Monitor, Store, retro vault and terminal.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "orientation": "any",
   "background_color": "#020617",
   "theme_color": "#020617",
+  "orientation": "any",
   "categories": ["utilities", "productivity", "developer"],
   "icons": [
     {
@@ -16,23 +15,6 @@
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
-    }
-  ],
-  "shortcuts": [
-    {
-      "name": "Terminal",
-      "short_name": "Terminal",
-      "url": "./?app=terminal"
-    },
-    {
-      "name": "Retro Vault",
-      "short_name": "Retro",
-      "url": "./?app=retro"
-    },
-    {
-      "name": "GitHub Projects",
-      "short_name": "Projects",
-      "url": "./?app=projects"
     }
   ]
 }
