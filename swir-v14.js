@@ -59,6 +59,7 @@
     let pin=$('#v14-pin',login);
     if(!pin){pin=document.createElement('input');pin.id='v14-pin';pin.className='v14-pin';pin.type='password';pin.inputMode='numeric';pin.autocomplete='current-password';pin.placeholder='ENTER LOCAL PIN';select.insertAdjacentElement('afterend',pin)}
     pin.style.display=current.pinEnabled?'block':'none';pin.value='';
+    pin.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();unlock?.click()}};
     let auth=$('#v14-auth-status',login);
     if(!auth){auth=document.createElement('div');auth.id='v14-auth-status';auth.className='v14-auth-status';pin.insertAdjacentElement('afterend',auth)}
     auth.textContent=current.pinEnabled?'PIN REQUIRED':'PROFILE READY';auth.className='v14-auth-status';
@@ -107,6 +108,12 @@
   function addQuickUserTile(){
     const grid=$('#quick-center .quick-grid');if(!grid||$('#quick-users-open'))return;
     const b=document.createElement('button');b.id='quick-users-open';b.className='quick-tile';b.type='button';b.innerHTML='<strong>USER MANAGER <span class="v13-quick-tag">1.4</span></strong><span>Profiles, roles & local PIN</span>';b.addEventListener('click',()=>open('users'));grid.appendChild(b);
+  }
+
+  function wireUserShortcut(){
+    document.addEventListener('keydown',e=>{
+      if(e.ctrlKey&&e.altKey&&!e.shiftKey&&e.key.toLowerCase()==='u'){e.preventDefault();open('users')}
+    });
   }
 
   function terminalLine(text,cls='term-muted'){
@@ -160,7 +167,7 @@
 
   async function init(){
     if(!window.SwirPlatform||!window.SwirOS){setTimeout(init,60);return}
-    await window.SwirPlatform.ready;updateVersionLabels();await renderShellIdentity();await renderLock();observeLocks();addQuickUserTile();wireTerminal();wireMessages();watchChatFrames();
+    await window.SwirPlatform.ready;updateVersionLabels();await renderShellIdentity();await renderLock();observeLocks();addQuickUserTile();wireUserShortcut();wireTerminal();wireMessages();watchChatFrames();
     document.addEventListener('click',authenticateAndUnlock,true);
     setTimeout(()=>toast('SWIR OS 1.4','Identity & Session Core online. Local profiles, roles, PIN and user-aware apps are ready.'),1500);
   }
