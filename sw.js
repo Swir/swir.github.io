@@ -1,4 +1,4 @@
-const CACHE_NAME = 'swir-os-v1.6.2-app-sdk-core';
+const CACHE_NAME = 'swir-os-v1.6.3-app-sdk-core';
 const CORE = [
   './','./index.html','./swir-platform.js','./swir-platform-bridge.js','./swir-packages.js','./swir-sdk.js','./swir-os.css','./swir-os.js','./swir-apps.js','./swir-v11.css','./swir-v11.js','./swir-v11-fixed.js','./swir-v12.css','./swir-v12.js','./swir-v13.css','./swir-v13.js','./swir-v14.css','./swir-v14.js','./swir-oobe.css','./swir-oobe.js','./swir-v15.css','./swir-v15.js','./swir-v16.css','./swir-v16.js','./swir-native.js','./swir-store.html','./swir-files.html','./swir-chat.html','./swir-chat-kit.html','./swir-users.html','./swir-services.html','./swir-device.html','./swir-network.html','./swir-settings.html','./swir-code.html','./swir-image.html','./swir-archive.html','./swir-pdf.html','./swir-notes.html','./swir-calc.html','./swir-player.html','./swir-monitor.html','./swir-taskmgr.html','./swir-updates.html','./swir-control.html','./swir-matrix.html','./swir-icon.svg','./manifest.webmanifest','./ding.mp3'
 ];
