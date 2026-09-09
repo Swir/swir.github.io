@@ -1,14 +1,14 @@
 {
   "name": "SWIR OS 1.3 — Neon Core Web Edition",
   "short_name": "SWIR OS",
-  "description": "SWIR OS Web Edition — portable platform API, desktop apps, Task Manager, Update Center, Store, retro vault and developer tools.",
+  "description": "SWIR OS Web Edition — SWIR Chat, Matrix, Player, portable platform API, File Explorer, Task Manager, Update Center and developer tools.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#020617",
   "theme_color": "#020617",
   "orientation": "any",
-  "categories": ["utilities", "productivity", "developer"],
+  "categories": ["utilities", "productivity", "developer", "social"],
   "icons": [
     {
       "src": "./swir-icon.svg",
