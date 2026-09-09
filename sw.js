@@ -1,4 +1,4 @@
-const CACHE_NAME = 'swir-os-v1.4.1-oobe-core';
+const CACHE_NAME = 'swir-os-v1.4.2-identity-oobe-core';
 const CORE = [
   './','./index.html','./swir-platform.js','./swir-platform-bridge.js','./swir-os.css','./swir-os.js','./swir-apps.js','./swir-v11.css','./swir-v11.js','./swir-v11-fixed.js','./swir-v12.css','./swir-v12.js','./swir-v13.css','./swir-v13.js','./swir-v14.css','./swir-v14.js','./swir-oobe.css','./swir-oobe.js','./swir-native.js','./swir-store.html','./swir-files.html','./swir-chat.html','./swir-chat-kit.html','./swir-users.html','./swir-services.html','./swir-notes.html','./swir-calc.html','./swir-player.html','./swir-monitor.html','./swir-taskmgr.html','./swir-updates.html','./swir-control.html','./swir-matrix.html','./swir-icon.svg','./manifest.webmanifest','./ding.mp3'
 ];
