@@ -1,4 +1,4 @@
-/* SWIR OS v1.4 — application registry
+/* SWIR OS v1.5 — application registry
    Active environment contains only current SWIR modules. Legacy/retro folders are not used. */
 
 window.SWIR_APPS = [
@@ -13,6 +13,8 @@ window.SWIR_APPS = [
   { id:"matrix", title:"SWIR Matrix", subtitle:"Native digital-rain renderer", icon:"01", category:"Visual", type:"iframe", url:"./swir-matrix.html", accent:"#39ff88", desktop:true },
   { id:"monitor", title:"System Monitor", subtitle:"Browser, storage and network telemetry", icon:"▥", category:"System", type:"iframe", url:"./swir-monitor.html", accent:"#7dffb3", desktop:true },
 
+  { id:"device", title:"Device Manager", subtitle:"Hostname, hardware and runtime information", icon:"DV", category:"System", type:"iframe", url:"./swir-device.html", accent:"#35e6ff", desktop:false },
+  { id:"network", title:"Network Center", subtitle:"Connection status and portable network profiles", icon:"NET", category:"System", type:"iframe", url:"./swir-network.html", accent:"#50e3a4", desktop:false },
   { id:"users", title:"User Manager", subtitle:"Profiles, roles, PIN and active session", icon:"US", category:"System", type:"iframe", url:"./swir-users.html", accent:"#35e6ff", desktop:false },
   { id:"taskmgr", title:"Task Manager", subtitle:"Running SWIR OS application processes", icon:"▧", category:"System", type:"iframe", url:"./swir-taskmgr.html", accent:"#7df0ff", desktop:false },
   { id:"services", title:"SWIR Services", subtitle:"System service and adapter status", icon:"SV", category:"System", type:"iframe", url:"./swir-services.html", accent:"#35e6ff", desktop:false },
@@ -23,6 +25,6 @@ window.SWIR_APPS = [
   { id:"projects", title:"GitHub Projects", subtitle:"Live repository dashboard", icon:"</>", category:"Developer", type:"internal", accent:"#48a8ff", desktop:true },
   { id:"browser", title:"SWIR Browser", subtitle:"Quick web launcher", icon:"◎", category:"Internet", type:"internal", accent:"#00d4ff" },
   { id:"github", title:"GitHub", subtitle:"github.com/Swir", icon:"GH", category:"Internet", type:"external", url:"https://github.com/Swir", accent:"#ffffff", desktop:true },
-  { id:"settings", title:"Settings", subtitle:"Personalize SWIR OS", icon:"⚙", category:"System", type:"internal", accent:"#7cc7ff", desktop:true },
+  { id:"settings", title:"System Settings", subtitle:"Device, appearance, session and storage settings", icon:"⚙", category:"System", type:"iframe", url:"./swir-settings.html", accent:"#7cc7ff", desktop:true },
   { id:"about", title:"About SWIR OS", subtitle:"NEON CORE build information", icon:"i", category:"System", type:"internal", accent:"#00a6ff" }
 ];
