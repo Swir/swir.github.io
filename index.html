@@ -4,11 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#020617">
-  <meta name="description" content="SWIR OS 1.4 — Neon Core Web Edition with Identity & Session Core, SWIR Chat, Matrix, Player, File Explorer, Task Manager and portable Platform API.">
+  <meta name="description" content="SWIR OS 1.4 — Neon Core Web Edition with First Boot Setup, Identity & Session Core, SWIR Chat, Matrix, Player, File Explorer and portable Platform API.">
   <meta name="author" content="Swir">
   <meta name="color-scheme" content="dark">
   <meta property="og:title" content="SWIR OS 1.4 — Neon Core">
-  <meta property="og:description" content="Custom web operating-system prototype with local user profiles, live SWIR Chat and portable APIs designed to evolve into Desktop and System editions.">
+  <meta property="og:description" content="Custom web operating-system prototype with first-boot setup, local user profiles, live SWIR Chat and portable APIs designed to evolve into Desktop and System editions.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://swir.github.io/">
   <title>SWIR OS 1.4 — Neon Core</title>
@@ -19,6 +19,7 @@
   <link rel="stylesheet" href="./swir-v12.css">
   <link rel="stylesheet" href="./swir-v13.css">
   <link rel="stylesheet" href="./swir-v14.css">
+  <link rel="stylesheet" href="./swir-oobe.css">
 </head>
 <body>
   <noscript><div style="padding:30px;background:#020617;color:white;font-family:monospace;min-height:100vh">SWIR OS requires JavaScript to run.</div></noscript>
@@ -30,7 +31,7 @@
   <main id="os-shell" data-wallpaper="grid"><div class="wallpaper-orb" aria-hidden="true"></div>
     <header class="topbar"><div class="topbar-brand"><span class="topbar-dot"></span><span>SWIR OS / NEON CORE 1.4</span></div><div class="topbar-status"><span class="hide-mobile">EDITION: WEB</span><span class="hide-mobile">SERVICES: ONLINE</span><span class="hide-mobile">IDENTITY: ONLINE</span><span id="top-clock">--:--</span></div></header>
     <section id="desktop-icons" aria-label="Desktop applications"></section>
-    <aside class="desktop-widget" aria-label="SWIR OS overview"><div class="widget-eyebrow">&gt; PLATFORM ONLINE</div><div class="widget-title">SWIR OS</div><div class="widget-subtitle">NEON CORE 1.4 — Web Edition with Identity & Session Core, SWIR Chat, Matrix, Player and a portable platform layer for future Desktop/System editions.</div><div class="widget-stats"><div class="widget-stat"><strong id="widget-repos">—</strong><span>Repos</span></div><div class="widget-stat"><strong id="widget-stars">—</strong><span>Stars</span></div><div class="widget-stat"><strong id="widget-followers">—</strong><span>Followers</span></div></div></aside>
+    <aside class="desktop-widget" aria-label="SWIR OS overview"><div class="widget-eyebrow">&gt; PLATFORM ONLINE</div><div class="widget-title">SWIR OS</div><div class="widget-subtitle">NEON CORE 1.4 — Web Edition with First Boot Setup, Identity & Session Core, SWIR Chat, Matrix, Player and a portable platform layer for future Desktop/System editions.</div><div class="widget-stats"><div class="widget-stat"><strong id="widget-repos">—</strong><span>Repos</span></div><div class="widget-stat"><strong id="widget-stars">—</strong><span>Stars</span></div><div class="widget-stat"><strong id="widget-followers">—</strong><span>Followers</span></div></div></aside>
     <section id="window-layer" aria-label="Open applications"></section><div id="launcher-backdrop" class="launcher-backdrop"></div>
     <aside id="launcher" class="launcher" aria-label="Application launcher"><div class="launcher-head"><div class="launcher-brand"><div class="brand-mark">S</div><div><strong>SWIR OS</strong><span>NEON CORE 1.4 // WEB EDITION</span></div></div><input id="launcher-search" class="launcher-search" type="search" placeholder="Search applications..." autocomplete="off" spellcheck="false" aria-label="Search applications"></div><div id="launcher-list" class="launcher-list"></div><div class="launcher-foot"><span>USER: SWIR</span><span>CTRL + SPACE</span></div></aside>
     <div id="v11-panel-backdrop" class="v11-panel-backdrop"></div>
@@ -49,5 +50,6 @@
   <script src="./swir-v13.js"></script>
   <script src="./swir-native.js"></script>
   <script src="./swir-v14.js"></script>
+  <script src="./swir-oobe.js"></script>
 </body>
 </html>
