@@ -1,26 +1,27 @@
-/* SWIR OS 1.7 — Files, Associations, Notifications & Package Integrity integration */
+/* SWIR OS 1.7 — Files, Associations, Notifications & Package Trust integration */
 (() => {
   'use strict';
   const $=(s,r=document)=>r.querySelector(s);
   const open=id=>window.SwirOS?.open?.(id);
   const toast=(t,m)=>window.SwirOS?.toast?.(t,m);
-  let integrityLoading=false;
+  let trustLoading=false;
 
-  function loadIntegrity(){
-    if(window.SwirPackageIntegrity||integrityLoading)return;
-    integrityLoading=true;
-    const script=document.createElement('script');
-    script.src='./swir-package-integrity.js';
-    script.async=false;
-    script.onload=()=>{integrityLoading=false};
-    script.onerror=()=>{integrityLoading=false;console.error('SWIR Package Integrity failed to load')};
-    document.head.appendChild(script);
+  function loadTrustCore(){
+    if((window.SwirTrustedKeys&&window.SwirPackageIntegrity)||trustLoading)return;
+    trustLoading=true;
+    const load=(src)=>new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.async=false;s.onload=resolve;s.onerror=reject;document.head.appendChild(s)});
+    (async()=>{
+      try{
+        if(!window.SwirTrustedKeys)await load('./swir-trusted-keys.js');
+        if(!window.SwirPackageIntegrity)await load('./swir-package-integrity.js');
+      }catch(error){console.error('SWIR Package Trust Core failed to load',error)}finally{trustLoading=false}
+    })();
   }
 
   function updateLabels(){
     document.title='SWIR OS 1.7 — Neon Core';
     document.querySelectorAll('.boot-subtitle,.topbar-brand span:last-child,.launcher-brand span,.widget-subtitle,.lock-session').forEach(n=>{
-      n.innerHTML=n.innerHTML.replace(/1\.6/g,'1.7').replace(/APP SDK: 1\.3/g,'APP SDK: 1.4').replace(/App SDK 1\.3/g,'App SDK 1.4');
+      n.innerHTML=n.innerHTML.replace(/1\.6/g,'1.7').replace(/APP SDK: 1\.3/g,'APP SDK: 1.5').replace(/APP SDK: 1\.4/g,'APP SDK: 1.5').replace(/App SDK 1\.3/g,'App SDK 1.5').replace(/App SDK 1\.4/g,'App SDK 1.5');
     });
   }
 
@@ -36,7 +37,7 @@
     document.addEventListener('keydown',async e=>{
       const input=e.target;if(!(input instanceof HTMLInputElement)||input.id!=='terminal-input'||e.key!=='Enter')return;
       const raw=input.value.trim(),parts=raw.toLowerCase().split(/\s+/),cmd=parts[0];
-      if(!['assoc','defaults','openwith','appdata','filetypes','notifytest','notifications','integrity'].includes(cmd))return;
+      if(!['assoc','defaults','openwith','appdata','filetypes','notifytest','notifications','integrity','trust'].includes(cmd))return;
       e.preventDefault();e.stopImmediatePropagation();input.value='';line(`swir@neon-core:~$ ${raw}`,'term-ok');
       const svc=window.SwirAssociations;
       if(cmd==='assoc'||cmd==='filetypes'){
@@ -52,7 +53,10 @@
         try{await window.SwirNotifications?.send?.('system',{title:'Notification Service',message:'Portable app notification API is online.',tag:'terminal-test'});line('Test notification sent through SWIR Notification Service.','term-accent')}catch(err){line(err?.message||'Notification test failed.','term-error')}return;
       }
       if(cmd==='integrity'){
-        const meta=window.SwirPackageIntegrity?.meta;line(meta?`${meta.name} ${meta.version} • ${meta.schema} • SHA-256 ready`:'Package Integrity service unavailable.',meta?'term-accent':'term-error');return;
+        const meta=window.SwirPackageIntegrity?.meta;line(meta?`${meta.name} ${meta.version} • ${meta.schema} • SHA-256 + Ed25519`:'Package Integrity service unavailable.',meta?'term-accent':'term-error');return;
+      }
+      if(cmd==='trust'){
+        const info=window.SwirTrustedKeys?.info?.();line(info?`TRUSTED KEY STORE • ${info.total} keys (${info.systemKeys} system / ${info.userKeys} user)`:'Trusted Key Store unavailable.',info?'term-accent':'term-error');return;
       }
       line('Opening Default Apps...','term-accent');open('defaults');
     },true);
@@ -61,17 +65,18 @@
   function showStatus(){
     const shell=$('#os-shell');if(!shell||$('#v17-assoc-pill'))return;
     const svc=window.SwirAssociations,total=svc?.allExtensions?.().filter(e=>svc.handlersFor(e).length).length||0;
+    const trust=window.SwirTrustedKeys?.info?.();
     const el=document.createElement('aside');el.id='v17-assoc-pill';el.className='v16-package-pill';
     el.style.bottom='86px';
-    el.innerHTML=`<strong>PACKAGE TRUST CORE</strong><span>${total} FILE TYPES • APP SDK 1.4 • SHA-256</span>`;
+    el.innerHTML=`<strong>PACKAGE TRUST CORE</strong><span>${total} FILE TYPES • SDK 1.5 • ED25519 • ${trust?.total||0} KEYS</span>`;
     el.addEventListener('click',()=>open('store'));shell.appendChild(el);
   }
 
   function init(){
-    loadIntegrity();
-    if(!window.SwirOS||!window.SwirAssociations||!window.SwirNotifications||!window.SwirAppSDK||!window.SwirPackageResolver||!window.SwirPackageIntegrity){setTimeout(init,60);return}
+    loadTrustCore();
+    if(!window.SwirOS||!window.SwirAssociations||!window.SwirNotifications||!window.SwirAppSDK||!window.SwirPackageResolver||!window.SwirTrustedKeys||!window.SwirPackageIntegrity){setTimeout(init,60);return}
     updateLabels();addQuickTile();wireTerminal();showStatus();
-    setTimeout(()=>toast('SWIR OS 1.7','Package integrity, files, notifications and dependency services are online.'),1300);
+    setTimeout(()=>toast('SWIR OS 1.7','Publisher trust, package integrity, files, notifications and dependency services are online.'),1300);
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
