@@ -1,4 +1,4 @@
-/* SWIR App SDK 1.5 — Web Edition bridge */
+/* SWIR App SDK 1.6 — Web Edition bridge */
 (() => {
   'use strict';
   const catalog = () => Array.isArray(window.SWIR_PACKAGE_CATALOG) ? window.SWIR_PACKAGE_CATALOG : [];
@@ -66,9 +66,15 @@
   function trustedKeys(){const svc=trustService();if(!svc)throw new Error('Trusted Key Store unavailable');return svc.all()}
   function trustedKey(keyId){const svc=trustService();if(!svc)throw new Error('Trusted Key Store unavailable');return svc.get(keyId)}
   function trustFor(keyId,packageId){const svc=trustService();if(!svc)throw new Error('Trusted Key Store unavailable');return svc.trustedFor(keyId,packageId)}
+  function installPipeline(){return window.SwirInstallPipeline||null}
+  function resolveManifest(value){const m=typeof value==='string'?manifest(value):value;if(!m)throw new Error('Package manifest not found');return m}
+  async function prepareInstall(value,options={}){const svc=installPipeline();if(!svc)throw new Error('Install Pipeline unavailable');return svc.prepare(resolveManifest(value),options)}
+  async function secureInstall(value,options={}){const svc=installPipeline();if(!svc)throw new Error('Install Pipeline unavailable');return svc.install(resolveManifest(value),options)}
+  async function secureRemove(value,options={}){const svc=installPipeline();if(!svc)throw new Error('Install Pipeline unavailable');return svc.remove(resolveManifest(value),options)}
+  function installPipelineInfo(){const svc=installPipeline();if(!svc)throw new Error('Install Pipeline unavailable');return svc.info()}
 
   window.SwirAppSDK = Object.freeze({
-    meta: Object.freeze({ name: 'SWIR App SDK', version: '1.5.0', schema: 'swir.app/1.0', os: 'SWIR OS 1.7', edition: 'WEB' }),
+    meta: Object.freeze({ name: 'SWIR App SDK', version: '1.6.0', schema: 'swir.app/1.0', os: 'SWIR OS 1.7', edition: 'WEB' }),
     catalog,
     manifest,
     installed,
@@ -78,7 +84,7 @@
     identity: Object.freeze({ active: activeIdentity }),
     files: Object.freeze({ open:openFile, consumeOpen, handlersFor, defaultFor, setDefault, extension, appData }),
     notifications: Object.freeze({ send:sendNotification, history:notificationHistory, clear:clearNotifications }),
-    packages: Object.freeze({ check:checkPackage, planInstall, planRemove, audit:packageAudit, runtime:packageRuntime, compareVersions, fingerprint:packageFingerprint, verifyManifest, verifyEntry, verifySignature, integrityPlan, validateSignatureDescriptor, trustInfo, trustedKeys, trustedKey, trustFor }),
+    packages: Object.freeze({ check:checkPackage, planInstall, planRemove, audit:packageAudit, runtime:packageRuntime, compareVersions, fingerprint:packageFingerprint, verifyManifest, verifyEntry, verifySignature, integrityPlan, validateSignatureDescriptor, trustInfo, trustedKeys, trustedKey, trustFor, prepareInstall, secureInstall, secureRemove, installPipelineInfo }),
     system: Object.freeze({ info: systemInfo }),
     shell: Object.freeze({ open, notify })
   });
