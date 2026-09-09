@@ -134,6 +134,10 @@
       const arch = systemCard(doc, 'SYS', 'SWIR-OS-ARCHITECTURE.md', 'Web → Desktop → System architecture roadmap.');
       arch.addEventListener('click', () => downloadStatic(RAW_BASE + 'SWIR-OS-ARCHITECTURE.md', 'SWIR-OS-ARCHITECTURE.md'));
       grid.appendChild(arch);
+
+      const services = systemCard(doc, 'SV', 'SWIR Services', 'Live status of system adapters and future native services.');
+      services.addEventListener('click', () => openApp('services'));
+      grid.appendChild(services);
     });
   }
 
@@ -163,14 +167,34 @@
     }).observe(layer, { childList: true, subtree: true });
   }
 
+  function addServicesQuickTile() {
+    const grid = document.querySelector('#quick-center .quick-grid');
+    if (!grid || document.querySelector('#quick-services-open')) return;
+    const button = document.createElement('button');
+    button.id = 'quick-services-open';
+    button.className = 'quick-tile';
+    button.type = 'button';
+    button.innerHTML = '<strong>SWIR SERVICES</strong><span>System service status</span>';
+    button.addEventListener('click', () => openApp('services'));
+    grid.appendChild(button);
+  }
+
   function wireTerminal() {
     document.addEventListener('keydown', event => {
       const input = event.target;
       if (!(input instanceof HTMLInputElement) || input.id !== 'terminal-input' || event.key !== 'Enter') return;
       const command = input.value.trim().toLowerCase();
-      if (!['chatserver','chatapi','serverkit'].includes(command)) return;
+      const commands = {
+        chatserver: ['chatkit', 'Opening SWIR Chat Server Kit...'],
+        chatapi: ['chatkit', 'Opening SWIR Chat Server Kit...'],
+        serverkit: ['chatkit', 'Opening SWIR Chat Server Kit...'],
+        services: ['services', 'Opening SWIR Services...'],
+        servicectl: ['services', 'Opening SWIR Services...']
+      };
+      if (!commands[command]) return;
       event.preventDefault();
       event.stopImmediatePropagation();
+      const [appId, text] = commands[command];
       const output = document.querySelector('#terminal-output');
       if (output) {
         const prompt = document.createElement('div');
@@ -178,12 +202,12 @@
         prompt.textContent = `swir@neon-core:~$ ${command}`;
         const result = document.createElement('div');
         result.className = 'term-accent';
-        result.textContent = 'Opening SWIR Chat Server Kit...';
+        result.textContent = text;
         output.append(prompt, result);
         output.scrollTop = output.scrollHeight;
       }
       input.value = '';
-      openApp('chatkit');
+      openApp(appId);
     }, true);
   }
 
@@ -194,10 +218,7 @@
 
   cleanLegacyShortcuts();
   cleanLegacyPackages();
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => { watchFrames(); wireTerminal(); });
-  } else {
-    watchFrames();
-    wireTerminal();
-  }
+  const start = () => { watchFrames(); wireTerminal(); setTimeout(addServicesQuickTile, 300); };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+  else start();
 })();
