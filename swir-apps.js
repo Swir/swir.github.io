@@ -1,4 +1,4 @@
-/* SWIR OS v1.6 — application registry + installable package bridge */
+/* SWIR OS v1.7 — application registry + installable package bridge */
 (() => {
   'use strict';
   const installed = (() => {
@@ -9,7 +9,8 @@
   const core = [
     { id:"apps", title:"App Center", subtitle:"All SWIR OS applications", icon:"◫", category:"System", type:"internal", accent:"#00c8ff", desktop:true, system:true },
     { id:"store", title:"SWIR Store", subtitle:"Install SWIR App Packages", icon:"S+", category:"System", type:"iframe", url:"./swir-store.html", accent:"#00d8ff", desktop:true, system:true },
-    { id:"files", title:"File Explorer", subtitle:"Virtual files, system files and Trash", icon:"▤", category:"System", type:"iframe", url:"./swir-files.html", accent:"#53c7ff", desktop:true, system:true },
+    { id:"files", title:"File Explorer", subtitle:"Virtual files, associations, App Data and Trash", icon:"▤", category:"System", type:"iframe", url:"./swir-files.html", accent:"#53c7ff", desktop:true, system:true },
+    { id:"defaults", title:"Default Apps", subtitle:"File associations and Open With defaults", icon:"DF", category:"System", type:"iframe", url:"./swir-default-apps.html", accent:"#7df0ff", desktop:false, system:true },
     { id:"chatkit", title:"Chat Server Kit", subtitle:"Download API backend and install guide", icon:"API", category:"Communication", type:"iframe", url:"./swir-chat-kit.html", accent:"#66f0ff", desktop:false, system:true },
     { id:"notes", title:"Notes", subtitle:"Autosaving local notes", icon:"N", category:"Productivity", type:"iframe", url:"./swir-notes.html", accent:"#55e6c1", desktop:true, system:true },
     { id:"calc", title:"Calculator", subtitle:"Scientific-style quick calculator", icon:"±", category:"Productivity", type:"iframe", url:"./swir-calc.html", accent:"#74b9ff", desktop:true, system:true },
@@ -36,7 +37,8 @@
     .map(pkg => ({
       id: pkg.id, title: pkg.name, subtitle: pkg.description, icon: pkg.icon, category: pkg.category,
       type: pkg.type || 'iframe', url: pkg.entry, accent: pkg.accent || '#00c8ff', desktop: pkg.desktop !== false,
-      packageId: pkg.packageId, packageVersion: pkg.version, permissions: pkg.permissions || [], optional: true
+      packageId: pkg.packageId, packageVersion: pkg.version, permissions: pkg.permissions || [], associations:pkg.associations||[], appData:pkg.appData,
+      optional: true
     }));
 
   window.SWIR_APPS = [...core, ...packages];
