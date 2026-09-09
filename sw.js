@@ -1,6 +1,6 @@
-const CACHE_NAME = 'swir-os-v1.3.7-chat-kit-core';
+const CACHE_NAME = 'swir-os-v1.3.8-chat-kit-core';
 const CORE = [
-  './','./index.html','./swir-platform.js','./swir-platform-bridge.js','./swir-os.css','./swir-os.js','./swir-apps.js','./swir-v11.css','./swir-v11.js','./swir-v11-fixed.js','./swir-v12.css','./swir-v12.js','./swir-v13.css','./swir-v13.js','./swir-native.js','./swir-store.html','./swir-files.html','./swir-chat.html','./swir-chat-kit.html','./swir-chat-api.php','./SWIR-CHAT-SERVER.md','./SWIR-OS-ARCHITECTURE.md','./swir-notes.html','./swir-calc.html','./swir-player.html','./swir-monitor.html','./swir-taskmgr.html','./swir-updates.html','./swir-control.html','./swir-matrix.html','./swir-icon.svg','./manifest.webmanifest','./ding.mp3'
+  './','./index.html','./swir-platform.js','./swir-platform-bridge.js','./swir-os.css','./swir-os.js','./swir-apps.js','./swir-v11.css','./swir-v11.js','./swir-v11-fixed.js','./swir-v12.css','./swir-v12.js','./swir-v13.css','./swir-v13.js','./swir-native.js','./swir-store.html','./swir-files.html','./swir-chat.html','./swir-chat-kit.html','./swir-notes.html','./swir-calc.html','./swir-player.html','./swir-monitor.html','./swir-taskmgr.html','./swir-updates.html','./swir-control.html','./swir-matrix.html','./swir-icon.svg','./manifest.webmanifest','./ding.mp3'
 ];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(CORE)));self.skipWaiting()});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('swir-os-')&&key!==CACHE_NAME).map(key=>caches.delete(key)))));self.clients.claim()});
