@@ -1,7 +1,7 @@
 {
-  "name": "SWIR OS 1.5 — Neon Core Web Edition",
+  "name": "SWIR OS 1.6 — Neon Core Web Edition",
   "short_name": "SWIR OS",
-  "description": "SWIR OS Web Edition — Device Manager, Network Center, System Settings, Identity & Session Core, SWIR Chat, Matrix, Player, Services, Update Center and portable Platform API.",
+  "description": "SWIR OS Web Edition — SWIR App SDK 1.0, installable SWIR App Packages, Device Manager, Network Center, Identity, Chat, Services and portable Platform APIs.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
