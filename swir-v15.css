@@ -1,0 +1,8 @@
+/* SWIR OS 1.5 — Device & Network Core */
+#v15-network-tray{border:1px solid rgba(70,205,255,.18);border-radius:8px;background:rgba(255,255,255,.025);color:#9fc3d7;min-width:30px;height:28px;padding:0 7px;display:inline-flex;align-items:center;justify-content:center;gap:5px;cursor:pointer;font:900 8px ui-monospace,Consolas,monospace}
+#v15-network-tray:hover{border-color:rgba(53,230,255,.5);color:#eaffff;background:rgba(53,230,255,.07)}
+#v15-network-tray .v15-net-dot{width:7px;height:7px;border-radius:50%;background:#ff718c;box-shadow:0 0 9px rgba(255,113,140,.45)}
+#v15-network-tray.online .v15-net-dot{background:#50e3a4;box-shadow:0 0 9px rgba(80,227,164,.55)}
+.v15-hostname{color:#6f93a8!important;font:800 9px ui-monospace,Consolas,monospace!important;letter-spacing:.06em}
+html.reduce-motion *,html.reduce-motion *::before,html.reduce-motion *::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}
+@media(max-width:700px){#v15-network-tray span:last-child{display:none}.v15-hostname{display:none!important}}
