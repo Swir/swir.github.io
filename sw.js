@@ -1,4 +1,4 @@
-const CACHE_NAME = 'swir-os-v1.1-core';
+const CACHE_NAME = 'swir-os-v1.1.1-core';
 const CORE = [
   './',
   './index.html',
@@ -7,6 +7,7 @@ const CORE = [
   './swir-apps.js',
   './swir-v11.css',
   './swir-v11.js',
+  './swir-v11-fixed.js',
   './swir-store.html',
   './swir-icon.svg',
   './manifest.webmanifest',
