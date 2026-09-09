@@ -42,6 +42,18 @@
     nodes.forEach(n=>{let h=n.innerHTML;replacements.forEach(([a,b])=>h=h.replace(a,b));n.innerHTML=h});
   }
 
+  function modernizeBootLog(){
+    const log=$('#boot-log');if(!log)return;
+    const fix=node=>{
+      if(!(node instanceof HTMLElement))return;
+      node.textContent=node.textContent
+        .replace('Mounting preserved apps','Loading package registry')
+        .replace('Initializing SWIR LAB','Starting App SDK services');
+    };
+    [...log.children].forEach(fix);
+    new MutationObserver(records=>records.forEach(r=>r.addedNodes.forEach(fix))).observe(log,{childList:true});
+  }
+
   function showPackageStatus(){
     const shell=$('#os-shell');if(!shell||$('#v16-package-pill'))return;
     const total=(window.SWIR_PACKAGE_CATALOG||[]).length,count=(window.SWIR_PACKAGE_CATALOG||[]).filter(p=>installed().has(p.id)).length;
@@ -49,6 +61,25 @@
     el.innerHTML=`<strong>APP SDK 1.0</strong><span>PACKAGES ${count}/${total} • SCHEMA swir.app/1.0</span>`;el.addEventListener('click',()=>open('store'));shell.appendChild(el);
   }
 
-  function init(){if(!window.SwirOS||!window.SwirAppSDK){setTimeout(init,60);return}updateLabels();addQuickTile();wireTerminal();showPackageStatus();setTimeout(()=>toast('SWIR OS 1.6','App SDK 1.0 and SWIR App Package 1.0 are online.'),1400)}
+  function addSystemFileCards(frame){
+    let doc;try{doc=frame.contentDocument}catch{return}if(!doc)return;
+    const nav=doc.querySelector('#system-files-nav');if(!nav||nav.dataset.v16==='1')return;nav.dataset.v16='1';
+    const append=()=>setTimeout(()=>{
+      const title=doc.querySelector('#title'),grid=doc.querySelector('#grid');if(!grid||title?.textContent!=='System Files'||doc.querySelector('#v16-package-spec'))return;
+      const make=(id,icon,name,desc,click)=>{const c=doc.createElement('article');c.id=id;c.className='item';c.innerHTML=`<div class="ico">${icon}</div><strong>${name}</strong><span>${desc}</span>`;c.addEventListener('click',click);grid.appendChild(c)};
+      make('v16-package-spec','APP','SWIR App Package 1.0','Manifest, permissions and future .swirapp archive specification.',()=>window.open('https://raw.githubusercontent.com/Swir/swir.github.io/main/SWIR-APP-PACKAGE-1.0.md','_blank','noopener,noreferrer'));
+      make('v16-package-store','S+','SWIR Store 2.0','Install, remove and inspect official SWIR application packages.',()=>open('store'));
+    },40);
+    nav.addEventListener('click',append);
+  }
+
+  function watchFileExplorer(){
+    const layer=$('#window-layer');if(!layer)return;
+    const attach=frame=>{if(!(frame instanceof HTMLIFrameElement)||frame.dataset.v16Files==='1')return;let path='';try{path=new URL(frame.src,location.href).pathname.toLowerCase()}catch{}if(!path.endsWith('/swir-files.html'))return;frame.dataset.v16Files='1';frame.addEventListener('load',()=>addSystemFileCards(frame));setTimeout(()=>addSystemFileCards(frame),80)};
+    layer.querySelectorAll('iframe').forEach(attach);
+    new MutationObserver(rs=>rs.forEach(r=>r.addedNodes.forEach(n=>{if(n instanceof HTMLIFrameElement)attach(n);if(n instanceof Element)n.querySelectorAll?.('iframe').forEach(attach)}))).observe(layer,{childList:true,subtree:true});
+  }
+
+  function init(){if(!window.SwirOS||!window.SwirAppSDK){setTimeout(init,60);return}updateLabels();modernizeBootLog();addQuickTile();wireTerminal();showPackageStatus();watchFileExplorer();setTimeout(()=>toast('SWIR OS 1.6','App SDK 1.0 and SWIR App Package 1.0 are online.'),1400)}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
