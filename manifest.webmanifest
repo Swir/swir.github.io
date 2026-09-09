@@ -1,7 +1,7 @@
 {
-  "name": "SWIR OS 1.3 — Neon Core Web Edition",
+  "name": "SWIR OS 1.4 — Neon Core Web Edition",
   "short_name": "SWIR OS",
-  "description": "SWIR OS Web Edition — SWIR Chat, Matrix, Player, portable platform API, File Explorer, Task Manager, Update Center and developer tools.",
+  "description": "SWIR OS Web Edition — Identity & Session Core, SWIR Chat, Matrix, Player, File Explorer, Task Manager, Services, Update Center and portable Platform API.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
