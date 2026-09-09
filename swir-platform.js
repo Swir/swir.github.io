@@ -1,5 +1,5 @@
 /* =============================================================
-   SWIR OS 1.3 — PLATFORM API
+   SWIR OS 1.4 — PLATFORM API
    Portable abstraction layer for Web -> Desktop -> System editions.
    ============================================================= */
 (() => {
@@ -8,14 +8,14 @@
   const META = Object.freeze({
     name: 'SWIR OS',
     core: 'NEON CORE',
-    version: '1.3.0',
+    version: '1.4.0',
     edition: 'WEB',
     build: '2026.09',
-    platformApi: 1
+    platformApi: 2
   });
 
   const DB_NAME = 'swir-os-platform';
-  const DB_VERSION = 1;
+  const DB_VERSION = 2;
   const FALLBACK_PREFIX = 'swir-platform:';
   const listeners = new Map();
   let dbPromise = null;
@@ -43,6 +43,7 @@
         if (!db.objectStoreNames.contains('files')) db.createObjectStore('files', { keyPath: 'id' });
         if (!db.objectStoreNames.contains('packages')) db.createObjectStore('packages', { keyPath: 'id' });
         if (!db.objectStoreNames.contains('permissions')) db.createObjectStore('permissions', { keyPath: 'id' });
+        if (!db.objectStoreNames.contains('users')) db.createObjectStore('users', { keyPath: 'id' });
       };
       req.onsuccess = () => resolve(req.result);
       req.onerror = () => reject(req.error || new Error('IndexedDB open failed'));
@@ -113,6 +114,22 @@
       try { await idbDelete('kv', key); } catch (_) {}
       localStorage.removeItem(FALLBACK_PREFIX + key);
       emit('storage-change', { key, removed: true });
+    }
+  };
+
+  const settings = {
+    async get(key, fallback = null) { return storage.get(`settings.${key}`, fallback); },
+    async set(key, value) {
+      const result = await storage.set(`settings.${key}`, value);
+      emit('setting-change', { key, value });
+      return result;
+    },
+    async remove(key) { await storage.remove(`settings.${key}`); emit('setting-change', { key, removed: true }); },
+    async userGet(userId, key, fallback = null) { return storage.get(`settings.user.${userId}.${key}`, fallback); },
+    async userSet(userId, key, value) {
+      const result = await storage.set(`settings.user.${userId}.${key}`, value);
+      emit('setting-change', { userId, key, value });
+      return result;
     }
   };
 
@@ -224,6 +241,158 @@
     }
   };
 
+  async function hashText(value) {
+    const text = String(value ?? '');
+    if (crypto.subtle && window.TextEncoder) {
+      const data = new TextEncoder().encode(text);
+      const digest = await crypto.subtle.digest('SHA-256', data);
+      return [...new Uint8Array(digest)].map(x => x.toString(16).padStart(2, '0')).join('');
+    }
+    let h = 2166136261;
+    for (let i = 0; i < text.length; i++) { h ^= text.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return `fallback-${(h >>> 0).toString(16)}`;
+  }
+
+  async function userListFallback() {
+    const value = await storage.get('identity.users', []);
+    return Array.isArray(value) ? value : [];
+  }
+
+  async function saveUserFallback(item) {
+    const list = await userListFallback();
+    const i = list.findIndex(x => x.id === item.id);
+    if (i >= 0) list[i] = item; else list.push(item);
+    await storage.set('identity.users', list);
+    return item;
+  }
+
+  const identity = {
+    async list() {
+      try { return await idbAll('users'); }
+      catch (_) { return userListFallback(); }
+    },
+    async get(id) {
+      try { return await idbGet('users', id); }
+      catch (_) { return (await identity.list()).find(x => x.id === id) || null; }
+    },
+    async create(input = {}) {
+      const name = String(input.name || '').trim().slice(0, 32);
+      if (name.length < 2) throw new Error('User name must contain at least 2 characters');
+      const roles = ['creator', 'user', 'guest'];
+      const role = roles.includes(String(input.role || '').toLowerCase()) ? String(input.role).toLowerCase() : 'user';
+      const id = input.id || `u-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+      const pin = String(input.pin || '');
+      const salt = pin ? crypto.getRandomValues(new Uint32Array(4)).join('-') : '';
+      const item = {
+        id,
+        name,
+        role,
+        avatar: String(input.avatar || name.slice(0, 2).toUpperCase()).slice(0, 3),
+        accent: String(input.accent || '#35e6ff'),
+        pinHash: pin ? await hashText(`${salt}:${pin}`) : '',
+        pinSalt: salt,
+        pinEnabled: !!pin,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        lastLoginAt: null
+      };
+      try { await idbPut('users', item); } catch (_) { await saveUserFallback(item); }
+      emit('identity-change', { action: 'create', user: { ...item, pinHash: undefined, pinSalt: undefined } });
+      return item;
+    },
+    async update(id, patch = {}) {
+      const current = await identity.get(id);
+      if (!current) throw new Error('User not found');
+      const next = { ...current, updatedAt: Date.now() };
+      if (patch.name !== undefined) {
+        const name = String(patch.name || '').trim().slice(0, 32);
+        if (name.length < 2) throw new Error('User name must contain at least 2 characters');
+        next.name = name;
+        if (!patch.avatar) next.avatar = name.slice(0, 2).toUpperCase();
+      }
+      if (patch.role !== undefined && ['creator','user','guest'].includes(String(patch.role).toLowerCase())) next.role = String(patch.role).toLowerCase();
+      if (patch.avatar !== undefined) next.avatar = String(patch.avatar || '').slice(0, 3) || next.name.slice(0, 2).toUpperCase();
+      if (patch.accent !== undefined) next.accent = String(patch.accent || '#35e6ff');
+      if (patch.pin !== undefined) {
+        const pin = String(patch.pin || '');
+        if (pin) {
+          const salt = crypto.getRandomValues(new Uint32Array(4)).join('-');
+          next.pinSalt = salt;
+          next.pinHash = await hashText(`${salt}:${pin}`);
+          next.pinEnabled = true;
+        } else {
+          next.pinSalt = '';
+          next.pinHash = '';
+          next.pinEnabled = false;
+        }
+      }
+      try { await idbPut('users', next); } catch (_) { await saveUserFallback(next); }
+      emit('identity-change', { action: 'update', user: { ...next, pinHash: undefined, pinSalt: undefined } });
+      return next;
+    },
+    async remove(id) {
+      const list = await identity.list();
+      if (list.length <= 1) throw new Error('SWIR OS must keep at least one local profile');
+      try { await idbDelete('users', id); }
+      catch (_) { await storage.set('identity.users', list.filter(x => x.id !== id)); }
+      const activeId = await storage.get('identity.activeId', null);
+      if (activeId === id) await identity.setActive(list.find(x => x.id !== id)?.id || null);
+      emit('identity-change', { action: 'remove', id });
+      return true;
+    },
+    async setActive(id) {
+      const user = id ? await identity.get(id) : null;
+      if (!user) throw new Error('User not found');
+      await storage.set('identity.activeId', user.id);
+      emit('identity-change', { action: 'active', user: { ...user, pinHash: undefined, pinSalt: undefined } });
+      return user;
+    },
+    async active() {
+      const list = await identity.list();
+      if (!list.length) return null;
+      const activeId = await storage.get('identity.activeId', null);
+      return list.find(x => x.id === activeId) || list[0];
+    },
+    async authenticate(id, pin = '') {
+      const user = await identity.get(id);
+      if (!user) return { ok: false, error: 'USER_NOT_FOUND' };
+      if (user.pinEnabled) {
+        const hash = await hashText(`${user.pinSalt}:${String(pin)}`);
+        if (hash !== user.pinHash) {
+          emit('session-auth-failed', { userId: id });
+          return { ok: false, error: 'INVALID_PIN' };
+        }
+      }
+      user.lastLoginAt = Date.now();
+      user.updatedAt = Date.now();
+      try { await idbPut('users', user); } catch (_) { await saveUserFallback(user); }
+      await storage.set('identity.activeId', user.id);
+      await storage.set('session.locked', false);
+      await storage.set('session.startedAt', Date.now());
+      emit('session-start', { user: { ...user, pinHash: undefined, pinSalt: undefined } });
+      return { ok: true, user };
+    },
+    async lock() { await storage.set('session.locked', true); emit('session-lock', { user: await identity.active() }); },
+    async session() {
+      return {
+        user: await identity.active(),
+        locked: await storage.get('session.locked', true),
+        startedAt: await storage.get('session.startedAt', null)
+      };
+    },
+    async ensureDefault() {
+      let list = await identity.list();
+      if (!list.length) {
+        const creator = await identity.create({ id: 'swir', name: 'SWIR', role: 'creator', avatar: 'S', accent: '#35e6ff' });
+        await storage.set('identity.activeId', creator.id);
+        list = [creator];
+      }
+      const activeId = await storage.get('identity.activeId', null);
+      if (!activeId || !list.some(x => x.id === activeId)) await storage.set('identity.activeId', list[0].id);
+      return identity.active();
+    }
+  };
+
   const processes = {
     list() {
       const wins = [...document.querySelectorAll('.os-window')];
@@ -281,34 +450,36 @@
 
   async function migrateLegacy() {
     const migrated = await storage.get('migration.1.3', false);
-    if (migrated) return;
-    try {
-      const legacyFiles = JSON.parse(localStorage.getItem('swir-vfs-v12') || '[]');
-      if (Array.isArray(legacyFiles)) {
-        for (const item of legacyFiles) {
-          try { await idbPut('files', item); } catch (_) { break; }
+    if (!migrated) {
+      try {
+        const legacyFiles = JSON.parse(localStorage.getItem('swir-vfs-v12') || '[]');
+        if (Array.isArray(legacyFiles)) {
+          for (const item of legacyFiles) { try { await idbPut('files', item); } catch (_) { break; } }
         }
-      }
-    } catch (_) {}
-    try {
-      const legacyPackages = JSON.parse(localStorage.getItem('swir-installed-apps') || '[]');
-      if (Array.isArray(legacyPackages)) {
-        for (const id of legacyPackages) {
-          try { await idbPut('packages', { id, source: 'legacy-store', installed: true, installedAt: Date.now() }); } catch (_) { break; }
+      } catch (_) {}
+      try {
+        const legacyPackages = JSON.parse(localStorage.getItem('swir-installed-apps') || '[]');
+        if (Array.isArray(legacyPackages)) {
+          for (const id of legacyPackages) { try { await idbPut('packages', { id, source: 'legacy-store', installed: true, installedAt: Date.now() }); } catch (_) { break; } }
         }
-      }
-    } catch (_) {}
-    await storage.set('migration.1.3', true);
-    emit('migration', { version: '1.3' });
+      } catch (_) {}
+      await storage.set('migration.1.3', true);
+      emit('migration', { version: '1.3' });
+    }
+    await identity.ensureDefault();
+    await storage.set('migration.1.4', true);
+    emit('migration', { version: '1.4' });
   }
 
   window.SwirPlatform = Object.freeze({
     meta: META,
     storage,
+    settings,
     files,
     clipboard,
     permissions,
     packages,
+    identity,
     processes,
     system,
     events: { on, emit },
