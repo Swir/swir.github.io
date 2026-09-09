@@ -1,0 +1,14 @@
+/* SWIR OS 1.4 — Identity & Session Core */
+#v14-user-tray{display:inline-flex;align-items:center;gap:7px;border:1px solid rgba(89,211,255,.18);border-radius:10px;background:rgba(255,255,255,.025);color:#dff7ff;padding:5px 8px;cursor:pointer;font:800 9px ui-monospace,Consolas,monospace}
+#v14-user-tray:hover{border-color:rgba(53,230,255,.45);background:rgba(53,230,255,.07)}
+#v14-user-tray .v14-avatar{width:22px;height:22px;display:grid;place-items:center;border-radius:7px;border:1px solid rgba(53,230,255,.25);color:#35e6ff;background:rgba(0,166,255,.08)}
+.v14-lock-select{width:100%;margin:10px 0 0;padding:10px 11px;border:1px solid rgba(83,201,255,.2);border-radius:11px;background:#03101d;color:#eaf9ff;outline:none;font:800 10px ui-monospace,Consolas,monospace}
+.v14-lock-select:focus,.v14-pin:focus{border-color:rgba(53,230,255,.55);box-shadow:0 0 0 3px rgba(53,230,255,.06)}
+.v14-pin{width:100%;margin-top:8px;padding:11px;border:1px solid rgba(83,201,255,.2);border-radius:11px;background:#03101d;color:white;outline:none;text-align:center;letter-spacing:.18em;font:900 12px ui-monospace,Consolas,monospace}
+.v14-auth-status{min-height:17px;margin-top:7px;color:#6f91a8;font:9px ui-monospace,Consolas,monospace;text-align:center}
+.v14-auth-status.bad{color:#ff8ba0}.v14-auth-status.ok{color:#67f2b4}
+.v14-lock-actions{display:grid;grid-template-columns:1fr auto;gap:7px;margin-top:8px}.v14-lock-actions .lock-enter{margin:0}
+#v14-manage-users{border:1px solid rgba(83,201,255,.22);border-radius:10px;background:rgba(255,255,255,.025);color:#b8d6e8;padding:0 11px;cursor:pointer;font:900 9px ui-monospace,Consolas,monospace}
+#v14-manage-users:hover{border-color:rgba(53,230,255,.45);color:white}
+.v14-session-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 7px;border:1px solid rgba(53,230,255,.16);border-radius:999px;color:#8fb4c8;font:800 8px ui-monospace,Consolas,monospace}
+@media(max-width:760px){#v14-user-tray .v14-name{display:none}.v14-lock-actions{grid-template-columns:1fr}.v14-lock-actions #v14-manage-users{min-height:38px}}
