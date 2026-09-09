@@ -11,15 +11,17 @@
     const legacy=parse(VFS_KEY,[]);if(!Array.isArray(legacy))return;
     const current=await api.files.list();
     const legacyIds=new Set(legacy.map(x=>x.id));
-    for(const item of legacy) await api.files.save(item);
-    for(const item of current){if(item?.id&&!legacyIds.has(item.id))await api.files.remove(item.id)}
+    for(const item of legacy) await api.files.save({...item,adapterSource:'legacy-v12'});
+    for(const item of current){
+      if(item?.id&&item.adapterSource==='legacy-v12'&&!legacyIds.has(item.id))await api.files.remove(item.id);
+    }
     await api.storage.set('compat.vfs.lastSync',Date.now());
   }
 
   async function syncNotes(){
     const api=window.SwirPlatform;if(!api)return;
     const notes=parse(NOTES_KEY,[]);if(!Array.isArray(notes))return;
-    await api.storage.set('notes.list',notes);
+    await api.storage.set('notes.list',notes.map(note=>({...note,adapterSource:'legacy-v12'})));
     await api.storage.set('notes.active',localStorage.getItem('swir-notes-open')||null);
     await api.storage.set('compat.notes.lastSync',Date.now());
   }
