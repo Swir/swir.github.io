@@ -1,4 +1,4 @@
-/* SWIR OS v1.1 — application registry
+/* SWIR OS v1.2 — application registry
    Existing folders are referenced only; their contents are not modified. */
 
 window.SWIR_APPS = [
@@ -21,6 +21,61 @@ window.SWIR_APPS = [
     type: "iframe",
     url: "./swir-store.html",
     accent: "#00d8ff",
+    desktop: true
+  },
+  {
+    id: "files",
+    title: "File Explorer",
+    subtitle: "Virtual files, preserved folders and Trash",
+    icon: "▤",
+    category: "System",
+    type: "iframe",
+    url: "./swir-files.html",
+    accent: "#53c7ff",
+    desktop: true
+  },
+  {
+    id: "notes",
+    title: "Notes",
+    subtitle: "Autosaving local notes",
+    icon: "N",
+    category: "Productivity",
+    type: "iframe",
+    url: "./swir-notes.html",
+    accent: "#55e6c1",
+    desktop: true
+  },
+  {
+    id: "calc",
+    title: "Calculator",
+    subtitle: "Scientific-style quick calculator",
+    icon: "±",
+    category: "Productivity",
+    type: "iframe",
+    url: "./swir-calc.html",
+    accent: "#74b9ff",
+    desktop: true
+  },
+  {
+    id: "player",
+    title: "SWIR Player",
+    subtitle: "Local audio and system sounds",
+    icon: "▶",
+    category: "Media",
+    type: "iframe",
+    url: "./swir-player.html",
+    accent: "#ff8fd8",
+    desktop: true
+  },
+  {
+    id: "monitor",
+    title: "System Monitor",
+    subtitle: "Browser, storage and network telemetry",
+    icon: "▥",
+    category: "System",
+    type: "iframe",
+    url: "./swir-monitor.html",
+    accent: "#7dffb3",
     desktop: true
   },
   {
@@ -162,7 +217,7 @@ window.SWIR_APPS = [
     category: "System",
     type: "internal",
     accent: "#54b8ff",
-    desktop: true
+    desktop: false
   },
   {
     id: "browser",
