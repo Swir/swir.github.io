@@ -6,6 +6,13 @@
   const toast=(t,m)=>window.SwirOS?.toast?.(t,m);
   const installed=()=>{try{const v=JSON.parse(localStorage.getItem('swir-installed-apps')||'[]');return new Set(Array.isArray(v)?v:[])}catch{return new Set()}};
 
+  function patchRuntimeVersion(){
+    const system=window.SwirPlatform?.system;if(!system||system.__swirV16Patched)return;
+    const original=system.info?.bind(system);if(!original)return;
+    system.info=()=>({...original(),version:'1.6.0',core:'NEON CORE',edition:'WEB',build:'2026.09',platformApi:2});
+    Object.defineProperty(system,'__swirV16Patched',{value:true,enumerable:false});
+  }
+
   function addQuickTile(){
     const grid=$('#quick-center .quick-grid');if(!grid||$('#quick-packages-open'))return;
     const b=document.createElement('button');b.id='quick-packages-open';b.className='quick-tile';b.type='button';
@@ -44,14 +51,8 @@
 
   function modernizeBootLog(){
     const log=$('#boot-log');if(!log)return;
-    const fix=node=>{
-      if(!(node instanceof HTMLElement))return;
-      node.textContent=node.textContent
-        .replace('Mounting preserved apps','Loading package registry')
-        .replace('Initializing SWIR LAB','Starting App SDK services');
-    };
-    [...log.children].forEach(fix);
-    new MutationObserver(records=>records.forEach(r=>r.addedNodes.forEach(fix))).observe(log,{childList:true});
+    const fix=node=>{if(!(node instanceof HTMLElement))return;node.textContent=node.textContent.replace('Mounting preserved apps','Loading package registry').replace('Initializing SWIR LAB','Starting App SDK services')};
+    [...log.children].forEach(fix);new MutationObserver(records=>records.forEach(r=>r.addedNodes.forEach(fix))).observe(log,{childList:true});
   }
 
   function showPackageStatus(){
@@ -80,6 +81,6 @@
     new MutationObserver(rs=>rs.forEach(r=>r.addedNodes.forEach(n=>{if(n instanceof HTMLIFrameElement)attach(n);if(n instanceof Element)n.querySelectorAll?.('iframe').forEach(attach)}))).observe(layer,{childList:true,subtree:true});
   }
 
-  function init(){if(!window.SwirOS||!window.SwirAppSDK){setTimeout(init,60);return}updateLabels();modernizeBootLog();addQuickTile();wireTerminal();showPackageStatus();watchFileExplorer();setTimeout(()=>toast('SWIR OS 1.6','App SDK 1.0 and SWIR App Package 1.0 are online.'),1400)}
+  function init(){if(!window.SwirOS||!window.SwirAppSDK){setTimeout(init,60);return}patchRuntimeVersion();updateLabels();modernizeBootLog();addQuickTile();wireTerminal();showPackageStatus();watchFileExplorer();setTimeout(()=>toast('SWIR OS 1.6','App SDK 1.0 and SWIR App Package 1.0 are online.'),1400)}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
