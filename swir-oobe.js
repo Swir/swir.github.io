@@ -4,7 +4,17 @@
   const $=(s,r=document)=>r.querySelector(s);
 
   async function waitForPlatform(){
-    while(!window.SwirPlatform?.identity||!window.SwirPlatform?.settings) await new Promise(r=>setTimeout(r,60));
+    let attempts=0;
+    while(!window.SwirPlatform?.identity||!window.SwirPlatform?.settings){
+      attempts++;
+      if(attempts===40&&window.SwirPlatform&&window.SwirPlatform.meta?.version!=='1.4.0'&&!sessionStorage.getItem('swir-reload-1.4')){
+        sessionStorage.setItem('swir-reload-1.4','1');
+        location.reload();
+        return new Promise(()=>{});
+      }
+      await new Promise(r=>setTimeout(r,60));
+    }
+    sessionStorage.removeItem('swir-reload-1.4');
     await window.SwirPlatform.ready;
   }
 
