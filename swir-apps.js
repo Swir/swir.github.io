@@ -1,4 +1,4 @@
-/* SWIR OS v1.3 — native application registry
+/* SWIR OS v1.4 — application registry
    Active environment contains only current SWIR modules. Legacy/retro folders are not used. */
 
 window.SWIR_APPS = [
@@ -13,6 +13,7 @@ window.SWIR_APPS = [
   { id:"matrix", title:"SWIR Matrix", subtitle:"Native digital-rain renderer", icon:"01", category:"Visual", type:"iframe", url:"./swir-matrix.html", accent:"#39ff88", desktop:true },
   { id:"monitor", title:"System Monitor", subtitle:"Browser, storage and network telemetry", icon:"▥", category:"System", type:"iframe", url:"./swir-monitor.html", accent:"#7dffb3", desktop:true },
 
+  { id:"users", title:"User Manager", subtitle:"Profiles, roles, PIN and active session", icon:"US", category:"System", type:"iframe", url:"./swir-users.html", accent:"#35e6ff", desktop:false },
   { id:"taskmgr", title:"Task Manager", subtitle:"Running SWIR OS application processes", icon:"▧", category:"System", type:"iframe", url:"./swir-taskmgr.html", accent:"#7df0ff", desktop:false },
   { id:"services", title:"SWIR Services", subtitle:"System service and adapter status", icon:"SV", category:"System", type:"iframe", url:"./swir-services.html", accent:"#35e6ff", desktop:false },
   { id:"updates", title:"Update Center", subtitle:"GitHub, cache and runtime updates", icon:"↻", category:"System", type:"iframe", url:"./swir-updates.html", accent:"#50e3a4", desktop:false },
