@@ -1,4 +1,4 @@
-/* SWIR App SDK 1.1 — Web Edition bridge */
+/* SWIR App SDK 1.2 — Web Edition bridge */
 (() => {
   'use strict';
   const catalog = () => Array.isArray(window.SWIR_PACKAGE_CATALOG) ? window.SWIR_PACKAGE_CATALOG : [];
@@ -43,9 +43,13 @@
   function setDefault(extension,appId){return associationService()?.setDefault?.(extension,appId)}
   function extension(name){return associationService()?.extension?.(name)||''}
   function appData(appId){return namespace(appId)}
+  function notificationService(){return window.SwirNotifications||null}
+  async function sendNotification(appId,options){const svc=notificationService();if(!svc)throw new Error('Notification service unavailable');return svc.send(appId,options)}
+  function notificationHistory(appId=null){return notificationService()?.list?.(appId)||[]}
+  function clearNotifications(appId=null){return notificationService()?.clear?.(appId)}
 
   window.SwirAppSDK = Object.freeze({
-    meta: Object.freeze({ name: 'SWIR App SDK', version: '1.1.0', schema: 'swir.app/1.0', os: 'SWIR OS 1.7', edition: 'WEB' }),
+    meta: Object.freeze({ name: 'SWIR App SDK', version: '1.2.0', schema: 'swir.app/1.0', os: 'SWIR OS 1.7', edition: 'WEB' }),
     catalog,
     manifest,
     installed,
@@ -54,6 +58,7 @@
     storage: Object.freeze({ namespace }),
     identity: Object.freeze({ active: activeIdentity }),
     files: Object.freeze({ open:openFile, consumeOpen, handlersFor, defaultFor, setDefault, extension, appData }),
+    notifications: Object.freeze({ send:sendNotification, history:notificationHistory, clear:clearNotifications }),
     system: Object.freeze({ info: systemInfo }),
     shell: Object.freeze({ open, notify })
   });
