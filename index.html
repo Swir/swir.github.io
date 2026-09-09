@@ -4,22 +4,23 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#020617">
-  <meta name="description" content="SWIR OS 1.2 — Neon Core. Custom web desktop with File Explorer, Notes, Calculator, Music Player, System Monitor, Store, retro vault and terminal.">
+  <meta name="description" content="SWIR OS 1.3 — Neon Core Web Edition. Portable platform API, File Explorer, Notes, Calculator, Music Player, Task Manager, Update Center, Store, retro vault and terminal.">
   <meta name="author" content="Swir">
   <meta name="color-scheme" content="dark">
 
-  <meta property="og:title" content="SWIR OS 1.2 — Neon Core">
-  <meta property="og:description" content="Enter the SWIR LAB: a custom web operating system with desktop apps, Store, retro zones and developer tools.">
+  <meta property="og:title" content="SWIR OS 1.3 — Neon Core">
+  <meta property="og:description" content="Enter the SWIR LAB: a custom web operating-system prototype designed to evolve into Desktop and System editions.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://swir.github.io/">
 
-  <title>SWIR OS 1.2 — Neon Core</title>
+  <title>SWIR OS 1.3 — Neon Core</title>
 
   <link rel="icon" href="./swir-icon.svg" type="image/svg+xml">
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="stylesheet" href="./swir-os.css">
   <link rel="stylesheet" href="./swir-v11.css">
   <link rel="stylesheet" href="./swir-v12.css">
+  <link rel="stylesheet" href="./swir-v13.css">
 </head>
 <body>
   <noscript>
@@ -34,7 +35,7 @@
         <div class="boot-mark">S</div>
         <div>
           <div class="boot-title">SWIR OS</div>
-          <div class="boot-subtitle">NEON CORE // v1.2</div>
+          <div class="boot-subtitle">NEON CORE // v1.3</div>
         </div>
       </div>
       <div id="boot-log" class="boot-log" aria-live="polite"></div>
@@ -54,7 +55,7 @@
       </div>
       <div class="lock-login">
         <div class="lock-user"><div class="lock-avatar">S</div><div><strong>SWIR</strong><span>CREATOR SESSION</span></div></div>
-        <div class="lock-session">ACCESS LEVEL: CREATOR<br>CORE: NEON 1.2<br>SESSION: LOCAL BROWSER</div>
+        <div class="lock-session">ACCESS LEVEL: CREATOR<br>CORE: NEON 1.3<br>EDITION: WEB<br>SESSION: LOCAL BROWSER</div>
         <button id="unlock-os" class="lock-enter" type="button">&gt; ACCESS SWIR OS</button>
       </div>
     </div>
@@ -64,16 +65,16 @@
     <div class="wallpaper-orb" aria-hidden="true"></div>
 
     <header class="topbar">
-      <div class="topbar-brand"><span class="topbar-dot"></span><span>SWIR OS / NEON CORE 1.2</span></div>
-      <div class="topbar-status"><span class="hide-mobile">STATUS: ONLINE</span><span class="hide-mobile">ACCESS: CREATOR</span><span id="top-clock">--:--</span></div>
+      <div class="topbar-brand"><span class="topbar-dot"></span><span>SWIR OS / NEON CORE 1.3</span></div>
+      <div class="topbar-status"><span class="hide-mobile">EDITION: WEB</span><span class="hide-mobile">STATUS: ONLINE</span><span class="hide-mobile">ACCESS: CREATOR</span><span id="top-clock">--:--</span></div>
     </header>
 
     <section id="desktop-icons" aria-label="Desktop applications"></section>
 
     <aside class="desktop-widget" aria-label="SWIR OS overview">
-      <div class="widget-eyebrow">&gt; SYSTEM ONLINE</div>
+      <div class="widget-eyebrow">&gt; PLATFORM ONLINE</div>
       <div class="widget-title">SWIR OS</div>
-      <div class="widget-subtitle">NEON CORE 1.2 — custom browser system for code, local apps, retro machines, experiments and the SWIR LAB.</div>
+      <div class="widget-subtitle">NEON CORE 1.3 — Web Edition and design laboratory for the future SWIR OS Desktop and bootable System editions.</div>
       <div class="widget-stats">
         <div class="widget-stat"><strong id="widget-repos">—</strong><span>Repos</span></div>
         <div class="widget-stat"><strong id="widget-stars">—</strong><span>Stars</span></div>
@@ -86,7 +87,7 @@
 
     <aside id="launcher" class="launcher" aria-label="Application launcher">
       <div class="launcher-head">
-        <div class="launcher-brand"><div class="brand-mark">S</div><div><strong>SWIR OS</strong><span>NEON CORE 1.2 // SYSTEM ONLINE</span></div></div>
+        <div class="launcher-brand"><div class="brand-mark">S</div><div><strong>SWIR OS</strong><span>NEON CORE 1.3 // WEB EDITION</span></div></div>
         <input id="launcher-search" class="launcher-search" type="search" placeholder="Search applications..." autocomplete="off" spellcheck="false" aria-label="Search applications">
       </div>
       <div id="launcher-list" class="launcher-list"></div>
@@ -106,7 +107,7 @@
         <section class="quick-section"><div class="quick-label">COLOR CORE</div><div class="v11-theme-pills"><button class="v11-theme-pill" data-v11-theme="blue" type="button">BLUE</button><button class="v11-theme-pill" data-v11-theme="green" type="button">GREEN</button><button class="v11-theme-pill" data-v11-theme="purple" type="button">PURPLE</button></div></section>
         <section class="quick-section"><div class="quick-label">WALLPAPER</div><div class="wallpaper-pills"><button class="wallpaper-pill" data-wallpaper="grid" type="button">GRID</button><button class="wallpaper-pill" data-wallpaper="aurora" type="button">AURORA</button><button class="wallpaper-pill" data-wallpaper="void" type="button">VOID</button></div></section>
         <section class="quick-section"><div class="quick-label">SYSTEM</div><div class="quick-grid"><button id="quick-store-open" class="quick-tile" type="button"><strong>SWIR STORE</strong><span>Install desktop shortcuts</span></button><button id="quick-lock" class="quick-tile" type="button"><strong>LOCK</strong><span>Lock creator session</span></button><button id="quick-reset-icons" class="quick-tile" type="button"><strong>RESET ICONS</strong><span>Restore desktop layout</span></button><button id="quick-install" class="quick-tile" type="button"><strong>INSTALL APP</strong><span>Browser menu also works</span></button></div></section>
-        <section class="quick-section"><div class="quick-label">SHORTCUTS</div><div class="notification-empty" style="padding:8px 2px;text-align:left">CTRL+SHIFT+N — notifications<br>CTRL+SHIFT+Q — control center<br>CTRL+SHIFT+L — lock session<br>CTRL+ALT+E — File Explorer<br>CTRL+ALT+N — Notes<br>CTRL+ALT+C — Calculator<br>CTRL+ALT+M — Player<br>CTRL+ALT+S — System Monitor</div></section>
+        <section class="quick-section"><div class="quick-label">SHORTCUTS</div><div class="notification-empty" style="padding:8px 2px;text-align:left">CTRL+SHIFT+N — notifications<br>CTRL+SHIFT+Q — control center<br>CTRL+SHIFT+L — lock session<br>CTRL+ALT+E — File Explorer<br>CTRL+ALT+N — Notes<br>CTRL+ALT+C — Calculator<br>CTRL+ALT+M — Player<br>CTRL+ALT+S — System Monitor<br>CTRL+ALT+SHIFT+T — Task Manager<br>CTRL+ALT+SHIFT+U — Update Center<br>CTRL+ALT+SHIFT+P — Platform Control</div></section>
       </div>
     </aside>
 
@@ -119,9 +120,11 @@
     </nav>
   </main>
 
+  <script src="./swir-platform.js"></script>
   <script src="./swir-apps.js"></script>
   <script src="./swir-os.js"></script>
   <script src="./swir-v11.js"></script>
   <script src="./swir-v12.js"></script>
+  <script src="./swir-v13.js"></script>
 </body>
 </html>
