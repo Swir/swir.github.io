@@ -9,9 +9,9 @@
 </style>
 </head>
 <body>
-<header class="head"><div><div class="k">SWIR OS // SYSTEM SERVICE LAYER</div><h1>SWIR Services</h1></div><button id="refresh" class="btn">REFRESH</button></header>
+<header class="head"><div><div class="k">SWIR OS 1.4 // SYSTEM SERVICE LAYER</div><h1>SWIR Services</h1></div><button id="refresh" class="btn">REFRESH</button></header>
 <section id="grid" class="grid"></section>
-<div class="foot">WEB EDITION: these services represent browser/platform adapters. Desktop and System editions can replace them with native daemons and background services.</div>
+<div class="foot">WEB EDITION: these services represent browser/platform adapters. Desktop and System editions can replace them with native daemons, account services and background processes.</div>
 <script>
 (() => {
   'use strict';
@@ -29,15 +29,21 @@
     const api=parentApi(),os=parentOs();
     let sw=false;try{sw=!!navigator.serviceWorker?.controller}catch{}
     let storage='LOCAL';try{if(navigator.storage?.estimate){const e=await navigator.storage.estimate();storage=`${Math.round((e.usage||0)/1024)} KB USED`}}catch{}
+    let session=null;try{if(api?.identity){await api.ready;session=await api.identity.session()}}catch{}
+    const user=session?.user;
+    const role=String(user?.role||'none').toUpperCase();
+    const sessionState=session?(session.locked?'LOCKED':role):'WAITING';
+    const sessionClass=session?(session.locked?'warn':'ok'):'warn';
     return [
       {icon:'WM',name:'Window Manager',adapter:'SWIR SHELL',state:os?'RUNNING':'OFFLINE',cls:os?'ok':'bad',meta:os?`${os.apps?.length||0} registered applications`:'Shell API unavailable'},
       {icon:'FS',name:'Storage Service',adapter:'SWIR PLATFORM',state:api?'RUNNING':'WAITING',cls:api?'ok':'warn',meta:`IndexedDB/local adapter • ${storage}`,open:'files'},
+      {icon:'ID',name:'Identity Service',adapter:'PLATFORM API 2',state:api?.identity?'ACTIVE':'WAITING',cls:api?.identity?'ok':'warn',meta:user?`${user.name} • ${role} • local Web profile`:'Identity profile unavailable',open:'users'},
+      {icon:'SES',name:'Session Service',adapter:'IDENTITY CORE',state:sessionState,cls:sessionClass,meta:user?`ACTIVE USER: ${user.name} • STARTED: ${session?.startedAt?new Date(session.startedAt).toLocaleTimeString():'-'}`:'Waiting for Identity Core',open:'users'},
       {icon:'NET',name:'Network Service',adapter:'BROWSER NETWORK',state:navigator.onLine?'ONLINE':'OFFLINE',cls:navigator.onLine?'ok':'bad',meta:navigator.onLine?'Network adapter reports connectivity':'Offline mode active'},
       {icon:'CH',name:'Chat Service',adapter:'REMOTE API CLIENT',state:configuredChat()?'CONFIGURED':'NOT SET',cls:configuredChat()?'ok':'warn',meta:configuredChat()?'External SWIR Chat API configured':'Download Server Kit and configure an API endpoint',open:'chat'},
       {icon:'PWA',name:'Cache Service',adapter:'SERVICE WORKER',state:sw?'ACTIVE':'STANDBY',cls:sw?'ok':'warn',meta:sw?'Offline application cache controlled':'Service worker may activate after reload',open:'updates'},
       {icon:'UP',name:'Update Service',adapter:'GITHUB CHANNEL',state:navigator.onLine?'READY':'OFFLINE',cls:navigator.onLine?'ok':'warn',meta:'Update Center checks repository/runtime state',open:'updates'},
-      {icon:'SEC',name:'Permission Service',adapter:'PLATFORM CONTROL',state:api?'ACTIVE':'WAITING',cls:api?'ok':'warn',meta:'Application permissions and package metadata',open:'control'},
-      {icon:'SES',name:'Session Service',adapter:'WEB SESSION',state:'CREATOR',cls:'ok',meta:'Local SWIR OS Web Edition session'}
+      {icon:'SEC',name:'Permission Service',adapter:'PLATFORM CONTROL',state:api?'ACTIVE':'WAITING',cls:api?'ok':'warn',meta:'Application permissions and package metadata',open:'control'}
     ];
   }
   async function render(){const list=await snapshot();grid.innerHTML='';list.forEach(s=>grid.appendChild(card(s)))}
