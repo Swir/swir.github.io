@@ -2,20 +2,17 @@
 
 ## Project direction
 
-SWIR OS is being designed in three editions that share the same UX, application model and platform contracts:
+SWIR OS is designed in three editions sharing one application model and platform contracts:
 
 1. **SWIR OS Web Edition** — current `swir.github.io` prototype and design laboratory.
-2. **SWIR OS Desktop Edition** — future native desktop build with access to real files, processes, clipboard, networking and OS integrations.
-3. **SWIR OS System Edition** — future bootable Linux-based operating system with the SWIR shell, services, accounts and applications.
-
-The goal is to reuse application UI and business logic between editions instead of rewriting everything.
-
----
-
-## Core architecture
+2. **SWIR OS Desktop Edition** — future native desktop build with real files, processes, networking and OS integrations.
+3. **SWIR OS System Edition** — future bootable Linux-based system with the SWIR shell, services, accounts and applications.
 
 ```text
 SWIR Application
+      |
+      v
+SWIR App SDK
       |
       v
 SWIR Platform API
@@ -31,146 +28,51 @@ SWIR Platform API
  PWA cache          Native packages       SWIR packages
 ```
 
-Applications should call `window.SwirPlatform` and edition adapters instead of reaching directly into browser-only APIs whenever possible.
+The UI should not need to know which edition it runs on.
 
 ---
 
 ## SWIR Platform API 2
 
-Platform API 1 was introduced in **SWIR OS 1.3**. Platform API 2 arrived with **SWIR OS 1.4** and added Identity, Sessions and Settings while preserving the previous API surface.
+Platform API 1 arrived in SWIR OS 1.3. Platform API 2 arrived in 1.4 and added Identity, Sessions and Settings.
 
-### Metadata
+Main surfaces:
 
-- `SwirPlatform.meta`
-- Version / edition / build / Platform API information.
+```text
+SwirPlatform.storage
+SwirPlatform.settings
+SwirPlatform.identity
+SwirPlatform.files
+SwirPlatform.clipboard
+SwirPlatform.permissions
+SwirPlatform.packages
+SwirPlatform.processes
+SwirPlatform.system
+```
 
-### Storage
+Web Edition currently maps these to browser APIs, IndexedDB/localStorage and the SWIR window manager. Desktop/System editions will replace the adapters with native implementations.
 
-- `SwirPlatform.storage.get(key)`
-- `SwirPlatform.storage.set(key, value)`
-- `SwirPlatform.storage.remove(key)`
+---
 
-Current Web adapter: IndexedDB with localStorage fallback.
+## Identity & Session Core — 1.4
 
-### Settings
+Web Edition provides local profiles, active-user selection, roles, optional local PIN, lock state and First Boot/OOBE.
 
-- `SwirPlatform.settings.get(key)`
-- `SwirPlatform.settings.set(key, value)`
-- `SwirPlatform.settings.remove(key)`
-- `SwirPlatform.settings.userGet(userId, key)`
-- `SwirPlatform.settings.userSet(userId, key, value)`
-
-SWIR OS 1.5 uses this layer for hostname, language, network profiles and per-user appearance settings.
-
-### Identity and sessions
-
-- `SwirPlatform.identity.list()`
-- `SwirPlatform.identity.get(id)`
-- `SwirPlatform.identity.create(profile)`
-- `SwirPlatform.identity.update(id, patch)`
-- `SwirPlatform.identity.remove(id)`
-- `SwirPlatform.identity.active()`
-- `SwirPlatform.identity.setActive(id)`
-- `SwirPlatform.identity.authenticate(id, pin)`
-- `SwirPlatform.identity.lock()`
-- `SwirPlatform.identity.session()`
-
-Current Web adapter: local browser profiles stored in IndexedDB. Optional PIN is a convenience lock, not a secure OS credential boundary.
-
-Future Desktop adapter: native desktop account/session backend.
-
-Future System adapter: Linux users, PAM/session integration and privilege enforcement.
-
-### Filesystem
-
-- `SwirPlatform.files.list()`
-- `SwirPlatform.files.get(id)`
-- `SwirPlatform.files.save(file)`
-- `SwirPlatform.files.remove(id)`
-
-Current Web adapter: IndexedDB with migration support for earlier virtual filesystem data.
-
-Future Desktop adapter: native filesystem sandbox.
-
-Future System adapter: Linux filesystem / user home.
-
-### Clipboard
-
-- `SwirPlatform.clipboard.writeText(text)`
-- `SwirPlatform.clipboard.readText()`
-- `SwirPlatform.clipboard.clear()`
-
-Current Web adapter: Clipboard API with internal fallback.
-
-### Permissions
-
-- `SwirPlatform.permissions.list()`
-- `SwirPlatform.permissions.get(appId, permission)`
-- `SwirPlatform.permissions.set(appId, permission, value)`
-
-Native editions can enforce permissions at the adapter layer.
-
-### Packages
-
-- `SwirPlatform.packages.list()`
-- `SwirPlatform.packages.install(pkg)`
-- `SwirPlatform.packages.remove(id)`
-
-Current Web adapter: local package/shortcut registry.
-
-Future editions: signed SWIR package manifests and a real package manager.
-
-### Processes
-
-- `SwirPlatform.processes.list()`
-- `SwirPlatform.processes.open(id)`
-- `SwirPlatform.processes.kill(id)`
-
-Current Web adapter: SWIR window-manager applications.
-
-Future Desktop/System adapters: native processes and services where allowed.
-
-### System
-
-- `SwirPlatform.system.info()`
-- `SwirPlatform.system.storageEstimate()`
-- `SwirPlatform.system.clearRuntimeCaches()`
+The Web PIN is only a convenience lock. Desktop/System editions must map identity and authentication to native account/session security.
 
 ---
 
 ## Device & Network Core — 1.5
 
-SWIR OS 1.5 introduces three user-facing system surfaces:
-
 ### Device Manager
 
-Current Web Edition capabilities:
-
-- hostname stored through `SwirPlatform.settings`
-- platform / browser runtime information
-- logical CPU count when exposed by the browser
-- approximate device memory when exposed
-- screen and viewport information
-- storage usage / quota
-- battery state when Battery API is available
-- connection telemetry when Network Information API is available
-- copyable device report through `SwirPlatform.clipboard`
-
-Desktop/System editions can replace the Web adapter with real hardware enumeration.
+Web Edition exposes the device information browsers make available, including logical CPU count, approximate memory, screen/viewport, storage estimate, battery when supported and connection telemetry.
 
 ### Network Center
 
-Current Web Edition capabilities:
+Web Edition exposes online/offline state and connection metrics when supported, plus portable SWIR network profiles.
 
-- online/offline state
-- effective connection type when exposed
-- approximate downlink and RTT when exposed
-- portable SWIR network profiles
-- active profile selection
-
-**Web Edition cannot scan or connect to real Wi-Fi networks.** Browsers intentionally do not expose that level of device control. The profile model exists so a future Desktop/System adapter can connect the same UI to native networking.
-
-Planned native mapping:
+Browsers do not allow arbitrary scanning/connecting to real Wi-Fi networks. Future native editions can map the same UI to native networking / NetworkManager.
 
 ```text
 SWIR Network Center
@@ -184,29 +86,86 @@ Desktop               System
 Native API            NetworkManager
 ```
 
-### System Settings
+---
 
-1.5 consolidates:
+## App SDK & Package Core — 1.6
 
-- device name
-- language preference
-- color core
-- wallpaper
-- reduced motion
-- system sounds
-- user/session shortcuts
-- cache/storage controls
-- links to Device, Network, Services and Update Center
+SWIR OS 1.6 introduces **SWIR App SDK 1.0** and **SWIR App Package 1.0**.
 
-Per-user settings use `SwirPlatform.settings.userGet/userSet`.
+Official package schema:
+
+```text
+swir.app/1.0
+```
+
+The specification lives in `SWIR-APP-PACKAGE-1.0.md`.
+
+### Web Edition install lifecycle
+
+```text
+SWIR Store 2.0
+      |
+      v
+Package manifest
+      |
+      v
+Permission review
+      |
+      v
+SwirPlatform.packages.install()
+      |
+      +--> SwirPlatform.permissions
+      +--> launcher registry mirror
+      |
+      v
+Apply / rebuild shell registry
+```
+
+Web Edition registers package state and permissions while the actual HTML/JS source ships with the static SWIR OS build.
+
+Desktop/System target lifecycle:
+
+```text
+DOWNLOAD .swirapp
+      -> VERIFY MANIFEST
+      -> VERIFY SIGNATURE
+      -> CHECK COMPATIBILITY
+      -> DISPLAY PERMISSIONS
+      -> INSTALL PAYLOAD
+      -> REGISTER APP / FILE TYPES
+      -> LAUNCH
+```
+
+### Initial installable package catalog
+
+- `swir.code` — SWIR Code
+- `swir.image-studio` — Image Studio
+- `swir.archive` — Archive Manager
+- `swir.pdf-viewer` — PDF Viewer
+- `swir.chat` — SWIR Chat
+
+Core system components such as Store, File Explorer, Settings, User Manager, Device Manager, Network Center, Task Manager, Services, Update Center, Platform Control and Terminal stay outside the uninstallable catalog.
+
+### Initial permission vocabulary
+
+```text
+files.read
+files.write
+clipboard
+downloads
+network
+storage
+identity.basic
+notifications
+```
+
+A manifest requesting a permission does not automatically grant authority. Platform adapters are responsible for enforcing granted capabilities.
 
 ---
 
-## System services
+## SWIR Services
 
-`SWIR Services` is the service-status surface shared by editions.
-
-Current Web services/adapters include:
+Current Web service/status model includes:
 
 - Window Manager
 - Device Service
@@ -219,13 +178,11 @@ Current Web services/adapters include:
 - Update Service
 - Permission Service
 
-In Desktop/System editions these cards can map to native background services, daemons and hardware/network components.
+Desktop/System editions can map these to native services/daemons.
 
 ---
 
-## Network services
-
-SWIR Chat is intentionally separated into two pieces:
+## SWIR Chat service
 
 ```text
 SWIR Chat client
@@ -237,124 +194,71 @@ SWIR Chat API
 MySQL / MariaDB
 ```
 
-The Web client lives in SWIR OS. The API is downloaded from **Chat Server Kit** and installed on a separate PHP hosting account. This keeps GitHub Pages static while allowing live multi-user communication.
-
-Future transport can move from polling to WebSockets without changing the Chat application model.
-
----
-
-## First Boot
-
-Web Edition 1.4 introduced an OOBE / First Boot flow that configures:
-
-- device name
-- first local profile
-- optional local PIN
-- color core
-
-1.5 reuses the same device identity in Device Manager and System Settings.
+The Web client lives in SWIR OS. Chat Server Kit supplies the downloadable PHP backend for separate hosting. Future transport can move from polling to WebSockets without replacing the client application model.
 
 ---
 
 ## Version roadmap
 
-### Web Edition 1.x
+### Web Edition 1.x — implemented foundation
 
-Already implemented or actively being stabilized:
-
-- desktop shell
-- window manager
+- desktop shell / window manager
 - launcher / taskbar
 - First Boot / OOBE
 - Identity & Session Core
 - Device Manager
 - Network Center
 - System Settings
-- File Explorer
-- virtual filesystem
-- Notes
-- Calculator
-- Music Player
-- Matrix visual module
-- SWIR Chat + downloadable server backend
-- Task Manager
-- SWIR Services
-- permissions model
-- package model
-- clipboard
-- Update Center
+- File Explorer / virtual filesystem
+- Notes / Calculator / Player / Matrix
+- SWIR Chat + downloadable backend
+- Task Manager / SWIR Services
+- permissions / clipboard / Update Center
+- **SWIR App SDK 1.0**
+- **SWIR App Package 1.0**
+- **SWIR Store 2.0 install/remove lifecycle**
 
-Next major Web Edition work:
+### Next Web Edition work
 
-- **1.6 Application SDK**
-- application manifests
-- centralized app permissions
-- SWIR package format
-- install/uninstall lifecycle
-- file associations
-- app data directories
-- widgets
+- app-specific data directories
+- file associations and “Open with”
+- package update/version comparison
+- package dependency model
 - notification API for applications
+- widgets as installable packages
+- application developer template / SDK examples
+- signed catalog metadata prototype
 
 ### Desktop Edition 2.x
 
-Planned direction:
+Planned:
 
-- native runtime such as Tauri or another lightweight shell
+- lightweight native runtime
 - native filesystem adapter
-- real hardware/device adapter
-- native network adapter
-- native account/session adapter
-- real process manager
-- native clipboard
-- tray integration
-- global shortcuts
-- file associations
-- installers / updater
-- sandboxed application permissions
-- native service manager
+- native device/network adapters
+- native account/session backend
+- process/service manager
+- native clipboard and tray
+- global shortcuts and file associations
+- `.swirapp` payload installer/updater
+- sandboxed permissions
 
 ### System Edition 3.x
 
-Planned direction:
+Planned:
 
-- Linux kernel
+- proven Linux base/kernel
 - bootable ISO
-- SWIR boot splash
-- SWIR login/session manager
+- SWIR boot splash and login/session manager
 - SWIR desktop shell
-- NetworkManager integration
-- hardware settings
+- NetworkManager/hardware integration
 - system services
-- package manager
-- updater
+- package manager/updater
 - filesystem integration
 - recovery mode
 
-The System Edition should use a proven Linux base rather than writing a kernel from scratch.
-
 ---
 
-## Rule for future development
+## Development rule
 
-**UI should not know which edition it runs on.**
-
-Whenever an application needs system functionality, prefer:
-
-```js
-SwirPlatform.storage
-SwirPlatform.settings
-SwirPlatform.identity
-SwirPlatform.files
-SwirPlatform.clipboard
-SwirPlatform.permissions
-SwirPlatform.packages
-SwirPlatform.processes
-SwirPlatform.system
-```
-
-over direct edition-specific APIs.
-
-Device/network features that cannot be exposed through current Platform API should live behind a replaceable adapter layer until Platform API 3 formalizes those contracts.
-
-This keeps SWIR OS portable.
+Applications should prefer **SwirAppSDK** and **SwirPlatform** over direct edition-specific APIs. Anything that cannot yet be represented by a portable contract should stay behind a replaceable adapter until that contract is formalized.
