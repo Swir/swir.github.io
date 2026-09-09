@@ -11,9 +11,12 @@ GitHub Pages cannot run PHP or a database, so the chat server must live on anoth
 
 - PHP 8.0 or newer
 - PDO MySQL extension
+- PHP `mbstring` extension
 - MySQL or MariaDB
 - HTTPS strongly recommended
 - A hosting account where PHP can write `swir-chat-config.php` next to the API file during installation
+
+These extensions are normally enabled on standard cPanel/shared PHP hosting.
 
 ## Installation
 
@@ -43,13 +46,15 @@ GitHub Pages cannot run PHP or a database, so the chat server must live on anoth
 
 ## Security model
 
-The **Public Chat Key is not a password**. It is intentionally safe to use in the browser and identifies your SWIR Chat instance. Anyone who can use the public chat can technically inspect it in browser developer tools.
+The **Public Chat Key is not a password**. It is intentionally usable in the browser and identifies your SWIR Chat instance. Anyone who can use the public chat can technically inspect it in browser developer tools.
 
 The **Admin Key is secret**. Do not commit it to GitHub, put it in `swir-chat.html`, or share it publicly.
 
 The server also restricts browser access using CORS. For the GitHub Pages edition the Allowed Origin should be:
 
 `https://swir.github.io`
+
+The server validates message length, validates client IDs and nicknames, uses prepared SQL statements, stores only a SHA-256 hash of the connecting IP with a message, and applies a basic send-rate limit. More advanced accounts, bans and moderation can be added in the next server version.
 
 ## Live behavior
 
