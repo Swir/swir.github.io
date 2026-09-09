@@ -1,4 +1,4 @@
-const CACHE_NAME = 'swir-os-v1.1.1-core';
+const CACHE_NAME = 'swir-os-v1.2-core';
 const CORE = [
   './',
   './index.html',
@@ -8,7 +8,14 @@ const CORE = [
   './swir-v11.css',
   './swir-v11.js',
   './swir-v11-fixed.js',
+  './swir-v12.css',
+  './swir-v12.js',
   './swir-store.html',
+  './swir-files.html',
+  './swir-notes.html',
+  './swir-calc.html',
+  './swir-player.html',
+  './swir-monitor.html',
   './swir-icon.svg',
   './manifest.webmanifest',
   './ding.mp3'
@@ -31,7 +38,6 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const request = event.request;
   if (request.method !== 'GET') return;
-
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
