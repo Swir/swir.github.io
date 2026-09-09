@@ -1,14 +1,26 @@
-/* SWIR OS 1.7 — Files, Associations & App Notifications integration */
+/* SWIR OS 1.7 — Files, Associations, Notifications & Package Integrity integration */
 (() => {
   'use strict';
   const $=(s,r=document)=>r.querySelector(s);
   const open=id=>window.SwirOS?.open?.(id);
   const toast=(t,m)=>window.SwirOS?.toast?.(t,m);
+  let integrityLoading=false;
+
+  function loadIntegrity(){
+    if(window.SwirPackageIntegrity||integrityLoading)return;
+    integrityLoading=true;
+    const script=document.createElement('script');
+    script.src='./swir-package-integrity.js';
+    script.async=false;
+    script.onload=()=>{integrityLoading=false};
+    script.onerror=()=>{integrityLoading=false;console.error('SWIR Package Integrity failed to load')};
+    document.head.appendChild(script);
+  }
 
   function updateLabels(){
     document.title='SWIR OS 1.7 — Neon Core';
     document.querySelectorAll('.boot-subtitle,.topbar-brand span:last-child,.launcher-brand span,.widget-subtitle,.lock-session').forEach(n=>{
-      n.innerHTML=n.innerHTML.replace(/1\.6/g,'1.7');
+      n.innerHTML=n.innerHTML.replace(/1\.6/g,'1.7').replace(/APP SDK: 1\.3/g,'APP SDK: 1.4').replace(/App SDK 1\.3/g,'App SDK 1.4');
     });
   }
 
@@ -24,7 +36,7 @@
     document.addEventListener('keydown',async e=>{
       const input=e.target;if(!(input instanceof HTMLInputElement)||input.id!=='terminal-input'||e.key!=='Enter')return;
       const raw=input.value.trim(),parts=raw.toLowerCase().split(/\s+/),cmd=parts[0];
-      if(!['assoc','defaults','openwith','appdata','filetypes','notifytest','notifications'].includes(cmd))return;
+      if(!['assoc','defaults','openwith','appdata','filetypes','notifytest','notifications','integrity'].includes(cmd))return;
       e.preventDefault();e.stopImmediatePropagation();input.value='';line(`swir@neon-core:~$ ${raw}`,'term-ok');
       const svc=window.SwirAssociations;
       if(cmd==='assoc'||cmd==='filetypes'){
@@ -39,6 +51,9 @@
       if(cmd==='notifytest'){
         try{await window.SwirNotifications?.send?.('system',{title:'Notification Service',message:'Portable app notification API is online.',tag:'terminal-test'});line('Test notification sent through SWIR Notification Service.','term-accent')}catch(err){line(err?.message||'Notification test failed.','term-error')}return;
       }
+      if(cmd==='integrity'){
+        const meta=window.SwirPackageIntegrity?.meta;line(meta?`${meta.name} ${meta.version} • ${meta.schema} • SHA-256 ready`:'Package Integrity service unavailable.',meta?'term-accent':'term-error');return;
+      }
       line('Opening Default Apps...','term-accent');open('defaults');
     },true);
   }
@@ -48,14 +63,15 @@
     const svc=window.SwirAssociations,total=svc?.allExtensions?.().filter(e=>svc.handlersFor(e).length).length||0;
     const el=document.createElement('aside');el.id='v17-assoc-pill';el.className='v16-package-pill';
     el.style.bottom='86px';
-    el.innerHTML=`<strong>FILES + NOTIFICATIONS</strong><span>${total} FILE TYPES • APP SDK 1.3</span>`;
-    el.addEventListener('click',()=>open('defaults'));shell.appendChild(el);
+    el.innerHTML=`<strong>PACKAGE TRUST CORE</strong><span>${total} FILE TYPES • APP SDK 1.4 • SHA-256</span>`;
+    el.addEventListener('click',()=>open('store'));shell.appendChild(el);
   }
 
   function init(){
-    if(!window.SwirOS||!window.SwirAssociations||!window.SwirNotifications||!window.SwirAppSDK||!window.SwirPackageResolver){setTimeout(init,60);return}
+    loadIntegrity();
+    if(!window.SwirOS||!window.SwirAssociations||!window.SwirNotifications||!window.SwirAppSDK||!window.SwirPackageResolver||!window.SwirPackageIntegrity){setTimeout(init,60);return}
     updateLabels();addQuickTile();wireTerminal();showStatus();
-    setTimeout(()=>toast('SWIR OS 1.7','Files, notifications and dependency-aware package services are online.'),1300);
+    setTimeout(()=>toast('SWIR OS 1.7','Package integrity, files, notifications and dependency services are online.'),1300);
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
