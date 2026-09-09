@@ -28,7 +28,7 @@
       if(!['pkg','packages','sdk','appinfo','install','remove'].includes(cmd))return;
       e.preventDefault();e.stopImmediatePropagation();input.value='';line(`swir@neon-core:~$ ${raw}`,'term-ok');
       const catalog=window.SWIR_PACKAGE_CATALOG||[],on=installed();
-      if(cmd==='sdk'){line('SWIR App SDK 1.1.0 // schema swir.app/1.0 // FILE ASSOCIATIONS 1.0 // WEB adapter','term-accent');return}
+      if(cmd==='sdk'){line('SWIR App SDK 1.2.0 // schema swir.app/1.0 // FILE ASSOCIATIONS 1.0 // NOTIFICATIONS 1.0 // WEB adapter','term-accent');return}
       if(cmd==='pkg'||cmd==='packages'){
         catalog.forEach(p=>line(`${on.has(p.id)?'[INSTALLED]':'[AVAILABLE]'} ${p.id.padEnd(8)} ${p.name} v${p.version}`,on.has(p.id)?'term-accent':'term-muted'));
         return;
@@ -59,7 +59,7 @@
     const shell=$('#os-shell');if(!shell||$('#v16-package-pill'))return;
     const total=(window.SWIR_PACKAGE_CATALOG||[]).length,count=(window.SWIR_PACKAGE_CATALOG||[]).filter(p=>installed().has(p.id)).length;
     const el=document.createElement('aside');el.id='v16-package-pill';el.className='v16-package-pill';
-    el.innerHTML=`<strong>APP SDK 1.1</strong><span>PACKAGES ${count}/${total} • FILE TYPES ENABLED</span>`;el.addEventListener('click',()=>open('store'));shell.appendChild(el);
+    el.innerHTML=`<strong>APP SDK 1.2</strong><span>PACKAGES ${count}/${total} • NOTIFICATIONS READY</span>`;el.addEventListener('click',()=>open('store'));shell.appendChild(el);
   }
 
   function addSystemFileCards(frame){
@@ -82,6 +82,6 @@
     new MutationObserver(rs=>rs.forEach(r=>r.addedNodes.forEach(n=>{if(n instanceof HTMLIFrameElement)attach(n);if(n instanceof Element)n.querySelectorAll?.('iframe').forEach(attach)}))).observe(layer,{childList:true,subtree:true});
   }
 
-  function init(){if(!window.SwirOS||!window.SwirAppSDK){setTimeout(init,60);return}patchRuntimeVersion();updateLabels();modernizeBootLog();addQuickTile();wireTerminal();showPackageStatus();watchFileExplorer();setTimeout(()=>toast('SWIR OS 1.7','App SDK 1.1 and file association manifests are online.'),1400)}
+  function init(){if(!window.SwirOS||!window.SwirAppSDK){setTimeout(init,60);return}patchRuntimeVersion();updateLabels();modernizeBootLog();addQuickTile();wireTerminal();showPackageStatus();watchFileExplorer();setTimeout(()=>toast('SWIR OS 1.7','App SDK 1.2, file associations and notifications are online.'),1400)}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
