@@ -125,9 +125,9 @@ Web Edition registers package state and permissions while the actual HTML/JS sou
 
 ---
 
-## Files & Associations Core — 1.7
+## Files, Associations & App Notifications — 1.7
 
-SWIR OS 1.7 extends the SDK to **SWIR App SDK 1.1** and adds a portable file association layer.
+SWIR OS 1.7 extends the SDK through **SWIR App SDK 1.2** and adds portable file-association, app-data and notification contracts.
 
 ### File handoff
 
@@ -191,7 +191,38 @@ The Web Explorer now supports:
 
 Web VFS binary imports are deliberately size-limited because browser-local storage is not a native disk. Desktop/System editions will remove this limitation by using native filesystem adapters.
 
-### SDK additions
+### Application Notification Service
+
+Applications with the `notifications` permission can publish portable notifications through the SDK. The Web Edition maps them to the SWIR shell toast/notification center and keeps a bounded application notification history. Desktop/System editions can later map the same contract to native notification daemons.
+
+```text
+SWIR App
+   |
+   v
+SwirAppSDK.notifications.send(appId, options)
+   |
+   +--> package installed check
+   +--> manifest permission declaration
+   +--> granted permission check
+   |
+   v
+SWIR Notification Service
+   |
+   +--> shell toast / notification center
+   +--> bounded app notification history
+```
+
+Supported SDK calls:
+
+```text
+SwirAppSDK.notifications.send(appId, options)
+SwirAppSDK.notifications.history(appId?)
+SwirAppSDK.notifications.clear(appId?)
+```
+
+Notification options currently support `title`, `message`, `tag`, `priority`, `silent` and `openApp`. Tagged notifications replace older entries from the same application instead of growing history indefinitely.
+
+### SDK additions available in 1.7
 
 ```text
 SwirAppSDK.files.open(file, appId?)
@@ -201,6 +232,9 @@ SwirAppSDK.files.defaultFor(name)
 SwirAppSDK.files.setDefault(extension, appId)
 SwirAppSDK.files.extension(name)
 SwirAppSDK.files.appData(appId)
+SwirAppSDK.notifications.send(appId, options)
+SwirAppSDK.notifications.history(appId?)
+SwirAppSDK.notifications.clear(appId?)
 ```
 
 ---
@@ -218,6 +252,7 @@ Current Web service/status model includes:
 - Package Service
 - File Association Service
 - App Data Service
+- Notification Service
 - Chat Service
 - Cache Service
 - Update Service
@@ -259,21 +294,21 @@ The Web client lives in SWIR OS. Chat Server Kit supplies the downloadable PHP b
 - SWIR Chat + downloadable backend
 - Task Manager / SWIR Services
 - permissions / clipboard / Update Center
-- **SWIR App SDK 1.1**
+- **SWIR App SDK 1.2**
 - **SWIR App Package 1.0**
 - **SWIR Store 2.1 install/remove lifecycle**
 - **file associations / Default Apps / Open With**
 - **App Data namespaces**
+- **permission-aware application notification API**
 
 ### Next Web Edition work
 
-- package update/version comparison
 - package dependency model
-- notification API for applications
 - widgets as installable packages
 - application developer template / SDK examples
 - signed catalog metadata prototype
 - larger binary/file storage on IndexedDB instead of localStorage mirror
+- native-ready notification actions and persistence adapter
 
 ### Desktop Edition 2.x
 
@@ -288,6 +323,7 @@ Planned:
 - global shortcuts and native file associations
 - `.swirapp` payload installer/updater
 - sandboxed permissions
+- native notification adapter
 
 ### System Edition 3.x
 
