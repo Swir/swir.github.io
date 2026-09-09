@@ -117,7 +117,11 @@
     const errors = [];
     if (!manifestCheck.ok) errors.push('Manifest digest mismatch');
     if (!entryCheck.ok) errors.push(entryCheck.error || 'Entry digest mismatch');
-    if (!signatureCheck.ok) errors.push(signatureCheck.error || ...(signatureCheck.errors || ['Signature verification failed']));
+    if (!signatureCheck.ok) {
+      if (signatureCheck.error) errors.push(signatureCheck.error);
+      else if (Array.isArray(signatureCheck.errors)) errors.push(...signatureCheck.errors);
+      else errors.push('Signature verification failed');
+    }
     return { schema:SCHEMA, ok:errors.length === 0, packageId:manifest?.packageId || manifest?.id || null, version:manifest?.version || null, manifest:manifestCheck, entry:entryCheck, signature:signatureCheck, errors, next:errors.length ? 'BLOCK' : 'RESOLVE_DEPENDENCIES' };
   }
 
