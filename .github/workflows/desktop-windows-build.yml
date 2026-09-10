@@ -84,6 +84,9 @@ jobs:
       - name: Run signed Update Broker self-tests
         run: dotnet run --project SWIR.Desktop.Update.SelfTests.csproj --configuration Release
 
+      - name: Run update transaction recovery self-tests
+        run: dotnet run --project SWIR.Desktop.Transaction.SelfTests.csproj --configuration Release
+
       - name: Restore
         run: dotnet restore SWIR.Desktop.Host.csproj
 
