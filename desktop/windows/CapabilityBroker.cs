@@ -5,38 +5,60 @@ namespace Swir.Desktop.Host;
 
 internal sealed class CapabilityBroker
 {
+    private const long MaxTextReadBytes = 2 * 1024 * 1024;
     private readonly ConcurrentDictionary<string, CapabilityGrant> _grants = new(StringComparer.Ordinal);
     private readonly TimeSpan _defaultLifetime = TimeSpan.FromMinutes(30);
+    private readonly string _sessionId = "session_" + Convert.ToHexString(RandomNumberGenerator.GetBytes(16)).ToLowerInvariant();
 
-    public object RegisterFile(string nativePath)
+    public string SessionId => _sessionId;
+
+    public object RegisterFile(string nativePath, string ownerAppId)
     {
         var info = new FileInfo(nativePath);
-        var grant = CreateGrant("file", info.FullName, info.Name);
+        if (!info.Exists) throw new BridgeException("RESOURCE_NOT_FOUND", "Selected file no longer exists.");
+        var grant = CreateGrant("file", info.FullName, info.Name, ownerAppId);
         return ToPublicDescriptor(grant, new { size = info.Length, modified = info.LastWriteTimeUtc });
     }
 
-    public object RegisterDirectory(string nativePath)
+    public object RegisterDirectory(string nativePath, string ownerAppId)
     {
         var info = new DirectoryInfo(nativePath);
-        var grant = CreateGrant("directory", info.FullName, info.Name);
+        if (!info.Exists) throw new BridgeException("RESOURCE_NOT_FOUND", "Selected directory no longer exists.");
+        var grant = CreateGrant("directory", info.FullName, info.Name, ownerAppId);
         return ToPublicDescriptor(grant);
     }
 
-    public object Describe(string token)
+    public object Describe(string token, string ownerAppId)
     {
-        var grant = Resolve(token);
+        var grant = Resolve(token, ownerAppId);
         return ToPublicDescriptor(grant);
     }
 
-    public string ReadText(string token)
+    public string ReadText(string token, string ownerAppId)
     {
-        var grant = Resolve(token, "file");
+        var grant = Resolve(token, ownerAppId, "file");
+        var info = new FileInfo(grant.NativePath);
+        if (!info.Exists) throw new BridgeException("RESOURCE_NOT_FOUND", "Capability resource no longer exists.");
+        if (info.Length > MaxTextReadBytes)
+            throw new BridgeException("RESOURCE_TOO_LARGE", $"Text reads are limited to {MaxTextReadBytes} bytes in this preview.");
         return File.ReadAllText(grant.NativePath);
     }
 
-    public bool Revoke(string token)
+    public bool Revoke(string token, string ownerAppId)
     {
-        return !string.IsNullOrWhiteSpace(token) && _grants.TryRemove(token, out _);
+        var grant = Resolve(token, ownerAppId);
+        return _grants.TryRemove(grant.Token, out _);
+    }
+
+    public int RevokeOwner(string ownerAppId)
+    {
+        var removed = 0;
+        foreach (var pair in _grants)
+        {
+            if (!string.Equals(pair.Value.OwnerAppId, ownerAppId, StringComparison.Ordinal)) continue;
+            if (_grants.TryRemove(pair.Key, out _)) removed++;
+        }
+        return removed;
     }
 
     public int PruneExpired()
@@ -51,10 +73,33 @@ internal sealed class CapabilityBroker
         return removed;
     }
 
-    private CapabilityGrant Resolve(string token, string? requiredKind = null)
+    public object Status()
+    {
+        PruneExpired();
+        return new
+        {
+            sessionId = _sessionId,
+            activeGrants = _grants.Count,
+            lifetimeMinutes = (int)_defaultLifetime.TotalMinutes,
+            maxTextReadBytes = MaxTextReadBytes,
+            ownerBound = true,
+            persistent = false
+        };
+    }
+
+    private CapabilityGrant Resolve(string token, string ownerAppId, string? requiredKind = null)
     {
         if (string.IsNullOrWhiteSpace(token) || !_grants.TryGetValue(token, out var grant))
             throw new BridgeException("CAPABILITY_INVALID", "Capability token is unknown or has been revoked.");
+
+        if (!string.Equals(grant.SessionId, _sessionId, StringComparison.Ordinal))
+        {
+            _grants.TryRemove(token, out _);
+            throw new BridgeException("CAPABILITY_SESSION_MISMATCH", "Capability belongs to another host session.");
+        }
+
+        if (!string.Equals(grant.OwnerAppId, ownerAppId, StringComparison.Ordinal))
+            throw new BridgeException("CAPABILITY_OWNER_MISMATCH", "Capability belongs to another application identity.");
 
         if (grant.ExpiresAt <= DateTimeOffset.UtcNow)
         {
@@ -68,7 +113,7 @@ internal sealed class CapabilityBroker
         return grant;
     }
 
-    private CapabilityGrant CreateGrant(string kind, string nativePath, string displayName)
+    private CapabilityGrant CreateGrant(string kind, string nativePath, string displayName, string ownerAppId)
     {
         PruneExpired();
         var token = "cap_" + Convert.ToHexString(RandomNumberGenerator.GetBytes(24)).ToLowerInvariant();
@@ -77,6 +122,8 @@ internal sealed class CapabilityBroker
             kind,
             nativePath,
             displayName,
+            ownerAppId,
+            _sessionId,
             DateTimeOffset.UtcNow,
             DateTimeOffset.UtcNow.Add(_defaultLifetime));
         _grants[token] = grant;
@@ -90,6 +137,8 @@ internal sealed class CapabilityBroker
             token = grant.Token,
             kind = grant.Kind,
             name = grant.DisplayName,
+            ownerAppId = grant.OwnerAppId,
+            sessionId = grant.SessionId,
             issuedAt = grant.IssuedAt,
             expiresAt = grant.ExpiresAt,
             revocable = true,
@@ -102,6 +151,8 @@ internal sealed class CapabilityBroker
         string Kind,
         string NativePath,
         string DisplayName,
+        string OwnerAppId,
+        string SessionId,
         DateTimeOffset IssuedAt,
         DateTimeOffset ExpiresAt);
 }
