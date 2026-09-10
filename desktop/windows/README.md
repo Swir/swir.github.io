@@ -1,10 +1,10 @@
-# SWIR OS Desktop Host — Windows Preview 0.5.0
+# SWIR OS Desktop Host — Windows Preview 0.5.1
 
 This is the native-host line for SWIR OS Desktop Edition.
 
 ## Current state
 
-Preview 0.5.0 keeps the `swir.runtime/1.0` boundary, WebView2 host, capability broker, Desktop package policy registry and package execution-context broker, and now enables isolated package routing for the five official installable packages after their migration to the portable SWIR App Bridge.
+Preview 0.5.1 keeps the `swir.runtime/1.0` boundary, WebView2 host, capability broker, Desktop package policy registry and package execution-context broker. It enables isolated routing for the five official installable packages, provides package-scoped native App Data, and now contains a signed update trust core plus a verification-only staging layer.
 
 The host now:
 
@@ -18,19 +18,24 @@ The host now:
 - rejects non-default ports and user-info on trusted shell/package source checks;
 - creates package execution contexts from installed permission grants and validates them against `app-policy.json`;
 - revokes package capability tokens when package contexts disappear or grants change;
-- keeps process spawn/kill, native network control and updater apply denied;
+- stores native application data below `%LOCALAPPDATA%\SWIR\Apps\<packageId>\Data` with per-package isolation and quotas;
+- verifies signed update envelopes using RSA-PSS/SHA-256 and strict HTTPS/host/version/package metadata policy;
+- stages verified update streams below `%LOCALAPPDATA%\SWIR\Updates\Staging` using streaming SHA-256, signed-size enforcement, temporary files and atomic promotion;
+- keeps updater apply/restart disabled until a rollback-safe apply contract exists;
+- keeps process spawn/kill and unrestricted native network control denied;
 - keeps external filesystem access behind expiring owner-bound capability tokens.
 
 ## App isolation routing
 
-The five official installable applications have been migrated away from direct `parent.SwirPlatform` / `parent.SwirAppSDK` dependencies and communicate with the shell through `swir-app-bridge.js` + `swir-app-bridge-host.js`.
+The five official installable applications communicate with the shell through `swir-app-bridge.js` + `swir-app-bridge-host.js` rather than direct `parent.SwirPlatform` / `parent.SwirAppSDK` access.
 
-Preview 0.5.0 therefore advertises:
+Preview 0.5.1 advertises:
 
 ```text
 features.packageContextBroker = true
 features.appIsolationRouting = true
 features.appIsolationState = APP_BRIDGE_VERIFIED
+features.nativeAppData = true
 ```
 
 `swir-apps.js` routes installed iframe packages to origins such as:
@@ -54,42 +59,46 @@ trusted package catalog
   -> managed iframe source
   -> App Bridge packageId check
   -> granted package permission
+  -> host-owned execution context
 ```
-
-`AppIsolationRegistry.TryResolveEntrySource()` requires HTTPS, the exact registered virtual host, the exact trusted package entry path, no user-info and the default HTTPS port.
 
 The package-side App Bridge never receives native execution tokens. Package-native messages are attributed by the host from their exact source origin and entry path, and the corresponding execution token is resolved internally.
 
-## Package execution-context synchronization
+## Native App Data
 
-`SwirRuntime.security.syncInstalledContexts()` reads installed package records and granted permissions from `SwirPlatform`, builds a minimal snapshot and sends it to the native host.
+`SwirRuntime.appData` is the portable application-storage contract. Web Edition keeps a namespaced browser fallback, while Desktop Edition routes storage through the native host.
 
-The host validates the complete snapshot before mutation:
+Desktop storage uses:
 
 ```text
-installed package
-  -> granted package permissions
-  -> app-policy.json declared permissions
-  -> ResolveNativePermissions()
-  -> host-owned package execution context
+%LOCALAPPDATA%\SWIR\Apps\<packageId>\Data\
 ```
 
-Package tokens are host-side only. Context synchronization is debounced on package and permission changes.
+The broker enforces package identity, storage permissions, a 1 MiB maximum value, a 16 MiB package quota and a 512-item limit. Writes use temporary files and atomic replacement. Corrupt JSON and I/O failures are surfaced as controlled errors.
 
-## Native permission projection
+CI includes native App Data isolation tests and Permission Broker tests covering cross-package denial, permission downgrade, capability invalidation and package-context removal.
 
-Current conservative mapping:
+## Signed update trust core
 
-- `files.read` -> `filesystem.picker`, `filesystem.capability.read`;
-- `files.write` -> `filesystem.sandbox.read`, `filesystem.sandbox.write`;
-- `clipboard` -> `clipboard.read`, `clipboard.write`;
-- other package permissions currently project to no native capability.
+`UpdateBroker` accepts only signed `swir.update-envelope/0.1` envelopes carrying `swir.desktop-update/0.1` payloads. Current signature algorithm is `RSA-PSS-SHA256`.
 
-Every package context also receives read-only `runtime.inspect`. Unknown native methods remain fail-closed.
+Before an update can be considered verified, the broker checks:
+
+- signature and key material;
+- release channel;
+- monotonic version upgrade;
+- publication timestamp;
+- canonical HTTPS package URL and explicit host allowlist;
+- signed package size, capped at 512 MiB;
+- SHA-256 package digest.
+
+`UpdateStagingBroker` then copies the package stream into a version-scoped staging directory while calculating SHA-256 incrementally. It never promotes a partial package. Only after exact signed size and digest match are both `package.bin` and `stage.json` atomically promoted from temporary files.
+
+The staging layer deliberately does **not** execute installers, replace binaries, restart the host or bypass signature checks.
 
 ## Runtime diagnostics
 
-SWIR Runtime exposes:
+SWIR Runtime exposes the portable security/App Data surfaces used by Desktop Edition, including:
 
 ```js
 await SwirRuntime.security.context();
@@ -98,13 +107,14 @@ await SwirRuntime.security.policyCatalog();
 await SwirRuntime.security.isolationInfo();
 await SwirRuntime.security.packageContexts();
 await SwirRuntime.security.syncInstalledContexts();
+await SwirRuntime.appData.info(packageId);
 ```
 
 ## Verification status
 
-Static App Bridge readiness and policy validation exist in CI, and the Windows host is built on GitHub Actions. Enabling routing is an architectural milestone, not a claim that every application flow has already been exercised in a manually launched Windows `.exe`.
+Windows CI checks Runtime/registry/App Bridge syntax and contracts, validates the Desktop package policy and all five isolated application entries, runs native App Data and Permission Broker self-tests, runs signed Update Broker/staging self-tests, and builds the Windows host.
 
-Until runtime E2E checks cover all five isolated origins, failures should be treated as Preview regressions and isolation should remain fail-closed rather than bypassing origin or permission checks.
+A green CI run verifies those automated paths. It is not yet a claim that every application workflow has been exercised manually in a packaged Windows `.exe`.
 
 ## Requirements
 
@@ -128,9 +138,10 @@ or:
 
 ## Next host milestone
 
-1. add automated isolated-origin smoke tests for all five official packages;
-2. add package-scoped native App Data roots instead of the shared preview sandbox;
-3. expose directory capability enumeration only through per-package grants;
-4. add a limited native tray adapter;
-5. build staged update download/verify/apply contracts without bypassing signature or permission checks;
-6. publish a repeatable self-contained Windows Desktop preview artifact once E2E checks are green.
+1. add an HTTPS update-download client that feeds only a previously verified manifest target into `UpdateStagingBroker`;
+2. add release key-id/key rotation policy without accepting unsigned fallback keys;
+3. expose read-only update/staging diagnostics to Update Center;
+4. add rollback-safe apply planning and a separate privileged handoff instead of self-overwriting the running host;
+5. add automated isolated-origin runtime smoke tests for all five official packages;
+6. add a limited native tray adapter;
+7. publish a repeatable self-contained Windows Desktop preview artifact once runtime E2E checks are green.
