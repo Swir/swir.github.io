@@ -56,10 +56,10 @@ internal sealed class AppDataBroker
         var dir = PackageDirectory(packageId, create: false);
         if (!Directory.Exists(dir)) return Array.Empty<string>();
         return Directory.EnumerateFiles(dir, "*.json", SearchOption.TopDirectoryOnly)
-            .Select(Path.GetFileNameWithoutExtension)
-            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .Select(path => Path.GetFileNameWithoutExtension(path) ?? string.Empty)
+            .Where(name => name.Length > 0)
             .OrderBy(name => name, StringComparer.Ordinal)
-            .ToArray()!;
+            .ToArray();
     }
 
     private string DataPath(string packageId, string key, bool createDirectory)
