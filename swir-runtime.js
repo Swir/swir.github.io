@@ -1,11 +1,11 @@
 /* =============================================================
-   SWIR OS 1.7.13 — RUNTIME ADAPTER CONTRACT 1.2.0
+   SWIR OS 1.7.13 — RUNTIME ADAPTER CONTRACT 1.2.1
    Portable Web -> Desktop -> System host boundary.
    ============================================================= */
 (() => {
   'use strict';
 
-  const META = Object.freeze({ name: 'SWIR Runtime', version: '1.2.0', contract: 'swir.runtime/1.0' });
+  const META = Object.freeze({ name: 'SWIR Runtime', version: '1.2.1', contract: 'swir.runtime/1.0' });
   const SHELL_APP_ID = 'swir.system.shell';
   const host = () => window.SWIR_NATIVE_HOST || null;
   const platform = () => window.SwirPlatform || null;
@@ -104,8 +104,9 @@
     apply: (...args) => call('updater', 'apply', args), restart: (...args) => call('updater', 'restart', args, async () => { location.reload(); return true; })
   });
   const security = Object.freeze({
-    context: () => call('security', 'contextInfo', [], async () => ({ appId: SHELL_APP_ID, sessionId: null, trusted: false, permissions: [], provider: 'web', tokenExposed: false })),
+    context: () => call('security', 'contextInfo', [], async () => ({ appId: SHELL_APP_ID, packageId: null, kind: 'web-shell', sessionId: null, trusted: false, permissions: [], provider: 'web', tokenExposed: false })),
     can: permission => call('security', 'can', [String(permission || '')], async () => false),
+    policyCatalog: () => call('security', 'policyCatalog', [], async () => ({ schema: null, packageCount: 0, packages: [], provider: 'web' })),
     async isAuthenticated() { const ctx = await security.context(); return !!ctx?.trusted && !!ctx?.sessionId; }
   });
 
