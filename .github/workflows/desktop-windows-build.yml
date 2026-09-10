@@ -67,6 +67,9 @@ jobs:
       - name: Validate Chat portable bridge contract
         run: node validate-chat-bridge.mjs
 
+      - name: Validate native App Data bridge routing
+        run: node validate-native-appdata-bridge.mjs
+
       - name: Setup .NET 8
         uses: actions/setup-dotnet@v4
         with:
