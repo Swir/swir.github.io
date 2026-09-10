@@ -35,7 +35,51 @@ internal static class UpdateBrokerSelfTests
         ExpectCode("UPDATE_PACKAGE_HASH_MISMATCH", () => UpdateBroker.VerifyPackage(tamperedPackage, verified), "same-size tampered package rejected");
         ExpectCode("UPDATE_PACKAGE_SIZE_MISMATCH", () => UpdateBroker.VerifyPackage(package[..^1], verified), "wrong package size rejected");
 
+        RunStagingTests(package, verified);
         Console.WriteLine($"SWIR Desktop Update Broker self-tests passed: {_passed}");
+    }
+
+    private static void RunStagingTests(byte[] package, UpdateBroker.VerifiedUpdate verified)
+    {
+        var root = Path.Combine(Path.GetTempPath(), "swir-update-selftest-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var staging = new UpdateStagingBroker(root);
+            using (var stream = new MemoryStream(package, writable: false))
+            {
+                var staged = staging.StageAsync(stream, verified).GetAwaiter().GetResult();
+                Expect(staged.Verified, "verified package staged");
+                Expect(File.Exists(staged.PackagePath), "staged package exists");
+                Expect(File.Exists(staged.MetadataPath), "staged metadata exists");
+                Expect(File.ReadAllBytes(staged.PackagePath).SequenceEqual(package), "staged package content preserved");
+            }
+
+            var status = staging.GetStatus(verified.Version);
+            Expect(status is not null && status.Verified && status.Size == package.Length, "staged update status readable");
+
+            var badPackage = package.ToArray();
+            badPackage[^1] ^= 1;
+            ExpectCode("UPDATE_PACKAGE_HASH_MISMATCH", () =>
+            {
+                using var stream = new MemoryStream(badPackage, writable: false);
+                staging.StageAsync(stream, verified).GetAwaiter().GetResult();
+            }, "tampered stream rejected during staging");
+
+            ExpectCode("UPDATE_PACKAGE_SIZE_MISMATCH", () =>
+            {
+                using var stream = new MemoryStream(package[..^1], writable: false);
+                staging.StageAsync(stream, verified).GetAwaiter().GetResult();
+            }, "truncated stream rejected during staging");
+
+            var tempFiles = Directory.Exists(root)
+                ? Directory.EnumerateFiles(root, "*.tmp", SearchOption.AllDirectories).ToArray()
+                : Array.Empty<string>();
+            Expect(tempFiles.Length == 0, "failed staging leaves no temporary files");
+        }
+        finally
+        {
+            try { if (Directory.Exists(root)) Directory.Delete(root, true); } catch { }
+        }
     }
 
     private static string Sign(RSA rsa, string version, string channel, string url, string sha256, long size)
