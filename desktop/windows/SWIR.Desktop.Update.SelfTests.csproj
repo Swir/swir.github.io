@@ -8,6 +8,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="UpdateBroker.cs" />
+    <Compile Include="UpdateStagingBroker.cs" />
     <Compile Include="UpdateBrokerSelfTests.cs" />
   </ItemGroup>
 </Project>
