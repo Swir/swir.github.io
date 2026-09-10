@@ -81,6 +81,9 @@ jobs:
       - name: Run Permission Broker isolation self-tests
         run: dotnet run --project SWIR.Desktop.Permission.SelfTests.csproj --configuration Release
 
+      - name: Run signed Update Broker self-tests
+        run: dotnet run --project SWIR.Desktop.Update.SelfTests.csproj --configuration Release
+
       - name: Restore
         run: dotnet restore SWIR.Desktop.Host.csproj
 
