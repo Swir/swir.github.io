@@ -20,6 +20,7 @@ internal sealed class MainWindow : Form
     private readonly CapabilityBroker _capabilities = new();
     private readonly PermissionBroker _permissions;
     private readonly ExecutionPolicyCatalog _policyCatalog;
+    private readonly AppIsolationRegistry _isolation;
     private readonly string _repoRoot;
     private readonly string _dataRoot;
 
@@ -32,6 +33,7 @@ internal sealed class MainWindow : Form
         StartPosition = FormStartPosition.CenterScreen;
         _repoRoot = ResolveRepoRoot();
         _policyCatalog = new ExecutionPolicyCatalog(Path.Combine(_repoRoot, "desktop", "windows", "app-policy.json"));
+        _isolation = new AppIsolationRegistry(_policyCatalog);
         _permissions = new PermissionBroker(_capabilities.SessionId, _policyCatalog);
         _dataRoot = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SWIR", "DesktopHost", "Data");
         Directory.CreateDirectory(_dataRoot);
@@ -51,6 +53,7 @@ internal sealed class MainWindow : Form
             core.Settings.IsStatusBarEnabled = false;
             core.Settings.AreBrowserAcceleratorKeysEnabled = true;
             core.SetVirtualHostNameToFolderMapping("swir.local", _repoRoot, CoreWebView2HostResourceAccessKind.DenyCors);
+            _isolation.Configure(core, _repoRoot);
             core.WebMessageReceived += OnWebMessageReceived;
             var bootstrap = NativeBridgeScript
                 .Replace("__SESSION_ID__", _capabilities.SessionId)
@@ -67,7 +70,7 @@ internal sealed class MainWindow : Form
 
     private async void OnWebMessageReceived(object? sender, CoreWebView2WebMessageReceivedEventArgs e)
     {
-        if (!IsTrustedSource(e.Source)) return;
+        if (!IsTrustedShellSource(e.Source)) return;
 
         BridgeRequest? request;
         try
@@ -156,6 +159,8 @@ internal sealed class MainWindow : Form
             "contextInfo" => _permissions.Describe(contextToken),
             "can" => _permissions.Can(contextToken, ArgString(args, 0)),
             "policyCatalog" => _policyCatalog.Describe(),
+            "appUrl" => _isolation.AppUrl(ArgString(args, 0), ArgString(args, 1)),
+            "isolationInfo" => _isolation.Describe(),
             _ => throw new BridgeException("RUNTIME_UNSUPPORTED", $"Unsupported security method: {method}")
         };
         return Task.FromResult(result);
@@ -251,11 +256,12 @@ internal sealed class MainWindow : Form
         return args[index];
     }
 
-    private static bool IsTrustedSource(string source)
+    private static bool IsTrustedShellSource(string source)
     {
         return Uri.TryCreate(source, UriKind.Absolute, out var uri)
             && string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase)
-            && string.Equals(uri.Host, "swir.local", StringComparison.OrdinalIgnoreCase);
+            && string.Equals(uri.Host, "swir.local", StringComparison.OrdinalIgnoreCase)
+            && string.Equals(uri.AbsolutePath, "/index.html", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string ResolveRepoRoot()
@@ -270,6 +276,7 @@ internal sealed class MainWindow : Form
 
     private const string NativeBridgeScript = """
 (() => {
+  if (window.top !== window || location.hostname !== 'swir.local' || location.pathname !== '/index.html') return;
   if (window.SWIR_NATIVE_HOST) return;
   const pending = new Map(); let seq = 0;
   const executionToken = '__EXECUTION_TOKEN__';
@@ -286,13 +293,13 @@ internal sealed class MainWindow : Form
   });
   const surface = (name, methods) => Object.freeze(Object.fromEntries(methods.map(method => [method, (...args) => call(name, method, ...args)])));
   window.SWIR_NATIVE_HOST = Object.freeze({
-    edition: 'DESKTOP', version: '0.3.1-preview', contract: 'swir.runtime/1.0', sessionId: '__SESSION_ID__',
+    edition: 'DESKTOP', version: '0.4.0-preview', contract: 'swir.runtime/1.0', sessionId: '__SESSION_ID__',
     filesystem: surface('filesystem', ['list','get','save','remove','pickFile','pickDirectory','capabilityInfo','readCapabilityText','revokeCapability','revokeOwnerCapabilities','pruneCapabilities','capabilityStatus']),
     clipboard: surface('clipboard', ['readText','writeText','clear']),
     processes: surface('processes', ['list','open','kill','spawn']),
-    security: surface('security', ['contextInfo','can','policyCatalog'])
+    security: surface('security', ['contextInfo','can','policyCatalog','appUrl','isolationInfo'])
   });
-  window.dispatchEvent(new CustomEvent('swir:native-host-ready', { detail: { edition: 'DESKTOP', version: '0.3.1-preview', sessionId: '__SESSION_ID__' } }));
+  window.dispatchEvent(new CustomEvent('swir:native-host-ready', { detail: { edition: 'DESKTOP', version: '0.4.0-preview', sessionId: '__SESSION_ID__' } }));
 })();
 """;
 
