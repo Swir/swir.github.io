@@ -6,11 +6,13 @@ on:
     paths:
       - 'desktop/windows/**'
       - 'swir-runtime.js'
+      - 'swir-packages.js'
       - '.github/workflows/desktop-windows-build.yml'
   pull_request:
     paths:
       - 'desktop/windows/**'
       - 'swir-runtime.js'
+      - 'swir-packages.js'
       - '.github/workflows/desktop-windows-build.yml'
 
 permissions:
@@ -29,6 +31,9 @@ jobs:
 
       - name: Check Runtime JavaScript syntax
         run: node --check ../../swir-runtime.js
+
+      - name: Validate Desktop package policy
+        run: node validate-policy.mjs
 
       - name: Setup .NET 8
         uses: actions/setup-dotnet@v4
