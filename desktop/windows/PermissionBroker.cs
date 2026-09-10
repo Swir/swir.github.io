@@ -45,7 +45,6 @@ internal sealed class PermissionBroker
         if (duplicates.Length > 0)
             throw new BridgeException("PACKAGE_CONTEXT_DUPLICATE", $"Duplicate package context requests: {string.Join(", ", duplicates)}");
 
-        // Validate every requested grant before mutating the active context set.
         var planned = requested.Select(request => new PlannedPackageContext(
             request.PackageId,
             _policyCatalog.ResolveNativePermissions(request.PackageId, request.Permissions ?? Array.Empty<string>()),
@@ -94,6 +93,20 @@ internal sealed class PermissionBroker
         if (!context.Permissions.Contains(required, StringComparer.Ordinal))
             throw new BridgeException("PERMISSION_DENIED", $"Execution context {context.AppId} is not granted {required}.");
         return context;
+    }
+
+    public ExecutionContextGrant AuthorizePackageTarget(string? callerToken, string packageId, string surface, string method)
+    {
+        var caller = Resolve(callerToken);
+        if (!string.Equals(caller.Kind, "shell", StringComparison.Ordinal)
+            && !string.Equals(caller.PackageId, packageId, StringComparison.Ordinal))
+            throw new BridgeException("EXECUTION_IDENTITY_MISMATCH", "Application may only access its own native App Data.");
+        if (string.Equals(caller.Kind, "shell", StringComparison.Ordinal)
+            && !caller.Permissions.Contains("runtime.context.manage", StringComparer.Ordinal))
+            throw new BridgeException("PERMISSION_DENIED", "Shell context is not allowed to broker package App Data.");
+
+        var packageToken = RequirePackageExecutionToken(packageId);
+        return Authorize(packageToken, surface, method, packageId);
     }
 
     public object Describe(string? token)
@@ -178,6 +191,8 @@ internal sealed class PermissionBroker
         ("filesystem", "pickFile" or "pickDirectory") => "filesystem.picker",
         ("filesystem", "capabilityInfo" or "readCapabilityText") => "filesystem.capability.read",
         ("filesystem", "revokeCapability" or "revokeOwnerCapabilities" or "pruneCapabilities" or "capabilityStatus") => "filesystem.capability.manage",
+        ("appdata", "get" or "list" or "info") => "filesystem.sandbox.read",
+        ("appdata", "set" or "remove") => "filesystem.sandbox.write",
         ("clipboard", "readText") => "clipboard.read",
         ("clipboard", "writeText" or "clear") => "clipboard.write",
         ("processes", "list" or "open") => "process.inspect",
