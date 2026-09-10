@@ -34,7 +34,7 @@ internal sealed class MainWindow : Form
         _repoRoot = ResolveRepoRoot();
         _policyCatalog = new ExecutionPolicyCatalog(Path.Combine(_repoRoot, "desktop", "windows", "app-policy.json"));
         _isolation = new AppIsolationRegistry(_policyCatalog);
-        _permissions = new PermissionBroker(_capabilities.SessionId, _policyCatalog);
+        _permissions = new PermissionBroker(_capabilities, _policyCatalog);
         _dataRoot = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SWIR", "DesktopHost", "Data");
         Directory.CreateDirectory(_dataRoot);
         Controls.Add(_web);
@@ -70,8 +70,6 @@ internal sealed class MainWindow : Form
 
     private async void OnWebMessageReceived(object? sender, CoreWebView2WebMessageReceivedEventArgs e)
     {
-        if (!IsTrustedShellSource(e.Source)) return;
-
         BridgeRequest? request;
         try
         {
@@ -83,7 +81,23 @@ internal sealed class MainWindow : Form
         BridgeResponse response;
         try
         {
-            var result = await DispatchAsync(request);
+            string? effectiveToken;
+            if (IsTrustedShellSource(e.Source))
+            {
+                effectiveToken = request.ContextToken;
+            }
+            else if (_isolation.TryResolveEntrySource(e.Source, out var packageId) && packageId is not null)
+            {
+                // Package pages never choose or receive execution tokens. Source origin + trusted entry
+                // identifies the package; the token remains host-side and must have been synchronized by the shell.
+                effectiveToken = _permissions.RequirePackageExecutionToken(packageId);
+            }
+            else
+            {
+                return;
+            }
+
+            var result = await DispatchAsync(request, effectiveToken);
             response = new BridgeResponse("swir-native-result", request.Id, true, result, null);
         }
         catch (Exception ex)
@@ -93,15 +107,15 @@ internal sealed class MainWindow : Form
         _web.CoreWebView2.PostWebMessageAsJson(JsonSerializer.Serialize(response, JsonOptions));
     }
 
-    private Task<object?> DispatchAsync(BridgeRequest request)
+    private Task<object?> DispatchAsync(BridgeRequest request, string? effectiveToken)
     {
-        _permissions.Authorize(request.ContextToken, request.Surface, request.Method, RequestedOwner(request));
+        _permissions.Authorize(effectiveToken, request.Surface, request.Method, RequestedOwner(request));
         return request.Surface switch
         {
             "filesystem" => DispatchFilesystemAsync(request.Method, request.Args),
             "clipboard" => DispatchClipboardAsync(request.Method, request.Args),
             "processes" => DispatchProcessesAsync(request.Method, request.Args),
-            "security" => DispatchSecurityAsync(request.Method, request.Args, request.ContextToken),
+            "security" => DispatchSecurityAsync(request.Method, request.Args, effectiveToken),
             _ => throw new BridgeException("RUNTIME_UNSUPPORTED", $"Unsupported native surface: {request.Surface}")
         };
     }
@@ -161,6 +175,8 @@ internal sealed class MainWindow : Form
             "policyCatalog" => _policyCatalog.Describe(),
             "appUrl" => _isolation.AppUrl(ArgString(args, 0), ArgString(args, 1)),
             "isolationInfo" => _isolation.Describe(),
+            "syncPackageContexts" => _permissions.SynchronizeApplicationContexts(ParsePackageContexts(args)),
+            "packageContexts" => _permissions.DescribePackageContexts(),
             _ => throw new BridgeException("RUNTIME_UNSUPPORTED", $"Unsupported security method: {method}")
         };
         return Task.FromResult(result);
@@ -219,6 +235,36 @@ internal sealed class MainWindow : Form
         if (string.IsNullOrWhiteSpace(safeName) || !string.Equals(safeName, id, StringComparison.Ordinal))
             throw new BridgeException("INVALID_PATH", "Only sandboxed file names are accepted by the preview host.");
         return Path.Combine(_dataRoot, safeName);
+    }
+
+    private static PermissionBroker.PackageContextRequest[] ParsePackageContexts(JsonElement args)
+    {
+        if (args.ValueKind != JsonValueKind.Array || args.GetArrayLength() < 1 || args[0].ValueKind != JsonValueKind.Array)
+            throw new BridgeException("INVALID_ARGUMENT", "Package context synchronization requires an array.");
+
+        var result = new List<PermissionBroker.PackageContextRequest>();
+        foreach (var item in args[0].EnumerateArray())
+        {
+            if (item.ValueKind != JsonValueKind.Object || !item.TryGetProperty("packageId", out var packageIdProp) || packageIdProp.ValueKind != JsonValueKind.String)
+                throw new BridgeException("INVALID_ARGUMENT", "Each package context requires packageId.");
+            var packageId = packageIdProp.GetString()?.Trim() ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(packageId)) throw new BridgeException("INVALID_APP_ID", "Package context packageId is required.");
+
+            var permissions = Array.Empty<string>();
+            if (item.TryGetProperty("permissions", out var permissionsProp))
+            {
+                if (permissionsProp.ValueKind != JsonValueKind.Array)
+                    throw new BridgeException("INVALID_ARGUMENT", "Package context permissions must be an array.");
+                permissions = permissionsProp.EnumerateArray().Select(permission =>
+                {
+                    if (permission.ValueKind != JsonValueKind.String)
+                        throw new BridgeException("INVALID_ARGUMENT", "Package context permissions must be strings.");
+                    return permission.GetString() ?? string.Empty;
+                }).Where(permission => !string.IsNullOrWhiteSpace(permission)).ToArray();
+            }
+            result.Add(new PermissionBroker.PackageContextRequest(packageId, permissions));
+        }
+        return result.ToArray();
     }
 
     private static string? RequestedOwner(BridgeRequest request)
@@ -293,13 +339,14 @@ internal sealed class MainWindow : Form
   });
   const surface = (name, methods) => Object.freeze(Object.fromEntries(methods.map(method => [method, (...args) => call(name, method, ...args)])));
   window.SWIR_NATIVE_HOST = Object.freeze({
-    edition: 'DESKTOP', version: '0.4.0-preview', contract: 'swir.runtime/1.0', sessionId: '__SESSION_ID__',
+    edition: 'DESKTOP', version: '0.4.1-preview', contract: 'swir.runtime/1.0', sessionId: '__SESSION_ID__',
+    features: Object.freeze({ packageContextBroker: true, appIsolationRouting: false, appIsolationState: 'APP_API_BRIDGE_PENDING' }),
     filesystem: surface('filesystem', ['list','get','save','remove','pickFile','pickDirectory','capabilityInfo','readCapabilityText','revokeCapability','revokeOwnerCapabilities','pruneCapabilities','capabilityStatus']),
     clipboard: surface('clipboard', ['readText','writeText','clear']),
     processes: surface('processes', ['list','open','kill','spawn']),
-    security: surface('security', ['contextInfo','can','policyCatalog','appUrl','isolationInfo'])
+    security: surface('security', ['contextInfo','can','policyCatalog','appUrl','isolationInfo','syncPackageContexts','packageContexts'])
   });
-  window.dispatchEvent(new CustomEvent('swir:native-host-ready', { detail: { edition: 'DESKTOP', version: '0.4.0-preview', sessionId: '__SESSION_ID__' } }));
+  window.dispatchEvent(new CustomEvent('swir:native-host-ready', { detail: { edition: 'DESKTOP', version: '0.4.1-preview', sessionId: '__SESSION_ID__' } }));
 })();
 """;
 

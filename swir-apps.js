@@ -41,9 +41,15 @@
       optional: true
     }));
 
-  function desktopIsolatedUrl(app) {
+  function desktopIsolationReady() {
     const host = window.SWIR_NATIVE_HOST;
-    if (!host || String(host.edition || '').toUpperCase() !== 'DESKTOP' || !app.packageId || app.type !== 'iframe') return app.url;
+    return !!host
+      && String(host.edition || '').toUpperCase() === 'DESKTOP'
+      && host.features?.appIsolationRouting === true;
+  }
+
+  function desktopIsolatedUrl(app) {
+    if (!desktopIsolationReady() || !app.packageId || app.type !== 'iframe') return app.url;
     const packageId = String(app.packageId);
     if (!/^[a-zA-Z0-9._-]{1,128}$/.test(packageId)) return app.url;
     const entry = String(app.url || '').replace(/^\.\//, '');
@@ -58,8 +64,28 @@
       app.webUrl = app.url;
       app.url = isolated;
       app.executionIsolation = 'desktop-origin';
+    } else if (window.SWIR_NATIVE_HOST && app.packageId) {
+      app.executionIsolation = 'desktop-origin-pending';
     }
   });
 
   window.SWIR_APPS = [...core, ...packages];
+
+  let syncTimer = 0;
+  async function syncDesktopPackageContexts() {
+    if (!window.SWIR_NATIVE_HOST?.features?.packageContextBroker || !window.SwirRuntime?.security?.syncInstalledContexts) return;
+    try {
+      await window.SwirRuntime.security.syncInstalledContexts();
+    } catch (error) {
+      console.warn('[SWIR Desktop] package context synchronization failed', error);
+    }
+  }
+  function scheduleDesktopPackageContextSync() {
+    clearTimeout(syncTimer);
+    syncTimer = setTimeout(syncDesktopPackageContexts, 60);
+  }
+
+  queueMicrotask(scheduleDesktopPackageContextSync);
+  window.addEventListener('swir:package-change', scheduleDesktopPackageContextSync);
+  window.addEventListener('swir:permission-change', scheduleDesktopPackageContextSync);
 })();

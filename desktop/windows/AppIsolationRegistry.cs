@@ -12,7 +12,7 @@ internal sealed class AppIsolationRegistry
         foreach (var policy in catalog.All())
         {
             var host = BuildHost(policy.PackageId);
-            var entry = new IsolationEntry(policy.PackageId, policy.Entry, host);
+            var entry = new IsolationEntry(policy.PackageId, NormalizeEntry(policy.Entry), host);
             _byPackage.Add(policy.PackageId, entry);
             _byHost.Add(host, entry);
         }
@@ -30,7 +30,7 @@ internal sealed class AppIsolationRegistry
             throw new BridgeException("PACKAGE_POLICY_MISSING", $"No isolated Desktop origin exists for {packageId}.");
 
         var normalized = NormalizeEntry(requestedEntry);
-        if (!string.Equals(normalized, NormalizeEntry(item.Entry), StringComparison.Ordinal))
+        if (!string.Equals(normalized, item.Entry, StringComparison.Ordinal))
             throw new BridgeException("PACKAGE_ENTRY_MISMATCH", $"Requested entry does not match trusted policy for {packageId}.");
 
         return $"https://{item.Host}/{normalized}";
@@ -38,18 +38,25 @@ internal sealed class AppIsolationRegistry
 
     public object Describe() => new
     {
-        schema = "swir.app-isolation/0.1",
+        schema = "swir.app-isolation/0.2",
+        routingEnabled = false,
+        routingState = "APP_API_BRIDGE_PENDING",
         packageCount = _byPackage.Count,
         packages = _byPackage.Values.OrderBy(x => x.PackageId, StringComparer.Ordinal)
             .Select(x => new { packageId = x.PackageId, entry = x.Entry, origin = $"https://{x.Host}" }).ToArray()
     };
 
-    public bool TryResolveSource(string? source, out string? packageId)
+    public bool TryResolveEntrySource(string? source, out string? packageId)
     {
         packageId = null;
-        if (!Uri.TryCreate(source, UriKind.Absolute, out var uri) || !string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
+        if (!Uri.TryCreate(source, UriKind.Absolute, out var uri)
+            || !string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase)
+            || !string.IsNullOrEmpty(uri.UserInfo))
             return false;
         if (!_byHost.TryGetValue(uri.Host, out var entry)) return false;
+
+        var path = Uri.UnescapeDataString(uri.AbsolutePath).TrimStart('/');
+        if (!string.Equals(path, entry.Entry, StringComparison.Ordinal)) return false;
         packageId = entry.PackageId;
         return true;
     }
@@ -64,7 +71,13 @@ internal sealed class AppIsolationRegistry
     {
         var value = (entry ?? string.Empty).Trim();
         while (value.StartsWith("./", StringComparison.Ordinal)) value = value[2..];
-        if (string.IsNullOrWhiteSpace(value) || value.Contains("..", StringComparison.Ordinal) || value.Contains('\\') || Uri.TryCreate(value, UriKind.Absolute, out _))
+        if (string.IsNullOrWhiteSpace(value)
+            || value.Contains("..", StringComparison.Ordinal)
+            || value.Contains('\\')
+            || value.StartsWith('/', StringComparison.Ordinal)
+            || value.Contains('?', StringComparison.Ordinal)
+            || value.Contains('#', StringComparison.Ordinal)
+            || Uri.TryCreate(value, UriKind.Absolute, out _))
             throw new BridgeException("INVALID_PACKAGE_ENTRY", "Package entry must be a safe repository-relative path.");
         return value;
     }

@@ -1,11 +1,11 @@
 /* =============================================================
-   SWIR OS 1.7.13 — RUNTIME ADAPTER CONTRACT 1.3.0
+   SWIR OS 1.7.13 — RUNTIME ADAPTER CONTRACT 1.3.1
    Portable Web -> Desktop -> System host boundary.
    ============================================================= */
 (() => {
   'use strict';
 
-  const META = Object.freeze({ name: 'SWIR Runtime', version: '1.3.0', contract: 'swir.runtime/1.0' });
+  const META = Object.freeze({ name: 'SWIR Runtime', version: '1.3.1', contract: 'swir.runtime/1.0' });
   const SHELL_APP_ID = 'swir.system.shell';
   const host = () => window.SWIR_NATIVE_HOST || null;
   const platform = () => window.SwirPlatform || null;
@@ -103,12 +103,38 @@
     async check() { return call('updater', 'check', [], async () => ({ runtime: 'web', serviceWorker: 'serviceWorker' in navigator, controller: !!navigator.serviceWorker?.controller, updateAvailable: false })); },
     apply: (...args) => call('updater', 'apply', args), restart: (...args) => call('updater', 'restart', args, async () => { location.reload(); return true; })
   });
+
+  async function buildInstalledContextSnapshot() {
+    const api = platform();
+    if (!api?.packages?.list || !api?.permissions?.list) return [];
+    const [installedPackages, grants] = await Promise.all([api.packages.list(), api.permissions.list()]);
+    const grantList = Array.isArray(grants) ? grants : [];
+    return (Array.isArray(installedPackages) ? installedPackages : [])
+      .filter(pkg => pkg && pkg.installed !== false && pkg.packageId)
+      .map(pkg => ({
+        packageId: String(pkg.packageId),
+        permissions: [...new Set(grantList
+          .filter(grant => grant && grant.value === true && String(grant.appId || '') === String(pkg.id || ''))
+          .map(grant => String(grant.permission || ''))
+          .filter(Boolean))].sort()
+      }))
+      .sort((a, b) => a.packageId.localeCompare(b.packageId));
+  }
+
   const security = Object.freeze({
     context: () => call('security', 'contextInfo', [], async () => ({ appId: SHELL_APP_ID, packageId: null, kind: 'web-shell', sessionId: null, trusted: false, permissions: [], provider: 'web', tokenExposed: false })),
     can: permission => call('security', 'can', [String(permission || '')], async () => false),
     policyCatalog: () => call('security', 'policyCatalog', [], async () => ({ schema: null, packageCount: 0, packages: [], provider: 'web' })),
     appUrl: (packageId, entry) => call('security', 'appUrl', [String(packageId || ''), String(entry || '')], async () => String(entry || '')),
-    isolationInfo: () => call('security', 'isolationInfo', [], async () => ({ schema: null, packageCount: 0, packages: [], provider: 'web', isolated: false })),
+    isolationInfo: () => call('security', 'isolationInfo', [], async () => ({ schema: null, packageCount: 0, packages: [], provider: 'web', isolated: false, routingEnabled: false })),
+    packageContexts: () => call('security', 'packageContexts', [], async () => ({ schema: null, sessionId: null, count: 0, contexts: [], provider: 'web' })),
+    async syncInstalledContexts() {
+      if (!nativeMethod('security', 'syncPackageContexts')) return { ok: false, provider: 'web', synchronized: 0, reason: 'NO_NATIVE_CONTEXT_BROKER' };
+      const contexts = await buildInstalledContextSnapshot();
+      const result = await call('security', 'syncPackageContexts', [contexts]);
+      emit('security-contexts-synced', { count: contexts.length, contexts: contexts.map(x => x.packageId) });
+      return result;
+    },
     async isAuthenticated() { const ctx = await security.context(); return !!ctx?.trusted && !!ctx?.sessionId; }
   });
 
@@ -118,11 +144,11 @@
       const impl = host()?.[surface];
       result[surface] = { provider: impl ? 'native' : 'web', native: !!impl, methods: impl ? Object.keys(impl).filter(k => typeof impl[k] === 'function') : Object.keys(api[surface] || {}).filter(k => typeof api[surface][k] === 'function') };
     }
-    return { native, edition: native ? String(host()?.edition || 'DESKTOP').toUpperCase() : 'WEB', surfaces: result };
+    return { native, edition: native ? String(host()?.edition || 'DESKTOP').toUpperCase() : 'WEB', features: host()?.features || {}, surfaces: result };
   }
   function info() {
     const caps = capabilities();
-    return { ...META, provider: caps.native ? 'native-host' : 'web-adapter', edition: caps.edition, nativeHost: caps.native, nativeSessionId: host()?.sessionId || null, capabilities: caps.surfaces };
+    return { ...META, provider: caps.native ? 'native-host' : 'web-adapter', edition: caps.edition, nativeHost: caps.native, nativeSessionId: host()?.sessionId || null, nativeFeatures: caps.features, capabilities: caps.surfaces };
   }
 
   const api = Object.freeze({ meta: META, filesystem, processes, clipboard, tray, network, updater, security, capabilities, info, events: Object.freeze({ on, emit }), hasNativeHost: () => !!host() });

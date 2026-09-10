@@ -6,12 +6,16 @@ namespace Swir.Desktop.Host;
 internal sealed class PermissionBroker
 {
     private readonly string _sessionId;
+    private readonly CapabilityBroker _capabilities;
     private readonly ExecutionPolicyCatalog _policyCatalog;
     private readonly ConcurrentDictionary<string, ExecutionContextGrant> _contexts = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, string> _packageTokens = new(StringComparer.Ordinal);
+    private readonly object _syncGate = new();
 
-    public PermissionBroker(string sessionId, ExecutionPolicyCatalog policyCatalog)
+    public PermissionBroker(CapabilityBroker capabilities, ExecutionPolicyCatalog policyCatalog)
     {
-        _sessionId = sessionId;
+        _capabilities = capabilities;
+        _sessionId = capabilities.SessionId;
         _policyCatalog = policyCatalog;
         ShellExecutionToken = RegisterTrustedContext(
             "swir.system.shell",
@@ -27,16 +31,55 @@ internal sealed class PermissionBroker
                 "clipboard.read",
                 "clipboard.write",
                 "process.inspect",
-                "runtime.inspect"
+                "runtime.inspect",
+                "runtime.context.manage"
             });
     }
 
     public string ShellExecutionToken { get; }
 
-    public string RegisterApplicationContext(string packageId, IEnumerable<string> grantedPackagePermissions)
+    public object SynchronizeApplicationContexts(IEnumerable<PackageContextRequest> requestedContexts)
     {
-        var nativePermissions = _policyCatalog.ResolveNativePermissions(packageId, grantedPackagePermissions);
-        return RegisterTrustedContext(packageId, packageId, "package", nativePermissions);
+        var requested = requestedContexts?.ToArray() ?? Array.Empty<PackageContextRequest>();
+        var duplicates = requested.GroupBy(x => x.PackageId, StringComparer.Ordinal).Where(g => g.Count() > 1).Select(g => g.Key).ToArray();
+        if (duplicates.Length > 0)
+            throw new BridgeException("PACKAGE_CONTEXT_DUPLICATE", $"Duplicate package context requests: {string.Join(", ", duplicates)}");
+
+        // Validate every requested grant before mutating the active context set.
+        var planned = requested.Select(request => new PlannedPackageContext(
+            request.PackageId,
+            _policyCatalog.ResolveNativePermissions(request.PackageId, request.Permissions ?? Array.Empty<string>()),
+            (request.Permissions ?? Array.Empty<string>()).Distinct(StringComparer.Ordinal).OrderBy(x => x, StringComparer.Ordinal).ToArray()))
+            .OrderBy(x => x.PackageId, StringComparer.Ordinal)
+            .ToArray();
+
+        lock (_syncGate)
+        {
+            var wanted = planned.Select(x => x.PackageId).ToHashSet(StringComparer.Ordinal);
+            foreach (var packageId in _packageTokens.Keys.Where(x => !wanted.Contains(x)).ToArray())
+                RemovePackageContext(packageId, revokeCapabilities: true);
+
+            foreach (var item in planned)
+            {
+                if (_packageTokens.TryGetValue(item.PackageId, out var existingToken)
+                    && _contexts.TryGetValue(existingToken, out var existing)
+                    && existing.Permissions.SequenceEqual(item.NativePermissions, StringComparer.Ordinal))
+                    continue;
+
+                RemovePackageContext(item.PackageId, revokeCapabilities: true);
+                var token = RegisterTrustedContext(item.PackageId, item.PackageId, "package", item.NativePermissions);
+                _packageTokens[item.PackageId] = token;
+            }
+        }
+
+        return DescribePackageContexts();
+    }
+
+    public string RequirePackageExecutionToken(string packageId)
+    {
+        if (string.IsNullOrWhiteSpace(packageId) || !_packageTokens.TryGetValue(packageId, out var token) || !_contexts.ContainsKey(token))
+            throw new BridgeException("PACKAGE_CONTEXT_NOT_READY", $"No active Desktop execution context exists for {packageId}.");
+        return token;
     }
 
     public ExecutionContextGrant Authorize(string? token, string surface, string method, string? requestedOwnerAppId = null)
@@ -56,17 +99,27 @@ internal sealed class PermissionBroker
     public object Describe(string? token)
     {
         var context = Resolve(token);
-        return new
-        {
-            appId = context.AppId,
-            packageId = context.PackageId,
-            kind = context.Kind,
-            sessionId = context.SessionId,
-            trusted = context.Trusted,
-            issuedAt = context.IssuedAt,
-            permissions = context.Permissions.OrderBy(x => x, StringComparer.Ordinal).ToArray(),
-            tokenExposed = false
-        };
+        return DescribeContext(context);
+    }
+
+    public object DescribePackageContexts()
+    {
+        var contexts = _packageTokens.OrderBy(x => x.Key, StringComparer.Ordinal)
+            .Select(pair => _contexts.TryGetValue(pair.Value, out var context) ? context : null)
+            .Where(context => context is not null)
+            .Select(context => new
+            {
+                packageId = context!.PackageId,
+                appId = context.AppId,
+                kind = context.Kind,
+                sessionId = context.SessionId,
+                trusted = context.Trusted,
+                issuedAt = context.IssuedAt,
+                permissions = context.Permissions,
+                tokenExposed = false
+            })
+            .ToArray();
+        return new { schema = "swir.desktop-execution-contexts/0.1", sessionId = _sessionId, count = contexts.Length, contexts };
     }
 
     public bool Can(string? token, string permission)
@@ -74,6 +127,18 @@ internal sealed class PermissionBroker
         var context = Resolve(token);
         return context.Permissions.Contains(permission, StringComparer.Ordinal);
     }
+
+    private object DescribeContext(ExecutionContextGrant context) => new
+    {
+        appId = context.AppId,
+        packageId = context.PackageId,
+        kind = context.Kind,
+        sessionId = context.SessionId,
+        trusted = context.Trusted,
+        issuedAt = context.IssuedAt,
+        permissions = context.Permissions.OrderBy(x => x, StringComparer.Ordinal).ToArray(),
+        tokenExposed = false
+    };
 
     private string RegisterTrustedContext(string appId, string? packageId, string kind, IEnumerable<string> permissions)
     {
@@ -89,6 +154,12 @@ internal sealed class PermissionBroker
             permissions.Distinct(StringComparer.Ordinal).OrderBy(x => x, StringComparer.Ordinal).ToArray());
         _contexts[token] = grant;
         return token;
+    }
+
+    private void RemovePackageContext(string packageId, bool revokeCapabilities)
+    {
+        if (_packageTokens.TryRemove(packageId, out var token)) _contexts.TryRemove(token, out _);
+        if (revokeCapabilities) _capabilities.RevokeOwner(packageId);
     }
 
     private ExecutionContextGrant Resolve(string? token)
@@ -112,10 +183,13 @@ internal sealed class PermissionBroker
         ("processes", "list" or "open") => "process.inspect",
         ("processes", "spawn") => "process.spawn",
         ("processes", "kill") => "process.kill",
-        ("security", "contextInfo" or "can" or "policyCatalog" or "appUrl" or "isolationInfo") => "runtime.inspect",
+        ("security", "syncPackageContexts") => "runtime.context.manage",
+        ("security", "contextInfo" or "can" or "policyCatalog" or "appUrl" or "isolationInfo" or "packageContexts") => "runtime.inspect",
         _ => null
     };
 
+    internal sealed record PackageContextRequest(string PackageId, string[]? Permissions);
+    private sealed record PlannedPackageContext(string PackageId, string[] NativePermissions, string[] PackagePermissions);
     internal sealed record ExecutionContextGrant(
         string Token,
         string AppId,
