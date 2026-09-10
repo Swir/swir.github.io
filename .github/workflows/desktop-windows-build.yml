@@ -6,12 +6,14 @@ on:
     paths:
       - 'desktop/windows/**'
       - 'swir-runtime.js'
+      - 'swir-apps.js'
       - 'swir-packages.js'
       - '.github/workflows/desktop-windows-build.yml'
   pull_request:
     paths:
       - 'desktop/windows/**'
       - 'swir-runtime.js'
+      - 'swir-apps.js'
       - 'swir-packages.js'
       - '.github/workflows/desktop-windows-build.yml'
 
@@ -31,6 +33,9 @@ jobs:
 
       - name: Check Runtime JavaScript syntax
         run: node --check ../../swir-runtime.js
+
+      - name: Check application registry syntax
+        run: node --check ../../swir-apps.js
 
       - name: Validate Desktop package policy
         run: node validate-policy.mjs
