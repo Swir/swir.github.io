@@ -12,11 +12,6 @@ vm.runInContext(fs.readFileSync(catalogFile, 'utf8'), sandbox, { filename: catal
 const catalog = sandbox.window.SWIR_PACKAGE_CATALOG;
 if (!Array.isArray(catalog) || !catalog.length) throw new Error('SWIR package catalog is empty or invalid.');
 
-// Chat is intentionally pending until its API/CORS policy supports the dedicated desktop app origin.
-const pending = new Map([
-  ['swir.chat', 'network/CORS migration pending for dedicated app origin']
-]);
-
 const failures = [];
 const ready = [];
 for (const pkg of catalog) {
@@ -27,15 +22,12 @@ for (const pkg of catalog) {
     continue;
   }
   const source = fs.readFileSync(file, 'utf8');
-  const reason = pending.get(pkg.packageId);
-  if (reason) {
-    console.log(`PENDING ${pkg.packageId}: ${reason}`);
-    continue;
-  }
   if (/parent\.(?:Swir|SWIR_)/.test(source)) failures.push(`${pkg.packageId}: direct parent.Swir*/parent.SWIR_* access remains`);
   if (!source.includes('swir-app-bridge.js')) failures.push(`${pkg.packageId}: swir-app-bridge.js is not loaded`);
   if (!source.includes(`data-swir-package="${pkg.packageId}"`)) failures.push(`${pkg.packageId}: bridge package identity is missing/mismatched`);
   if (!source.includes(`data-swir-app="${pkg.id}"`)) failures.push(`${pkg.packageId}: bridge app identity is missing/mismatched`);
+  if ((pkg.permissions || []).includes('network') && /\bfetch\s*\(/.test(source)) failures.push(`${pkg.packageId}: direct fetch() remains; use SwirAppBridge.network`);
+  if ((pkg.permissions || []).includes('network') && !source.includes('bridge.network')) failures.push(`${pkg.packageId}: network package does not use App Bridge network transport`);
   if (!failures.some(x => x.startsWith(`${pkg.packageId}:`))) ready.push(pkg.packageId);
 }
 
@@ -44,5 +36,8 @@ if (failures.length) {
   for (const failure of failures) console.error(` - ${failure}`);
   process.exit(1);
 }
+if (ready.length !== catalog.length) {
+  console.error(`Expected ${catalog.length} bridge-ready packages but found ${ready.length}.`);
+  process.exit(1);
+}
 console.log(`App isolation bridge-ready packages (${ready.length}/${catalog.length}): ${ready.join(', ')}`);
-console.log(`Explicitly pending packages: ${[...pending.keys()].join(', ') || 'none'}`);
