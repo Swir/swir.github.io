@@ -11,6 +11,7 @@
     <Compile Include="UpdateStagingBroker.cs" />
     <Compile Include="UpdateHandoffBroker.cs" />
     <Compile Include="UpdateTransactionJournal.cs" />
+    <Compile Include="UpdateHealthBroker.cs" />
     <Compile Include="UpdateTransactionSelfTests.cs" />
   </ItemGroup>
 </Project>
