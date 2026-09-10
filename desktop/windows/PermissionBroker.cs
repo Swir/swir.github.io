@@ -112,7 +112,7 @@ internal sealed class PermissionBroker
         ("processes", "list" or "open") => "process.inspect",
         ("processes", "spawn") => "process.spawn",
         ("processes", "kill") => "process.kill",
-        ("security", "contextInfo" or "can" or "policyCatalog") => "runtime.inspect",
+        ("security", "contextInfo" or "can" or "policyCatalog" or "appUrl" or "isolationInfo") => "runtime.inspect",
         _ => null
     };
 
