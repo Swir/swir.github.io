@@ -6,13 +6,17 @@ namespace Swir.Desktop.Host;
 internal sealed class PermissionBroker
 {
     private readonly string _sessionId;
+    private readonly ExecutionPolicyCatalog _policyCatalog;
     private readonly ConcurrentDictionary<string, ExecutionContextGrant> _contexts = new(StringComparer.Ordinal);
 
-    public PermissionBroker(string sessionId)
+    public PermissionBroker(string sessionId, ExecutionPolicyCatalog policyCatalog)
     {
         _sessionId = sessionId;
+        _policyCatalog = policyCatalog;
         ShellExecutionToken = RegisterTrustedContext(
             "swir.system.shell",
+            null,
+            "shell",
             new[]
             {
                 "filesystem.sandbox.read",
@@ -28,6 +32,12 @@ internal sealed class PermissionBroker
     }
 
     public string ShellExecutionToken { get; }
+
+    public string RegisterApplicationContext(string packageId, IEnumerable<string> grantedPackagePermissions)
+    {
+        var nativePermissions = _policyCatalog.ResolveNativePermissions(packageId, grantedPackagePermissions);
+        return RegisterTrustedContext(packageId, packageId, "package", nativePermissions);
+    }
 
     public ExecutionContextGrant Authorize(string? token, string surface, string method, string? requestedOwnerAppId = null)
     {
@@ -49,6 +59,8 @@ internal sealed class PermissionBroker
         return new
         {
             appId = context.AppId,
+            packageId = context.PackageId,
+            kind = context.Kind,
             sessionId = context.SessionId,
             trusted = context.Trusted,
             issuedAt = context.IssuedAt,
@@ -63,16 +75,18 @@ internal sealed class PermissionBroker
         return context.Permissions.Contains(permission, StringComparer.Ordinal);
     }
 
-    private string RegisterTrustedContext(string appId, IEnumerable<string> permissions)
+    private string RegisterTrustedContext(string appId, string? packageId, string kind, IEnumerable<string> permissions)
     {
         var token = "exec_" + Convert.ToHexString(RandomNumberGenerator.GetBytes(32)).ToLowerInvariant();
         var grant = new ExecutionContextGrant(
             token,
             appId,
+            packageId,
+            kind,
             _sessionId,
             true,
             DateTimeOffset.UtcNow,
-            permissions.Distinct(StringComparer.Ordinal).ToArray());
+            permissions.Distinct(StringComparer.Ordinal).OrderBy(x => x, StringComparer.Ordinal).ToArray());
         _contexts[token] = grant;
         return token;
     }
@@ -98,13 +112,15 @@ internal sealed class PermissionBroker
         ("processes", "list" or "open") => "process.inspect",
         ("processes", "spawn") => "process.spawn",
         ("processes", "kill") => "process.kill",
-        ("security", "contextInfo" or "can") => "runtime.inspect",
+        ("security", "contextInfo" or "can" or "policyCatalog") => "runtime.inspect",
         _ => null
     };
 
     internal sealed record ExecutionContextGrant(
         string Token,
         string AppId,
+        string? PackageId,
+        string Kind,
         string SessionId,
         bool Trusted,
         DateTimeOffset IssuedAt,
