@@ -5,10 +5,12 @@ on:
     branches: [main]
     paths:
       - 'desktop/windows/**'
+      - 'swir-runtime.js'
       - '.github/workflows/desktop-windows-build.yml'
   pull_request:
     paths:
       - 'desktop/windows/**'
+      - 'swir-runtime.js'
       - '.github/workflows/desktop-windows-build.yml'
 
 permissions:
@@ -24,6 +26,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Check Runtime JavaScript syntax
+        run: node --check ../../swir-runtime.js
 
       - name: Setup .NET 8
         uses: actions/setup-dotnet@v4
