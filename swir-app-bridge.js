@@ -1,4 +1,4 @@
-/* SWIR OS App Bridge 0.5 — package-side portable API */
+/* SWIR OS App Bridge 0.5.1 — package-side portable API */
 (() => {
   'use strict';
   if (window.SwirAppBridge) return;
@@ -19,7 +19,10 @@
     if (!packageId) return Promise.reject(Object.assign(new Error('Missing data-swir-package'), { code: 'INVALID_APP_ID' }));
     const id = `app-${Date.now()}-${++seq}`;
     const promise = new Promise((resolve, reject) => {
-      const timer = setTimeout(() => { pending.delete(id); reject(Object.assign(new Error('SWIR App Bridge timeout'), { code: 'BRIDGE_TIMEOUT' })); }, 8000);
+      const timer = setTimeout(() => {
+        pending.delete(id);
+        reject(Object.assign(new Error('SWIR App Bridge timeout'), { code: 'BRIDGE_TIMEOUT' }));
+      }, 12000);
       pending.set(id, { resolve, reject, timer });
     });
     parent.postMessage({ type: REQUEST, id, packageId, method, args }, targetOrigin());
@@ -30,7 +33,9 @@
     if (event.source !== parent || event.origin !== targetOrigin()) return;
     const msg = event.data;
     if (msg?.type === RESULT && pending.has(msg.id)) {
-      const p = pending.get(msg.id); pending.delete(msg.id); clearTimeout(p.timer);
+      const p = pending.get(msg.id);
+      pending.delete(msg.id);
+      clearTimeout(p.timer);
       if (msg.ok) p.resolve(msg.result);
       else p.reject(Object.assign(new Error(msg.error?.message || 'SWIR App Bridge error'), { code: msg.error?.code || 'APP_BRIDGE_ERROR' }));
       return;
@@ -46,14 +51,23 @@
     remove: key => call('storage.remove', key)
   });
   const files = Object.freeze({ consumeOpen: () => call('files.consumeOpen') });
+  const network = Object.freeze({
+    request: options => call('network.request', options || {}),
+    json: async options => {
+      const result = await call('network.request', options || {});
+      if (!result?.ok) throw Object.assign(new Error(result?.error || `HTTP ${result?.status || 0}`), { code: 'NETWORK_HTTP_ERROR', status: result?.status || 0 });
+      return result.data;
+    }
+  });
   const sdk = Object.freeze({
     files,
+    network,
     identity: Object.freeze({ active: () => call('identity.active') }),
     notifications: Object.freeze({ send: options => call('notifications.send', options) }),
     shell: Object.freeze({ notify: (title, message) => call('shell.notify', title, message) }),
     bridge: Object.freeze({ info: () => call('bridge.info') })
   });
-  const platform = Object.freeze({ storage });
-  window.SwirAppBridge = Object.freeze({ version: '0.5.0-preview', packageId, appId, call, storage, files, sdk, platform });
+  const platform = Object.freeze({ storage, network });
+  window.SwirAppBridge = Object.freeze({ version: '0.5.1-preview', packageId, appId, call, storage, files, network, sdk, platform });
   dispatchEvent(new CustomEvent('swir:app-bridge-ready', { detail: { packageId, appId } }));
 })();
