@@ -75,6 +75,9 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
+      - name: Run native App Data isolation self-tests
+        run: dotnet run --project SWIR.Desktop.AppData.SelfTests.csproj --configuration Release
+
       - name: Restore
         run: dotnet restore SWIR.Desktop.Host.csproj
 
