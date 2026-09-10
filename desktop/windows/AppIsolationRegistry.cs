@@ -18,6 +18,8 @@ internal sealed class AppIsolationRegistry
         }
     }
 
+    public bool RoutingEnabled => true;
+
     public void Configure(CoreWebView2 core, string repoRoot)
     {
         foreach (var item in _byPackage.Values)
@@ -38,9 +40,9 @@ internal sealed class AppIsolationRegistry
 
     public object Describe() => new
     {
-        schema = "swir.app-isolation/0.2",
-        routingEnabled = false,
-        routingState = "APP_API_BRIDGE_PENDING",
+        schema = "swir.app-isolation/0.3",
+        routingEnabled = RoutingEnabled,
+        routingState = RoutingEnabled ? "APP_BRIDGE_VERIFIED" : "DISABLED",
         packageCount = _byPackage.Count,
         packages = _byPackage.Values.OrderBy(x => x.PackageId, StringComparer.Ordinal)
             .Select(x => new { packageId = x.PackageId, entry = x.Entry, origin = $"https://{x.Host}" }).ToArray()
@@ -51,7 +53,8 @@ internal sealed class AppIsolationRegistry
         packageId = null;
         if (!Uri.TryCreate(source, UriKind.Absolute, out var uri)
             || !string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase)
-            || !string.IsNullOrEmpty(uri.UserInfo))
+            || !string.IsNullOrEmpty(uri.UserInfo)
+            || !uri.IsDefaultPort)
             return false;
         if (!_byHost.TryGetValue(uri.Host, out var entry)) return false;
 
