@@ -1,5 +1,5 @@
 /* =============================================================
-   SWIR OS 1.7.12 — RUNTIME ADAPTER CONTRACT 1.0
+   SWIR OS 1.7.13 — RUNTIME ADAPTER CONTRACT 1.1
    Portable Web -> Desktop -> System host boundary.
    ============================================================= */
 (() => {
@@ -7,7 +7,7 @@
 
   const META = Object.freeze({
     name: 'SWIR Runtime',
-    version: '1.0.0',
+    version: '1.1.0',
     contract: 'swir.runtime/1.0'
   });
 
@@ -57,7 +57,11 @@
         if (!window.showDirectoryPicker) throw Object.assign(new Error('Native directory picker unavailable'), { code: 'RUNTIME_UNSUPPORTED' });
         return window.showDirectoryPicker(options);
       });
-    }
+    },
+    capabilityInfo: token => call('filesystem', 'capabilityInfo', [token]),
+    readCapabilityText: token => call('filesystem', 'readCapabilityText', [token]),
+    revokeCapability: token => call('filesystem', 'revokeCapability', [token]),
+    pruneCapabilities: () => call('filesystem', 'pruneCapabilities', [])
   });
 
   const processes = Object.freeze({
@@ -74,14 +78,8 @@
   });
 
   const tray = Object.freeze({
-    set: (...args) => call('tray', 'set', args, async options => {
-      emit('tray-request', { action: 'set', options });
-      return { ok: false, emulated: true, reason: 'WEB_RUNTIME' };
-    }),
-    clear: (...args) => call('tray', 'clear', args, async () => {
-      emit('tray-request', { action: 'clear' });
-      return { ok: false, emulated: true, reason: 'WEB_RUNTIME' };
-    })
+    set: (...args) => call('tray', 'set', args, async options => ({ ok: false, emulated: true, reason: 'WEB_RUNTIME', options })),
+    clear: (...args) => call('tray', 'clear', args, async () => ({ ok: false, emulated: true, reason: 'WEB_RUNTIME' }))
   });
 
   const network = Object.freeze({
@@ -102,12 +100,7 @@
 
   const updater = Object.freeze({
     async check() {
-      return call('updater', 'check', [], async () => ({
-        runtime: 'web',
-        serviceWorker: 'serviceWorker' in navigator,
-        controller: !!navigator.serviceWorker?.controller,
-        updateAvailable: false
-      }));
+      return call('updater', 'check', [], async () => ({ runtime: 'web', serviceWorker: 'serviceWorker' in navigator, controller: !!navigator.serviceWorker?.controller, updateAvailable: false }));
     },
     apply: (...args) => call('updater', 'apply', args),
     restart: (...args) => call('updater', 'restart', args, async () => { location.reload(); return true; })
@@ -133,20 +126,7 @@
     return { ...META, provider: caps.native ? 'native-host' : 'web-adapter', edition: caps.edition, nativeHost: caps.native, capabilities: caps.surfaces };
   }
 
-  const api = Object.freeze({
-    meta: META,
-    filesystem,
-    processes,
-    clipboard,
-    tray,
-    network,
-    updater,
-    capabilities,
-    info,
-    events: Object.freeze({ on, emit }),
-    hasNativeHost: () => !!host()
-  });
-
+  const api = Object.freeze({ meta: META, filesystem, processes, clipboard, tray, network, updater, capabilities, info, events: Object.freeze({ on, emit }), hasNativeHost: () => !!host() });
   window.SwirRuntime = api;
   window.SWIR_RUNTIME = api;
   emit('ready', info());
