@@ -33,6 +33,16 @@ internal sealed class UpdateHealthBroker
         if (requestedTtl < MinTtl || requestedTtl > MaxTtl)
             throw new UpdateSecurityException("UPDATE_HEALTH_TTL_INVALID", "Health challenge TTL is outside the allowed range.");
 
+        var healthPath = HealthPath(canonical);
+        if (File.Exists(healthPath))
+        {
+            // Never rotate a health token while the same transaction is pending. A token
+            // replacement could strand an already launched candidate process and weaken
+            // the one-challenge/one-transaction trust boundary.
+            _ = ReadMetadata(canonical);
+            throw new UpdateSecurityException("UPDATE_HEALTH_ALREADY_ISSUED", "A health challenge already exists for this update transaction.");
+        }
+
         var now = _clock();
         var tokenBytes = RandomNumberGenerator.GetBytes(32);
         var token = Convert.ToHexString(tokenBytes).ToLowerInvariant();
@@ -46,7 +56,6 @@ internal sealed class UpdateHealthBroker
             now.Add(requestedTtl),
             null);
 
-        var healthPath = HealthPath(canonical);
         AtomicWrite(healthPath, metadata);
         return new HealthChallenge(canonical.TransactionId, canonical.TargetVersion, token, metadata.ExpiresAt, healthPath);
     }
@@ -138,8 +147,7 @@ internal sealed class UpdateHealthBroker
             if (!string.Equals(metadata.Schema, HealthSchema, StringComparison.Ordinal)
                 || string.IsNullOrWhiteSpace(metadata.TransactionId)
                 || !Version.TryParse(metadata.TargetVersion, out _)
-                || string.IsNullOrWhiteSpace(metadata.TokenHash)
-                || metadata.TokenHash.Length != 64
+                || !IsSha256Hex(metadata.TokenHash)
                 || metadata.CreatedAt == default
                 || metadata.ExpiresAt <= metadata.CreatedAt
                 || metadata.ExpiresAt - metadata.CreatedAt > MaxTtl
@@ -154,6 +162,14 @@ internal sealed class UpdateHealthBroker
         {
             throw new UpdateSecurityException("UPDATE_HEALTH_METADATA_INVALID", "Health challenge metadata is unreadable or invalid.");
         }
+    }
+
+    private static bool IsSha256Hex(string? value)
+    {
+        if (value is null || value.Length != 64) return false;
+        foreach (var ch in value)
+            if (!Uri.IsHexDigit(ch)) return false;
+        return true;
     }
 
     private static string HealthPath(UpdateTransactionJournal.TransactionState state)
