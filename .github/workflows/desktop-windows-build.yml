@@ -15,6 +15,7 @@ on:
       - 'swir-archive.html'
       - 'swir-pdf.html'
       - 'swir-chat.html'
+      - 'swir-chat-api.php'
       - '.github/workflows/desktop-windows-build.yml'
   pull_request:
     paths:
@@ -29,6 +30,7 @@ on:
       - 'swir-archive.html'
       - 'swir-pdf.html'
       - 'swir-chat.html'
+      - 'swir-chat-api.php'
       - '.github/workflows/desktop-windows-build.yml'
 
 permissions:
@@ -61,6 +63,9 @@ jobs:
 
       - name: Validate App Bridge isolation readiness
         run: node validate-app-isolation.mjs
+
+      - name: Validate Chat portable bridge contract
+        run: node validate-chat-bridge.mjs
 
       - name: Setup .NET 8
         uses: actions/setup-dotnet@v4
