@@ -29,7 +29,10 @@ internal static class UpdateBrokerSelfTests
         ExpectCode("UPDATE_HOST_DENIED", () => broker.VerifyManifest(Sign(rsa, "0.5.2", "stable", "https://evil.example/a.zip", hash, package.Length), current, "stable"), "untrusted package host rejected");
         ExpectCode("UPDATE_HASH_INVALID", () => broker.VerifyManifest(Sign(rsa, "0.5.2", "stable", "https://downloads.swir.example/a.zip", "abcd", package.Length), current, "stable"), "malformed hash rejected");
         ExpectCode("UPDATE_PACKAGE_SIZE_INVALID", () => broker.VerifyManifest(Sign(rsa, "0.5.2", "stable", "https://downloads.swir.example/a.zip", hash, 0), current, "stable"), "zero package size rejected");
-        ExpectCode("UPDATE_PACKAGE_HASH_MISMATCH", () => UpdateBroker.VerifyPackage(Encoding.UTF8.GetBytes("tampered-package-content-xxxxx"), verified), "tampered package rejected");
+
+        var tamperedPackage = package.ToArray();
+        tamperedPackage[^1] ^= 1;
+        ExpectCode("UPDATE_PACKAGE_HASH_MISMATCH", () => UpdateBroker.VerifyPackage(tamperedPackage, verified), "same-size tampered package rejected");
         ExpectCode("UPDATE_PACKAGE_SIZE_MISMATCH", () => UpdateBroker.VerifyPackage(package[..^1], verified), "wrong package size rejected");
 
         Console.WriteLine($"SWIR Desktop Update Broker self-tests passed: {_passed}");
