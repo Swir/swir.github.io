@@ -8,6 +8,13 @@ on:
       - 'swir-runtime.js'
       - 'swir-apps.js'
       - 'swir-packages.js'
+      - 'swir-app-bridge.js'
+      - 'swir-app-bridge-host.js'
+      - 'swir-code.html'
+      - 'swir-image.html'
+      - 'swir-archive.html'
+      - 'swir-pdf.html'
+      - 'swir-chat.html'
       - '.github/workflows/desktop-windows-build.yml'
   pull_request:
     paths:
@@ -15,6 +22,13 @@ on:
       - 'swir-runtime.js'
       - 'swir-apps.js'
       - 'swir-packages.js'
+      - 'swir-app-bridge.js'
+      - 'swir-app-bridge-host.js'
+      - 'swir-code.html'
+      - 'swir-image.html'
+      - 'swir-archive.html'
+      - 'swir-pdf.html'
+      - 'swir-chat.html'
       - '.github/workflows/desktop-windows-build.yml'
 
 permissions:
@@ -37,8 +51,16 @@ jobs:
       - name: Check application registry syntax
         run: node --check ../../swir-apps.js
 
+      - name: Check App Bridge JavaScript syntax
+        run: |
+          node --check ../../swir-app-bridge.js
+          node --check ../../swir-app-bridge-host.js
+
       - name: Validate Desktop package policy
         run: node validate-policy.mjs
+
+      - name: Validate App Bridge isolation readiness
+        run: node validate-app-isolation.mjs
 
       - name: Setup .NET 8
         uses: actions/setup-dotnet@v4
