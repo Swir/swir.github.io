@@ -74,6 +74,34 @@ window.SWIR_NATIVE_HOST = {
 };
 ```
 
+## Windows Desktop Host Preview 0.1
+
+The first concrete Desktop Edition host now lives in `desktop/windows/` and targets .NET 8 + Microsoft WebView2.
+
+It serves the existing SWIR shell through an isolated `https://swir.local/` virtual origin and injects `SWIR_NATIVE_HOST` before the shell runtime loads.
+
+Implemented native surfaces:
+
+```text
+filesystem.list
+filesystem.get
+filesystem.save
+filesystem.remove
+filesystem.pickFile
+filesystem.pickDirectory
+clipboard.readText
+clipboard.writeText
+clipboard.clear
+processes.list
+processes.open
+```
+
+The preview filesystem is deliberately sandboxed under the current user's local application-data area. External file and folder access requires a Windows picker initiated by the user.
+
+`processes.spawn` and `processes.kill` are intentionally denied with `PERMISSION_DENIED` until the Desktop permission broker is implemented. Network control, tray integration and native updates are not exposed by the host yet and therefore continue through safe Web fallbacks where available or fail with `RUNTIME_UNSUPPORTED`.
+
+The host bridge uses an allowlisted message dispatcher rather than arbitrary script-to-native invocation. The current picker response still exposes a native path for development diagnostics; a future milestone should replace raw native paths with revocable capability tokens.
+
 ## Security rules
 
 - Native hosts must validate every privileged request; JavaScript input is untrusted.
@@ -81,6 +109,7 @@ window.SWIR_NATIVE_HOST = {
 - `processes.spawn`, native network control, updater apply and real filesystem access are intentionally unavailable in the Web adapter.
 - Desktop/System hosts should expose the minimum capability required and keep OS-specific implementation outside application code.
 - Package verification and permission approval remain separate gates before native installation or execution.
+- Desktop bridges should prefer allowlisted operations and capability tokens over arbitrary paths or arbitrary command execution.
 
 ## Diagnostics
 
@@ -94,6 +123,7 @@ The SWIR terminal command `runtime` prints the same capability map.
 
 1. Web Edition validates application contracts using browser fallbacks.
 2. Desktop Edition injects a lightweight native host and progressively implements real filesystem, process, tray, network and updater operations.
-3. System Edition replaces the Desktop host implementation with Linux-native services while preserving `swir.runtime/1.0` where possible.
+3. The Windows Preview host validates the native bridge with sandboxed filesystem and clipboard capabilities before higher-risk process/network/update surfaces are enabled.
+4. System Edition replaces the Desktop host implementation with Linux-native services while preserving `swir.runtime/1.0` where possible.
 
 This contract is intentionally small. New privileged surfaces should only be added when a real Desktop/System use case cannot be represented safely by the existing interfaces.
