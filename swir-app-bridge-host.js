@@ -48,19 +48,23 @@
   async function requirePermission(pkg, permission) {
     if (!(await hasPermission(pkg, permission))) throw bridgeError('PERMISSION_DENIED', `${pkg.packageId} lacks ${permission}.`);
   }
+  async function requireAnyPermission(pkg, permissions) {
+    for (const permission of permissions) if (await hasPermission(pkg, permission)) return permission;
+    throw bridgeError('PERMISSION_DENIED', `${pkg.packageId} lacks required permission (${permissions.join(' or ')}).`);
+  }
 
   async function dispatch(pkg, method, args) {
     switch (method) {
       case 'bridge.info':
         return { version: VERSION, packageId: pkg.packageId, appId: pkg.id, edition: window.SWIR_NATIVE_HOST?.edition || 'WEB' };
       case 'storage.get':
-        await requirePermission(pkg, 'storage').catch(async e => { if (pkg.id !== 'code' || !(pkg.permissions || []).includes('files.write')) throw e; });
+        await requireAnyPermission(pkg, ['storage', 'files.read']);
         return window.SwirAppSDK?.storage?.namespace?.(pkg.id)?.get?.(String(args?.[0] || ''), args?.[1] ?? null);
       case 'storage.set':
-        await requirePermission(pkg, 'storage').catch(async e => { if (pkg.id !== 'code' || !(pkg.permissions || []).includes('files.write')) throw e; });
+        await requireAnyPermission(pkg, ['storage', 'files.write']);
         return window.SwirAppSDK?.storage?.namespace?.(pkg.id)?.set?.(String(args?.[0] || ''), args?.[1]);
       case 'storage.remove':
-        await requirePermission(pkg, 'storage').catch(async e => { if (pkg.id !== 'code' || !(pkg.permissions || []).includes('files.write')) throw e; });
+        await requireAnyPermission(pkg, ['storage', 'files.write']);
         return window.SwirAppSDK?.storage?.namespace?.(pkg.id)?.remove?.(String(args?.[0] || ''));
       case 'files.consumeOpen':
         await requirePermission(pkg, 'files.read');
@@ -81,7 +85,7 @@
   addEventListener('message', async event => {
     const msg = event.data;
     if (!msg || msg.type !== REQUEST || typeof msg.id !== 'string') return;
-    let targetOrigin = event.origin;
+    const targetOrigin = event.origin;
     try {
       const pkg = resolveCaller(event, msg.packageId);
       const result = await dispatch(pkg, String(msg.method || ''), Array.isArray(msg.args) ? msg.args : []);
