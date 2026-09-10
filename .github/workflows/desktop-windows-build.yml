@@ -1,0 +1,37 @@
+name: Desktop Windows Build
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'desktop/windows/**'
+      - '.github/workflows/desktop-windows-build.yml'
+  pull_request:
+    paths:
+      - 'desktop/windows/**'
+      - '.github/workflows/desktop-windows-build.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: desktop/windows
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: dotnet restore SWIR.Desktop.Host.csproj
+
+      - name: Build
+        run: dotnet build SWIR.Desktop.Host.csproj --configuration Release --no-restore
