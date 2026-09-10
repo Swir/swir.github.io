@@ -1,6 +1,6 @@
-# SWIR OS Desktop Host — Windows Preview 0.2.1
+# SWIR OS Desktop Host — Windows Preview 0.3
 
-This is the first native-host line for SWIR OS Desktop Edition.
+This is the native-host line for SWIR OS Desktop Edition.
 
 ## What it does
 
@@ -8,13 +8,14 @@ This is the first native-host line for SWIR OS Desktop Edition.
 - maps the repository root to the isolated `https://swir.local/` virtual origin;
 - injects `window.SWIR_NATIVE_HOST` before application scripts run;
 - implements the stable `swir.runtime/1.0` boundary;
-- provides native clipboard access;
-- provides a sandboxed native filesystem under `%LOCALAPPDATA%\SWIR\DesktopHost\Data`;
-- allows explicit user-driven external file/folder selection through Windows dialogs;
-- converts external selections into revocable capability tokens instead of returning raw OS paths;
-- binds every external capability to the current host session and an application identity;
-- exposes host-process diagnostics;
-- rejects native process spawn/kill until a permission broker exists.
+- adds an in-memory Desktop Permission Broker with authenticated host-session execution contexts;
+- requires a non-exported 256-bit execution token on every native bridge request;
+- authorizes every native method through a method-to-permission policy map;
+- rejects owner/app identity mismatches before capability resolution;
+- accepts native bridge messages only from the `https://swir.local` origin;
+- provides native clipboard access and a sandboxed filesystem under `%LOCALAPPDATA%\SWIR\DesktopHost\Data`;
+- converts user-selected external files/folders into revocable capability tokens instead of returning raw OS paths;
+- keeps process spawn/kill denied because the shell context is not granted those capabilities.
 
 ## Requirements
 
@@ -30,33 +31,44 @@ dotnet restore
 dotnet run
 ```
 
-The host walks upward from its build directory until it finds the repository `index.html`, then serves the current checkout through the WebView2 virtual host.
+The host walks upward from its build directory until it finds the repository `index.html`, then serves the checkout through the WebView2 virtual host.
 
 ## Security model
 
-Preview 0.2.1 follows least privilege:
+Preview 0.3 follows least privilege:
 
+- native calls require a valid execution context token tied to the current host session;
+- the token is captured inside the injected bridge closure and is not exported through `window.SWIR_NATIVE_HOST`;
+- the bridge binds `chrome.webview.postMessage` before page scripts run, reducing token interception through later monkey-patching;
+- every method is mapped to a named permission such as `filesystem.sandbox.read`, `filesystem.picker`, `clipboard.write` or `process.inspect`;
+- unknown methods fail closed when no policy exists;
+- capability owner IDs must match the authenticated execution context;
 - normal filesystem operations cannot escape the SWIR data sandbox;
-- path traversal and nested arbitrary paths are rejected;
-- external files/directories are available only after a Windows picker action;
-- picker results never expose `nativePath` to JavaScript;
-- picker grants use random 192-bit capability tokens;
-- grants are bound to a host session ID and owner app ID;
-- a token cannot be used through another owner identity;
-- grants expire after 30 minutes and can be revoked individually or per owner;
-- protected reads validate token, session, owner, kind, expiry and resource existence;
-- text reads through external capabilities are capped at 2 MiB in this preview;
-- process spawning and termination remain disabled;
-- the bridge exposes an allowlisted dispatcher rather than arbitrary native invocation;
+- external resources are available only after explicit Windows picker actions;
+- capability grants are random 192-bit tokens, session-bound, owner-bound, expiring and revocable;
+- protected text reads are capped at 2 MiB;
+- process spawning/termination, native network control and updater apply remain denied;
 - existing SWIR package permissions and Secure Install Pipeline remain separate gates.
 
-Capability grants remain in-memory, so restarting the host revokes all of them automatically.
+Capability grants and execution contexts are in-memory. Restarting the host invalidates both.
 
-### Important trust boundary
+## Runtime security diagnostics
 
-`ownerAppId` binding is isolation groundwork, not yet a complete permission boundary. The current WebView shell is still same-origin JavaScript, so the native host cannot yet cryptographically prove which app frame originated a claimed app ID. For that reason Preview 0.2.1 does **not** unlock process spawn, arbitrary native filesystem writes, native network control or updater apply.
+SWIR Runtime 1.2 exposes read-only diagnostics without exposing the execution token:
 
-A later Desktop Permission Broker must authenticate app execution context and validate the package permission grant before privileged operations are enabled.
+```js
+const context = await SwirRuntime.security.context();
+const canRead = await SwirRuntime.security.can('filesystem.sandbox.read');
+const authenticated = await SwirRuntime.security.isAuthenticated();
+```
+
+`context.tokenExposed` is always `false` in the native broker descriptor.
+
+## Important trust boundary
+
+Preview 0.3 authenticates the **shell execution context**, but it does not yet authenticate third-party apps separately. All current UI is still hosted inside one WebView2 document. Therefore app code must not receive independent native permissions until SWIR introduces isolated app execution realms (separate WebView/frame/process boundary) and the host issues a distinct context token to each verified package.
+
+Because of this, `SwirRuntime.filesystem.forApp('another.app')` will now fail native capability operations with `EXECUTION_IDENTITY_MISMATCH` while the active native context belongs to `swir.system.shell`. This is deliberate fail-closed behavior, not a regression.
 
 ## Implemented native surfaces
 
@@ -78,47 +90,38 @@ clipboard.writeText
 clipboard.clear
 processes.list
 processes.open
+security.contextInfo
+security.can
 ```
 
-Present but denied until a permission broker is implemented:
+Present but denied by policy:
 
 ```text
 processes.spawn
 processes.kill
 ```
 
-## App-scoped runtime use
-
-Portable application code can obtain a scoped facade without talking directly to the C# bridge:
-
-```js
-const fs = SwirRuntime.filesystem.forApp('swir.example.notes');
-const picked = await fs.pickFile();
-const text = picked ? await fs.readCapabilityText(picked.token) : null;
-await fs.revokeAllCapabilities();
-```
-
-Existing shell-level Runtime calls remain backward compatible and use `swir.system.shell` as their owner identity.
-
-## Capability lifecycle
+## Authorization flow
 
 ```text
-USER PICKER
-   -> random capability token
-   -> bind { host session + owner app }
-   -> validate { token + session + owner + kind + expiry }
+SWIR RUNTIME CALL
+   -> injected bridge closure
+   -> execution token + request
+   -> trusted origin check
+   -> session context lookup
+   -> method permission policy
+   -> requested owner == authenticated appId
+   -> capability validation (when required)
    -> native operation
-   -> revoke / expiry / host restart
 ```
-
-A token is an opaque authorization reference, not a path.
 
 ## Next host milestone
 
-1. authenticated Desktop Permission Broker mapped to installed package grants;
-2. trusted app execution context / frame-to-package identity;
-3. directory capability operations with strict scoped enumeration;
-4. native tray integration;
-5. native updater staging/rollback;
-6. process/service broker with strict executable allowlists;
-7. self-contained Windows publish package and CI build verification.
+1. isolated app execution realm / frame-to-package identity;
+2. issue separate execution contexts from installed package manifests and granted permissions;
+3. map Secure Install Pipeline grants into Desktop Permission Broker policies;
+4. directory capability operations with scoped enumeration;
+5. native tray integration;
+6. updater staging/rollback;
+7. process/service broker with strict executable allowlists;
+8. self-contained Windows publish package and smoke-test CI.
