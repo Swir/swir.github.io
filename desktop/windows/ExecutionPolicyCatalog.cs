@@ -34,6 +34,10 @@ internal sealed class ExecutionPolicyCatalog
         return policy;
     }
 
+    public IReadOnlyList<PackagePolicy> All() => _packages.Values
+        .OrderBy(policy => policy.PackageId, StringComparer.Ordinal)
+        .ToArray();
+
     public string[] ResolveNativePermissions(string packageId, IEnumerable<string> grantedPackagePermissions)
     {
         var policy = Require(packageId);
@@ -69,10 +73,7 @@ internal sealed class ExecutionPolicyCatalog
     {
         schema = "swir.desktop-policy/0.1",
         packageCount = _packages.Count,
-        packages = _packages.Values
-            .OrderBy(policy => policy.PackageId, StringComparer.Ordinal)
-            .Select(policy => new { packageId = policy.PackageId, entry = policy.Entry, permissions = policy.Permissions })
-            .ToArray()
+        packages = All().Select(policy => new { packageId = policy.PackageId, entry = policy.Entry, permissions = policy.Permissions }).ToArray()
     };
 
     private static void Validate(PackagePolicy policy)
