@@ -47,31 +47,8 @@ internal sealed class CandidatePackagePreparer
             long expandedBytes = 0;
             using (var archive = ZipFile.OpenRead(packagePath))
             {
-                if (archive.Entries.Count > MaxFiles + 1)
-                    throw new UpdateSecurityException("UPDATE_CANDIDATE_TOO_MANY_FILES", "Desktop update package contains too many archive entries.");
-
-                var manifestEntries = archive.Entries.Where(e => string.Equals(NormalizeArchivePath(e.FullName), ManifestEntryName, StringComparison.OrdinalIgnoreCase)).ToArray();
-                if (manifestEntries.Length != 1 || IsDirectory(manifestEntries[0]) || IsSymlink(manifestEntries[0]))
-                    throw new UpdateSecurityException("UPDATE_CANDIDATE_MANIFEST_INVALID", "Desktop update package must contain exactly one regular root manifest.");
-
-                manifest = ReadManifest(manifestEntries[0]);
-                ValidateManifest(manifest, plan);
-
-                var archiveFiles = new Dictionary<string, ZipArchiveEntry>(StringComparer.OrdinalIgnoreCase);
-                foreach (var entry in archive.Entries)
-                {
-                    var normalized = NormalizeArchivePath(entry.FullName);
-                    if (string.Equals(normalized, ManifestEntryName, StringComparison.OrdinalIgnoreCase))
-                        continue;
-                    ValidateRelativePath(normalized);
-                    if (IsSymlink(entry))
-                        throw new UpdateSecurityException("UPDATE_CANDIDATE_LINK_BLOCKED", "Symbolic links are not allowed in Desktop update packages.");
-                    if (IsDirectory(entry))
-                        continue;
-                    if (!archiveFiles.TryAdd(normalized, entry))
-                        throw new UpdateSecurityException("UPDATE_CANDIDATE_DUPLICATE_PATH", "Desktop update package contains duplicate file paths.");
-                }
-
+                manifest = ReadValidatedManifest(archive, plan);
+                var archiveFiles = IndexArchiveFiles(archive);
                 if (archiveFiles.Count != manifest.Files.Count)
                     throw new UpdateSecurityException("UPDATE_CANDIDATE_MANIFEST_MISMATCH", "Archive file set does not match the signed package manifest.");
 
@@ -88,26 +65,7 @@ internal sealed class CandidatePackagePreparer
 
                     var destination = SafeChild(tempRoot, normalized.Replace('/', Path.DirectorySeparatorChar));
                     Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
-                    using var input = entry.Open();
-                    using var output = new FileStream(destination, FileMode.CreateNew, FileAccess.Write, FileShare.None, 128 * 1024, FileOptions.SequentialScan);
-                    using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
-                    var buffer = new byte[128 * 1024];
-                    long written = 0;
-                    int read;
-                    while ((read = input.Read(buffer, 0, buffer.Length)) > 0)
-                    {
-                        written += read;
-                        if (written > file.Size || written > MaxSingleFileBytes)
-                            throw new UpdateSecurityException("UPDATE_CANDIDATE_FILE_SIZE_INVALID", $"Candidate file exceeded declared size: {normalized}");
-                        hash.AppendData(buffer, 0, read);
-                        output.Write(buffer, 0, read);
-                    }
-                    output.Flush(true);
-                    if (written != file.Size)
-                        throw new UpdateSecurityException("UPDATE_CANDIDATE_FILE_SIZE_INVALID", $"Candidate file size changed while extracting: {normalized}");
-                    var actualHash = Convert.ToHexString(hash.GetHashAndReset()).ToLowerInvariant();
-                    if (!FixedHashEquals(actualHash, file.Sha256))
-                        throw new UpdateSecurityException("UPDATE_CANDIDATE_FILE_HASH_INVALID", $"Candidate file hash mismatch: {normalized}");
+                    ExtractAndVerify(entry, destination, file);
                 }
             }
 
@@ -161,15 +119,101 @@ internal sealed class CandidatePackagePreparer
                 || !string.Equals(Path.GetFullPath(state.StatePath), canonicalStatePath, StringComparison.OrdinalIgnoreCase)
                 || !Directory.Exists(expectedPayload))
                 throw new UpdateSecurityException("UPDATE_CANDIDATE_STATE_INVALID", "Candidate state is invalid or no longer bound to the worker plan.");
+
             ValidateRelativePath(NormalizeArchivePath(state.EntryPoint));
-            if (!File.Exists(SafeChild(expectedPayload, NormalizeArchivePath(state.EntryPoint).Replace('/', Path.DirectorySeparatorChar))))
-                throw new UpdateSecurityException("UPDATE_CANDIDATE_ENTRYPOINT_INVALID", "Prepared candidate entry point is missing.");
+            VerifyPackageHash(plan.PackagePath, plan.Sha256);
+            PackageManifest manifest;
+            using (var archive = ZipFile.OpenRead(plan.PackagePath))
+                manifest = ReadValidatedManifest(archive, plan);
+            if (!string.Equals(NormalizeArchivePath(manifest.EntryPoint), NormalizeArchivePath(state.EntryPoint), StringComparison.OrdinalIgnoreCase)
+                || manifest.Files.Count != state.FileCount
+                || manifest.Files.Sum(f => f.Size) != state.ExpandedBytes)
+                throw new UpdateSecurityException("UPDATE_CANDIDATE_STATE_INVALID", "Candidate state no longer matches the package manifest.");
+
+            VerifyPreparedPayload(expectedPayload, manifest);
             return state;
         }
         catch (UpdateSecurityException) { throw; }
-        catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
+        catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException or InvalidDataException or OverflowException)
         {
             throw new UpdateSecurityException("UPDATE_CANDIDATE_STATE_INVALID", "Candidate state is unreadable or invalid.");
+        }
+    }
+
+    private static PackageManifest ReadValidatedManifest(ZipArchive archive, UpdaterWorkerProtocol.WorkerPlan plan)
+    {
+        if (archive.Entries.Count > MaxFiles + 1)
+            throw new UpdateSecurityException("UPDATE_CANDIDATE_TOO_MANY_FILES", "Desktop update package contains too many archive entries.");
+        var manifestEntries = archive.Entries.Where(e => string.Equals(NormalizeArchivePath(e.FullName), ManifestEntryName, StringComparison.OrdinalIgnoreCase)).ToArray();
+        if (manifestEntries.Length != 1 || IsDirectory(manifestEntries[0]) || IsSymlink(manifestEntries[0]))
+            throw new UpdateSecurityException("UPDATE_CANDIDATE_MANIFEST_INVALID", "Desktop update package must contain exactly one regular root manifest.");
+        var manifest = ReadManifest(manifestEntries[0]);
+        ValidateManifest(manifest, plan);
+        return manifest;
+    }
+
+    private static Dictionary<string, ZipArchiveEntry> IndexArchiveFiles(ZipArchive archive)
+    {
+        var archiveFiles = new Dictionary<string, ZipArchiveEntry>(StringComparer.OrdinalIgnoreCase);
+        foreach (var entry in archive.Entries)
+        {
+            var normalized = NormalizeArchivePath(entry.FullName);
+            if (string.Equals(normalized, ManifestEntryName, StringComparison.OrdinalIgnoreCase))
+                continue;
+            ValidateRelativePath(normalized);
+            if (IsSymlink(entry))
+                throw new UpdateSecurityException("UPDATE_CANDIDATE_LINK_BLOCKED", "Symbolic links are not allowed in Desktop update packages.");
+            if (IsDirectory(entry))
+                continue;
+            if (!archiveFiles.TryAdd(normalized, entry))
+                throw new UpdateSecurityException("UPDATE_CANDIDATE_DUPLICATE_PATH", "Desktop update package contains duplicate file paths.");
+        }
+        return archiveFiles;
+    }
+
+    private static void ExtractAndVerify(ZipArchiveEntry entry, string destination, PackageFile file)
+    {
+        using var input = entry.Open();
+        using var output = new FileStream(destination, FileMode.CreateNew, FileAccess.Write, FileShare.None, 128 * 1024, FileOptions.SequentialScan);
+        using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+        var buffer = new byte[128 * 1024];
+        long written = 0;
+        int read;
+        while ((read = input.Read(buffer, 0, buffer.Length)) > 0)
+        {
+            written += read;
+            if (written > file.Size || written > MaxSingleFileBytes)
+                throw new UpdateSecurityException("UPDATE_CANDIDATE_FILE_SIZE_INVALID", $"Candidate file exceeded declared size: {file.Path}");
+            hash.AppendData(buffer, 0, read);
+            output.Write(buffer, 0, read);
+        }
+        output.Flush(true);
+        if (written != file.Size)
+            throw new UpdateSecurityException("UPDATE_CANDIDATE_FILE_SIZE_INVALID", $"Candidate file size changed while extracting: {file.Path}");
+        var actualHash = Convert.ToHexString(hash.GetHashAndReset()).ToLowerInvariant();
+        if (!FixedHashEquals(actualHash, file.Sha256))
+            throw new UpdateSecurityException("UPDATE_CANDIDATE_FILE_HASH_INVALID", $"Candidate file hash mismatch: {file.Path}");
+    }
+
+    private static void VerifyPreparedPayload(string payloadRoot, PackageManifest manifest)
+    {
+        var expected = new HashSet<string>(manifest.Files.Select(f => NormalizeArchivePath(f.Path)), StringComparer.OrdinalIgnoreCase);
+        var actual = Directory.EnumerateFiles(payloadRoot, "*", SearchOption.AllDirectories)
+            .Select(path => Path.GetRelativePath(payloadRoot, path).Replace(Path.DirectorySeparatorChar, '/'))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (!actual.SetEquals(expected))
+            throw new UpdateSecurityException("UPDATE_CANDIDATE_PAYLOAD_INVALID", "Prepared candidate file set no longer matches its manifest.");
+
+        foreach (var file in manifest.Files)
+        {
+            var path = SafeChild(payloadRoot, NormalizeArchivePath(file.Path).Replace('/', Path.DirectorySeparatorChar));
+            var info = new FileInfo(path);
+            if (!info.Exists || info.Length != file.Size)
+                throw new UpdateSecurityException("UPDATE_CANDIDATE_PAYLOAD_INVALID", $"Prepared candidate file size mismatch: {file.Path}");
+            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 128 * 1024, FileOptions.SequentialScan);
+            var actualHash = Convert.ToHexString(SHA256.HashData(stream)).ToLowerInvariant();
+            if (!FixedHashEquals(actualHash, file.Sha256))
+                throw new UpdateSecurityException("UPDATE_CANDIDATE_PAYLOAD_INVALID", $"Prepared candidate file hash mismatch: {file.Path}");
         }
     }
 
@@ -191,6 +235,7 @@ internal sealed class CandidatePackagePreparer
             throw new UpdateSecurityException("UPDATE_CANDIDATE_MANIFEST_INVALID", "Desktop package manifest metadata is invalid.");
 
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        long total = 0;
         foreach (var file in manifest.Files)
         {
             var path = NormalizeArchivePath(file.Path);
@@ -198,6 +243,9 @@ internal sealed class CandidatePackagePreparer
             if (string.Equals(path, ManifestEntryName, StringComparison.OrdinalIgnoreCase) || !seen.Add(path)
                 || !IsSha256(file.Sha256) || file.Size < 0 || file.Size > MaxSingleFileBytes)
                 throw new UpdateSecurityException("UPDATE_CANDIDATE_MANIFEST_INVALID", "Desktop package file manifest contains invalid or duplicate metadata.");
+            checked { total += file.Size; }
+            if (total > MaxExpandedBytes)
+                throw new UpdateSecurityException("UPDATE_CANDIDATE_EXPANDED_LIMIT", "Desktop package manifest exceeds the expanded size limit.");
         }
 
         var entryPoint = NormalizeArchivePath(manifest.EntryPoint);
@@ -208,10 +256,10 @@ internal sealed class CandidatePackagePreparer
 
     private static void ValidateRelativePath(string path)
     {
-        if (string.IsNullOrWhiteSpace(path) || Path.IsPathRooted(path) || path.Contains(':') || path.Contains('\\'))
+        if (string.IsNullOrWhiteSpace(path) || Path.IsPathRooted(path) || path.Contains(':'))
             throw new UpdateSecurityException("UPDATE_CANDIDATE_PATH_INVALID", "Desktop package contains an invalid relative path.");
-        var parts = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length == 0 || parts.Any(p => p is "." or ".." || p.Length == 0))
+        var parts = path.Split('/', StringSplitOptions.None);
+        if (parts.Length == 0 || parts.Any(p => string.IsNullOrWhiteSpace(p) || p is "." or ".."))
             throw new UpdateSecurityException("UPDATE_CANDIDATE_PATH_INVALID", "Desktop package path traversal is blocked.");
     }
 
@@ -237,8 +285,8 @@ internal sealed class CandidatePackagePreparer
 
     private static void VerifyPackageHash(string path, string expected)
     {
-        if (!IsSha256(expected))
-            throw new UpdateSecurityException("UPDATE_CANDIDATE_PACKAGE_INVALID", "Worker plan package hash is invalid.");
+        if (!IsSha256(expected) || !File.Exists(path))
+            throw new UpdateSecurityException("UPDATE_CANDIDATE_PACKAGE_INVALID", "Worker plan package is missing or its hash is invalid.");
         using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 128 * 1024, FileOptions.SequentialScan);
         var actual = Convert.ToHexString(SHA256.HashData(stream)).ToLowerInvariant();
         if (!FixedHashEquals(actual, expected))
