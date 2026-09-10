@@ -34,9 +34,7 @@ internal sealed class ExecutionPolicyCatalog
         return policy;
     }
 
-    public IReadOnlyList<PackagePolicy> All() => _packages.Values
-        .OrderBy(policy => policy.PackageId, StringComparer.Ordinal)
-        .ToArray();
+    public IReadOnlyList<PackagePolicy> All() => _packages.Values.OrderBy(policy => policy.PackageId, StringComparer.Ordinal).ToArray();
 
     public string[] ResolveNativePermissions(string packageId, IEnumerable<string> grantedPackagePermissions)
     {
@@ -52,6 +50,10 @@ internal sealed class ExecutionPolicyCatalog
         {
             switch (permission)
             {
+                case "storage":
+                    native.Add("filesystem.sandbox.read");
+                    native.Add("filesystem.sandbox.write");
+                    break;
                 case "files.read":
                     native.Add("filesystem.picker");
                     native.Add("filesystem.capability.read");
