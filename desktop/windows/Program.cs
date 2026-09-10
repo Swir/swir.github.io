@@ -262,14 +262,14 @@ internal sealed class MainWindow : Form
     if (msg.ok) p.resolve(msg.result);
     else { const error = new Error(msg.error?.message || 'Native host error'); error.code = msg.error?.code || 'NATIVE_HOST_ERROR'; p.reject(error); }
   });
-  const surface = name => new Proxy({}, { get: (_, method) => (...args) => call(name, String(method), ...args) });
+  const surface = (name, methods) => Object.freeze(Object.fromEntries(methods.map(method => [method, (...args) => call(name, method, ...args)])));
   window.SWIR_NATIVE_HOST = Object.freeze({
     edition: 'DESKTOP',
     version: '0.2.0-preview',
     contract: 'swir.runtime/1.0',
-    filesystem: surface('filesystem'),
-    clipboard: surface('clipboard'),
-    processes: surface('processes')
+    filesystem: surface('filesystem', ['list','get','save','remove','pickFile','pickDirectory','capabilityInfo','readCapabilityText','revokeCapability','pruneCapabilities']),
+    clipboard: surface('clipboard', ['readText','writeText','clear']),
+    processes: surface('processes', ['list','open','kill','spawn'])
   });
   window.dispatchEvent(new CustomEvent('swir:native-host-ready', { detail: { edition: 'DESKTOP', version: '0.2.0-preview' } }));
 })();
