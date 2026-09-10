@@ -41,5 +41,25 @@
       optional: true
     }));
 
+  function desktopIsolatedUrl(app) {
+    const host = window.SWIR_NATIVE_HOST;
+    if (!host || String(host.edition || '').toUpperCase() !== 'DESKTOP' || !app.packageId || app.type !== 'iframe') return app.url;
+    const packageId = String(app.packageId);
+    if (!/^[a-zA-Z0-9._-]{1,128}$/.test(packageId)) return app.url;
+    const entry = String(app.url || '').replace(/^\.\//, '');
+    if (!entry || entry.includes('..') || entry.includes('\\') || /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(entry)) return app.url;
+    const slug = packageId.toLowerCase().replace(/[^a-z0-9]/g, '-');
+    return `https://app-${slug}.swir.local/${entry}`;
+  }
+
+  packages.forEach(app => {
+    const isolated = desktopIsolatedUrl(app);
+    if (isolated !== app.url) {
+      app.webUrl = app.url;
+      app.url = isolated;
+      app.executionIsolation = 'desktop-origin';
+    }
+  });
+
   window.SWIR_APPS = [...core, ...packages];
 })();
