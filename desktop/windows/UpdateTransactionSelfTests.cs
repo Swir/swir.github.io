@@ -36,6 +36,7 @@ internal static class UpdateTransactionSelfTests
             Expect(challenge.Token.Length == 64, "health challenge uses a 256-bit random token");
             var healthStatus = healthBroker.GetStatus(health);
             Expect(!healthStatus.Expired && healthStatus.ConfirmedAt is null, "fresh health challenge reports pending state");
+            ExpectCode("UPDATE_HEALTH_ALREADY_ISSUED", () => healthBroker.Issue(health, TimeSpan.FromMinutes(2)), "health token cannot be silently rotated for active transaction");
             ExpectCode("UPDATE_HEALTH_TOKEN_INVALID", () => healthBroker.Confirm(health, new string('0', 64), new Version(0, 5, 2)), "wrong health token cannot commit update");
             ExpectCode("UPDATE_HEALTH_VERSION_MISMATCH", () => healthBroker.Confirm(health, challenge.Token, new Version(0, 5, 3)), "wrong running version cannot commit update");
             var committed = healthBroker.Confirm(health, challenge.Token, new Version(0, 5, 2));
@@ -74,7 +75,12 @@ internal static class UpdateTransactionSelfTests
             var invalidHealthPlan = NewPlan(root, installRoot, packagePath, hash, package.Length);
             var invalidHealthPrepared = journal.Begin(invalidHealthPlan);
             ExpectCode("UPDATE_HEALTH_STATE_INVALID", () => healthBroker.Issue(invalidHealthPrepared), "health challenge cannot be issued before apply reaches health-check state");
-            ExpectCode("UPDATE_HEALTH_TTL_INVALID", () => healthBroker.Issue(timeoutHealth, TimeSpan.FromHours(1)), "health challenge rejects excessive TTL");
+
+            var ttlPlan = NewPlan(root, installRoot, packagePath, hash, package.Length);
+            var ttlPrepared = journal.Begin(ttlPlan);
+            var ttlApplying = journal.Transition(ttlPrepared, "applying");
+            var ttlHealth = journal.Transition(ttlApplying, "awaiting-health-check");
+            ExpectCode("UPDATE_HEALTH_TTL_INVALID", () => healthBroker.Issue(ttlHealth, TimeSpan.FromHours(1)), "health challenge rejects excessive TTL");
 
             ExpectCode("UPDATE_TRANSACTION_PATH_INVALID", () => journal.Read(Path.Combine(root, "outside.json")), "journal read cannot escape transaction sandbox");
             Console.WriteLine($"SWIR Desktop Update Transaction self-tests passed: {_passed}");
