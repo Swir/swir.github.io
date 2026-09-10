@@ -74,7 +74,7 @@ internal sealed class AppIsolationRegistry
         if (string.IsNullOrWhiteSpace(value)
             || value.Contains("..", StringComparison.Ordinal)
             || value.Contains('\\')
-            || value.StartsWith('/', StringComparison.Ordinal)
+            || value.StartsWith("/", StringComparison.Ordinal)
             || value.Contains('?', StringComparison.Ordinal)
             || value.Contains('#', StringComparison.Ordinal)
             || Uri.TryCreate(value, UriKind.Absolute, out _))
