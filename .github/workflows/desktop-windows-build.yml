@@ -78,6 +78,9 @@ jobs:
       - name: Run native App Data isolation self-tests
         run: dotnet run --project SWIR.Desktop.AppData.SelfTests.csproj --configuration Release
 
+      - name: Run Permission Broker isolation self-tests
+        run: dotnet run --project SWIR.Desktop.Permission.SelfTests.csproj --configuration Release
+
       - name: Restore
         run: dotnet restore SWIR.Desktop.Host.csproj
 
