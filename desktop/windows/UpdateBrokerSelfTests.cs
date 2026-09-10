@@ -38,6 +38,7 @@ internal static class UpdateBrokerSelfTests
 
         RunStagingTests(package, verified);
         RunDownloadTests(package, verified);
+        RunHandoffTests(package, verified, current);
         Console.WriteLine($"SWIR Desktop Update Broker self-tests passed: {_passed}");
     }
 
@@ -126,6 +127,45 @@ internal static class UpdateBrokerSelfTests
             using (var downloader = new UpdateDownloadClient(staging, client))
                 downloader.DownloadAndStageAsync(verified).GetAwaiter().GetResult();
             Expect(requestedUri == verified.PackageUri, "downloader requests exact signed package URI");
+        }
+        finally
+        {
+            try { if (Directory.Exists(root)) Directory.Delete(root, true); } catch { }
+        }
+    }
+
+    private static void RunHandoffTests(byte[] package, UpdateBroker.VerifiedUpdate verified, Version current)
+    {
+        var root = Path.Combine(Path.GetTempPath(), "swir-handoff-selftest-" + Guid.NewGuid().ToString("N"));
+        var stagingRoot = Path.Combine(root, "staging");
+        var pendingRoot = Path.Combine(root, "pending");
+        var installRoot = Path.Combine(root, "install");
+        try
+        {
+            Directory.CreateDirectory(installRoot);
+            var staging = new UpdateStagingBroker(stagingRoot);
+            using (var stream = new MemoryStream(package, writable: false))
+                staging.StageAsync(stream, verified).GetAwaiter().GetResult();
+            var status = staging.GetStatus(verified.Version)!;
+
+            var handoff = new UpdateHandoffBroker(pendingRoot);
+            var plan = handoff.Prepare(status, current, installRoot);
+            Expect(File.Exists(plan.PlanPath), "verified stage creates handoff plan");
+            Expect(plan.TargetVersion == verified.Version && plan.CurrentVersion == current, "handoff plan binds current and target versions");
+            Expect(plan.State == "prepared", "handoff plan remains non-executing prepared state");
+
+            var reread = handoff.Read(plan.PlanPath);
+            Expect(reread.TransactionId == plan.TransactionId && reread.Sha256 == verified.Sha256, "handoff plan can be revalidated from disk");
+
+            var original = File.ReadAllBytes(status.PackagePath);
+            var tampered = original.ToArray();
+            tampered[^1] ^= 1;
+            File.WriteAllBytes(status.PackagePath, tampered);
+            ExpectCode("UPDATE_STAGE_HASH_MISMATCH", () => handoff.Read(plan.PlanPath), "handoff detects package tampering after plan creation");
+            File.WriteAllBytes(status.PackagePath, original);
+
+            ExpectCode("UPDATE_HANDOFF_PATH_INVALID", () => handoff.Read(Path.Combine(root, "outside.json")), "handoff read cannot escape pending sandbox");
+            ExpectCode("UPDATE_HANDOFF_DOWNGRADE_BLOCKED", () => handoff.Prepare(status, verified.Version, installRoot), "handoff blocks same-version target");
         }
         finally
         {
