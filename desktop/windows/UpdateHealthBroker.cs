@@ -87,9 +87,12 @@ internal sealed class UpdateHealthBroker
         if (!CryptographicOperations.FixedTimeEquals(suppliedHash, expectedHash))
             throw new UpdateSecurityException("UPDATE_HEALTH_TOKEN_INVALID", "Health confirmation token is invalid.");
 
+        // The journal is authoritative. Commit first so a concurrent timeout/commit
+        // cannot leave health metadata marked confirmed while the transaction is still pending.
+        var committed = _journal.Transition(canonical, "committed");
         var confirmed = metadata with { ConfirmedAt = _clock() };
-        AtomicWrite(HealthPath(canonical), confirmed);
-        return _journal.Transition(canonical, "committed");
+        AtomicWrite(HealthPath(committed), confirmed);
+        return committed;
     }
 
     public UpdateTransactionJournal.TransactionState EvaluateTimeout(UpdateTransactionJournal.TransactionState state)
