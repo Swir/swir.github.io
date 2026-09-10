@@ -1,12 +1,14 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace Swir.Desktop.Host;
 
 internal sealed class UpdateHandoffBroker
 {
     public const string PlanSchema = "swir.desktop-update-handoff/0.1";
+    private static readonly Regex Sha256Pattern = new("^[a-f0-9]{64}$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
     private readonly string _pendingRoot;
 
     public UpdateHandoffBroker(string? pendingRoot = null)
@@ -27,6 +29,9 @@ internal sealed class UpdateHandoffBroker
         if (!stage.Verified) throw new UpdateSecurityException("UPDATE_STAGE_UNVERIFIED", "Only a verified staged update can be prepared for handoff.");
         if (stage.Version <= currentVersion) throw new UpdateSecurityException("UPDATE_HANDOFF_DOWNGRADE_BLOCKED", "Handoff target must be newer than the installed version.");
         if (string.IsNullOrWhiteSpace(currentInstallRoot)) throw new UpdateSecurityException("UPDATE_INSTALL_ROOT_INVALID", "Current installation root is required.");
+        if (!IsValidHash(stage.Sha256)) throw new UpdateSecurityException("UPDATE_STAGE_HASH_INVALID", "Staged update hash metadata is invalid.");
+        if (stage.Size is <= 0 or > UpdateBroker.MaxPackageBytes) throw new UpdateSecurityException("UPDATE_STAGE_SIZE_MISMATCH", "Staged update size is outside the allowed range.");
+        if (string.IsNullOrWhiteSpace(stage.Channel) || string.IsNullOrWhiteSpace(stage.KeyId)) throw new UpdateSecurityException("UPDATE_STAGE_METADATA_INVALID", "Staged update trust metadata is incomplete.");
 
         var installRoot = Path.GetFullPath(currentInstallRoot);
         if (!Directory.Exists(installRoot))
@@ -39,10 +44,11 @@ internal sealed class UpdateHandoffBroker
         if (info.Length != stage.Size)
             throw new UpdateSecurityException("UPDATE_STAGE_SIZE_MISMATCH", "Staged package size changed after verification.");
 
+        var expectedHash = stage.Sha256.ToLowerInvariant();
         var actualHash = HashFile(packagePath);
         if (!CryptographicOperations.FixedTimeEquals(
                 Encoding.ASCII.GetBytes(actualHash),
-                Encoding.ASCII.GetBytes(stage.Sha256.ToLowerInvariant())))
+                Encoding.ASCII.GetBytes(expectedHash)))
             throw new UpdateSecurityException("UPDATE_STAGE_HASH_MISMATCH", "Staged package hash changed after verification.");
 
         var transactionId = $"{stage.Version}-{Guid.NewGuid():N}";
@@ -59,7 +65,7 @@ internal sealed class UpdateHandoffBroker
             stage.Version.ToString(),
             stage.Channel,
             packagePath,
-            stage.Sha256.ToLowerInvariant(),
+            expectedHash,
             stage.Size,
             stage.KeyId,
             installRoot,
@@ -83,7 +89,7 @@ internal sealed class UpdateHandoffBroker
             stage.Version,
             stage.Channel,
             packagePath,
-            stage.Sha256.ToLowerInvariant(),
+            expectedHash,
             stage.Size,
             stage.KeyId,
             installRoot,
@@ -100,6 +106,8 @@ internal sealed class UpdateHandoffBroker
         var rootWithSeparator = _pendingRoot.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
         if (!canonical.StartsWith(rootWithSeparator, StringComparison.OrdinalIgnoreCase))
             throw new UpdateSecurityException("UPDATE_HANDOFF_PATH_INVALID", "Handoff plan escaped its pending update sandbox.");
+        if (!string.Equals(Path.GetFileName(canonical), "handoff.json", StringComparison.OrdinalIgnoreCase))
+            throw new UpdateSecurityException("UPDATE_HANDOFF_PATH_INVALID", "Handoff plan must use the canonical handoff filename.");
         if (!File.Exists(canonical))
             throw new UpdateSecurityException("UPDATE_HANDOFF_MISSING", "Handoff plan does not exist.");
 
@@ -116,17 +124,30 @@ internal sealed class UpdateHandoffBroker
                 || string.IsNullOrWhiteSpace(metadata.PackagePath)
                 || string.IsNullOrWhiteSpace(metadata.InstallRoot)
                 || string.IsNullOrWhiteSpace(metadata.TransactionId)
+                || string.IsNullOrWhiteSpace(metadata.Channel)
+                || string.IsNullOrWhiteSpace(metadata.KeyId)
+                || !IsValidHash(metadata.Sha256)
+                || metadata.CreatedAt == default
+                || metadata.CreatedAt > DateTimeOffset.UtcNow.AddHours(24)
                 || !string.Equals(metadata.State, "prepared", StringComparison.Ordinal))
                 throw new UpdateSecurityException("UPDATE_HANDOFF_INVALID", "Handoff plan metadata is invalid.");
+
+            if (!string.Equals(Path.GetFileName(Path.GetDirectoryName(canonical)), metadata.TransactionId, StringComparison.Ordinal))
+                throw new UpdateSecurityException("UPDATE_HANDOFF_INVALID", "Handoff transaction directory does not match plan metadata.");
 
             var packagePath = Path.GetFullPath(metadata.PackagePath);
             if (!File.Exists(packagePath) || new FileInfo(packagePath).Length != metadata.Size)
                 throw new UpdateSecurityException("UPDATE_STAGE_SIZE_MISMATCH", "Staged package no longer matches handoff metadata.");
+            var expectedHash = metadata.Sha256.ToLowerInvariant();
             var actualHash = HashFile(packagePath);
             if (!CryptographicOperations.FixedTimeEquals(
                     Encoding.ASCII.GetBytes(actualHash),
-                    Encoding.ASCII.GetBytes(metadata.Sha256.ToLowerInvariant())))
+                    Encoding.ASCII.GetBytes(expectedHash)))
                 throw new UpdateSecurityException("UPDATE_STAGE_HASH_MISMATCH", "Staged package hash no longer matches handoff metadata.");
+
+            var installRoot = Path.GetFullPath(metadata.InstallRoot);
+            if (!Directory.Exists(installRoot))
+                throw new UpdateSecurityException("UPDATE_INSTALL_ROOT_INVALID", "Installation root recorded by handoff no longer exists.");
 
             return new HandoffPlan(
                 metadata.TransactionId,
@@ -134,10 +155,10 @@ internal sealed class UpdateHandoffBroker
                 targetVersion,
                 metadata.Channel,
                 packagePath,
-                metadata.Sha256.ToLowerInvariant(),
+                expectedHash,
                 metadata.Size,
                 metadata.KeyId,
-                Path.GetFullPath(metadata.InstallRoot),
+                installRoot,
                 canonical,
                 metadata.CreatedAt,
                 metadata.State);
@@ -160,6 +181,9 @@ internal sealed class UpdateHandoffBroker
             throw new UpdateSecurityException("UPDATE_HANDOFF_PATH_INVALID", "Update handoff path escaped its sandbox.");
         return candidate;
     }
+
+    private static bool IsValidHash(string? hash)
+        => !string.IsNullOrWhiteSpace(hash) && Sha256Pattern.IsMatch(hash.Trim().ToLowerInvariant());
 
     private static string HashFile(string path)
     {
