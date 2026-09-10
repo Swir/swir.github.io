@@ -13,6 +13,25 @@ internal static class UpdaterWorkerMain
             var protocol = new UpdaterWorkerProtocol(journal, parsed.DeploymentRoot);
             var plan = protocol.Prepare(state);
 
+            if (string.Equals(parsed.Command, "prepare-candidate", StringComparison.OrdinalIgnoreCase))
+            {
+                var candidate = new CandidatePackagePreparer().Prepare(plan);
+                Console.WriteLine(JsonSerializer.Serialize(new
+                {
+                    schema = CandidatePackagePreparer.CandidateStateSchema,
+                    transactionId = candidate.TransactionId,
+                    targetVersion = candidate.TargetVersion,
+                    state = "candidate-prepared",
+                    payloadRoot = candidate.PayloadRoot,
+                    entryPoint = candidate.EntryPoint,
+                    fileCount = candidate.FileCount,
+                    expandedBytes = candidate.ExpandedBytes,
+                    candidateStatePath = candidate.StatePath,
+                    executableActionsEnabled = false
+                }));
+                return 0;
+            }
+
             Console.WriteLine(JsonSerializer.Serialize(new
             {
                 schema = UpdaterWorkerProtocol.WorkerPlanSchema,
@@ -42,10 +61,12 @@ internal static class UpdaterWorkerMain
 
     private static ParsedArgs ParseArgs(string[] args)
     {
-        if (args.Length != 7 || !string.Equals(args[0], "plan", StringComparison.OrdinalIgnoreCase))
+        if (args.Length != 7
+            || (!string.Equals(args[0], "plan", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(args[0], "prepare-candidate", StringComparison.OrdinalIgnoreCase)))
             throw new UpdateSecurityException(
                 "UPDATE_WORKER_ARGS_INVALID",
-                "Usage: SWIR.Desktop.UpdaterWorker plan --journal <path> --transactions-root <path> --deployment-root <path>");
+                "Usage: SWIR.Desktop.UpdaterWorker <plan|prepare-candidate> --journal <path> --transactions-root <path> --deployment-root <path>");
 
         string? journal = null;
         string? transactionsRoot = null;
@@ -65,8 +86,8 @@ internal static class UpdaterWorkerMain
 
         if (string.IsNullOrWhiteSpace(journal) || string.IsNullOrWhiteSpace(transactionsRoot) || string.IsNullOrWhiteSpace(deploymentRoot))
             throw new UpdateSecurityException("UPDATE_WORKER_ARGS_INVALID", "Updater worker requires journal, transactions root and deployment root.");
-        return new ParsedArgs(Path.GetFullPath(journal), Path.GetFullPath(transactionsRoot), Path.GetFullPath(deploymentRoot));
+        return new ParsedArgs(args[0], Path.GetFullPath(journal), Path.GetFullPath(transactionsRoot), Path.GetFullPath(deploymentRoot));
     }
 
-    private sealed record ParsedArgs(string JournalPath, string TransactionsRoot, string DeploymentRoot);
+    private sealed record ParsedArgs(string Command, string JournalPath, string TransactionsRoot, string DeploymentRoot);
 }
