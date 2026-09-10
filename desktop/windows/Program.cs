@@ -16,9 +16,9 @@ internal static class Program
 
 internal sealed class MainWindow : Form
 {
-    private const string ShellAppId = "swir.system.shell";
     private readonly WebView2 _web = new() { Dock = DockStyle.Fill };
     private readonly CapabilityBroker _capabilities = new();
+    private readonly PermissionBroker _permissions;
     private readonly string _repoRoot;
     private readonly string _dataRoot;
 
@@ -29,6 +29,7 @@ internal sealed class MainWindow : Form
         Height = 900;
         MinimumSize = new Size(1024, 700);
         StartPosition = FormStartPosition.CenterScreen;
+        _permissions = new PermissionBroker(_capabilities.SessionId);
         _repoRoot = ResolveRepoRoot();
         _dataRoot = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SWIR", "DesktopHost", "Data");
         Directory.CreateDirectory(_dataRoot);
@@ -49,7 +50,10 @@ internal sealed class MainWindow : Form
             core.Settings.AreBrowserAcceleratorKeysEnabled = true;
             core.SetVirtualHostNameToFolderMapping("swir.local", _repoRoot, CoreWebView2HostResourceAccessKind.DenyCors);
             core.WebMessageReceived += OnWebMessageReceived;
-            await core.AddScriptToExecuteOnDocumentCreatedAsync(NativeBridgeScript.Replace("__SESSION_ID__", _capabilities.SessionId));
+            var bootstrap = NativeBridgeScript
+                .Replace("__SESSION_ID__", _capabilities.SessionId)
+                .Replace("__EXECUTION_TOKEN__", _permissions.ShellExecutionToken);
+            await core.AddScriptToExecuteOnDocumentCreatedAsync(bootstrap);
             core.Navigate("https://swir.local/index.html");
         }
         catch (Exception ex)
@@ -61,6 +65,8 @@ internal sealed class MainWindow : Form
 
     private async void OnWebMessageReceived(object? sender, CoreWebView2WebMessageReceivedEventArgs e)
     {
+        if (!IsTrustedSource(e.Source)) return;
+
         BridgeRequest? request;
         try
         {
@@ -82,13 +88,18 @@ internal sealed class MainWindow : Form
         _web.CoreWebView2.PostWebMessageAsJson(JsonSerializer.Serialize(response, JsonOptions));
     }
 
-    private Task<object?> DispatchAsync(BridgeRequest request) => request.Surface switch
+    private Task<object?> DispatchAsync(BridgeRequest request)
     {
-        "filesystem" => DispatchFilesystemAsync(request.Method, request.Args),
-        "clipboard" => DispatchClipboardAsync(request.Method, request.Args),
-        "processes" => DispatchProcessesAsync(request.Method, request.Args),
-        _ => throw new BridgeException("RUNTIME_UNSUPPORTED", $"Unsupported native surface: {request.Surface}")
-    };
+        _permissions.Authorize(request.ContextToken, request.Surface, request.Method, RequestedOwner(request));
+        return request.Surface switch
+        {
+            "filesystem" => DispatchFilesystemAsync(request.Method, request.Args),
+            "clipboard" => DispatchClipboardAsync(request.Method, request.Args),
+            "processes" => DispatchProcessesAsync(request.Method, request.Args),
+            "security" => DispatchSecurityAsync(request.Method, request.Args, request.ContextToken),
+            _ => throw new BridgeException("RUNTIME_UNSUPPORTED", $"Unsupported native surface: {request.Surface}")
+        };
+    }
 
     private Task<object?> DispatchFilesystemAsync(string method, JsonElement args)
     {
@@ -129,9 +140,20 @@ internal sealed class MainWindow : Form
         {
             "list" => new[] { new { pid = Environment.ProcessId, name = "SWIR.Desktop.Host", kind = "desktop-host" } },
             "open" => new { ok = true, pid = Environment.ProcessId },
-            "kill" => throw new BridgeException("PERMISSION_DENIED", "Desktop host does not allow process termination yet."),
-            "spawn" => throw new BridgeException("PERMISSION_DENIED", "Process spawning is disabled until a permission broker is implemented."),
+            "kill" => throw new BridgeException("PERMISSION_DENIED", "Process termination is not granted to the shell execution context."),
+            "spawn" => throw new BridgeException("PERMISSION_DENIED", "Process spawning is not granted to the shell execution context."),
             _ => throw new BridgeException("RUNTIME_UNSUPPORTED", $"Unsupported processes method: {method}")
+        };
+        return Task.FromResult(result);
+    }
+
+    private Task<object?> DispatchSecurityAsync(string method, JsonElement args, string? contextToken)
+    {
+        object? result = method switch
+        {
+            "contextInfo" => _permissions.Describe(contextToken),
+            "can" => _permissions.Can(contextToken, ArgString(args, 0)),
+            _ => throw new BridgeException("RUNTIME_UNSUPPORTED", $"Unsupported security method: {method}")
         };
         return Task.FromResult(result);
     }
@@ -191,10 +213,23 @@ internal sealed class MainWindow : Form
         return Path.Combine(_dataRoot, safeName);
     }
 
+    private static string? RequestedOwner(BridgeRequest request)
+    {
+        if (!string.Equals(request.Surface, "filesystem", StringComparison.Ordinal)) return null;
+        return request.Method switch
+        {
+            "pickFile" or "pickDirectory" => Owner(request.Args, 0),
+            "capabilityInfo" or "readCapabilityText" or "revokeCapability" => Owner(request.Args, 1),
+            "revokeOwnerCapabilities" => Owner(request.Args, 0),
+            _ => null
+        };
+    }
+
     private static string Owner(JsonElement args, int index)
     {
-        var owner = ArgString(args, index);
-        if (string.IsNullOrWhiteSpace(owner)) return ShellAppId;
+        var owner = ArgString(args, index).Trim();
+        if (string.IsNullOrWhiteSpace(owner))
+            throw new BridgeException("INVALID_APP_ID", "Application identity is required for capability operations.");
         if (owner.Length > 128 || owner.Any(ch => !(char.IsLetterOrDigit(ch) || ch is '.' or '-' or '_')))
             throw new BridgeException("INVALID_APP_ID", "Application identity contains unsupported characters.");
         return owner;
@@ -213,6 +248,13 @@ internal sealed class MainWindow : Form
         return args[index];
     }
 
+    private static bool IsTrustedSource(string source)
+    {
+        return Uri.TryCreate(source, UriKind.Absolute, out var uri)
+            && string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase)
+            && string.Equals(uri.Host, "swir.local", StringComparison.OrdinalIgnoreCase);
+    }
+
     private static string ResolveRepoRoot()
     {
         var current = new DirectoryInfo(AppContext.BaseDirectory);
@@ -227,9 +269,11 @@ internal sealed class MainWindow : Form
 (() => {
   if (window.SWIR_NATIVE_HOST) return;
   const pending = new Map(); let seq = 0;
+  const executionToken = '__EXECUTION_TOKEN__';
+  const postMessage = chrome.webview.postMessage.bind(chrome.webview);
   const call = (surface, method, ...args) => new Promise((resolve, reject) => {
     const id = `swir-${Date.now()}-${++seq}`; pending.set(id, { resolve, reject });
-    chrome.webview.postMessage({ type: 'swir-native-call', id, surface, method, args });
+    postMessage({ type: 'swir-native-call', id, surface, method, args, contextToken: executionToken });
   });
   chrome.webview.addEventListener('message', event => {
     const msg = event.data;
@@ -239,19 +283,20 @@ internal sealed class MainWindow : Form
   });
   const surface = (name, methods) => Object.freeze(Object.fromEntries(methods.map(method => [method, (...args) => call(name, method, ...args)])));
   window.SWIR_NATIVE_HOST = Object.freeze({
-    edition: 'DESKTOP', version: '0.2.1-preview', contract: 'swir.runtime/1.0', sessionId: '__SESSION_ID__',
+    edition: 'DESKTOP', version: '0.3-preview', contract: 'swir.runtime/1.0', sessionId: '__SESSION_ID__',
     filesystem: surface('filesystem', ['list','get','save','remove','pickFile','pickDirectory','capabilityInfo','readCapabilityText','revokeCapability','revokeOwnerCapabilities','pruneCapabilities','capabilityStatus']),
     clipboard: surface('clipboard', ['readText','writeText','clear']),
-    processes: surface('processes', ['list','open','kill','spawn'])
+    processes: surface('processes', ['list','open','kill','spawn']),
+    security: surface('security', ['contextInfo','can'])
   });
-  window.dispatchEvent(new CustomEvent('swir:native-host-ready', { detail: { edition: 'DESKTOP', version: '0.2.1-preview', sessionId: '__SESSION_ID__' } }));
+  window.dispatchEvent(new CustomEvent('swir:native-host-ready', { detail: { edition: 'DESKTOP', version: '0.3-preview', sessionId: '__SESSION_ID__' } }));
 })();
 """;
 
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web) { PropertyNameCaseInsensitive = true };
 }
 
-internal sealed record BridgeRequest(string Type, string Id, string Surface, string Method, JsonElement Args);
+internal sealed record BridgeRequest(string Type, string Id, string Surface, string Method, JsonElement Args, string? ContextToken);
 internal sealed record BridgeResponse(string Type, string Id, bool Ok, object? Result, BridgeError? Error);
 internal sealed record BridgeError(string Code, string Message);
 internal sealed class BridgeException(string code, string message) : Exception(message) { public string Code { get; } = code; }
