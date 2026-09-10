@@ -15,6 +15,7 @@
     <Compile Remove="PermissionBrokerSelfTests.cs" />
     <Compile Remove="UpdateBrokerSelfTests.cs" />
     <Compile Remove="UpdateTransactionSelfTests.cs" />
+    <Compile Remove="UpdaterWorkerMain.cs" />
   </ItemGroup>
 
   <ItemGroup>
