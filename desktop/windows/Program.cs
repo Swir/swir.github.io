@@ -88,8 +88,6 @@ internal sealed class MainWindow : Form
             }
             else if (_isolation.TryResolveEntrySource(e.Source, out var packageId) && packageId is not null)
             {
-                // Package pages never choose or receive execution tokens. Source origin + trusted entry
-                // identifies the package; the token remains host-side and must have been synchronized by the shell.
                 effectiveToken = _permissions.RequirePackageExecutionToken(packageId);
             }
             else
@@ -307,6 +305,8 @@ internal sealed class MainWindow : Form
         return Uri.TryCreate(source, UriKind.Absolute, out var uri)
             && string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase)
             && string.Equals(uri.Host, "swir.local", StringComparison.OrdinalIgnoreCase)
+            && uri.IsDefaultPort
+            && string.IsNullOrEmpty(uri.UserInfo)
             && string.Equals(uri.AbsolutePath, "/index.html", StringComparison.OrdinalIgnoreCase);
     }
 
@@ -339,14 +339,14 @@ internal sealed class MainWindow : Form
   });
   const surface = (name, methods) => Object.freeze(Object.fromEntries(methods.map(method => [method, (...args) => call(name, method, ...args)])));
   window.SWIR_NATIVE_HOST = Object.freeze({
-    edition: 'DESKTOP', version: '0.4.1-preview', contract: 'swir.runtime/1.0', sessionId: '__SESSION_ID__',
-    features: Object.freeze({ packageContextBroker: true, appIsolationRouting: false, appIsolationState: 'APP_API_BRIDGE_PENDING' }),
+    edition: 'DESKTOP', version: '0.5.0-preview', contract: 'swir.runtime/1.0', sessionId: '__SESSION_ID__',
+    features: Object.freeze({ packageContextBroker: true, appIsolationRouting: true, appIsolationState: 'APP_BRIDGE_VERIFIED' }),
     filesystem: surface('filesystem', ['list','get','save','remove','pickFile','pickDirectory','capabilityInfo','readCapabilityText','revokeCapability','revokeOwnerCapabilities','pruneCapabilities','capabilityStatus']),
     clipboard: surface('clipboard', ['readText','writeText','clear']),
     processes: surface('processes', ['list','open','kill','spawn']),
     security: surface('security', ['contextInfo','can','policyCatalog','appUrl','isolationInfo','syncPackageContexts','packageContexts'])
   });
-  window.dispatchEvent(new CustomEvent('swir:native-host-ready', { detail: { edition: 'DESKTOP', version: '0.4.1-preview', sessionId: '__SESSION_ID__' } }));
+  window.dispatchEvent(new CustomEvent('swir:native-host-ready', { detail: { edition: 'DESKTOP', version: '0.5.0-preview', sessionId: '__SESSION_ID__' } }));
 })();
 """;
 
