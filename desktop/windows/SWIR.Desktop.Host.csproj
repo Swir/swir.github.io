@@ -14,6 +14,7 @@
     <Compile Remove="AppDataSelfTests.BridgeException.cs" />
     <Compile Remove="PermissionBrokerSelfTests.cs" />
     <Compile Remove="UpdateBrokerSelfTests.cs" />
+    <Compile Remove="UpdateTransactionSelfTests.cs" />
   </ItemGroup>
 
   <ItemGroup>
