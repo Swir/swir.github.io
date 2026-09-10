@@ -32,6 +32,7 @@
     try{await window.SwirPlatform?.storage?.set?.(`open-file.${app.id}`,payload)}catch{}
     window.SwirOS?.open?.(app.id);
     setTimeout(()=>{
+      if(window.SwirAppBridgeHost?.deliverOpenFile?.(app.id,payload))return;
       const frame=document.querySelector(`.os-window[data-window="${CSS.escape(app.id)}"] iframe`);
       try{frame?.contentWindow?.postMessage({type:'SWIR_OPEN_FILE',appId:app.id,file:payload},location.origin)}catch{}
     },160);
