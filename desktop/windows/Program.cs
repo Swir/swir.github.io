@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Text.Json;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
@@ -17,6 +16,7 @@ internal static class Program
 
 internal sealed class MainWindow : Form
 {
+    private const string ShellAppId = "swir.system.shell";
     private readonly WebView2 _web = new() { Dock = DockStyle.Fill };
     private readonly CapabilityBroker _capabilities = new();
     private readonly string _repoRoot;
@@ -29,11 +29,9 @@ internal sealed class MainWindow : Form
         Height = 900;
         MinimumSize = new Size(1024, 700);
         StartPosition = FormStartPosition.CenterScreen;
-
         _repoRoot = ResolveRepoRoot();
         _dataRoot = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SWIR", "DesktopHost", "Data");
         Directory.CreateDirectory(_dataRoot);
-
         Controls.Add(_web);
         Shown += async (_, _) => await StartAsync();
     }
@@ -44,20 +42,14 @@ internal sealed class MainWindow : Form
         {
             var env = await CoreWebView2Environment.CreateAsync(userDataFolder: Path.Combine(_dataRoot, "WebView2"));
             await _web.EnsureCoreWebView2Async(env);
-
             var core = _web.CoreWebView2;
             core.Settings.AreDevToolsEnabled = true;
             core.Settings.AreDefaultContextMenusEnabled = true;
             core.Settings.IsStatusBarEnabled = false;
             core.Settings.AreBrowserAcceleratorKeysEnabled = true;
-
-            core.SetVirtualHostNameToFolderMapping(
-                "swir.local",
-                _repoRoot,
-                CoreWebView2HostResourceAccessKind.DenyCors);
-
+            core.SetVirtualHostNameToFolderMapping("swir.local", _repoRoot, CoreWebView2HostResourceAccessKind.DenyCors);
             core.WebMessageReceived += OnWebMessageReceived;
-            await core.AddScriptToExecuteOnDocumentCreatedAsync(NativeBridgeScript);
+            await core.AddScriptToExecuteOnDocumentCreatedAsync(NativeBridgeScript.Replace("__SESSION_ID__", _capabilities.SessionId));
             core.Navigate("https://swir.local/index.html");
         }
         catch (Exception ex)
@@ -75,10 +67,7 @@ internal sealed class MainWindow : Form
             request = JsonSerializer.Deserialize<BridgeRequest>(e.WebMessageAsJson, JsonOptions);
             if (request is null || request.Type != "swir-native-call" || string.IsNullOrWhiteSpace(request.Id)) return;
         }
-        catch
-        {
-            return;
-        }
+        catch { return; }
 
         BridgeResponse response;
         try
@@ -90,21 +79,16 @@ internal sealed class MainWindow : Form
         {
             response = new BridgeResponse("swir-native-result", request.Id, false, null, new BridgeError(MapErrorCode(ex), ex.Message));
         }
-
-        var json = JsonSerializer.Serialize(response, JsonOptions);
-        _web.CoreWebView2.PostWebMessageAsJson(json);
+        _web.CoreWebView2.PostWebMessageAsJson(JsonSerializer.Serialize(response, JsonOptions));
     }
 
-    private Task<object?> DispatchAsync(BridgeRequest request)
+    private Task<object?> DispatchAsync(BridgeRequest request) => request.Surface switch
     {
-        return request.Surface switch
-        {
-            "filesystem" => DispatchFilesystemAsync(request.Method, request.Args),
-            "clipboard" => DispatchClipboardAsync(request.Method, request.Args),
-            "processes" => DispatchProcessesAsync(request.Method, request.Args),
-            _ => throw new BridgeException("RUNTIME_UNSUPPORTED", $"Unsupported native surface: {request.Surface}")
-        };
-    }
+        "filesystem" => DispatchFilesystemAsync(request.Method, request.Args),
+        "clipboard" => DispatchClipboardAsync(request.Method, request.Args),
+        "processes" => DispatchProcessesAsync(request.Method, request.Args),
+        _ => throw new BridgeException("RUNTIME_UNSUPPORTED", $"Unsupported native surface: {request.Surface}")
+    };
 
     private Task<object?> DispatchFilesystemAsync(string method, JsonElement args)
     {
@@ -114,12 +98,14 @@ internal sealed class MainWindow : Form
             "get" => GetFile(ArgString(args, 0)),
             "save" => SaveFile(ArgObject(args, 0)),
             "remove" => RemoveFile(ArgString(args, 0)),
-            "pickFile" => PickFile(),
-            "pickDirectory" => PickDirectory(),
-            "capabilityInfo" => _capabilities.Describe(ArgString(args, 0)),
-            "readCapabilityText" => _capabilities.ReadText(ArgString(args, 0)),
-            "revokeCapability" => _capabilities.Revoke(ArgString(args, 0)),
+            "pickFile" => PickFile(Owner(args, 0)),
+            "pickDirectory" => PickDirectory(Owner(args, 0)),
+            "capabilityInfo" => _capabilities.Describe(ArgString(args, 0), Owner(args, 1)),
+            "readCapabilityText" => _capabilities.ReadText(ArgString(args, 0), Owner(args, 1)),
+            "revokeCapability" => _capabilities.Revoke(ArgString(args, 0), Owner(args, 1)),
+            "revokeOwnerCapabilities" => _capabilities.RevokeOwner(Owner(args, 0)),
             "pruneCapabilities" => _capabilities.PruneExpired(),
+            "capabilityStatus" => _capabilities.Status(),
             _ => throw new BridgeException("RUNTIME_UNSUPPORTED", $"Unsupported filesystem method: {method}")
         };
         return Task.FromResult(result);
@@ -150,14 +136,9 @@ internal sealed class MainWindow : Form
         return Task.FromResult(result);
     }
 
-    private object[] ListFiles()
-    {
-        return Directory.EnumerateFiles(_dataRoot, "*", SearchOption.TopDirectoryOnly)
-            .Where(path => !path.EndsWith(".tmp", StringComparison.OrdinalIgnoreCase))
-            .Select(path => new FileInfo(path))
-            .Select(info => new object[] { info.Name, info.Length, info.LastWriteTimeUtc })
-            .ToArray();
-    }
+    private object[] ListFiles() => Directory.EnumerateFiles(_dataRoot, "*", SearchOption.TopDirectoryOnly)
+        .Where(path => !path.EndsWith(".tmp", StringComparison.OrdinalIgnoreCase))
+        .Select(path => new FileInfo(path)).Select(info => new object[] { info.Name, info.Length, info.LastWriteTimeUtc }).ToArray();
 
     private object? GetFile(string id)
     {
@@ -187,30 +168,20 @@ internal sealed class MainWindow : Form
         return true;
     }
 
-    private object? PickFile()
+    private object? PickFile(string ownerAppId)
     {
         using var dialog = new OpenFileDialog { CheckFileExists = true, Multiselect = false, Title = "Open file in SWIR OS" };
-        if (dialog.ShowDialog(this) != DialogResult.OK) return null;
-        return _capabilities.RegisterFile(dialog.FileName);
+        return dialog.ShowDialog(this) == DialogResult.OK ? _capabilities.RegisterFile(dialog.FileName, ownerAppId) : null;
     }
 
-    private object? PickDirectory()
+    private object? PickDirectory(string ownerAppId)
     {
         using var dialog = new FolderBrowserDialog { Description = "Choose a folder for SWIR OS" };
-        return dialog.ShowDialog(this) == DialogResult.OK ? _capabilities.RegisterDirectory(dialog.SelectedPath) : null;
+        return dialog.ShowDialog(this) == DialogResult.OK ? _capabilities.RegisterDirectory(dialog.SelectedPath, ownerAppId) : null;
     }
 
-    private static bool WriteClipboard(string text)
-    {
-        Clipboard.SetText(text ?? string.Empty);
-        return true;
-    }
-
-    private static bool ClearClipboard()
-    {
-        Clipboard.Clear();
-        return true;
-    }
+    private static bool WriteClipboard(string text) { Clipboard.SetText(text ?? string.Empty); return true; }
+    private static bool ClearClipboard() { Clipboard.Clear(); return true; }
 
     private string SafeDataPath(string id)
     {
@@ -218,6 +189,15 @@ internal sealed class MainWindow : Form
         if (string.IsNullOrWhiteSpace(safeName) || !string.Equals(safeName, id, StringComparison.Ordinal))
             throw new BridgeException("INVALID_PATH", "Only sandboxed file names are accepted by the preview host.");
         return Path.Combine(_dataRoot, safeName);
+    }
+
+    private static string Owner(JsonElement args, int index)
+    {
+        var owner = ArgString(args, index);
+        if (string.IsNullOrWhiteSpace(owner)) return ShellAppId;
+        if (owner.Length > 128 || owner.Any(ch => !(char.IsLetterOrDigit(ch) || ch is '.' or '-' or '_')))
+            throw new BridgeException("INVALID_APP_ID", "Application identity contains unsupported characters.");
+        return owner;
     }
 
     private static string ArgString(JsonElement args, int index)
@@ -237,9 +217,7 @@ internal sealed class MainWindow : Form
     {
         var current = new DirectoryInfo(AppContext.BaseDirectory);
         for (var i = 0; i < 8 && current is not null; i++, current = current.Parent)
-        {
             if (File.Exists(Path.Combine(current.FullName, "index.html"))) return current.FullName;
-        }
         throw new DirectoryNotFoundException("Could not find SWIR OS repository root containing index.html.");
     }
 
@@ -248,30 +226,25 @@ internal sealed class MainWindow : Form
     private const string NativeBridgeScript = """
 (() => {
   if (window.SWIR_NATIVE_HOST) return;
-  const pending = new Map();
-  let seq = 0;
+  const pending = new Map(); let seq = 0;
   const call = (surface, method, ...args) => new Promise((resolve, reject) => {
-    const id = `swir-${Date.now()}-${++seq}`;
-    pending.set(id, { resolve, reject });
+    const id = `swir-${Date.now()}-${++seq}`; pending.set(id, { resolve, reject });
     chrome.webview.postMessage({ type: 'swir-native-call', id, surface, method, args });
   });
   chrome.webview.addEventListener('message', event => {
     const msg = event.data;
     if (!msg || msg.type !== 'swir-native-result' || !pending.has(msg.id)) return;
     const p = pending.get(msg.id); pending.delete(msg.id);
-    if (msg.ok) p.resolve(msg.result);
-    else { const error = new Error(msg.error?.message || 'Native host error'); error.code = msg.error?.code || 'NATIVE_HOST_ERROR'; p.reject(error); }
+    if (msg.ok) p.resolve(msg.result); else { const error = new Error(msg.error?.message || 'Native host error'); error.code = msg.error?.code || 'NATIVE_HOST_ERROR'; p.reject(error); }
   });
   const surface = (name, methods) => Object.freeze(Object.fromEntries(methods.map(method => [method, (...args) => call(name, method, ...args)])));
   window.SWIR_NATIVE_HOST = Object.freeze({
-    edition: 'DESKTOP',
-    version: '0.2.0-preview',
-    contract: 'swir.runtime/1.0',
-    filesystem: surface('filesystem', ['list','get','save','remove','pickFile','pickDirectory','capabilityInfo','readCapabilityText','revokeCapability','pruneCapabilities']),
+    edition: 'DESKTOP', version: '0.2.1-preview', contract: 'swir.runtime/1.0', sessionId: '__SESSION_ID__',
+    filesystem: surface('filesystem', ['list','get','save','remove','pickFile','pickDirectory','capabilityInfo','readCapabilityText','revokeCapability','revokeOwnerCapabilities','pruneCapabilities','capabilityStatus']),
     clipboard: surface('clipboard', ['readText','writeText','clear']),
     processes: surface('processes', ['list','open','kill','spawn'])
   });
-  window.dispatchEvent(new CustomEvent('swir:native-host-ready', { detail: { edition: 'DESKTOP', version: '0.2.0-preview' } }));
+  window.dispatchEvent(new CustomEvent('swir:native-host-ready', { detail: { edition: 'DESKTOP', version: '0.2.1-preview', sessionId: '__SESSION_ID__' } }));
 })();
 """;
 
@@ -281,8 +254,4 @@ internal sealed class MainWindow : Form
 internal sealed record BridgeRequest(string Type, string Id, string Surface, string Method, JsonElement Args);
 internal sealed record BridgeResponse(string Type, string Id, bool Ok, object? Result, BridgeError? Error);
 internal sealed record BridgeError(string Code, string Message);
-
-internal sealed class BridgeException(string code, string message) : Exception(message)
-{
-    public string Code { get; } = code;
-}
+internal sealed class BridgeException(string code, string message) : Exception(message) { public string Code { get; } = code; }
