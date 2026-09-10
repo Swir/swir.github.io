@@ -1,4 +1,4 @@
-# SWIR Runtime Adapter Contract 1.1
+# SWIR Runtime Adapter Contract 1.1.1
 
 ## Goal
 
@@ -32,12 +32,13 @@ The Web Edition delegates compatible operations to `SwirPlatform` and browser AP
 
 Desktop/System hosts must not expose stable raw OS paths to untrusted application code when a narrower capability can represent the same access.
 
-The Windows Desktop Host Preview 0.2 implements this lifecycle:
+Windows Desktop Host Preview 0.2.1 uses:
 
 ```text
 USER PICKER
-   -> opaque capability token
-   -> native host validates token + kind + expiry
+   -> opaque random capability token
+   -> bind to host session + owner app ID
+   -> validate token + session + owner + kind + expiry + resource
    -> operation executes inside granted scope
    -> revoke / expiry / host restart
 ```
@@ -45,30 +46,36 @@ USER PICKER
 Current native capability methods:
 
 ```text
-filesystem.capabilityInfo(token)
-filesystem.readCapabilityText(token)
-filesystem.revokeCapability(token)
+filesystem.capabilityInfo(token, ownerAppId)
+filesystem.readCapabilityText(token, ownerAppId)
+filesystem.revokeCapability(token, ownerAppId)
+filesystem.revokeOwnerCapabilities(ownerAppId)
 filesystem.pruneCapabilities()
+filesystem.capabilityStatus()
 ```
 
-Picker results contain a random opaque token, resource kind, display name, issue/expiry timestamps and non-sensitive metadata. They do not include `nativePath`.
+Tokens use 192 bits of cryptographic randomness, expire after 30 minutes, remain memory-only and are invalidated when the host exits. External text reads are capped at 2 MiB in Preview 0.2.1.
 
-Tokens in Preview 0.2:
+Portable applications should prefer the app-scoped facade:
 
-- use 192 bits of cryptographic randomness;
-- expire after 30 minutes;
-- are revocable;
-- are stored in memory only;
-- are all revoked implicitly when the host exits;
-- validate resource kind before protected operations.
+```js
+const fs = SwirRuntime.filesystem.forApp('swir.example.notes');
+const picked = await fs.pickFile();
+const text = picked ? await fs.readCapabilityText(picked.token) : null;
+await fs.revokeAllCapabilities();
+```
 
-Future revisions should bind each token to the requesting application/package identity and its permission grant.
+Legacy/root Runtime calls remain compatible and default to `swir.system.shell`.
+
+## Security boundary
+
+App-ID ownership in Preview 0.2.1 is a containment primitive, not authenticated authorization. The current same-origin WebView shell can still claim another app ID. Therefore the Desktop host must continue to deny process spawning/termination, native network control, unrestricted external writes and updater apply until an authenticated Permission Broker can bind native calls to a trusted package execution context and approved SWIR permission grant.
 
 ## Native host injection
 
-Desktop/System hosts inject `window.SWIR_NATIVE_HOST` before `swir-runtime.js` loads. Each provided surface replaces the Web fallback for that surface only.
+Desktop/System hosts inject `window.SWIR_NATIVE_HOST` before `swir-runtime.js` loads. Each provided surface replaces the Web fallback for that surface only. The host also publishes an ephemeral `sessionId` for diagnostics; applications must not treat it as a secret or authorization token.
 
-## Windows Desktop Host Preview 0.2
+## Windows Desktop Host Preview 0.2.1
 
 The concrete Desktop Edition host lives in `desktop/windows/` and targets .NET 8 + Microsoft WebView2.
 
@@ -84,7 +91,9 @@ filesystem.pickDirectory
 filesystem.capabilityInfo
 filesystem.readCapabilityText
 filesystem.revokeCapability
+filesystem.revokeOwnerCapabilities
 filesystem.pruneCapabilities
+filesystem.capabilityStatus
 clipboard.readText
 clipboard.writeText
 clipboard.clear
@@ -92,31 +101,33 @@ processes.list
 processes.open
 ```
 
-The normal SWIR filesystem remains sandboxed under the current user's local application-data area. External resources require an explicit Windows picker. Raw native paths no longer cross the JavaScript/native boundary.
-
-`processes.spawn` and `processes.kill` remain denied with `PERMISSION_DENIED` until the Desktop permission broker exists. Network control, tray integration and native updates are not exposed by the host yet.
+The normal SWIR filesystem remains sandboxed under the current user's local application-data area. External resources require an explicit Windows picker. Raw native paths do not cross the JavaScript/native boundary.
 
 ## Security rules
 
-- Native hosts must validate every privileged request; JavaScript input is untrusted.
+- Treat all JavaScript/native bridge input as untrusted.
+- Never treat an app-supplied ID alone as proof of identity.
 - Runtime adapters do not bypass SWIR package permissions or install-pipeline checks.
-- Real external filesystem access should use revocable capability tokens, not arbitrary paths.
-- `processes.spawn`, native network control and updater apply remain unavailable until explicit brokers exist.
+- External filesystem access should use revocable capabilities rather than arbitrary paths.
+- Validate capability session, owner, kind, expiry and resource state before use.
+- Keep dangerous native operations fail-closed until their broker exists.
 - Package verification and permission approval remain separate gates before native installation or execution.
-- Desktop bridges should expose allowlisted operations only.
+- Desktop bridges expose allowlisted operations only.
 
 ## Diagnostics
 
-`SwirRuntime.info()` reports the active edition, provider and available methods per surface.
+`SwirRuntime.info()` reports active edition, provider, native session ID when present, and available methods per surface.
 
-`SwirRuntime.capabilities()` reports whether each surface is supplied by a native host or by the Web adapter.
+`SwirRuntime.capabilities()` reports whether each surface is supplied by a native host or Web adapter.
 
-The SWIR terminal command `runtime` prints the same capability map.
+`SwirRuntime.filesystem.capabilityStatus()` exposes non-secret broker diagnostics such as active grant count, lifetime and text-read limit.
 
 ## Migration path
 
-1. Web Edition validates application contracts using browser fallbacks.
+1. Web Edition validates portable application contracts using browser fallbacks.
 2. Desktop Edition injects a lightweight native host and progressively implements privileged services behind brokers.
-3. Windows Preview 0.2 establishes capability-token external filesystem access.
-4. The next Desktop milestone should add a permission broker and bind capabilities to package/app identity.
-5. System Edition can replace the Desktop implementation with Linux-native services while preserving `swir.runtime/1.0` where possible.
+3. Preview 0.2 introduced opaque filesystem capability tokens.
+4. Preview 0.2.1 binds grants to the current host session and an owner app identity while preserving fail-closed privileged operations.
+5. Next milestone: authenticated app execution context + Desktop Permission Broker mapped to installed package grants.
+6. Then add scoped directory capabilities, tray, updater staging and tightly allowlisted process services.
+7. System Edition can replace the Desktop implementation with Linux-native services while preserving `swir.runtime/1.0` where possible.
