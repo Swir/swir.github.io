@@ -43,9 +43,7 @@
 
   function desktopIsolationReady() {
     const host = window.SWIR_NATIVE_HOST;
-    return !!host
-      && String(host.edition || '').toUpperCase() === 'DESKTOP'
-      && host.features?.appIsolationRouting === true;
+    return !!host && String(host.edition || '').toUpperCase() === 'DESKTOP' && host.features?.appIsolationRouting === true;
   }
 
   function desktopIsolatedUrl(app) {
@@ -74,11 +72,8 @@
   let syncTimer = 0;
   async function syncDesktopPackageContexts() {
     if (!window.SWIR_NATIVE_HOST?.features?.packageContextBroker || !window.SwirRuntime?.security?.syncInstalledContexts) return;
-    try {
-      await window.SwirRuntime.security.syncInstalledContexts();
-    } catch (error) {
-      console.warn('[SWIR Desktop] package context synchronization failed', error);
-    }
+    try { await window.SwirRuntime.security.syncInstalledContexts(); }
+    catch (error) { console.warn('[SWIR Desktop] package context synchronization failed', error); }
   }
   function scheduleDesktopPackageContextSync() {
     clearTimeout(syncTimer);
@@ -86,6 +81,7 @@
   }
 
   queueMicrotask(scheduleDesktopPackageContextSync);
+  window.addEventListener('swir:runtime:ready', scheduleDesktopPackageContextSync);
   window.addEventListener('swir:package-change', scheduleDesktopPackageContextSync);
   window.addEventListener('swir:permission-change', scheduleDesktopPackageContextSync);
 })();
