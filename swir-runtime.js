@@ -1,11 +1,11 @@
 /* =============================================================
-   SWIR OS 1.7.13 — RUNTIME ADAPTER CONTRACT 1.1.1
+   SWIR OS 1.7.13 — RUNTIME ADAPTER CONTRACT 1.2.0
    Portable Web -> Desktop -> System host boundary.
    ============================================================= */
 (() => {
   'use strict';
 
-  const META = Object.freeze({ name: 'SWIR Runtime', version: '1.1.1', contract: 'swir.runtime/1.0' });
+  const META = Object.freeze({ name: 'SWIR Runtime', version: '1.2.0', contract: 'swir.runtime/1.0' });
   const SHELL_APP_ID = 'swir.system.shell';
   const host = () => window.SWIR_NATIVE_HOST || null;
   const platform = () => window.SwirPlatform || null;
@@ -103,9 +103,14 @@
     async check() { return call('updater', 'check', [], async () => ({ runtime: 'web', serviceWorker: 'serviceWorker' in navigator, controller: !!navigator.serviceWorker?.controller, updateAvailable: false })); },
     apply: (...args) => call('updater', 'apply', args), restart: (...args) => call('updater', 'restart', args, async () => { location.reload(); return true; })
   });
+  const security = Object.freeze({
+    context: () => call('security', 'contextInfo', [], async () => ({ appId: SHELL_APP_ID, sessionId: null, trusted: false, permissions: [], provider: 'web', tokenExposed: false })),
+    can: permission => call('security', 'can', [String(permission || '')], async () => false),
+    async isAuthenticated() { const ctx = await security.context(); return !!ctx?.trusted && !!ctx?.sessionId; }
+  });
 
   function capabilities() {
-    const native = !!host(); const surfaces = ['filesystem','processes','clipboard','tray','network','updater']; const result = {};
+    const native = !!host(); const surfaces = ['filesystem','processes','clipboard','tray','network','updater','security']; const result = {};
     for (const surface of surfaces) {
       const impl = host()?.[surface];
       result[surface] = { provider: impl ? 'native' : 'web', native: !!impl, methods: impl ? Object.keys(impl).filter(k => typeof impl[k] === 'function') : Object.keys(api[surface] || {}).filter(k => typeof api[surface][k] === 'function') };
@@ -117,6 +122,6 @@
     return { ...META, provider: caps.native ? 'native-host' : 'web-adapter', edition: caps.edition, nativeHost: caps.native, nativeSessionId: host()?.sessionId || null, capabilities: caps.surfaces };
   }
 
-  const api = Object.freeze({ meta: META, filesystem, processes, clipboard, tray, network, updater, capabilities, info, events: Object.freeze({ on, emit }), hasNativeHost: () => !!host() });
+  const api = Object.freeze({ meta: META, filesystem, processes, clipboard, tray, network, updater, security, capabilities, info, events: Object.freeze({ on, emit }), hasNativeHost: () => !!host() });
   window.SwirRuntime = api; window.SWIR_RUNTIME = api; emit('ready', info());
 })();
