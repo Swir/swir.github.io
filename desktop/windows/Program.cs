@@ -19,6 +19,7 @@ internal sealed class MainWindow : Form
     private readonly WebView2 _web = new() { Dock = DockStyle.Fill };
     private readonly CapabilityBroker _capabilities = new();
     private readonly PermissionBroker _permissions;
+    private readonly ExecutionPolicyCatalog _policyCatalog;
     private readonly string _repoRoot;
     private readonly string _dataRoot;
 
@@ -29,8 +30,9 @@ internal sealed class MainWindow : Form
         Height = 900;
         MinimumSize = new Size(1024, 700);
         StartPosition = FormStartPosition.CenterScreen;
-        _permissions = new PermissionBroker(_capabilities.SessionId);
         _repoRoot = ResolveRepoRoot();
+        _policyCatalog = new ExecutionPolicyCatalog(Path.Combine(_repoRoot, "desktop", "windows", "app-policy.json"));
+        _permissions = new PermissionBroker(_capabilities.SessionId, _policyCatalog);
         _dataRoot = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SWIR", "DesktopHost", "Data");
         Directory.CreateDirectory(_dataRoot);
         Controls.Add(_web);
@@ -153,6 +155,7 @@ internal sealed class MainWindow : Form
         {
             "contextInfo" => _permissions.Describe(contextToken),
             "can" => _permissions.Can(contextToken, ArgString(args, 0)),
+            "policyCatalog" => _policyCatalog.Describe(),
             _ => throw new BridgeException("RUNTIME_UNSUPPORTED", $"Unsupported security method: {method}")
         };
         return Task.FromResult(result);
@@ -283,13 +286,13 @@ internal sealed class MainWindow : Form
   });
   const surface = (name, methods) => Object.freeze(Object.fromEntries(methods.map(method => [method, (...args) => call(name, method, ...args)])));
   window.SWIR_NATIVE_HOST = Object.freeze({
-    edition: 'DESKTOP', version: '0.3-preview', contract: 'swir.runtime/1.0', sessionId: '__SESSION_ID__',
+    edition: 'DESKTOP', version: '0.3.1-preview', contract: 'swir.runtime/1.0', sessionId: '__SESSION_ID__',
     filesystem: surface('filesystem', ['list','get','save','remove','pickFile','pickDirectory','capabilityInfo','readCapabilityText','revokeCapability','revokeOwnerCapabilities','pruneCapabilities','capabilityStatus']),
     clipboard: surface('clipboard', ['readText','writeText','clear']),
     processes: surface('processes', ['list','open','kill','spawn']),
-    security: surface('security', ['contextInfo','can'])
+    security: surface('security', ['contextInfo','can','policyCatalog'])
   });
-  window.dispatchEvent(new CustomEvent('swir:native-host-ready', { detail: { edition: 'DESKTOP', version: '0.3-preview', sessionId: '__SESSION_ID__' } }));
+  window.dispatchEvent(new CustomEvent('swir:native-host-ready', { detail: { edition: 'DESKTOP', version: '0.3.1-preview', sessionId: '__SESSION_ID__' } }));
 })();
 """;
 
