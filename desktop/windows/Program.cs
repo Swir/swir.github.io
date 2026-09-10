@@ -18,6 +18,7 @@ internal static class Program
 internal sealed class MainWindow : Form
 {
     private readonly WebView2 _web = new() { Dock = DockStyle.Fill };
+    private readonly CapabilityBroker _capabilities = new();
     private readonly string _repoRoot;
     private readonly string _dataRoot;
 
@@ -115,6 +116,10 @@ internal sealed class MainWindow : Form
             "remove" => RemoveFile(ArgString(args, 0)),
             "pickFile" => PickFile(),
             "pickDirectory" => PickDirectory(),
+            "capabilityInfo" => _capabilities.Describe(ArgString(args, 0)),
+            "readCapabilityText" => _capabilities.ReadText(ArgString(args, 0)),
+            "revokeCapability" => _capabilities.Revoke(ArgString(args, 0)),
+            "pruneCapabilities" => _capabilities.PruneExpired(),
             _ => throw new BridgeException("RUNTIME_UNSUPPORTED", $"Unsupported filesystem method: {method}")
         };
         return Task.FromResult(result);
@@ -186,14 +191,13 @@ internal sealed class MainWindow : Form
     {
         using var dialog = new OpenFileDialog { CheckFileExists = true, Multiselect = false, Title = "Open file in SWIR OS" };
         if (dialog.ShowDialog(this) != DialogResult.OK) return null;
-        var info = new FileInfo(dialog.FileName);
-        return new { name = info.Name, nativePath = info.FullName, size = info.Length, content = File.ReadAllText(info.FullName) };
+        return _capabilities.RegisterFile(dialog.FileName);
     }
 
     private object? PickDirectory()
     {
         using var dialog = new FolderBrowserDialog { Description = "Choose a folder for SWIR OS" };
-        return dialog.ShowDialog(this) == DialogResult.OK ? new { nativePath = dialog.SelectedPath, name = new DirectoryInfo(dialog.SelectedPath).Name } : null;
+        return dialog.ShowDialog(this) == DialogResult.OK ? _capabilities.RegisterDirectory(dialog.SelectedPath) : null;
     }
 
     private static bool WriteClipboard(string text)
@@ -261,13 +265,13 @@ internal sealed class MainWindow : Form
   const surface = name => new Proxy({}, { get: (_, method) => (...args) => call(name, String(method), ...args) });
   window.SWIR_NATIVE_HOST = Object.freeze({
     edition: 'DESKTOP',
-    version: '0.1.0-preview',
+    version: '0.2.0-preview',
     contract: 'swir.runtime/1.0',
     filesystem: surface('filesystem'),
     clipboard: surface('clipboard'),
     processes: surface('processes')
   });
-  window.dispatchEvent(new CustomEvent('swir:native-host-ready', { detail: { edition: 'DESKTOP', version: '0.1.0-preview' } }));
+  window.dispatchEvent(new CustomEvent('swir:native-host-ready', { detail: { edition: 'DESKTOP', version: '0.2.0-preview' } }));
 })();
 """;
 
