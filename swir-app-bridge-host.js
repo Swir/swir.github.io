@@ -3,7 +3,7 @@
   'use strict';
   if (window.top !== window || window.SwirAppBridgeHost) return;
 
-  const VERSION = '0.5.1-preview';
+  const VERSION = '0.5.2-preview';
   const REQUEST = 'SWIR_APP_BRIDGE_REQUEST';
   const RESULT = 'SWIR_APP_BRIDGE_RESULT';
   const OPEN_FILE = 'SWIR_APP_BRIDGE_OPEN_FILE';
@@ -55,6 +55,58 @@
   async function requireAnyPermission(pkg, permissions) {
     for (const permission of permissions) if (await hasPermission(pkg, permission)) return permission;
     throw bridgeError('PERMISSION_DENIED', `${pkg.packageId} lacks required permission (${permissions.join(' or ')}).`);
+  }
+
+  function webStorage(pkg) {
+    return window.SwirAppSDK?.storage?.namespace?.(pkg.id) || null;
+  }
+
+  function nativeAppData() {
+    if (window.SWIR_NATIVE_HOST?.features?.nativeAppData !== true) return null;
+    const api = window.SwirRuntime?.appData;
+    return api && typeof api.get === 'function' && typeof api.set === 'function' && typeof api.remove === 'function' ? api : null;
+  }
+
+  function missingMarker() {
+    const nonce = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
+    return { __swirNativeAppDataMissing: nonce };
+  }
+
+  function markerMatches(value, marker) {
+    return !!value && typeof value === 'object' && value.__swirNativeAppDataMissing === marker.__swirNativeAppDataMissing;
+  }
+
+  async function storageGet(pkg, key, fallback = null) {
+    const normalizedKey = String(key || '');
+    const native = nativeAppData();
+    const web = webStorage(pkg);
+    if (!native) return web?.get?.(normalizedKey, fallback) ?? fallback;
+
+    const nativeMissing = missingMarker();
+    const nativeValue = await native.get(pkg.packageId, normalizedKey, nativeMissing);
+    if (!markerMatches(nativeValue, nativeMissing)) return nativeValue;
+
+    if (!web?.get) return fallback;
+    const webMissing = missingMarker();
+    const legacyValue = await web.get(normalizedKey, webMissing);
+    if (markerMatches(legacyValue, webMissing)) return fallback;
+
+    await native.set(pkg.packageId, normalizedKey, legacyValue);
+    return legacyValue;
+  }
+
+  async function storageSet(pkg, key, value) {
+    const normalizedKey = String(key || '');
+    const native = nativeAppData();
+    if (native) return native.set(pkg.packageId, normalizedKey, value);
+    return webStorage(pkg)?.set?.(normalizedKey, value);
+  }
+
+  async function storageRemove(pkg, key) {
+    const normalizedKey = String(key || '');
+    const native = nativeAppData();
+    if (native) return native.remove(pkg.packageId, normalizedKey);
+    return webStorage(pkg)?.remove?.(normalizedKey);
   }
 
   function isPrivateHostname(hostname) {
@@ -131,16 +183,16 @@
   async function dispatch(pkg, method, args) {
     switch (method) {
       case 'bridge.info':
-        return { version: VERSION, packageId: pkg.packageId, appId: pkg.id, edition: window.SWIR_NATIVE_HOST?.edition || 'WEB' };
+        return { version: VERSION, packageId: pkg.packageId, appId: pkg.id, edition: window.SWIR_NATIVE_HOST?.edition || 'WEB', nativeAppData: !!nativeAppData() };
       case 'storage.get':
         await requireAnyPermission(pkg, ['storage', 'files.read']);
-        return window.SwirAppSDK?.storage?.namespace?.(pkg.id)?.get?.(String(args?.[0] || ''), args?.[1] ?? null);
+        return storageGet(pkg, args?.[0], args?.[1] ?? null);
       case 'storage.set':
         await requireAnyPermission(pkg, ['storage', 'files.write']);
-        return window.SwirAppSDK?.storage?.namespace?.(pkg.id)?.set?.(String(args?.[0] || ''), args?.[1]);
+        return storageSet(pkg, args?.[0], args?.[1]);
       case 'storage.remove':
         await requireAnyPermission(pkg, ['storage', 'files.write']);
-        return window.SwirAppSDK?.storage?.namespace?.(pkg.id)?.remove?.(String(args?.[0] || ''));
+        return storageRemove(pkg, args?.[0]);
       case 'files.consumeOpen':
         await requirePermission(pkg, 'files.read');
         return window.SwirAppSDK?.files?.consumeOpen?.(pkg.id) ?? null;
