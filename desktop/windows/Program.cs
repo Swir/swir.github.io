@@ -18,6 +18,7 @@ internal sealed class MainWindow : Form
 {
     private readonly WebView2 _web = new() { Dock = DockStyle.Fill };
     private readonly CapabilityBroker _capabilities = new();
+    private readonly AppDataBroker _appData = new();
     private readonly PermissionBroker _permissions;
     private readonly ExecutionPolicyCatalog _policyCatalog;
     private readonly AppIsolationRegistry _isolation;
@@ -83,17 +84,11 @@ internal sealed class MainWindow : Form
         {
             string? effectiveToken;
             if (IsTrustedShellSource(e.Source))
-            {
                 effectiveToken = request.ContextToken;
-            }
             else if (_isolation.TryResolveEntrySource(e.Source, out var packageId) && packageId is not null)
-            {
                 effectiveToken = _permissions.RequirePackageExecutionToken(packageId);
-            }
             else
-            {
                 return;
-            }
 
             var result = await DispatchAsync(request, effectiveToken);
             response = new BridgeResponse("swir-native-result", request.Id, true, result, null);
@@ -107,6 +102,9 @@ internal sealed class MainWindow : Form
 
     private Task<object?> DispatchAsync(BridgeRequest request, string? effectiveToken)
     {
+        if (string.Equals(request.Surface, "appdata", StringComparison.Ordinal))
+            return DispatchAppDataAsync(request.Method, request.Args, effectiveToken);
+
         _permissions.Authorize(effectiveToken, request.Surface, request.Method, RequestedOwner(request));
         return request.Surface switch
         {
@@ -116,6 +114,22 @@ internal sealed class MainWindow : Form
             "security" => DispatchSecurityAsync(request.Method, request.Args, effectiveToken),
             _ => throw new BridgeException("RUNTIME_UNSUPPORTED", $"Unsupported native surface: {request.Surface}")
         };
+    }
+
+    private Task<object?> DispatchAppDataAsync(string method, JsonElement args, string? callerToken)
+    {
+        var packageId = Owner(args, 0);
+        _permissions.AuthorizePackageTarget(callerToken, packageId, "appdata", method);
+        object? result = method switch
+        {
+            "info" => _appData.Info(packageId),
+            "list" => _appData.List(packageId),
+            "get" => _appData.Get(packageId, ArgString(args, 1), ArgElement(args, 2)),
+            "set" => _appData.Set(packageId, ArgString(args, 1), ArgElement(args, 2)),
+            "remove" => _appData.Remove(packageId, ArgString(args, 1)),
+            _ => throw new BridgeException("RUNTIME_UNSUPPORTED", $"Unsupported App Data method: {method}")
+        };
+        return Task.FromResult(result);
     }
 
     private Task<object?> DispatchFilesystemAsync(string method, JsonElement args)
@@ -293,6 +307,13 @@ internal sealed class MainWindow : Form
         return args[index].ValueKind == JsonValueKind.String ? args[index].GetString() ?? string.Empty : args[index].ToString();
     }
 
+    private static JsonElement ArgElement(JsonElement args, int index)
+    {
+        if (args.ValueKind != JsonValueKind.Array || args.GetArrayLength() <= index)
+            return JsonDocument.Parse("null").RootElement.Clone();
+        return args[index].Clone();
+    }
+
     private static JsonElement ArgObject(JsonElement args, int index)
     {
         if (args.ValueKind != JsonValueKind.Array || args.GetArrayLength() <= index || args[index].ValueKind != JsonValueKind.Object)
@@ -339,14 +360,15 @@ internal sealed class MainWindow : Form
   });
   const surface = (name, methods) => Object.freeze(Object.fromEntries(methods.map(method => [method, (...args) => call(name, method, ...args)])));
   window.SWIR_NATIVE_HOST = Object.freeze({
-    edition: 'DESKTOP', version: '0.5.0-preview', contract: 'swir.runtime/1.0', sessionId: '__SESSION_ID__',
-    features: Object.freeze({ packageContextBroker: true, appIsolationRouting: true, appIsolationState: 'APP_BRIDGE_VERIFIED' }),
+    edition: 'DESKTOP', version: '0.5.1-preview', contract: 'swir.runtime/1.0', sessionId: '__SESSION_ID__',
+    features: Object.freeze({ packageContextBroker: true, appIsolationRouting: true, appIsolationState: 'APP_BRIDGE_VERIFIED', nativeAppData: true }),
     filesystem: surface('filesystem', ['list','get','save','remove','pickFile','pickDirectory','capabilityInfo','readCapabilityText','revokeCapability','revokeOwnerCapabilities','pruneCapabilities','capabilityStatus']),
+    appData: surface('appdata', ['info','list','get','set','remove']),
     clipboard: surface('clipboard', ['readText','writeText','clear']),
     processes: surface('processes', ['list','open','kill','spawn']),
     security: surface('security', ['contextInfo','can','policyCatalog','appUrl','isolationInfo','syncPackageContexts','packageContexts'])
   });
-  window.dispatchEvent(new CustomEvent('swir:native-host-ready', { detail: { edition: 'DESKTOP', version: '0.5.0-preview', sessionId: '__SESSION_ID__' } }));
+  window.dispatchEvent(new CustomEvent('swir:native-host-ready', { detail: { edition: 'DESKTOP', version: '0.5.1-preview', sessionId: '__SESSION_ID__' } }));
 })();
 """;
 
