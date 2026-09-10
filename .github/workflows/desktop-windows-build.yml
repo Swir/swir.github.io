@@ -87,6 +87,12 @@ jobs:
       - name: Run update transaction recovery self-tests
         run: dotnet run --project SWIR.Desktop.Transaction.SelfTests.csproj --configuration Release
 
+      - name: Run updater worker contract self-tests
+        run: dotnet run --project SWIR.Desktop.UpdaterWorker.SelfTests.csproj --configuration Release
+
+      - name: Build standalone updater worker
+        run: dotnet build SWIR.Desktop.UpdaterWorker.csproj --configuration Release
+
       - name: Restore
         run: dotnet restore SWIR.Desktop.Host.csproj
 
