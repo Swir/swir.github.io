@@ -12,6 +12,7 @@
     <Compile Include="UpdateHandoffBroker.cs" />
     <Compile Include="UpdateTransactionJournal.cs" />
     <Compile Include="UpdaterWorkerProtocol.cs" />
+    <Compile Include="CandidatePackagePreparer.cs" />
     <Compile Include="UpdaterWorkerSelfTests.cs" />
   </ItemGroup>
 </Project>
