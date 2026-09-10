@@ -1,0 +1,30 @@
+{
+  "schema": "swir.desktop-policy/0.1",
+  "packages": [
+    {
+      "packageId": "swir.code",
+      "entry": "./swir-code.html",
+      "permissions": ["files.read", "files.write", "clipboard", "downloads"]
+    },
+    {
+      "packageId": "swir.image-studio",
+      "entry": "./swir-image.html",
+      "permissions": ["files.read", "files.write", "downloads"]
+    },
+    {
+      "packageId": "swir.archive",
+      "entry": "./swir-archive.html",
+      "permissions": ["files.read", "files.write", "downloads"]
+    },
+    {
+      "packageId": "swir.pdf-viewer",
+      "entry": "./swir-pdf.html",
+      "permissions": ["files.read"]
+    },
+    {
+      "packageId": "swir.chat",
+      "entry": "./swir-chat.html",
+      "permissions": ["network", "storage", "identity.basic", "notifications"]
+    }
+  ]
+}
