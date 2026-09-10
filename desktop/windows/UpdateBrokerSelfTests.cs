@@ -1,3 +1,4 @@
+using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -36,6 +37,7 @@ internal static class UpdateBrokerSelfTests
         ExpectCode("UPDATE_PACKAGE_SIZE_MISMATCH", () => UpdateBroker.VerifyPackage(package[..^1], verified), "wrong package size rejected");
 
         RunStagingTests(package, verified);
+        RunDownloadTests(package, verified);
         Console.WriteLine($"SWIR Desktop Update Broker self-tests passed: {_passed}");
     }
 
@@ -80,6 +82,77 @@ internal static class UpdateBrokerSelfTests
         {
             try { if (Directory.Exists(root)) Directory.Delete(root, true); } catch { }
         }
+    }
+
+    private static void RunDownloadTests(byte[] package, UpdateBroker.VerifiedUpdate verified)
+    {
+        var root = Path.Combine(Path.GetTempPath(), "swir-download-selftest-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var staging = new UpdateStagingBroker(root);
+
+            using (var client = MakeClient(package, HttpStatusCode.OK, package.Length))
+            using (var downloader = new UpdateDownloadClient(staging, client))
+            {
+                var staged = downloader.DownloadAndStageAsync(verified).GetAwaiter().GetResult();
+                Expect(staged.Verified && File.ReadAllBytes(staged.PackagePath).SequenceEqual(package), "signed URI downloaded and staged");
+            }
+
+            using (var client = MakeClient(package, HttpStatusCode.Redirect, package.Length, "https://downloads.swir.example/other.zip"))
+            using (var downloader = new UpdateDownloadClient(staging, client))
+                ExpectCode("UPDATE_REDIRECT_BLOCKED", () => downloader.DownloadAndStageAsync(verified).GetAwaiter().GetResult(), "update redirects rejected");
+
+            using (var client = MakeClient(package, HttpStatusCode.OK, package.Length + 1))
+            using (var downloader = new UpdateDownloadClient(staging, client))
+                ExpectCode("UPDATE_PACKAGE_SIZE_MISMATCH", () => downloader.DownloadAndStageAsync(verified).GetAwaiter().GetResult(), "wrong Content-Length rejected before staging");
+
+            var tampered = package.ToArray();
+            tampered[0] ^= 1;
+            using (var client = MakeClient(tampered, HttpStatusCode.OK, tampered.Length))
+            using (var downloader = new UpdateDownloadClient(staging, client))
+                ExpectCode("UPDATE_PACKAGE_HASH_MISMATCH", () => downloader.DownloadAndStageAsync(verified).GetAwaiter().GetResult(), "downloaded tampered package rejected by staging");
+
+            using (var client = MakeClient(Array.Empty<byte>(), HttpStatusCode.ServiceUnavailable, 0))
+            using (var downloader = new UpdateDownloadClient(staging, client))
+                ExpectCode("UPDATE_DOWNLOAD_HTTP_STATUS", () => downloader.DownloadAndStageAsync(verified).GetAwaiter().GetResult(), "non-200 update response rejected");
+
+            var requestedUri = (Uri?)null;
+            var handler = new StaticHandler(request =>
+            {
+                requestedUri = request.RequestUri;
+                return Response(package, HttpStatusCode.OK, package.Length);
+            });
+            using (var client = new HttpClient(handler) { Timeout = Timeout.InfiniteTimeSpan })
+            using (var downloader = new UpdateDownloadClient(staging, client))
+                downloader.DownloadAndStageAsync(verified).GetAwaiter().GetResult();
+            Expect(requestedUri == verified.PackageUri, "downloader requests exact signed package URI");
+        }
+        finally
+        {
+            try { if (Directory.Exists(root)) Directory.Delete(root, true); } catch { }
+        }
+    }
+
+    private static HttpClient MakeClient(byte[] body, HttpStatusCode status, long? contentLength, string? location = null)
+    {
+        var handler = new StaticHandler(_ => Response(body, status, contentLength, location));
+        return new HttpClient(handler) { Timeout = Timeout.InfiniteTimeSpan };
+    }
+
+    private static HttpResponseMessage Response(byte[] body, HttpStatusCode status, long? contentLength, string? location = null)
+    {
+        var response = new HttpResponseMessage(status) { Content = new ByteArrayContent(body) };
+        if (contentLength.HasValue) response.Content.Headers.ContentLength = contentLength.Value;
+        if (location is not null) response.Headers.Location = new Uri(location);
+        return response;
+    }
+
+    private sealed class StaticHandler : HttpMessageHandler
+    {
+        private readonly Func<HttpRequestMessage, HttpResponseMessage> _factory;
+        public StaticHandler(Func<HttpRequestMessage, HttpResponseMessage> factory) => _factory = factory;
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+            => Task.FromResult(_factory(request));
     }
 
     private static string Sign(RSA rsa, string version, string channel, string url, string sha256, long size)
