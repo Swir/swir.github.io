@@ -31,8 +31,11 @@
     throw Object.assign(new Error(`${surface}.${method} is not available in this runtime`), { code: 'RUNTIME_UNSUPPORTED', surface, method });
   }
   function appIdOf(context) {
-    const value = String(context?.appId || SHELL_APP_ID).trim();
-    return /^[a-zA-Z0-9._-]{1,128}$/.test(value) ? value : SHELL_APP_ID;
+    if (context?.appId === undefined || context?.appId === null || context?.appId === '') return SHELL_APP_ID;
+    const value = String(context.appId).trim();
+    if (!/^[a-zA-Z0-9._-]{1,128}$/.test(value))
+      throw Object.assign(new Error('Invalid SWIR application identity'), { code: 'INVALID_APP_ID' });
+    return value;
   }
 
   async function pickFile(options = {}, context = {}) {
