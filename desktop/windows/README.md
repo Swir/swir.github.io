@@ -4,7 +4,7 @@ This is the native-host line for SWIR OS Desktop Edition.
 
 ## Current state
 
-Preview 0.5.1 keeps the `swir.runtime/1.0` boundary, WebView2 host, capability broker, Desktop package policy registry and package execution-context broker. It enables isolated routing for the five official installable packages, provides package-scoped native App Data, and now contains a signed update trust/download/staging/handoff pipeline with crash-safe transaction journaling and a guarded post-restart health-check contract.
+Preview 0.5.1 keeps the `swir.runtime/1.0` boundary, WebView2 host, capability broker, Desktop package policy registry and package execution-context broker. It enables isolated routing for the five official installable packages, provides package-scoped native App Data, and now contains a signed update trust/download/staging/handoff pipeline with crash-safe transaction journaling, candidate preparation, rollback-safe deployment slots and a guarded post-activation health-check contract.
 
 The host now:
 
@@ -24,9 +24,12 @@ The host now:
 - stages verified update streams below `%LOCALAPPDATA%\SWIR\Updates\Staging` using streaming SHA-256, signed-size enforcement, temporary files and atomic promotion;
 - prepares a non-executing handoff plan and re-verifies the staged package before an apply transaction can begin;
 - journals update transactions through prepared/applying/awaiting-health-check/commit or rollback states with stale-state protection and recovery discovery;
-- issues a short-lived 256-bit post-restart health challenge, stores only its SHA-256 digest, requires the exact target version for commit, and moves expired health checks to `rollback-pending`;
-- keeps updater binary replacement/restart disabled until the separate rollback-safe worker exists and passes failure-path tests;
-- keeps process spawn/kill and unrestricted native network control denied;
+- prepares verified candidate payloads from the Desktop package manifest with traversal, symlink, duplicate-name, file-count, expanded-size and per-file SHA-256 enforcement;
+- maintains rollback-safe `Current`, `Previous` and transaction-scoped `Candidate` deployment slots with conservative crash recovery;
+- issues a short-lived 256-bit health challenge after activation, stores only its SHA-256 digest, requires the exact target version for commit, and moves expired health checks to `rollback-pending`;
+- immediately restores `Previous` if activation succeeds but the health challenge cannot be created;
+- keeps automatic process launch/restart disabled while activation and recovery remain explicitly orchestrated by the standalone updater worker foundation;
+- keeps process spawn/kill and unrestricted native network control denied to WebView applications;
 - keeps external filesystem access behind expiring owner-bound capability tokens.
 
 ## App isolation routing
@@ -97,15 +100,23 @@ signed manifest
   -> UpdateStagingBroker streaming verification
   -> UpdateHandoffBroker re-verification + prepared handoff
   -> UpdateTransactionJournal crash-safe state machine
-  -> UpdateHealthBroker post-restart health proof
-  -> future separate updater worker
+  -> UpdaterWorkerProtocol planning
+  -> CandidatePackagePreparer verified extraction
+  -> DeploymentSlotActivator Current/Previous swap
+  -> UpdateActivationCoordinator guarded health issuance
+  -> UpdateRecoveryCoordinator crash/timeout rollback
+  -> future controlled candidate process launch
 ```
 
 `UpdateDownloadClient` refuses redirects and ambient HTTP credentials. `UpdateStagingBroker` never promotes a partial package. `UpdateHandoffBroker` hashes the package again before creating a prepared handoff. `UpdateTransactionJournal` records recoverable state transitions atomically and rejects stale writers.
 
-`UpdateHealthBroker` can issue a bounded challenge only after a transaction reaches `awaiting-health-check`. The raw 256-bit token is returned to the caller but is not persisted; only its SHA-256 digest is stored. A successful confirmation requires the exact target version and commits the transaction. An expired unconfirmed challenge can only transition to `rollback-pending`.
+`CandidatePackagePreparer` extracts only manifested content into a transaction-specific candidate sandbox and re-verifies the payload before activation. `DeploymentSlotActivator` preserves the known-good deployment in `Previous`, promotes the candidate into `Current`, quarantines ambiguous/failed promoted content and prefers rollback over forward recovery after an interrupted swap.
 
-The update subsystem still deliberately does **not** replace running binaries, execute arbitrary installers, restart the host or bypass signature checks.
+`UpdateActivationCoordinator` couples successful slot activation with health challenge creation. A raw 256-bit token exists only in memory; persistent `health.json` stores its SHA-256 digest. If challenge issuance fails after the candidate has already been promoted, the coordinator immediately transitions to rollback and restores `Previous` rather than leaving an unconfirmable `Current` active.
+
+`UpdateRecoveryCoordinator` reconciles `applying`, `awaiting-health-check` and `rollback-pending` transactions after startup. Missing/expired health metadata causes rollback, while a valid non-expired challenge remains pending for exact-version confirmation.
+
+The update subsystem still deliberately does **not** launch the promoted candidate automatically, replace arbitrary binaries outside the controlled deployment slots, execute arbitrary installers, restart the host or bypass signature checks.
 
 ## Runtime diagnostics
 
@@ -123,7 +134,7 @@ await SwirRuntime.appData.info(packageId);
 
 ## Verification status
 
-Windows CI checks Runtime/registry/App Bridge syntax and contracts, validates the Desktop package policy and all five isolated application entries, runs native App Data and Permission Broker self-tests, runs signed Update Broker/download/staging/handoff tests, runs transaction recovery and health-check tests, and builds the Windows host.
+Windows CI checks Runtime/registry/App Bridge syntax and contracts, validates the Desktop package policy and all five isolated application entries, runs native App Data and Permission Broker self-tests, runs signed Update Broker/download/staging/handoff tests, runs transaction recovery/health-check tests, runs guarded activation/rollback tests, runs updater worker contract tests, builds the standalone updater worker and builds the Windows host.
 
 A green CI run verifies those automated paths. It is not yet a claim that every application workflow has been exercised manually in a packaged Windows `.exe`.
 
@@ -149,9 +160,9 @@ or:
 
 ## Next host milestone
 
-1. build a separate updater worker contract around `Current`, `Previous`, candidate and transaction directories without giving the WebView arbitrary process/filesystem authority;
-2. add atomic candidate activation plus failure-injection tests, keeping automatic restart disabled until rollback succeeds reliably;
-3. connect the health challenge to startup so the exact target host can prove healthy and commit, otherwise recovery selects rollback;
+1. add a controlled candidate launch contract that passes the health token only in-memory/process environment and never persists it in clear text;
+2. prove launch failure and early process-exit paths restore `Previous` automatically before exposing `activate-and-restart` to Update Center;
+3. wire startup recovery into the native host so incomplete transactions are reconciled before normal shell startup;
 4. add release key-id/key rotation policy without accepting unsigned fallback keys;
 5. expose read-only update transaction/staging diagnostics to Update Center;
 6. add automated isolated-origin runtime smoke tests for all five official packages;
