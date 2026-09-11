@@ -24,8 +24,9 @@ internal sealed class UpdateRecoveryCoordinator
     /// <summary>
     /// Reconciles one updater transaction after worker/host startup.
     /// Prepared and non-expired health-check transactions are left untouched.
-    /// Interrupted applying transactions, missing health challenges after activation,
-    /// expired health checks, and persisted rollback-pending states are rolled back.
+    /// Interrupted applying transactions are either rolled back when slots moved or
+    /// marked failed when the crash happened before Current was touched. Missing or
+    /// expired health checks and persisted rollback-pending states are rolled back.
     /// </summary>
     public RecoveryResult Recover(UpdaterWorkerProtocol.WorkerPlan plan)
     {
@@ -41,7 +42,10 @@ internal sealed class UpdateRecoveryCoordinator
             case "applying":
             {
                 var recovered = _activator.RecoverApplying(plan);
-                return Result(recovered, "interrupted-activation-rolled-back", true);
+                var action = string.Equals(recovered.State, "rolled-back", StringComparison.Ordinal)
+                    ? "interrupted-activation-rolled-back"
+                    : "interrupted-before-swap-marked-failed";
+                return Result(recovered, action, true);
             }
 
             case "awaiting-health-check":
