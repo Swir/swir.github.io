@@ -5,8 +5,8 @@
 SWIR OS is designed in three editions sharing one application model and platform contracts:
 
 1. **SWIR OS Web Edition** — current `swir.github.io` prototype and design laboratory.
-2. **SWIR OS Desktop Edition** — future native desktop build with real files, processes, networking and OS integrations.
-3. **SWIR OS System Edition** — future bootable Linux-based system with the SWIR shell, services, accounts and applications.
+2. **SWIR OS Desktop Edition** — native desktop build with real files, processes, networking and OS integrations.
+3. **SWIR OS System Edition** — future bootable Linux-based system with the SWIR shell, services, accounts, native Linux applications and a managed Windows compatibility layer.
 
 ```text
 SWIR Application
@@ -15,7 +15,7 @@ SWIR Application
 SWIR App SDK
       |
       v
-SWIR Platform API
+SWIR Platform API / SwirRuntime
       |
       +------------------+------------------+
       |                  |                  |
@@ -25,10 +25,10 @@ SWIR Platform API
  Browser APIs       Native processes      Linux processes
  Local profiles     Native accounts       Linux accounts
  Browser network    Native adapters       NetworkManager
- PWA cache          Native packages       SWIR packages
+ PWA cache          Native packages       Linux/SWIR packages
 ```
 
-The UI should not need to know which edition it runs on.
+The UI should not need to know which edition it runs on. Privileged behavior remains behind replaceable brokers and permission checks.
 
 ---
 
@@ -50,7 +50,7 @@ SwirPlatform.processes
 SwirPlatform.system
 ```
 
-Web Edition currently maps these to browser APIs, IndexedDB/localStorage and the SWIR window manager. Desktop/System editions will replace the adapters with native implementations.
+Web Edition currently maps these to browser APIs, IndexedDB/localStorage and the SWIR window manager. Desktop/System editions replace adapters with native implementations while preserving portable call shapes where practical.
 
 ---
 
@@ -72,7 +72,7 @@ Web Edition exposes the device information browsers make available, including lo
 
 Web Edition exposes online/offline state and connection metrics when supported, plus portable SWIR network profiles.
 
-Browsers do not allow arbitrary scanning/connecting to real Wi-Fi networks. Future native editions can map the same UI to native networking / NetworkManager.
+Browsers do not allow arbitrary scanning/connecting to real Wi-Fi networks. Native editions map the same user model to native adapters; System Edition targets a NetworkManager-backed service.
 
 ---
 
@@ -86,7 +86,7 @@ The specification lives in `SWIR-APP-PACKAGE-1.0.md`.
 
 ## Files, Associations, Notifications & Dependency Core — 1.7
 
-SWIR OS 1.7 now reaches **SWIR App SDK 1.3**. The 1.7 line adds portable file-association, app-data, application-notification and package dependency contracts.
+SWIR OS 1.7 reaches **SWIR App SDK 1.3**. The 1.7 line adds portable file-association, app-data, application-notification and package dependency contracts.
 
 ### File handoff
 
@@ -130,7 +130,7 @@ SWIR://APPDATA/PDF
 SWIR://APPDATA/CHAT
 ```
 
-Web Edition maps this to namespaced SWIR Platform storage. Desktop Edition can map it to a native application-data directory. System Edition can map it to the native user/application filesystem.
+Web Edition maps this to namespaced SWIR Platform storage. Desktop Edition maps it to a native application-data directory. System Edition maps it to a native per-user/per-application filesystem location.
 
 ### Application Notification Service
 
@@ -216,7 +216,7 @@ Current Web service/status model includes:
 - Update Service
 - Permission Service
 
-Desktop/System editions can map these to native services/daemons.
+Desktop/System editions map these to native services/daemons where privileged or persistent behavior is required.
 
 ---
 
@@ -233,6 +233,55 @@ MySQL / MariaDB
 ```
 
 The Web client lives in SWIR OS. Chat Server Kit supplies the downloadable PHP backend for separate hosting. Future transport can move from polling to WebSockets without replacing the client application model.
+
+---
+
+## Hybrid System Edition foundation
+
+System Edition is deliberately Linux-based and hybrid rather than pretending that every foreign binary is native.
+
+### Execution classes
+
+```text
+swir-web       -> SWIR App SDK / runtime
+linux-native   -> approved Linux package provider
+windows-compat -> Wine / Proton managed compatibility profile
+```
+
+Windows user applications are planned through Wine/Proton-style compatibility prefixes. Windows kernel drivers are not a general Linux hardware solution and must not be treated as one.
+
+### Common Store / Package layer
+
+The future common provider layer can resolve and plan installation across:
+
+```text
+SWIR packages
+base-distribution packages
+Flatpak
+AppImage (after explicit sandbox/update policy)
+Wine compatibility profiles
+Proton compatibility profiles
+```
+
+Provider mechanics remain separate from Store UI policy. Privileged mutations require a structured plan, trusted source policy and transaction journal.
+
+### Hardware / Driver architecture
+
+System Edition adds a read-only-first **Hardware Service** and a **SWIR Driver Center**. Hardware inventory normalizes PCI/USB IDs and maps devices through the Hardware Catalog to kernel modules, firmware, packages and update sources.
+
+Trusted driver/firmware source classes are limited to:
+
+```text
+kernel-in-tree
+linux-firmware
+distribution-repository
+fwupd-lvfs
+vendor-official-repository
+```
+
+Unknown hardware may be diagnosed but must not trigger arbitrary automatic downloads. Firmware and driver mutations require a privileged transaction with rollback/recovery metadata where supported.
+
+The detailed foundation and machine-readable contract schemas live under `system/`, beginning with `system/SWIR-SYSTEM-EDITION-ARCHITECTURE-0.1.md`.
 
 ---
 
@@ -271,7 +320,7 @@ The Web client lives in SWIR OS. Chat Server Kit supplies the downloadable PHP b
 
 ### Desktop Edition 2.x
 
-Planned:
+Active direction:
 
 - lightweight native runtime
 - native filesystem adapter
@@ -285,23 +334,30 @@ Planned:
 - package signatures and integrity verification
 - sandboxed permissions
 - native notification adapter
+- guarded update activation, health proof, rollback and restart handoff
 
 ### System Edition 3.x
 
 Planned:
 
-- proven Linux base/kernel
-- bootable ISO
+- maintained Linux base/kernel and bootable image
 - SWIR boot splash and login/session manager
 - SWIR desktop shell
-- NetworkManager/hardware integration
-- system services
-- dependency-aware package manager/updater
-- filesystem integration
-- recovery mode
+- NetworkManager integration
+- native Linux application execution
+- common Package Provider layer for distribution packages and later Flatpak/AppImage
+- managed Wine/Proton compatibility service for Windows user applications
+- Hardware Service with PCI/USB inventory
+- SWIR Driver Center / Hardware Catalog
+- in-tree Linux drivers + linux-firmware as primary hardware path
+- fwupd/LVFS firmware updates where supported
+- allowlisted official vendor repositories for exceptional proprietary components
+- dependency-aware system package manager/updater
+- journaled driver/firmware/package transactions
+- filesystem integration and recovery mode
 
 ---
 
 ## Development rule
 
-Applications should prefer **SwirAppSDK** and **SwirPlatform** over direct edition-specific APIs. Anything that cannot yet be represented by a portable contract should stay behind a replaceable adapter until that contract is formalized.
+Applications should prefer **SwirAppSDK**, **SwirPlatform** and **SwirRuntime** over direct edition-specific APIs. Anything that cannot yet be represented by a portable contract stays behind a replaceable adapter until that contract is formalized. Privileged operations remain fail-closed until the corresponding broker, identity binding, permission model and recovery path exist.
