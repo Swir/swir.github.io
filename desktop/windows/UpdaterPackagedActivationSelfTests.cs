@@ -85,7 +85,7 @@ internal static class UpdaterPackagedActivationSelfTests
             Expect(File.ReadAllText(Path.Combine(plan.CurrentRoot, "e2e-mode.txt")).Trim() == "healthy", "Current contains healthy candidate payload");
             Expect(File.Exists(Path.Combine(plan.PreviousRoot, "version.txt")), "Previous retains the known-good deployment after commit");
             Expect(File.ReadAllText(Path.Combine(plan.PreviousRoot, "version.txt")).Trim() == "0.5.1", "Previous contains original known-good version");
-            Expect(File.Exists(Path.Combine(Path.GetDirectoryName(prepared.JournalPath)!, "shutdown.consumed.json")), "shutdown authorization cannot be replayed after activation");
+            Expect(File.Exists(Path.Combine(Path.GetDirectoryName(prepared.JournalPath)!, "shutdown-consumed.json")), "shutdown authorization cannot be replayed after activation");
 
             var evidencePath = Path.Combine(plan.CurrentRoot, "candidate-evidence.json");
             WaitForFile(evidencePath, TimeSpan.FromSeconds(5));
@@ -137,7 +137,7 @@ internal static class UpdaterPackagedActivationSelfTests
             WaitForFile(evidencePath, TimeSpan.FromSeconds(3));
             using var evidence = JsonDocument.Parse(File.ReadAllText(evidencePath));
             Expect(!evidence.RootElement.GetProperty("shutdownNonceLeaked").GetBoolean(), "rollback Candidate also receives no shutdown nonce");
-            Expect(File.Exists(Path.Combine(Path.GetDirectoryName(prepared.JournalPath)!, "shutdown.consumed.json")), "failed launch still consumes one-shot shutdown authorization");
+            Expect(File.Exists(Path.Combine(Path.GetDirectoryName(prepared.JournalPath)!, "shutdown-consumed.json")), "failed launch still consumes one-shot shutdown authorization");
         }
         finally
         {
