@@ -19,6 +19,7 @@
     <Compile Include="DeploymentSlotActivator.cs" />
     <Compile Include="UpdateActivationCoordinator.cs" />
     <Compile Include="UpdateRecoveryCoordinator.cs" />
+    <Compile Include="ControlledCandidateLauncher.cs" />
     <Compile Include="UpdaterWorkerMain.cs" />
   </ItemGroup>
 </Project>
