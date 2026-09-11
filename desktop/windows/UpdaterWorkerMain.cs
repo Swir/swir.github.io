@@ -53,22 +53,22 @@ internal static class UpdaterWorkerMain
                 // Re-read the canonical prepared transaction after waiting for the old host.
                 // If anything changed concurrently, Prepare/activation will reject stale state.
                 state = journal.Read(parsed.JournalPath);
-                var preparedPlan = protocol.Prepare(state);
+                var activationPlan = protocol.Prepare(state);
                 var candidatePreparer = new CandidatePackagePreparer();
-                var candidateStatePath = Path.Combine(Path.GetFullPath(preparedPlan.CandidateRoot), "candidate-state.json");
-                var candidate = candidatePreparer.ReadAndVerify(preparedPlan, candidateStatePath);
+                var candidateStatePath = Path.Combine(Path.GetFullPath(activationPlan.CandidateRoot), "candidate-state.json");
+                var candidate = candidatePreparer.ReadAndVerify(activationPlan, candidateStatePath);
 
                 var activator = new DeploymentSlotActivator(journal, candidatePreparer);
                 var health = new UpdateHealthBroker(journal);
                 var activationCoordinator = new UpdateActivationCoordinator(journal, activator, health);
-                var ready = activationCoordinator.ActivateAndIssueHealth(preparedPlan, candidate);
+                var ready = activationCoordinator.ActivateAndIssueHealth(activationPlan, candidate);
 
                 // Launch is intentionally performed only after the old host is confirmed
                 // stopped, the candidate is re-verified, atomically promoted and bound to
                 // a persisted health challenge. ControlledCandidateLauncher rolls back to
                 // Previous on start failure or an early process exit.
                 var launcher = new ControlledCandidateLauncher(journal, activator);
-                var launch = launcher.Launch(preparedPlan, candidate, ready);
+                var launch = launcher.Launch(activationPlan, candidate, ready);
 
                 Console.WriteLine(JsonSerializer.Serialize(new
                 {
