@@ -16,6 +16,7 @@ on:
       - 'swir-pdf.html'
       - 'swir-chat.html'
       - 'swir-chat-api.php'
+      - 'swir-updates.html'
       - '.github/workflows/desktop-windows-build.yml'
   pull_request:
     paths:
@@ -31,6 +32,7 @@ on:
       - 'swir-pdf.html'
       - 'swir-chat.html'
       - 'swir-chat-api.php'
+      - 'swir-updates.html'
       - '.github/workflows/desktop-windows-build.yml'
 
 permissions:
@@ -69,6 +71,9 @@ jobs:
 
       - name: Validate native App Data bridge routing
         run: node validate-native-appdata-bridge.mjs
+
+      - name: Validate Update Center Desktop readiness boundary
+        run: node validate-update-center-desktop-contract.mjs
 
       - name: Setup .NET 8
         uses: actions/setup-dotnet@v4
