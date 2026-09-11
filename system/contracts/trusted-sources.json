@@ -1,0 +1,40 @@
+{
+  "schema": "swir.trusted-sources/0.1",
+  "driverSourceClasses": [
+    "kernel-in-tree",
+    "linux-firmware",
+    "distribution-repository",
+    "fwupd-lvfs",
+    "vendor-official-repository"
+  ],
+  "packageSourceClasses": [
+    "swir-signed",
+    "distribution-repository",
+    "flatpak-remote",
+    "vendor-official-repository",
+    "local-user-selected"
+  ],
+  "reservedProviders": [
+    "swir.package.web",
+    "swir.package.system",
+    "swir.package.flatpak",
+    "swir.package.appimage",
+    "swir.compat.wine",
+    "swir.compat.proton"
+  ],
+  "forbiddenAutomaticDriverArtifacts": [
+    ".exe",
+    ".msi",
+    ".sys",
+    ".bat",
+    ".cmd"
+  ],
+  "policy": {
+    "arbitraryDriverUrls": false,
+    "windowsKernelDriversAsLinuxDrivers": false,
+    "signatureVerificationRequiredForRepositories": true,
+    "privilegedMutationRequiresPlan": true,
+    "privilegedMutationRequiresJournal": true,
+    "unknownHardwareMayAutoDownload": false
+  }
+}
