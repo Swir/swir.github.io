@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://swir.github.io/system/contracts/package-provider.schema.json",
+  "title": "SWIR Package Provider Manifest 0.1",
+  "type": "object",
+  "required": ["schema", "id", "executionClass", "provider", "trust"],
+  "properties": {
+    "schema": { "const": "swir.package-provider/0.1" },
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]+$" },
+    "executionClass": { "enum": ["swir-web", "linux-native", "windows-compat"] },
+    "provider": {
+      "enum": [
+        "swir.package.web",
+        "swir.package.system",
+        "swir.package.flatpak",
+        "swir.package.appimage",
+        "swir.compat.wine",
+        "swir.compat.proton"
+      ]
+    },
+    "package": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "channel": { "type": "string" },
+        "architecture": { "type": "string" },
+        "sourceRef": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "compatibility": {
+      "type": "object",
+      "properties": {
+        "prefixPolicy": { "enum": ["per-app", "shared-explicit"] },
+        "windowsArchitecture": { "enum": ["win64", "win32"] },
+        "runtimeChannel": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "trust": {
+      "type": "object",
+      "required": ["sourceClass", "signatureRequired"],
+      "properties": {
+        "sourceClass": {
+          "enum": [
+            "swir-signed",
+            "distribution-repository",
+            "flatpak-remote",
+            "vendor-official-repository",
+            "local-user-selected"
+          ]
+        },
+        "repositoryId": { "type": "string" },
+        "signatureRequired": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "permissions": { "type": "array", "items": { "type": "string" } },
+    "rollback": { "type": "boolean" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "executionClass": { "const": "windows-compat" } } },
+      "then": {
+        "required": ["compatibility"],
+        "properties": {
+          "provider": { "enum": ["swir.compat.wine", "swir.compat.proton"] }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "executionClass": { "const": "linux-native" } } },
+      "then": {
+        "properties": {
+          "provider": { "enum": ["swir.package.system", "swir.package.flatpak", "swir.package.appimage"] }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "executionClass": { "const": "swir-web" } } },
+      "then": {
+        "properties": { "provider": { "const": "swir.package.web" } }
+      }
+    }
+  ],
+  "additionalProperties": false
+}
