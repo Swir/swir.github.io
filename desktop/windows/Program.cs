@@ -23,6 +23,7 @@ internal sealed class MainWindow : Form
     private readonly ExecutionPolicyCatalog _policyCatalog;
     private readonly AppIsolationRegistry _isolation;
     private readonly StartupHealthHandshake? _startupHealth;
+    private readonly DesktopStartupRecovery _startupRecovery;
     private readonly string _repoRoot;
     private readonly string _dataRoot;
 
@@ -34,6 +35,7 @@ internal sealed class MainWindow : Form
         MinimumSize = new Size(1024, 700);
         StartPosition = FormStartPosition.CenterScreen;
         _startupHealth = StartupHealthHandshake.CaptureFromEnvironment();
+        _startupRecovery = new DesktopStartupRecovery();
         _repoRoot = ResolveRepoRoot();
         _policyCatalog = new ExecutionPolicyCatalog(Path.Combine(_repoRoot, "desktop", "windows", "app-policy.json"));
         _isolation = new AppIsolationRegistry(_policyCatalog);
@@ -48,6 +50,7 @@ internal sealed class MainWindow : Form
     {
         try
         {
+            _startupRecovery.RecoverBeforeShellStart();
             var env = await CoreWebView2Environment.CreateAsync(userDataFolder: Path.Combine(_dataRoot, "WebView2"));
             await _web.EnsureCoreWebView2Async(env);
             var core = _web.CoreWebView2;
