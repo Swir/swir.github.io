@@ -121,6 +121,9 @@ jobs:
       - name: Run Desktop host restart hooks self-tests
         run: dotnet run --project SWIR.Desktop.HostRestartHooks.SelfTests.csproj --configuration Release
 
+      - name: Run Desktop update bridge command gate self-tests
+        run: dotnet run --project SWIR.Desktop.UpdateBridge.SelfTests.csproj --configuration Release
+
       - name: Run Desktop startup recovery self-tests
         run: dotnet run --project SWIR.Desktop.StartupRecovery.SelfTests.csproj --configuration Release
 
