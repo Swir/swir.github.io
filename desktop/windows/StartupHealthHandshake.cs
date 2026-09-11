@@ -58,14 +58,17 @@ internal sealed class StartupHealthHandshake
             throw new UpdateSecurityException("UPDATE_STARTUP_HEALTH_TOKEN_INVALID", "Candidate health token is malformed.");
 
         var canonicalJournal = Path.GetFullPath(journalPath!);
-        if (!string.Equals(Path.GetFileName(canonicalJournal), "transaction.json", StringComparison.OrdinalIgnoreCase))
-            throw new UpdateSecurityException("UPDATE_STARTUP_HEALTH_JOURNAL_INVALID", "Candidate journal path is not canonical.");
+        if (!string.Equals(Path.GetFileName(canonicalJournal), "transaction.json", StringComparison.OrdinalIgnoreCase)
+            || !File.Exists(canonicalJournal))
+            throw new UpdateSecurityException("UPDATE_STARTUP_HEALTH_JOURNAL_INVALID", "Candidate journal path is missing or non-canonical.");
         var transactionDirectory = Path.GetDirectoryName(canonicalJournal)
             ?? throw new UpdateSecurityException("UPDATE_STARTUP_HEALTH_JOURNAL_INVALID", "Candidate transaction directory is invalid.");
         if (!string.Equals(Path.GetFileName(transactionDirectory), transactionId, StringComparison.Ordinal))
             throw new UpdateSecurityException("UPDATE_STARTUP_HEALTH_JOURNAL_INVALID", "Candidate journal directory does not match transaction id.");
         var transactionsRoot = Path.GetDirectoryName(transactionDirectory)
             ?? throw new UpdateSecurityException("UPDATE_STARTUP_HEALTH_JOURNAL_INVALID", "Candidate transactions root is invalid.");
+        if (!Directory.Exists(transactionsRoot))
+            throw new UpdateSecurityException("UPDATE_STARTUP_HEALTH_JOURNAL_INVALID", "Candidate transactions root does not exist.");
 
         var journal = new UpdateTransactionJournal(transactionsRoot);
         var state = journal.Read(canonicalJournal);
