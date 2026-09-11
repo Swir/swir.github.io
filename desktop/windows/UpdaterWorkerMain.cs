@@ -35,6 +35,62 @@ internal static class UpdaterWorkerMain
                 return 0;
             }
 
+            if (string.Equals(parsed.Command, "activate-and-launch", StringComparison.OrdinalIgnoreCase))
+            {
+                // Activation is authorized only by a fresh one-shot shutdown handoff from
+                // the currently running Desktop Host. Capture and scrub the nonce before
+                // any child process can inherit the updater environment.
+                var shutdownNonce = HostShutdownHandoff.CaptureNonceFromEnvironment();
+                var transactionDirectory = Path.GetDirectoryName(Path.GetFullPath(parsed.JournalPath))
+                    ?? throw new UpdateSecurityException("UPDATE_SHUTDOWN_PATH_INVALID", "Transaction journal directory is invalid.");
+                var shutdownTicketPath = Path.Combine(transactionDirectory, "shutdown.json");
+                var shutdown = new HostShutdownHandoff(journal).VerifyAndWait(
+                    state,
+                    shutdownTicketPath,
+                    shutdownNonce,
+                    TimeSpan.FromSeconds(30));
+
+                // Re-read the canonical prepared transaction after waiting for the old host.
+                // If anything changed concurrently, Prepare/activation will reject stale state.
+                state = journal.Read(parsed.JournalPath);
+                var preparedPlan = protocol.Prepare(state);
+                var candidatePreparer = new CandidatePackagePreparer();
+                var candidateStatePath = Path.Combine(Path.GetFullPath(preparedPlan.CandidateRoot), "candidate-state.json");
+                var candidate = candidatePreparer.ReadAndVerify(preparedPlan, candidateStatePath);
+
+                var activator = new DeploymentSlotActivator(journal, candidatePreparer);
+                var health = new UpdateHealthBroker(journal);
+                var activationCoordinator = new UpdateActivationCoordinator(journal, activator, health);
+                var ready = activationCoordinator.ActivateAndIssueHealth(preparedPlan, candidate);
+
+                // Launch is intentionally performed only after the old host is confirmed
+                // stopped, the candidate is re-verified, atomically promoted and bound to
+                // a persisted health challenge. ControlledCandidateLauncher rolls back to
+                // Previous on start failure or an early process exit.
+                var launcher = new ControlledCandidateLauncher(journal, activator);
+                var launch = launcher.Launch(preparedPlan, candidate, ready);
+
+                Console.WriteLine(JsonSerializer.Serialize(new
+                {
+                    schema = ControlledCandidateLauncher.LaunchSchema,
+                    transactionId = launch.TransactionId,
+                    targetVersion = launch.TargetVersion,
+                    state = launch.Phase,
+                    processId = launch.ProcessId,
+                    entryPoint = launch.EntryPoint,
+                    startedAt = launch.StartedAt,
+                    launchPath = launch.LaunchPath,
+                    journalPath = parsed.JournalPath,
+                    previousHostProcessId = shutdown.HostProcessId,
+                    shutdownVerifiedAt = shutdown.VerifiedAt,
+                    shutdownTicketConsumed = true,
+                    executableActionsEnabled = true,
+                    healthTokenPersisted = false,
+                    shutdownNoncePersisted = false
+                }));
+                return 0;
+            }
+
             var preparedPlan = protocol.Prepare(state);
             if (string.Equals(parsed.Command, "prepare-candidate", StringComparison.OrdinalIgnoreCase))
             {
@@ -51,41 +107,6 @@ internal static class UpdaterWorkerMain
                     expandedBytes = candidate.ExpandedBytes,
                     candidateStatePath = candidate.StatePath,
                     executableActionsEnabled = false
-                }));
-                return 0;
-            }
-
-            if (string.Equals(parsed.Command, "activate-and-launch", StringComparison.OrdinalIgnoreCase))
-            {
-                var candidatePreparer = new CandidatePackagePreparer();
-                var candidateStatePath = Path.Combine(Path.GetFullPath(preparedPlan.CandidateRoot), "candidate-state.json");
-                var candidate = candidatePreparer.ReadAndVerify(preparedPlan, candidateStatePath);
-
-                var activator = new DeploymentSlotActivator(journal, candidatePreparer);
-                var health = new UpdateHealthBroker(journal);
-                var activationCoordinator = new UpdateActivationCoordinator(journal, activator, health);
-                var ready = activationCoordinator.ActivateAndIssueHealth(preparedPlan, candidate);
-
-                // Launch is intentionally performed only after the candidate has been
-                // re-verified, atomically promoted and bound to a persisted health challenge.
-                // ControlledCandidateLauncher rolls back to Previous on start failure or
-                // an early process exit; the raw health token is never written to stdout.
-                var launcher = new ControlledCandidateLauncher(journal, activator);
-                var launch = launcher.Launch(preparedPlan, candidate, ready);
-
-                Console.WriteLine(JsonSerializer.Serialize(new
-                {
-                    schema = ControlledCandidateLauncher.LaunchSchema,
-                    transactionId = launch.TransactionId,
-                    targetVersion = launch.TargetVersion,
-                    state = launch.Phase,
-                    processId = launch.ProcessId,
-                    entryPoint = launch.EntryPoint,
-                    startedAt = launch.StartedAt,
-                    launchPath = launch.LaunchPath,
-                    journalPath = parsed.JournalPath,
-                    executableActionsEnabled = true,
-                    healthTokenPersisted = false
                 }));
                 return 0;
             }
