@@ -108,6 +108,9 @@ jobs:
       - name: Run Desktop bridge drain restart session self-tests
         run: dotnet run --project SWIR.Desktop.RestartSession.SelfTests.csproj --configuration Release
 
+      - name: Run prepared Desktop update selector self-tests
+        run: dotnet run --project SWIR.Desktop.PreparedUpdate.SelfTests.csproj --configuration Release
+
       - name: Run Desktop startup recovery self-tests
         run: dotnet run --project SWIR.Desktop.StartupRecovery.SelfTests.csproj --configuration Release
 

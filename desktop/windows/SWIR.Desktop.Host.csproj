@@ -25,6 +25,7 @@
     <Compile Remove="DesktopStartupRecoverySelfTests.cs" />
     <Compile Remove="DesktopUpdateRestartLifecycleSelfTests.cs" />
     <Compile Remove="DesktopUpdateRestartSessionSelfTests.cs" />
+    <Compile Remove="DesktopPreparedUpdateSelectorSelfTests.cs" />
   </ItemGroup>
 
   <ItemGroup>

@@ -7,6 +7,7 @@ internal static class DesktopUpdateRestartSessionSelfTests
         await GateRejectsNewWorkAndDrainsExistingAsync();
         await SessionOrdersDrainBeforePrepareAndExitAsync();
         await SessionResumesBridgeWhenRestartFailsBeforeWorkerAsync();
+        await SessionRestoresHostBeforeBridgeAdmissionAsync();
         Console.WriteLine("Desktop update restart session self-tests passed.");
     }
 
@@ -82,6 +83,46 @@ internal static class DesktopUpdateRestartSessionSelfTests
         Assert(gate.IsAccepting, "bridge must resume after failure before updater ownership");
         Assert(session.TryEnterBridgeRequest(out var lease) && lease is not null, "bridge should accept retry after safe resume");
         lease!.Dispose();
+    }
+
+    private static async Task SessionRestoresHostBeforeBridgeAdmissionAsync()
+    {
+        var gate = new DesktopBridgeDrainGate();
+        var state = State();
+        var hostReady = false;
+        var session = new DesktopUpdateRestartSession(gate, async (s, quiesce, prepare, exit, resume, ct) =>
+        {
+            await quiesce(ct);
+            try
+            {
+                await prepare(ct);
+                throw new InvalidOperationException("restore-order-test");
+            }
+            catch
+            {
+                await resume(CancellationToken.None);
+                throw;
+            }
+        });
+
+        try
+        {
+            await session.RestartAsync(
+                state,
+                _ => Task.CompletedTask,
+                () => throw new Exception("must not exit"),
+                _ =>
+                {
+                    Assert(!gate.IsAccepting, "bridge must stay closed while host resources are restored");
+                    hostReady = true;
+                    return Task.CompletedTask;
+                });
+            throw new Exception("expected restore-order failure");
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("restore-order-test", StringComparison.Ordinal)) { }
+
+        Assert(hostReady, "host restore callback must run on safe pre-worker failure");
+        Assert(gate.IsAccepting, "bridge opens only after host restoration completes");
     }
 
     private static UpdateTransactionJournal.TransactionState State() => new(

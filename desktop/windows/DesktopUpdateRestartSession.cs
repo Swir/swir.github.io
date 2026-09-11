@@ -7,7 +7,7 @@ namespace Swir.Desktop.Host;
 /// </summary>
 internal sealed class DesktopUpdateRestartSession
 {
-    public const string SessionSchema = "swir.desktop-update-restart-session/0.1";
+    public const string SessionSchema = "swir.desktop-update-restart-session/0.2";
 
     private readonly DesktopBridgeDrainGate _bridgeGate;
     private readonly RestartExecutor _restart;
@@ -47,18 +47,28 @@ internal sealed class DesktopUpdateRestartSession
         UpdateTransactionJournal.TransactionState state,
         Func<CancellationToken, Task> prepareHostForExitAsync,
         Action requestHostExit,
+        Func<CancellationToken, Task>? resumeHostAfterFailureAsync = null,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(prepareHostForExitAsync);
         ArgumentNullException.ThrowIfNull(requestHostExit);
 
+        async Task ResumeAsync(CancellationToken token)
+        {
+            // The host must be operational again before bridge admission is reopened,
+            // otherwise a retrying WebView request could race partially-restored UI state.
+            if (resumeHostAfterFailureAsync is not null)
+                await resumeHostAfterFailureAsync(token).ConfigureAwait(false);
+            await _bridgeGate.ResumeAsync(token).ConfigureAwait(false);
+        }
+
         return _restart(
             state,
-            cancellationToken => _bridgeGate.QuiesceAndDrainAsync(cancellationToken),
+            token => _bridgeGate.QuiesceAndDrainAsync(token),
             prepareHostForExitAsync,
             requestHostExit,
-            cancellationToken => _bridgeGate.ResumeAsync(cancellationToken),
+            ResumeAsync,
             cancellationToken);
     }
 
