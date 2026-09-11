@@ -1,0 +1,43 @@
+name: System Edition Contracts
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'system/**'
+      - 'SWIR-OS-ARCHITECTURE.md'
+      - '.github/workflows/system-contracts.yml'
+  pull_request:
+    paths:
+      - 'system/**'
+      - 'SWIR-OS-ARCHITECTURE.md'
+      - '.github/workflows/system-contracts.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Check validator syntax
+        run: node --check system/validate-system-contracts.mjs
+
+      - name: Validate System Edition contracts
+        run: node system/validate-system-contracts.mjs
+
+      - name: Parse contract JSON
+        shell: bash
+        run: |
+          node -e "JSON.parse(require('fs').readFileSync('system/contracts/hardware-catalog.schema.json','utf8'))"
+          node -e "JSON.parse(require('fs').readFileSync('system/contracts/package-provider.schema.json','utf8'))"
+          node -e "JSON.parse(require('fs').readFileSync('system/contracts/trusted-sources.json','utf8'))"
