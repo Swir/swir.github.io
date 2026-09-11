@@ -35,6 +35,9 @@ jobs:
           node --check system/hardware/hardware-service.mjs
           node --check system/hardware/hardware-probe.mjs
           node --check system/hardware/hardware-service.selftest.mjs
+          node --check system/hardware/driver-resolver.mjs
+          node --check system/hardware/driver-resolver.selftest.mjs
+          node --check system/hardware/driver-plan.mjs
 
       - name: Validate System Edition contracts
         run: node system/validate-system-contracts.mjs
@@ -42,17 +45,27 @@ jobs:
       - name: Run Hardware Service self-tests
         run: node system/hardware/hardware-service.selftest.mjs
 
+      - name: Run Driver Resolver self-tests
+        run: node system/hardware/driver-resolver.selftest.mjs
+
       - name: Probe CI Linux hardware read-only
         shell: bash
         run: |
           node system/hardware/hardware-probe.mjs --compact > "$RUNNER_TEMP/swir-hardware.json"
           node -e "const s=JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')); if(s.schema!=='swir.hardware-snapshot/0.1'||s.host?.readOnly!==true||!Array.isArray(s.devices)) process.exit(1); console.log('Hardware probe devices:', s.devices.length)" "$RUNNER_TEMP/swir-hardware.json"
 
+      - name: Generate CI Driver Center preview
+        shell: bash
+        run: |
+          node system/hardware/driver-plan.mjs --compact > "$RUNNER_TEMP/swir-driver-plan.json"
+          node -e "const p=JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')); if(p.schema!=='swir.driver-plan/0.1'||p.mode!=='preview'||p.readOnly!==true||p.autoExecutable!==false||!Array.isArray(p.operations)) process.exit(1); console.log('Driver plan operations:', p.operations.length)" "$RUNNER_TEMP/swir-driver-plan.json"
+
       - name: Parse contract JSON
         shell: bash
         run: |
           node -e "JSON.parse(require('fs').readFileSync('system/contracts/hardware-catalog.schema.json','utf8'))"
           node -e "JSON.parse(require('fs').readFileSync('system/contracts/hardware-snapshot.schema.json','utf8'))"
+          node -e "JSON.parse(require('fs').readFileSync('system/contracts/driver-plan.schema.json','utf8'))"
           node -e "JSON.parse(require('fs').readFileSync('system/contracts/package-provider.schema.json','utf8'))"
           node -e "JSON.parse(require('fs').readFileSync('system/contracts/trusted-sources.json','utf8'))"
           node -e "JSON.parse(require('fs').readFileSync('system/hardware/hardware-catalog.json','utf8'))"
