@@ -20,6 +20,7 @@
     <Compile Include="UpdateActivationCoordinator.cs" />
     <Compile Include="UpdateRecoveryCoordinator.cs" />
     <Compile Include="ControlledCandidateLauncher.cs" />
+    <Compile Include="HostShutdownHandoff.cs" />
     <Compile Include="UpdaterWorkerMain.cs" />
   </ItemGroup>
 </Project>
