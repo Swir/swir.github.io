@@ -20,6 +20,7 @@
     <Compile Remove="UpdateActivationCoordinatorSelfTests.cs" />
     <Compile Remove="ControlledCandidateLauncherSelfTests.cs" />
     <Compile Remove="StartupHealthHandshakeSelfTests.cs" />
+    <Compile Remove="HostShutdownHandoffSelfTests.cs" />
   </ItemGroup>
 
   <ItemGroup>
