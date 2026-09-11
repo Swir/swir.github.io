@@ -22,6 +22,7 @@ internal sealed class MainWindow : Form
     private readonly PermissionBroker _permissions;
     private readonly ExecutionPolicyCatalog _policyCatalog;
     private readonly AppIsolationRegistry _isolation;
+    private readonly StartupHealthHandshake? _startupHealth;
     private readonly string _repoRoot;
     private readonly string _dataRoot;
 
@@ -32,6 +33,7 @@ internal sealed class MainWindow : Form
         Height = 900;
         MinimumSize = new Size(1024, 700);
         StartPosition = FormStartPosition.CenterScreen;
+        _startupHealth = StartupHealthHandshake.CaptureFromEnvironment();
         _repoRoot = ResolveRepoRoot();
         _policyCatalog = new ExecutionPolicyCatalog(Path.Combine(_repoRoot, "desktop", "windows", "app-policy.json"));
         _isolation = new AppIsolationRegistry(_policyCatalog);
@@ -60,7 +62,35 @@ internal sealed class MainWindow : Form
                 .Replace("__SESSION_ID__", _capabilities.SessionId)
                 .Replace("__EXECUTION_TOKEN__", _permissions.ShellExecutionToken);
             await core.AddScriptToExecuteOnDocumentCreatedAsync(bootstrap);
-            core.Navigate("https://swir.local/index.html");
+
+            var shellReady = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            void OnNavigationCompleted(object? _, CoreWebView2NavigationCompletedEventArgs args)
+            {
+                if (!args.IsSuccess)
+                {
+                    shellReady.TrySetException(new InvalidOperationException($"SWIR shell navigation failed: {args.WebErrorStatus}."));
+                    return;
+                }
+                if (!IsTrustedShellSource(core.Source))
+                {
+                    shellReady.TrySetException(new InvalidOperationException("SWIR shell navigation completed on an unexpected origin."));
+                    return;
+                }
+                shellReady.TrySetResult(true);
+            }
+
+            core.NavigationCompleted += OnNavigationCompleted;
+            try
+            {
+                core.Navigate("https://swir.local/index.html");
+                await shellReady.Task.WaitAsync(TimeSpan.FromSeconds(20));
+            }
+            finally
+            {
+                core.NavigationCompleted -= OnNavigationCompleted;
+            }
+
+            _startupHealth?.ConfirmShellReady();
         }
         catch (Exception ex)
         {
