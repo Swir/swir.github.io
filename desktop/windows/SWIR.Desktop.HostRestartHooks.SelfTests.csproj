@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <AssemblyName>SWIR.Desktop.HostRestartHooks.SelfTests</AssemblyName>
+    <RootNamespace>Swir.Desktop.Host</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="DesktopHostRestartHooks.cs" />
+    <Compile Include="DesktopHostRestartHooksSelfTests.cs" />
+    <Compile Include="UpdateSecurityException.cs" />
+  </ItemGroup>
+</Project>
