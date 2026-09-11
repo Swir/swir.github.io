@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="UpdateBroker.cs" />
+    <Compile Include="UpdateStagingBroker.cs" />
+    <Compile Include="UpdateHandoffBroker.cs" />
+    <Compile Include="UpdateTransactionJournal.cs" />
+    <Compile Include="HostShutdownHandoff.cs" />
+    <Compile Include="UpdateRestartLauncher.cs" />
+    <Compile Include="UpdateRestartLauncherSelfTests.cs" />
+  </ItemGroup>
+</Project>
