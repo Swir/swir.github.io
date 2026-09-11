@@ -142,6 +142,12 @@ jobs:
       - name: Run packaged health-timeout startup recovery E2E
         run: dotnet run --project SWIR.Desktop.Updater.PackagedRecovery.SelfTests.csproj --configuration Release -- "${{ github.workspace }}\desktop\windows\bin\Release\net8.0\SWIR.Desktop.UpdaterWorker.exe" "${{ runner.temp }}\swir-e2e-candidate"
 
+      - name: Build activation crash harness
+        run: dotnet build SWIR.Desktop.Updater.ActivationCrashHarness.csproj --configuration Release
+
+      - name: Run packaged interrupted-swap and rollback-pending recovery E2E
+        run: dotnet run --project SWIR.Desktop.Updater.PackagedCrashRecovery.SelfTests.csproj --configuration Release -- "${{ github.workspace }}\desktop\windows\bin\Release\net8.0\SWIR.Desktop.UpdaterWorker.exe" "${{ runner.temp }}\swir-e2e-candidate" "${{ github.workspace }}\desktop\windows\bin\Release\net8.0\SWIR.Desktop.Updater.ActivationCrashHarness.exe"
+
       - name: Restore
         run: dotnet restore SWIR.Desktop.Host.csproj
 
