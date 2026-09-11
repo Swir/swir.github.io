@@ -3,13 +3,34 @@
   "$id": "https://swir.github.io/system/contracts/driver-plan.schema.json",
   "title": "SWIR Driver Plan 0.1",
   "type": "object",
-  "required": ["schema", "generatedAt", "mode", "readOnly", "autoExecutable", "summary", "operations"],
+  "required": ["schema", "generatedAt", "mode", "readOnly", "autoExecutable", "host", "summary", "operations"],
   "properties": {
     "schema": { "const": "swir.driver-plan/0.1" },
     "generatedAt": { "type": "string", "format": "date-time" },
     "mode": { "const": "preview" },
     "readOnly": { "const": true },
     "autoExecutable": { "const": false },
+    "host": {
+      "type": "object",
+      "required": ["distribution", "fwupdAvailable", "lvfsMetadataPresent", "packageManagers", "repositoryManagers"],
+      "properties": {
+        "distribution": {
+          "type": "object",
+          "required": ["id", "versionId", "family"],
+          "properties": {
+            "id": { "type": "string", "minLength": 1 },
+            "versionId": { "type": ["string", "null"] },
+            "family": { "enum": ["debian", "fedora", "arch", "suse", "unknown"] }
+          },
+          "additionalProperties": false
+        },
+        "fwupdAvailable": { "type": "boolean" },
+        "lvfsMetadataPresent": { "type": "boolean" },
+        "packageManagers": { "type": "array", "items": { "enum": ["apt", "dnf", "rpm-ostree", "pacman", "zypper"] }, "uniqueItems": true },
+        "repositoryManagers": { "type": "array", "items": { "enum": ["apt", "dnf", "zypper", "pacman"] }, "uniqueItems": true }
+      },
+      "additionalProperties": false
+    },
     "summary": {
       "type": "object",
       "required": ["devices", "matched", "healthy", "attention", "operations"],
@@ -22,10 +43,7 @@
       },
       "additionalProperties": false
     },
-    "operations": {
-      "type": "array",
-      "items": { "$ref": "#/$defs/operation" }
-    }
+    "operations": { "type": "array", "items": { "$ref": "#/$defs/operation" } }
   },
   "additionalProperties": false,
   "$defs": {
@@ -50,6 +68,9 @@
         "state": { "const": "proposed" },
         "requiresPrivilege": { "type": "boolean" },
         "reason": { "type": "string", "minLength": 1 },
+        "modalias": { "type": ["string", "null"] },
+        "capability": { "enum": ["available", "unavailable"] },
+        "packageManager": { "type": ["string", "null"], "enum": ["apt", "dnf", "rpm-ostree", "pacman", "zypper", null] },
         "moduleCandidates": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
         "firmwareCandidates": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
         "packageCandidates": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },

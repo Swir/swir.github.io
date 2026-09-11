@@ -10,6 +10,22 @@ const SOURCE_CLASSES = new Set([
   'vendor-official-repository'
 ]);
 
+const PACKAGE_MANAGER_PROBES = [
+  ['apt', 'usr/bin/apt'],
+  ['dnf', 'usr/bin/dnf'],
+  ['rpm-ostree', 'usr/bin/rpm-ostree'],
+  ['pacman', 'usr/bin/pacman'],
+  ['zypper', 'usr/bin/zypper']
+];
+
+const REPOSITORY_CONFIG_PROBES = [
+  ['apt', 'etc/apt/sources.list'],
+  ['apt', 'etc/apt/sources.list.d'],
+  ['dnf', 'etc/yum.repos.d'],
+  ['zypper', 'etc/zypp/repos.d'],
+  ['pacman', 'etc/pacman.conf']
+];
+
 function safeRead(file) {
   try { return fs.readFileSync(file, 'utf8').trim(); }
   catch { return null; }
@@ -18,6 +34,11 @@ function safeRead(file) {
 function safeRealpath(file) {
   try { return fs.realpathSync(file); }
   catch { return null; }
+}
+
+function exists(file) {
+  try { return fs.existsSync(file); }
+  catch { return false; }
 }
 
 function normalizeHex(value, width = 4) {
@@ -39,6 +60,69 @@ function listDirs(root) {
   } catch {
     return [];
   }
+}
+
+function parseOsRelease(raw) {
+  const values = {};
+  for (const line of String(raw || '').split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const separator = trimmed.indexOf('=');
+    if (separator <= 0) continue;
+    const key = trimmed.slice(0, separator).trim();
+    let value = trimmed.slice(separator + 1).trim();
+    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+      value = value.slice(1, -1);
+    }
+    values[key] = value.replace(/\\([\\"'$`])/g, '$1');
+  }
+  return values;
+}
+
+function distributionFamily(release) {
+  const candidates = [release.ID, ...(release.ID_LIKE || '').split(/\s+/)].filter(Boolean);
+  const map = new Map([
+    ['ubuntu', 'debian'], ['debian', 'debian'], ['linuxmint', 'debian'],
+    ['fedora', 'fedora'], ['rhel', 'fedora'], ['centos', 'fedora'],
+    ['arch', 'arch'], ['manjaro', 'arch'],
+    ['opensuse', 'suse'], ['opensuse-leap', 'suse'], ['sles', 'suse']
+  ]);
+  for (const candidate of candidates) {
+    const family = map.get(candidate.toLowerCase());
+    if (family) return family;
+  }
+  return 'unknown';
+}
+
+export function detectLinuxHostEnvironment({ root = '/' } = {}) {
+  const release = parseOsRelease(safeRead(path.join(root, 'etc', 'os-release')) || safeRead(path.join(root, 'usr', 'lib', 'os-release')) || '');
+  const packageManagers = PACKAGE_MANAGER_PROBES
+    .filter(([, relative]) => exists(path.join(root, relative)))
+    .map(([name]) => name);
+  const repositoryConfig = REPOSITORY_CONFIG_PROBES
+    .filter(([, relative]) => exists(path.join(root, relative)))
+    .map(([manager, relative]) => ({ manager, path: `/${relative.replace(/\\/g, '/')}` }));
+  const fwupdRelative = ['usr/bin/fwupdmgr', 'usr/libexec/fwupd/fwupd', 'usr/lib/fwupd/fwupd']
+    .find(relative => exists(path.join(root, relative)));
+
+  return {
+    distribution: {
+      id: release.ID || 'unknown',
+      versionId: release.VERSION_ID || null,
+      prettyName: release.PRETTY_NAME || release.NAME || release.ID || 'Unknown Linux',
+      family: distributionFamily(release)
+    },
+    capabilities: {
+      fwupd: {
+        available: Boolean(fwupdRelative),
+        executable: fwupdRelative ? `/${fwupdRelative}` : null,
+        lvfsMetadataPresent: exists(path.join(root, 'var', 'lib', 'fwupd', 'remotes.d', 'lvfs'))
+          || exists(path.join(root, 'var', 'lib', 'fwupd', 'metadata'))
+      },
+      packageManagers,
+      repositoryConfig
+    }
+  };
 }
 
 function pciIds(devicePath) {
@@ -63,9 +147,9 @@ function cleanIds(ids) {
 
 function readDriver(devicePath) {
   const target = safeRealpath(path.join(devicePath, 'driver'));
-  if (target) return { status: 'loaded', module: basenameOrNull(target) };
   const modalias = safeRead(path.join(devicePath, 'modalias'));
-  return { status: modalias ? 'unbound' : 'unknown', module: null };
+  if (target) return { status: 'loaded', module: basenameOrNull(target), modalias };
+  return { status: modalias ? 'unbound' : 'unknown', module: null, modalias };
 }
 
 function makeDevice(bus, devicePath, ids) {
@@ -153,20 +237,44 @@ export function applyHardwareCatalog(devices, catalog) {
   });
 }
 
-export function createHardwareSnapshot({ devices, catalog, platform = os.platform(), arch = os.arch(), kernel = os.release(), now = new Date() }) {
+export function createHardwareSnapshot({
+  devices,
+  catalog,
+  platform = os.platform(),
+  arch = os.arch(),
+  kernel = os.release(),
+  environment = null,
+  now = new Date()
+}) {
+  const hostEnvironment = environment || {
+    distribution: { id: 'unknown', versionId: null, prettyName: platform, family: 'unknown' },
+    capabilities: { fwupd: { available: false, executable: null, lvfsMetadataPresent: false }, packageManagers: [], repositoryConfig: [] }
+  };
   return {
-    schema: 'swir.hardware-snapshot/0.1',
+    schema: 'swir.hardware-snapshot/0.2',
     generatedAt: now.toISOString(),
-    host: { platform, arch, kernel, readOnly: true },
+    host: {
+      platform,
+      arch,
+      kernel,
+      readOnly: true,
+      distribution: hostEnvironment.distribution,
+      capabilities: hostEnvironment.capabilities
+    },
     devices: applyHardwareCatalog(devices, catalog)
   };
 }
 
-export function collectHardwareSnapshot({ catalog = { entries: [] }, sysRoot = '/sys', now = new Date() } = {}) {
+export function collectHardwareSnapshot({ catalog = { entries: [] }, sysRoot = '/sys', hostRoot = '/', now = new Date() } = {}) {
   if (os.platform() !== 'linux') {
     return createHardwareSnapshot({ devices: [], catalog, platform: os.platform(), arch: os.arch(), kernel: os.release(), now });
   }
-  return createHardwareSnapshot({ devices: scanLinuxSysfs({ sysRoot }), catalog, now });
+  return createHardwareSnapshot({
+    devices: scanLinuxSysfs({ sysRoot }),
+    catalog,
+    environment: detectLinuxHostEnvironment({ root: hostRoot }),
+    now
+  });
 }
 
 export function loadCatalog(file) {
@@ -178,8 +286,9 @@ export function loadCatalog(file) {
 }
 
 export function assertReadOnlyContract(snapshot) {
-  if (snapshot?.schema !== 'swir.hardware-snapshot/0.1') throw new Error('Hardware snapshot schema mismatch');
+  if (snapshot?.schema !== 'swir.hardware-snapshot/0.2') throw new Error('Hardware snapshot schema mismatch');
   if (snapshot?.host?.readOnly !== true) throw new Error('Hardware Service must stay read-only');
+  if (!snapshot?.host?.distribution || !snapshot?.host?.capabilities) throw new Error('Hardware snapshot host diagnostics missing');
   for (const device of snapshot.devices || []) {
     for (const source of device.catalog?.recommendedSources || []) {
       if (!SOURCE_CLASSES.has(source.class)) throw new Error(`Untrusted driver source class: ${source.class}`);

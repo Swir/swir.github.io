@@ -36,11 +36,28 @@ function operationId(deviceKey, kind, index) {
   return `${deviceKey}:${kind}:${index}`.replace(/[^A-Za-z0-9._:-]/g, '_');
 }
 
+function hostFacts(snapshot) {
+  const distro = snapshot?.host?.distribution || {};
+  const capabilities = snapshot?.host?.capabilities || {};
+  return {
+    distribution: {
+      id: distro.id || 'unknown',
+      versionId: distro.versionId ?? null,
+      family: distro.family || 'unknown'
+    },
+    fwupdAvailable: capabilities.fwupd?.available === true,
+    lvfsMetadataPresent: capabilities.fwupd?.lvfsMetadataPresent === true,
+    packageManagers: uniqueStrings(capabilities.packageManagers || []),
+    repositoryManagers: uniqueStrings((capabilities.repositoryConfig || []).map(item => item?.manager))
+  };
+}
+
 export function resolveDriverPlan(snapshot, catalog, { now = new Date() } = {}) {
-  if (snapshot?.schema !== 'swir.hardware-snapshot/0.1' || snapshot?.host?.readOnly !== true) {
+  if (snapshot?.schema !== 'swir.hardware-snapshot/0.2' || snapshot?.host?.readOnly !== true) {
     throw new Error('Driver resolver requires a trusted read-only hardware snapshot');
   }
 
+  const facts = hostFacts(snapshot);
   const operations = [];
   let healthy = 0;
   let attention = 0;
@@ -77,12 +94,14 @@ export function resolveDriverPlan(snapshot, catalog, { now = new Date() } = {}) 
 
     if (device?.driver?.status === 'unbound' && isMatched) {
       push('diagnose-unbound', 'Device exposes a modalias but no driver is currently bound.', {
+        modalias: device.driver.modalias || null,
         moduleCandidates: support.modules
       });
     }
 
     if (support.modules.length && !expectedModuleLoaded) {
       push('review-module', 'Catalog contains Linux kernel module candidates that require review before any privileged change.', {
+        modalias: device?.driver?.modalias || null,
         moduleCandidates: support.modules
       });
     }
@@ -94,13 +113,21 @@ export function resolveDriverPlan(snapshot, catalog, { now = new Date() } = {}) 
     }
 
     if (support.packages.length) {
-      push('review-package', 'Catalog contains distribution package candidates; resolve only through trusted repositories.', {
+      const managerHint = facts.packageManagers[0] || null;
+      push('review-package', managerHint
+        ? `Catalog contains distribution package candidates; resolve through trusted ${managerHint} repositories only.`
+        : 'Catalog contains distribution package candidates, but no supported package manager was detected.', {
+        packageManager: managerHint,
         packageCandidates: support.packages
       });
     }
 
     if (sources.some(source => source.class === 'fwupd-lvfs')) {
-      push('review-fwupd', 'Device may support firmware servicing through fwupd/LVFS; capability and update metadata must be checked separately.');
+      push('review-fwupd', facts.fwupdAvailable
+        ? 'fwupd is available; query signed LVFS metadata before proposing any firmware mutation.'
+        : 'Catalog recommends fwupd/LVFS, but fwupd is not currently available on this host.', {
+        capability: facts.fwupdAvailable ? 'available' : 'unavailable'
+      });
     }
   }
 
@@ -110,6 +137,7 @@ export function resolveDriverPlan(snapshot, catalog, { now = new Date() } = {}) 
     mode: 'preview',
     readOnly: true,
     autoExecutable: false,
+    host: facts,
     summary: {
       devices: (snapshot.devices || []).length,
       matched,

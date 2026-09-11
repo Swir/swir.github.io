@@ -52,13 +52,18 @@ jobs:
         shell: bash
         run: |
           node system/hardware/hardware-probe.mjs --compact > "$RUNNER_TEMP/swir-hardware.json"
-          node -e "const s=JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')); if(s.schema!=='swir.hardware-snapshot/0.1'||s.host?.readOnly!==true||!Array.isArray(s.devices)) process.exit(1); console.log('Hardware probe devices:', s.devices.length)" "$RUNNER_TEMP/swir-hardware.json"
+          node -e "const s=JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')); if(s.schema!=='swir.hardware-snapshot/0.2'||s.host?.readOnly!==true||!s.host?.distribution?.id||!s.host?.capabilities?.fwupd||!Array.isArray(s.host?.capabilities?.packageManagers)||!Array.isArray(s.devices)) process.exit(1); console.log('Hardware probe:', s.host.distribution.prettyName, 'devices=', s.devices.length, 'fwupd=', s.host.capabilities.fwupd.available, 'pkg=', s.host.capabilities.packageManagers.join(','))" "$RUNNER_TEMP/swir-hardware.json"
+
+      - name: Verify modalias diagnostics shape
+        shell: bash
+        run: |
+          node -e "const s=JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')); for(const d of s.devices){if(!d.driver||!Object.prototype.hasOwnProperty.call(d.driver,'modalias')) process.exit(1)} console.log('Modalias-aware devices:', s.devices.filter(d=>d.driver.modalias).length)" "$RUNNER_TEMP/swir-hardware.json"
 
       - name: Generate CI Driver Center preview
         shell: bash
         run: |
           node system/hardware/driver-plan.mjs --compact > "$RUNNER_TEMP/swir-driver-plan.json"
-          node -e "const p=JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')); if(p.schema!=='swir.driver-plan/0.1'||p.mode!=='preview'||p.readOnly!==true||p.autoExecutable!==false||!Array.isArray(p.operations)) process.exit(1); console.log('Driver plan operations:', p.operations.length)" "$RUNNER_TEMP/swir-driver-plan.json"
+          node -e "const p=JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')); if(p.schema!=='swir.driver-plan/0.1'||p.mode!=='preview'||p.readOnly!==true||p.autoExecutable!==false||!p.host?.distribution||typeof p.host?.fwupdAvailable!=='boolean'||!Array.isArray(p.host?.packageManagers)||!Array.isArray(p.operations)) process.exit(1); console.log('Driver plan host:', p.host.distribution.id, 'operations=', p.operations.length)" "$RUNNER_TEMP/swir-driver-plan.json"
 
       - name: Parse contract JSON
         shell: bash

@@ -1,6 +1,5 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import process from 'node:process';
 
 const ROOT = path.dirname(new URL(import.meta.url).pathname.replace(/^\/(.:)/, '$1'));
 const contracts = path.join(ROOT, 'contracts');
@@ -26,13 +25,17 @@ const baselineCatalog = JSON.parse(fs.readFileSync(path.join(ROOT, 'hardware', '
 assert(hardware.$schema?.includes('2020-12'), 'hardware schema must use JSON Schema 2020-12');
 assert(hardware.properties?.schema?.const === 'swir.hardware-catalog/0.1', 'hardware schema ID mismatch');
 assert(snapshot.$schema?.includes('2020-12'), 'snapshot schema must use JSON Schema 2020-12');
-assert(snapshot.properties?.schema?.const === 'swir.hardware-snapshot/0.1', 'snapshot schema ID mismatch');
+assert(snapshot.properties?.schema?.const === 'swir.hardware-snapshot/0.2', 'snapshot schema ID mismatch');
 assert(snapshot.properties?.host?.properties?.readOnly?.const === true, 'Hardware Service snapshot must remain read-only');
+assert(snapshot.properties?.host?.properties?.distribution, 'Hardware Service snapshot must expose distribution facts');
+assert(snapshot.properties?.host?.properties?.capabilities, 'Hardware Service snapshot must expose host capabilities');
+assert(snapshot.$defs?.device?.properties?.driver?.properties?.modalias, 'Hardware Service snapshot must expose modalias');
 assert(driverPlan.$schema?.includes('2020-12'), 'driver plan schema must use JSON Schema 2020-12');
 assert(driverPlan.properties?.schema?.const === 'swir.driver-plan/0.1', 'driver plan schema ID mismatch');
 assert(driverPlan.properties?.mode?.const === 'preview', 'driver plan must remain preview-only');
 assert(driverPlan.properties?.readOnly?.const === true, 'driver plan must remain read-only');
 assert(driverPlan.properties?.autoExecutable?.const === false, 'driver plan must not be directly executable');
+assert(driverPlan.properties?.host, 'driver plan must carry non-privileged host facts');
 assert(providers.properties?.schema?.const === 'swir.package-provider/0.1', 'provider schema ID mismatch');
 assert(trust.schema === 'swir.trusted-sources/0.1', 'trusted source schema mismatch');
 assert(baselineCatalog.schema === 'swir.hardware-catalog/0.1', 'baseline Hardware Catalog schema mismatch');
@@ -92,11 +95,16 @@ for (const ext of ['.exe', '.msi', '.sys']) {
 const serviceSource = fs.readFileSync(path.join(ROOT, 'hardware', 'hardware-service.mjs'), 'utf8');
 const resolverSource = fs.readFileSync(path.join(ROOT, 'hardware', 'driver-resolver.mjs'), 'utf8');
 assert(serviceSource.includes("readOnly: true"), 'Hardware Service must explicitly emit readOnly=true');
-assert(!serviceSource.includes('execSync(') && !serviceSource.includes('spawnSync('), 'Hardware Service 0.1 must not execute system commands');
-assert(resolverSource.includes("autoExecutable: false"), 'Driver resolver must explicitly disable direct execution');
-for (const forbiddenCall of ['execSync(', 'spawnSync(', 'execFileSync(', 'spawn(']) {
+assert(serviceSource.includes("swir.hardware-snapshot/0.2"), 'Hardware Service must emit snapshot contract 0.2');
+assert(serviceSource.includes('detectLinuxHostEnvironment'), 'Hardware Service must expose host environment detection');
+assert(serviceSource.includes('modalias'), 'Hardware Service must preserve modalias diagnostics');
+for (const forbiddenCall of ['execSync(', 'spawnSync(', 'execFileSync(', 'spawn(', 'exec(']) {
+  assert(!serviceSource.includes(forbiddenCall), `Hardware Service must not execute system commands: ${forbiddenCall}`);
   assert(!resolverSource.includes(forbiddenCall), `Driver resolver must not execute system commands: ${forbiddenCall}`);
 }
+assert(resolverSource.includes("autoExecutable: false"), 'Driver resolver must explicitly disable direct execution');
+assert(resolverSource.includes('fwupdAvailable'), 'Driver resolver must account for fwupd availability');
+assert(resolverSource.includes('packageManagers'), 'Driver resolver must account for package manager availability');
 
 const doc = fs.readFileSync(path.join(ROOT, 'SWIR-SYSTEM-EDITION-ARCHITECTURE-0.1.md'), 'utf8');
 for (const phrase of ['Wine / Proton', 'Hardware Service', 'SWIR Driver Center', 'fwupd', 'linux-firmware']) {
@@ -107,4 +115,5 @@ console.log('SWIR System Edition contract validation: OK');
 console.log(`Driver source classes: ${[...policyClasses].join(', ')}`);
 console.log(`Reserved providers: ${[...providerIds].join(', ')}`);
 console.log(`Hardware Catalog entries: ${baselineCatalog.entries.length}`);
+console.log('Hardware snapshot: 0.2 read-only host diagnostics');
 console.log('Driver plan mode: preview/read-only/non-executable');
