@@ -123,7 +123,13 @@ internal sealed class ControlledCandidateLauncher
 
             return state;
         }
-        catch (UpdateSecurityException ex) when (ex.Code is not "UPDATE_LAUNCH_EARLY_EXIT")
+        catch (UpdateSecurityException ex) when (ex.Code == "UPDATE_LAUNCH_EARLY_EXIT")
+        {
+            // Rollback and diagnostics were already completed above. Preserve the
+            // precise early-exit signal instead of wrapping it as a start failure.
+            throw;
+        }
+        catch (UpdateSecurityException ex)
         {
             TryRollbackAfterStartFailure(plan, canonical, ex);
             throw;
