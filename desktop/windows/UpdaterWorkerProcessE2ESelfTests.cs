@@ -82,7 +82,7 @@ internal static class UpdaterWorkerProcessE2ESelfTests
 
             var leakedEnvironment = new Dictionary<string, string?>
             {
-                [HostShutdownHandoff.EnvironmentNonceName] = "process-e2e-secret-that-must-not-be-used"
+                [HostShutdownHandoff.NonceEnvironmentVariable] = "process-e2e-secret-that-must-not-be-used"
             };
             var readonlyWithNonce = Run(workerExe, leakedEnvironment, "plan", prepared.JournalPath, transactionsRoot, deploymentRoot);
             Expect(readonlyWithNonce.ExitCode == 0, "read-only worker command is unaffected by unrelated shutdown nonce");
