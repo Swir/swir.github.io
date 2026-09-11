@@ -83,6 +83,7 @@ internal static class UpdaterWorkerSelfTests
             ExpectCode("UPDATE_CANDIDATE_MANIFEST_INVALID", () => candidatePreparer.Prepare(wrongVersionPlan), "candidate package version must match signed target version");
 
             RunActivationTests(root, installRoot, journal, protocol, candidatePreparer);
+            RunRecoveryCoordinatorTests(root, installRoot, journal, protocol, candidatePreparer, deploymentRoot);
 
             ExpectCode("UPDATE_WORKER_ROOT_INVALID", () => _ = new UpdaterWorkerProtocol(journal, " "), "worker requires explicit deployment root");
             Console.WriteLine($"SWIR Desktop Updater Worker self-tests passed: {_passed}");
@@ -140,6 +141,60 @@ internal static class UpdaterWorkerSelfTests
         Expect(recovered2.State == "rolled-back", "recovery prefers rollback over forward resume after ambiguous promotion crash");
         Expect(File.ReadAllText(Path.Combine(crash2Plan.CurrentRoot, "version.txt")) == "OLD-AFTER-PROMOTE", "ambiguous promotion crash restores known-good Previous slot");
         Expect(Directory.Exists(Path.Combine(crash2Plan.CandidateRoot, "AbandonedCurrent")), "ambiguous promoted candidate is quarantined for diagnostics");
+    }
+
+    private static void RunRecoveryCoordinatorTests(
+        string root,
+        string installRoot,
+        UpdateTransactionJournal journal,
+        UpdaterWorkerProtocol protocol,
+        CandidatePackagePreparer preparer,
+        string deploymentRoot)
+    {
+        var clock = DateTimeOffset.UtcNow;
+
+        ResetDeployment(deploymentRoot, "OLD-HEALTH-TIMEOUT");
+        var expiredPackage = CreateActivationPackage(root, "activation-health-timeout.zip", "0.5.8");
+        var expiredPrepared = Begin(journal, root, installRoot, expiredPackage, "0.5.8");
+        var expiredPlan = protocol.Prepare(expiredPrepared);
+        var expiredCandidate = preparer.Prepare(expiredPlan);
+        var expiredActivator = new DeploymentSlotActivator(journal, preparer);
+        expiredActivator.Activate(expiredPlan, expiredCandidate);
+        var expiredHealth = new UpdateHealthBroker(journal, () => clock);
+        expiredHealth.Issue(journal.Read(expiredPrepared.JournalPath), TimeSpan.FromSeconds(5));
+        clock = clock.AddSeconds(6);
+        var expiredRecovery = new UpdateRecoveryCoordinator(journal, expiredHealth, expiredActivator).Recover(expiredPlan);
+        Expect(expiredRecovery.State == "rolled-back" && expiredRecovery.Action == "expired-health-check-rolled-back", "expired health challenge triggers automatic slot rollback");
+        Expect(File.ReadAllText(Path.Combine(expiredPlan.CurrentRoot, "version.txt")) == "OLD-HEALTH-TIMEOUT", "health timeout recovery restores known-good Current");
+        Expect(Directory.Exists(Path.Combine(expiredPlan.CandidateRoot, "FailedCurrent")), "timed-out candidate is quarantined for diagnostics");
+
+        ResetDeployment(deploymentRoot, "OLD-MISSING-HEALTH");
+        var missingHealthPackage = CreateActivationPackage(root, "activation-missing-health.zip", "0.5.9");
+        var missingHealthPrepared = Begin(journal, root, installRoot, missingHealthPackage, "0.5.9");
+        var missingHealthPlan = protocol.Prepare(missingHealthPrepared);
+        var missingHealthCandidate = preparer.Prepare(missingHealthPlan);
+        var missingHealthActivator = new DeploymentSlotActivator(journal, preparer);
+        missingHealthActivator.Activate(missingHealthPlan, missingHealthCandidate);
+        var missingHealthBroker = new UpdateHealthBroker(journal, () => clock);
+        var missingHealthRecovery = new UpdateRecoveryCoordinator(journal, missingHealthBroker, missingHealthActivator).Recover(missingHealthPlan);
+        Expect(missingHealthRecovery.State == "rolled-back" && missingHealthRecovery.Action == "missing-health-challenge-rolled-back", "startup recovery rolls back activation that crashed before health challenge persistence");
+        Expect(File.ReadAllText(Path.Combine(missingHealthPlan.CurrentRoot, "version.txt")) == "OLD-MISSING-HEALTH", "missing health metadata cannot strand an unverified Current deployment");
+
+        ResetDeployment(deploymentRoot, "OLD-LIVE-HEALTH");
+        var livePackage = CreateActivationPackage(root, "activation-live-health.zip", "0.5.10");
+        var livePrepared = Begin(journal, root, installRoot, livePackage, "0.5.10");
+        var livePlan = protocol.Prepare(livePrepared);
+        var liveCandidate = preparer.Prepare(livePlan);
+        var liveActivator = new DeploymentSlotActivator(journal, preparer);
+        liveActivator.Activate(livePlan, liveCandidate);
+        var liveHealth = new UpdateHealthBroker(journal, () => clock);
+        var challenge = liveHealth.Issue(journal.Read(livePrepared.JournalPath), TimeSpan.FromMinutes(1));
+        var liveRecovery = new UpdateRecoveryCoordinator(journal, liveHealth, liveActivator).Recover(livePlan);
+        Expect(liveRecovery.State == "awaiting-health-check" && !liveRecovery.Changed, "non-expired health challenge is preserved without rollback");
+        var committed = liveHealth.Confirm(journal.Read(livePrepared.JournalPath), challenge.Token, new Version(0, 5, 10));
+        Expect(committed.State == "committed", "healthy candidate can commit after recovery scan leaves it pending");
+        var terminal = new UpdateRecoveryCoordinator(journal, liveHealth, liveActivator).Recover(livePlan);
+        Expect(terminal.State == "committed" && !terminal.Changed, "recovery coordinator leaves committed transaction untouched");
     }
 
     private static string CreateActivationPackage(string root, string fileName, string version)
