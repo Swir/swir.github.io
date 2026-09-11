@@ -27,6 +27,16 @@ requireText(updateCenter, 'parent.SWIR_NATIVE_HOST', 'Update Center must discove
 requireText(updateCenter, 'guardedUpdateRestartLifecycle', 'Update Center must derive restart readiness from the host feature contract.');
 requireText(updateCenter, 'PACKAGED E2E REQUIRED', 'Update Center must visibly keep restart application gated pending packaged E2E.');
 
+const scripts = [...updateCenter.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(match => match[1]).filter(Boolean);
+if (!scripts.length) throw new Error('Update Center must contain its executable script.');
+for (const [index, script] of scripts.entries()) {
+  try {
+    new Function(script);
+  } catch (error) {
+    throw new Error(`Update Center inline script ${index + 1} failed JavaScript parse validation: ${error.message}`);
+  }
+}
+
 // The current milestone is intentionally read-only. Do not accidentally expose a mutating
 // update command to an iframe/system page until the packaged Windows failure-injection suite
 // proves the full two-slot handoff and rollback path.
@@ -40,4 +50,4 @@ for (const forbidden of [
   rejectText(updateCenter, forbidden, `Update Center must remain read-only before packaged E2E: found ${forbidden}`);
 }
 
-console.log('Update Center Desktop readiness contract validated (read-only / packaged-E2E gate enforced).');
+console.log('Update Center Desktop readiness contract validated (syntax + read-only packaged-E2E gate enforced).');
