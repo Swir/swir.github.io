@@ -17,6 +17,7 @@
     <Compile Remove="UpdateTransactionSelfTests.cs" />
     <Compile Remove="UpdaterWorkerMain.cs" />
     <Compile Remove="UpdaterWorkerSelfTests.cs" />
+    <Compile Remove="UpdateActivationCoordinatorSelfTests.cs" />
   </ItemGroup>
 
   <ItemGroup>
