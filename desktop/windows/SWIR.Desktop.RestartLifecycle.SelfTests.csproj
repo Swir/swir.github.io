@@ -13,6 +13,7 @@
     <Compile Include="UpdateTransactionJournal.cs" />
     <Compile Include="HostShutdownHandoff.cs" />
     <Compile Include="UpdateRestartLauncher.cs" />
+    <Compile Include="DesktopUpdatePaths.cs" />
     <Compile Include="DesktopUpdateRestartLifecycle.cs" />
     <Compile Include="DesktopUpdateRestartLifecycleSelfTests.cs" />
   </ItemGroup>
