@@ -130,6 +130,9 @@ jobs:
       - name: Build standalone updater worker
         run: dotnet build SWIR.Desktop.UpdaterWorker.csproj --configuration Release
 
+      - name: Run standalone updater worker process E2E self-tests
+        run: dotnet run --project SWIR.Desktop.UpdaterWorker.ProcessE2E.SelfTests.csproj --configuration Release -- "${{ github.workspace }}\desktop\windows\bin\Release\net8.0\SWIR.Desktop.UpdaterWorker.exe"
+
       - name: Restore
         run: dotnet restore SWIR.Desktop.Host.csproj
 
