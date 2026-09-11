@@ -11,11 +11,34 @@ internal static class UpdaterWorkerMain
             var journal = new UpdateTransactionJournal(parsed.TransactionsRoot);
             var state = journal.Read(parsed.JournalPath);
             var protocol = new UpdaterWorkerProtocol(journal, parsed.DeploymentRoot);
-            var plan = protocol.Prepare(state);
 
+            if (string.Equals(parsed.Command, "recover", StringComparison.OrdinalIgnoreCase))
+            {
+                var planPath = Path.Combine(
+                    Path.GetDirectoryName(Path.GetFullPath(parsed.JournalPath))
+                        ?? throw new UpdateSecurityException("UPDATE_WORKER_PLAN_PATH_INVALID", "Transaction journal directory is invalid."),
+                    "worker-plan.json");
+                var plan = protocol.Read(planPath, state);
+                var activator = new DeploymentSlotActivator(journal);
+                var health = new UpdateHealthBroker(journal);
+                var recovery = new UpdateRecoveryCoordinator(journal, health, activator).Recover(plan);
+                Console.WriteLine(JsonSerializer.Serialize(new
+                {
+                    schema = "swir.desktop-updater-recovery/0.1",
+                    transactionId = recovery.TransactionId,
+                    state = recovery.State,
+                    action = recovery.Action,
+                    changed = recovery.Changed,
+                    journalPath = recovery.JournalPath,
+                    executableActionsEnabled = false
+                }));
+                return 0;
+            }
+
+            var preparedPlan = protocol.Prepare(state);
             if (string.Equals(parsed.Command, "prepare-candidate", StringComparison.OrdinalIgnoreCase))
             {
-                var candidate = new CandidatePackagePreparer().Prepare(plan);
+                var candidate = new CandidatePackagePreparer().Prepare(preparedPlan);
                 Console.WriteLine(JsonSerializer.Serialize(new
                 {
                     schema = CandidatePackagePreparer.CandidateStateSchema,
@@ -35,14 +58,14 @@ internal static class UpdaterWorkerMain
             Console.WriteLine(JsonSerializer.Serialize(new
             {
                 schema = UpdaterWorkerProtocol.WorkerPlanSchema,
-                transactionId = plan.TransactionId,
-                currentVersion = plan.CurrentVersion.ToString(),
-                targetVersion = plan.TargetVersion.ToString(),
-                state = plan.State,
-                currentRoot = plan.CurrentRoot,
-                previousRoot = plan.PreviousRoot,
-                candidateRoot = plan.CandidateRoot,
-                planPath = plan.PlanPath,
+                transactionId = preparedPlan.TransactionId,
+                currentVersion = preparedPlan.CurrentVersion.ToString(),
+                targetVersion = preparedPlan.TargetVersion.ToString(),
+                state = preparedPlan.State,
+                currentRoot = preparedPlan.CurrentRoot,
+                previousRoot = preparedPlan.PreviousRoot,
+                candidateRoot = preparedPlan.CandidateRoot,
+                planPath = preparedPlan.PlanPath,
                 executableActionsEnabled = false
             }));
             return 0;
@@ -63,10 +86,11 @@ internal static class UpdaterWorkerMain
     {
         if (args.Length != 7
             || (!string.Equals(args[0], "plan", StringComparison.OrdinalIgnoreCase)
-                && !string.Equals(args[0], "prepare-candidate", StringComparison.OrdinalIgnoreCase)))
+                && !string.Equals(args[0], "prepare-candidate", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(args[0], "recover", StringComparison.OrdinalIgnoreCase)))
             throw new UpdateSecurityException(
                 "UPDATE_WORKER_ARGS_INVALID",
-                "Usage: SWIR.Desktop.UpdaterWorker <plan|prepare-candidate> --journal <path> --transactions-root <path> --deployment-root <path>");
+                "Usage: SWIR.Desktop.UpdaterWorker <plan|prepare-candidate|recover> --journal <path> --transactions-root <path> --deployment-root <path>");
 
         string? journal = null;
         string? transactionsRoot = null;
