@@ -3,17 +3,23 @@ using Swir.Desktop.Host;
 
 internal static class UpdaterPackagedCandidateSelfTests
 {
+    private const string TransactionEnvironment = "SWIR_UPDATE_TRANSACTION_ID";
+    private const string TargetVersionEnvironment = "SWIR_UPDATE_TARGET_VERSION";
+    private const string HealthTokenEnvironment = "SWIR_UPDATE_HEALTH_TOKEN";
+    private const string JournalEnvironment = "SWIR_UPDATE_JOURNAL";
+    private const string ShutdownNonceEnvironment = "SWIR_UPDATE_SHUTDOWN_NONCE";
+
     private static int Main()
     {
         try
         {
             var modePath = Path.Combine(AppContext.BaseDirectory, "e2e-mode.txt");
             var mode = File.Exists(modePath) ? File.ReadAllText(modePath).Trim() : "healthy";
-            var journalPath = Require(ControlledCandidateLauncher.JournalEnvironment);
-            var transactionId = Require(ControlledCandidateLauncher.TransactionEnvironment);
-            var targetVersionText = Require(ControlledCandidateLauncher.TargetVersionEnvironment);
-            var token = Require(ControlledCandidateLauncher.HealthTokenEnvironment);
-            var nonceLeaked = !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(HostShutdownHandoff.NonceEnvironmentVariable));
+            var journalPath = Require(JournalEnvironment);
+            var transactionId = Require(TransactionEnvironment);
+            var targetVersionText = Require(TargetVersionEnvironment);
+            var token = Require(HealthTokenEnvironment);
+            var nonceLeaked = !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(ShutdownNonceEnvironment));
 
             var evidencePath = Path.Combine(AppContext.BaseDirectory, "candidate-evidence.json");
             File.WriteAllText(evidencePath, JsonSerializer.Serialize(new
