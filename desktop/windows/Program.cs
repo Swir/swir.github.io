@@ -24,8 +24,13 @@ internal sealed class MainWindow : Form
     private readonly AppIsolationRegistry _isolation;
     private readonly StartupHealthHandshake? _startupHealth;
     private readonly DesktopStartupRecovery _startupRecovery;
+    private readonly DesktopUpdateRestartSession _restartSession;
+    private readonly DesktopUpdateRestartController _updateRestartController;
+    private readonly DesktopHostRestartHooks _restartHooks;
     private readonly string _repoRoot;
     private readonly string _dataRoot;
+    private CoreWebView2? _core;
+    private bool _bridgeAttached;
 
     public MainWindow()
     {
@@ -36,6 +41,18 @@ internal sealed class MainWindow : Form
         StartPosition = FormStartPosition.CenterScreen;
         _startupHealth = StartupHealthHandshake.CaptureFromEnvironment();
         _startupRecovery = new DesktopStartupRecovery();
+
+        var updateJournal = new UpdateTransactionJournal(DesktopUpdatePaths.TransactionsRoot);
+        var restartLauncher = new UpdateRestartLauncher(new HostShutdownHandoff(updateJournal));
+        var restartLifecycle = new DesktopUpdateRestartLifecycle(restartLauncher);
+        _restartSession = new DesktopUpdateRestartSession(restartLifecycle);
+        _updateRestartController = new DesktopUpdateRestartController(
+            new DesktopPreparedUpdateSelector(updateJournal),
+            _restartSession);
+        _restartHooks = new DesktopHostRestartHooks(
+            SuspendHostForUpdateRestartAsync,
+            ResumeHostAfterUpdateRestartFailureAsync);
+
         _repoRoot = ResolveRepoRoot();
         _policyCatalog = new ExecutionPolicyCatalog(Path.Combine(_repoRoot, "desktop", "windows", "app-policy.json"));
         _isolation = new AppIsolationRegistry(_policyCatalog);
@@ -44,6 +61,7 @@ internal sealed class MainWindow : Form
         Directory.CreateDirectory(_dataRoot);
         Controls.Add(_web);
         Shown += async (_, _) => await StartAsync();
+        FormClosed += (_, _) => DetachBridge();
     }
 
     private async Task StartAsync()
@@ -54,13 +72,14 @@ internal sealed class MainWindow : Form
             var env = await CoreWebView2Environment.CreateAsync(userDataFolder: Path.Combine(_dataRoot, "WebView2"));
             await _web.EnsureCoreWebView2Async(env);
             var core = _web.CoreWebView2;
+            _core = core;
             core.Settings.AreDevToolsEnabled = true;
             core.Settings.AreDefaultContextMenusEnabled = true;
             core.Settings.IsStatusBarEnabled = false;
             core.Settings.AreBrowserAcceleratorKeysEnabled = true;
             core.SetVirtualHostNameToFolderMapping("swir.local", _repoRoot, CoreWebView2HostResourceAccessKind.DenyCors);
             _isolation.Configure(core, _repoRoot);
-            core.WebMessageReceived += OnWebMessageReceived;
+            AttachBridge();
             var bootstrap = NativeBridgeScript
                 .Replace("__SESSION_ID__", _capabilities.SessionId)
                 .Replace("__EXECUTION_TOKEN__", _permissions.ShellExecutionToken);
@@ -112,25 +131,121 @@ internal sealed class MainWindow : Form
         }
         catch { return; }
 
-        BridgeResponse response;
-        try
+        if (!_restartSession.TryEnterBridgeRequest(out var bridgeLease) || bridgeLease is null)
         {
-            string? effectiveToken;
-            if (IsTrustedShellSource(e.Source))
-                effectiveToken = request.ContextToken;
-            else if (_isolation.TryResolveEntrySource(e.Source, out var packageId) && packageId is not null)
-                effectiveToken = _permissions.RequirePackageExecutionToken(packageId);
-            else
-                return;
+            PostBridgeResponse(new BridgeResponse(
+                "swir-native-result",
+                request.Id,
+                false,
+                null,
+                new BridgeError("UPDATE_RESTART_IN_PROGRESS", "Desktop host is draining native requests for update restart.")));
+            return;
+        }
 
-            var result = await DispatchAsync(request, effectiveToken);
-            response = new BridgeResponse("swir-native-result", request.Id, true, result, null);
-        }
-        catch (Exception ex)
+        using (bridgeLease)
         {
-            response = new BridgeResponse("swir-native-result", request.Id, false, null, new BridgeError(MapErrorCode(ex), ex.Message));
+            BridgeResponse response;
+            try
+            {
+                string? effectiveToken;
+                if (IsTrustedShellSource(e.Source))
+                    effectiveToken = request.ContextToken;
+                else if (_isolation.TryResolveEntrySource(e.Source, out var packageId) && packageId is not null)
+                    effectiveToken = _permissions.RequirePackageExecutionToken(packageId);
+                else
+                    return;
+
+                var result = await DispatchAsync(request, effectiveToken);
+                response = new BridgeResponse("swir-native-result", request.Id, true, result, null);
+            }
+            catch (Exception ex)
+            {
+                response = new BridgeResponse("swir-native-result", request.Id, false, null, new BridgeError(MapErrorCode(ex), ex.Message));
+            }
+            PostBridgeResponse(response);
         }
-        _web.CoreWebView2.PostWebMessageAsJson(JsonSerializer.Serialize(response, JsonOptions));
+    }
+
+    internal object DescribeUpdateRestartReadiness() => _updateRestartController.Describe();
+
+    internal Task<DesktopUpdateRestartLifecycle.RestartLifecycleResult> ApplyPreparedUpdateAndRestartAsync(
+        CancellationToken cancellationToken = default)
+        => _updateRestartController.RestartReadyAsync(
+            _restartHooks.PrepareAsync,
+            RequestHostExit,
+            _restartHooks.ResumeAsync,
+            cancellationToken);
+
+    private Task SuspendHostForUpdateRestartAsync(CancellationToken cancellationToken)
+        => InvokeOnUiThreadAsync(() =>
+        {
+            DetachBridge();
+            _core?.Stop();
+        }, cancellationToken);
+
+    private Task ResumeHostAfterUpdateRestartFailureAsync(CancellationToken cancellationToken)
+        => InvokeOnUiThreadAsync(AttachBridge, cancellationToken);
+
+    private void RequestHostExit()
+    {
+        if (IsDisposed || Disposing) return;
+        if (InvokeRequired)
+        {
+            BeginInvoke(new Action(RequestHostExit));
+            return;
+        }
+        Close();
+    }
+
+    private void AttachBridge()
+    {
+        if (_core is null || _bridgeAttached || IsDisposed || Disposing) return;
+        _core.WebMessageReceived += OnWebMessageReceived;
+        _bridgeAttached = true;
+    }
+
+    private void DetachBridge()
+    {
+        if (_core is null || !_bridgeAttached) return;
+        _core.WebMessageReceived -= OnWebMessageReceived;
+        _bridgeAttached = false;
+    }
+
+    private Task InvokeOnUiThreadAsync(Action action, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(action);
+        cancellationToken.ThrowIfCancellationRequested();
+        if (IsDisposed || Disposing)
+            throw new ObjectDisposedException(nameof(MainWindow));
+
+        if (!InvokeRequired)
+        {
+            action();
+            return Task.CompletedTask;
+        }
+
+        var completion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        BeginInvoke(new Action(() =>
+        {
+            try
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (IsDisposed || Disposing) throw new ObjectDisposedException(nameof(MainWindow));
+                action();
+                completion.TrySetResult(true);
+            }
+            catch (OperationCanceledException ex) { completion.TrySetCanceled(ex.CancellationToken); }
+            catch (Exception ex) { completion.TrySetException(ex); }
+        }));
+        return completion.Task;
+    }
+
+    private void PostBridgeResponse(BridgeResponse response)
+    {
+        var core = _core;
+        if (core is null || IsDisposed || Disposing) return;
+        try { core.PostWebMessageAsJson(JsonSerializer.Serialize(response, JsonOptions)); }
+        catch (InvalidOperationException) when (!_bridgeAttached || IsDisposed || Disposing) { }
     }
 
     private Task<object?> DispatchAsync(BridgeRequest request, string? effectiveToken)
@@ -394,7 +509,7 @@ internal sealed class MainWindow : Form
   const surface = (name, methods) => Object.freeze(Object.fromEntries(methods.map(method => [method, (...args) => call(name, method, ...args)])));
   window.SWIR_NATIVE_HOST = Object.freeze({
     edition: 'DESKTOP', version: '0.5.1-preview', contract: 'swir.runtime/1.0', sessionId: '__SESSION_ID__',
-    features: Object.freeze({ packageContextBroker: true, appIsolationRouting: true, appIsolationState: 'APP_BRIDGE_VERIFIED', nativeAppData: true }),
+    features: Object.freeze({ packageContextBroker: true, appIsolationRouting: true, appIsolationState: 'APP_BRIDGE_VERIFIED', nativeAppData: true, guardedUpdateRestartLifecycle: true }),
     filesystem: surface('filesystem', ['list','get','save','remove','pickFile','pickDirectory','capabilityInfo','readCapabilityText','revokeCapability','revokeOwnerCapabilities','pruneCapabilities','capabilityStatus']),
     appData: surface('appdata', ['info','list','get','set','remove']),
     clipboard: surface('clipboard', ['readText','writeText','clear']),
