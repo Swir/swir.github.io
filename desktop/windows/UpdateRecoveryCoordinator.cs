@@ -24,8 +24,8 @@ internal sealed class UpdateRecoveryCoordinator
     /// <summary>
     /// Reconciles one updater transaction after worker/host startup.
     /// Prepared and non-expired health-check transactions are left untouched.
-    /// Interrupted applying transactions and expired health checks are rolled back.
-    /// A previously persisted rollback-pending transaction resumes its rollback.
+    /// Interrupted applying transactions, missing health challenges after activation,
+    /// expired health checks, and persisted rollback-pending states are rolled back.
     /// </summary>
     public RecoveryResult Recover(UpdaterWorkerProtocol.WorkerPlan plan)
     {
@@ -45,18 +45,7 @@ internal sealed class UpdateRecoveryCoordinator
             }
 
             case "awaiting-health-check":
-            {
-                var status = _health.GetStatus(state);
-                if (!status.Expired)
-                    return Result(state, "awaiting-health-check", false);
-
-                var rollbackPending = _health.EvaluateTimeout(state);
-                var rolledBack = _activator.Rollback(plan);
-                if (!string.Equals(rollbackPending.State, "rollback-pending", StringComparison.Ordinal)
-                    || !string.Equals(rolledBack.State, "rolled-back", StringComparison.Ordinal))
-                    throw new UpdateSecurityException("UPDATE_RECOVERY_ROLLBACK_INCOMPLETE", "Expired update did not complete rollback.");
-                return Result(rolledBack, "expired-health-check-rolled-back", true);
-            }
+                return RecoverHealthCheck(plan, state);
 
             case "rollback-pending":
             {
@@ -72,6 +61,42 @@ internal sealed class UpdateRecoveryCoordinator
             default:
                 throw new UpdateSecurityException("UPDATE_RECOVERY_STATE_INVALID", $"Unsupported update recovery state: {state.State}");
         }
+    }
+
+    private RecoveryResult RecoverHealthCheck(
+        UpdaterWorkerProtocol.WorkerPlan plan,
+        UpdateTransactionJournal.TransactionState state)
+    {
+        try
+        {
+            var status = _health.GetStatus(state);
+            if (!status.Expired)
+                return Result(state, "awaiting-health-check", false);
+
+            var rollbackPending = _health.EvaluateTimeout(state);
+            return CompleteRollback(plan, rollbackPending, "expired-health-check-rolled-back");
+        }
+        catch (UpdateSecurityException ex) when (ex.Code == "UPDATE_HEALTH_MISSING")
+        {
+            // Activation can reach awaiting-health-check immediately before the challenge
+            // is persisted. A crash in that narrow window must not strand the deployment.
+            var rollbackPending = _journal.Transition(state, "rollback-pending");
+            return CompleteRollback(plan, rollbackPending, "missing-health-challenge-rolled-back");
+        }
+    }
+
+    private RecoveryResult CompleteRollback(
+        UpdaterWorkerProtocol.WorkerPlan plan,
+        UpdateTransactionJournal.TransactionState rollbackPending,
+        string action)
+    {
+        if (!string.Equals(rollbackPending.State, "rollback-pending", StringComparison.Ordinal))
+            throw new UpdateSecurityException("UPDATE_RECOVERY_ROLLBACK_INCOMPLETE", "Recovery did not reach rollback-pending state.");
+
+        var rolledBack = _activator.Rollback(plan);
+        if (!string.Equals(rolledBack.State, "rolled-back", StringComparison.Ordinal))
+            throw new UpdateSecurityException("UPDATE_RECOVERY_ROLLBACK_INCOMPLETE", "Recovery did not complete slot rollback.");
+        return Result(rolledBack, action, true);
     }
 
     private static void EnsureBound(UpdaterWorkerProtocol.WorkerPlan plan, UpdateTransactionJournal.TransactionState state)
