@@ -55,6 +55,41 @@ internal static class UpdaterWorkerMain
                 return 0;
             }
 
+            if (string.Equals(parsed.Command, "activate-and-launch", StringComparison.OrdinalIgnoreCase))
+            {
+                var candidatePreparer = new CandidatePackagePreparer();
+                var candidateStatePath = Path.Combine(Path.GetFullPath(preparedPlan.CandidateRoot), "candidate-state.json");
+                var candidate = candidatePreparer.ReadAndVerify(preparedPlan, candidateStatePath);
+
+                var activator = new DeploymentSlotActivator(journal, candidatePreparer);
+                var health = new UpdateHealthBroker(journal);
+                var activationCoordinator = new UpdateActivationCoordinator(journal, activator, health);
+                var ready = activationCoordinator.ActivateAndIssueHealth(preparedPlan, candidate);
+
+                // Launch is intentionally performed only after the candidate has been
+                // re-verified, atomically promoted and bound to a persisted health challenge.
+                // ControlledCandidateLauncher rolls back to Previous on start failure or
+                // an early process exit; the raw health token is never written to stdout.
+                var launcher = new ControlledCandidateLauncher(journal, activator);
+                var launch = launcher.Launch(preparedPlan, candidate, ready);
+
+                Console.WriteLine(JsonSerializer.Serialize(new
+                {
+                    schema = ControlledCandidateLauncher.LaunchSchema,
+                    transactionId = launch.TransactionId,
+                    targetVersion = launch.TargetVersion,
+                    state = launch.Phase,
+                    processId = launch.ProcessId,
+                    entryPoint = launch.EntryPoint,
+                    startedAt = launch.StartedAt,
+                    launchPath = launch.LaunchPath,
+                    journalPath = parsed.JournalPath,
+                    executableActionsEnabled = true,
+                    healthTokenPersisted = false
+                }));
+                return 0;
+            }
+
             Console.WriteLine(JsonSerializer.Serialize(new
             {
                 schema = UpdaterWorkerProtocol.WorkerPlanSchema,
@@ -87,10 +122,11 @@ internal static class UpdaterWorkerMain
         if (args.Length != 7
             || (!string.Equals(args[0], "plan", StringComparison.OrdinalIgnoreCase)
                 && !string.Equals(args[0], "prepare-candidate", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(args[0], "activate-and-launch", StringComparison.OrdinalIgnoreCase)
                 && !string.Equals(args[0], "recover", StringComparison.OrdinalIgnoreCase)))
             throw new UpdateSecurityException(
                 "UPDATE_WORKER_ARGS_INVALID",
-                "Usage: SWIR.Desktop.UpdaterWorker <plan|prepare-candidate|recover> --journal <path> --transactions-root <path> --deployment-root <path>");
+                "Usage: SWIR.Desktop.UpdaterWorker <plan|prepare-candidate|activate-and-launch|recover> --journal <path> --transactions-root <path> --deployment-root <path>");
 
         string? journal = null;
         string? transactionsRoot = null;
