@@ -11,6 +11,7 @@ internal static class HostShutdownHandoffSelfTests
         var root = Path.Combine(Path.GetTempPath(), "swir-host-shutdown-selftest-" + Guid.NewGuid().ToString("N"));
         var installRoot = Path.Combine(root, "install");
         var packagePath = Path.Combine(root, "package.bin");
+        var previousNonceEnvironment = Environment.GetEnvironmentVariable(HostShutdownHandoff.NonceEnvironmentVariable);
         try
         {
             Directory.CreateDirectory(installRoot);
@@ -18,6 +19,15 @@ internal static class HostShutdownHandoffSelfTests
             File.WriteAllBytes(packagePath, package);
             var hash = Convert.ToHexString(SHA256.HashData(package)).ToLowerInvariant();
             var journal = new UpdateTransactionJournal(Path.Combine(root, "transactions"));
+
+            var capturedNonce = new string('a', 64);
+            Environment.SetEnvironmentVariable(HostShutdownHandoff.NonceEnvironmentVariable, capturedNonce);
+            Expect(HostShutdownHandoff.CaptureNonceFromEnvironment() == capturedNonce, "worker captures shutdown nonce from environment");
+            Expect(Environment.GetEnvironmentVariable(HostShutdownHandoff.NonceEnvironmentVariable) is null, "captured shutdown nonce is removed before child processes can inherit it");
+            ExpectCode("UPDATE_SHUTDOWN_NONCE_REQUIRED", () => HostShutdownHandoff.CaptureNonceFromEnvironment(), "shutdown nonce capture is one-shot");
+            Environment.SetEnvironmentVariable(HostShutdownHandoff.NonceEnvironmentVariable, "invalid");
+            ExpectCode("UPDATE_SHUTDOWN_NONCE_INVALID", () => HostShutdownHandoff.CaptureNonceFromEnvironment(), "invalid environment shutdown nonce is rejected");
+            Expect(Environment.GetEnvironmentVariable(HostShutdownHandoff.NonceEnvironmentVariable) is null, "invalid shutdown nonce is still scrubbed from environment");
 
             var prepared = journal.Begin(NewPlan(root, installRoot, packagePath, hash, package.Length));
             var broker = new HostShutdownHandoff(journal, _ => false, _ => { });
@@ -56,6 +66,7 @@ internal static class HostShutdownHandoffSelfTests
         }
         finally
         {
+            Environment.SetEnvironmentVariable(HostShutdownHandoff.NonceEnvironmentVariable, previousNonceEnvironment);
             try { if (Directory.Exists(root)) Directory.Delete(root, true); } catch { }
         }
     }
