@@ -82,6 +82,8 @@ internal static class UpdaterWorkerSelfTests
             var wrongVersionPlan = protocol.Prepare(wrongVersionPrepared);
             ExpectCode("UPDATE_CANDIDATE_MANIFEST_INVALID", () => candidatePreparer.Prepare(wrongVersionPlan), "candidate package version must match signed target version");
 
+            RunActivationTests(root, installRoot, journal, protocol, candidatePreparer);
+
             ExpectCode("UPDATE_WORKER_ROOT_INVALID", () => _ = new UpdaterWorkerProtocol(journal, " "), "worker requires explicit deployment root");
             Console.WriteLine($"SWIR Desktop Updater Worker self-tests passed: {_passed}");
         }
@@ -89,6 +91,76 @@ internal static class UpdaterWorkerSelfTests
         {
             try { if (Directory.Exists(root)) Directory.Delete(root, true); } catch { }
         }
+    }
+
+    private static void RunActivationTests(string root, string installRoot, UpdateTransactionJournal journal, UpdaterWorkerProtocol protocol, CandidatePackagePreparer preparer)
+    {
+        var deploymentRoot = Path.GetDirectoryName(protocol.Prepare(Begin(journal, root, installRoot, CreateActivationPackage(root, "activation-success.zip", "0.5.4"), "0.5.4")).CurrentRoot)!;
+        ResetDeployment(deploymentRoot, "OLD-0.5.1");
+
+        var successPackage = CreateActivationPackage(root, "activation-success-2.zip", "0.5.5");
+        var successPrepared = Begin(journal, root, installRoot, successPackage, "0.5.5");
+        var successPlan = protocol.Prepare(successPrepared);
+        var successCandidate = preparer.Prepare(successPlan);
+        var activator = new DeploymentSlotActivator(journal, preparer);
+        var activation = activator.Activate(successPlan, successCandidate);
+        Expect(activation.Phase == "awaiting-health-check", "slot activation reaches awaiting-health-check only after both atomic moves");
+        Expect(journal.Read(successPrepared.JournalPath).State == "awaiting-health-check", "transaction journal follows successful slot activation");
+        Expect(File.ReadAllText(Path.Combine(successPlan.PreviousRoot, "version.txt")) == "OLD-0.5.1", "Current is preserved as Previous before candidate promotion");
+        Expect(File.Exists(Path.Combine(successPlan.CurrentRoot, "SWIR.Desktop.Host.exe")), "candidate payload is promoted into Current");
+        Expect(activator.Read(successPlan).Phase == "awaiting-health-check", "activation checkpoint is persisted and readable");
+
+        var rollbackPending = journal.Transition(journal.Read(successPrepared.JournalPath), "rollback-pending");
+        var rolledBack = activator.Rollback(successPlan);
+        Expect(rollbackPending.State == "rollback-pending" && rolledBack.State == "rolled-back", "explicit rollback completes journal state transition");
+        Expect(File.ReadAllText(Path.Combine(successPlan.CurrentRoot, "version.txt")) == "OLD-0.5.1", "rollback restores Previous as Current");
+        Expect(!Directory.Exists(successPlan.PreviousRoot), "rollback consumes Previous only after restoration");
+        Expect(Directory.Exists(Path.Combine(successPlan.CandidateRoot, "FailedCurrent")), "failed candidate is quarantined instead of deleted during rollback");
+
+        ResetDeployment(deploymentRoot, "OLD-AFTER-BACKUP");
+        var crash1Package = CreateActivationPackage(root, "activation-crash-backup.zip", "0.5.6");
+        var crash1Prepared = Begin(journal, root, installRoot, crash1Package, "0.5.6");
+        var crash1Plan = protocol.Prepare(crash1Prepared);
+        var crash1Candidate = preparer.Prepare(crash1Plan);
+        var crashAfterBackup = new DeploymentSlotActivator(journal, preparer, point => { if (point == "after-current-backup") throw new SimulatedCrashException(); });
+        ExpectThrows<SimulatedCrashException>(() => crashAfterBackup.Activate(crash1Plan, crash1Candidate), "failure injection interrupts activation after Current backup");
+        Expect(journal.Read(crash1Prepared.JournalPath).State == "applying", "interrupted activation remains recoverable in applying state");
+        var recovered1 = new DeploymentSlotActivator(journal, preparer).RecoverApplying(crash1Plan);
+        Expect(recovered1.State == "rolled-back", "recovery rolls back interrupted activation after Current backup");
+        Expect(File.ReadAllText(Path.Combine(crash1Plan.CurrentRoot, "version.txt")) == "OLD-AFTER-BACKUP", "recovery restores original Current after backup-stage crash");
+
+        ResetDeployment(deploymentRoot, "OLD-AFTER-PROMOTE");
+        var crash2Package = CreateActivationPackage(root, "activation-crash-promote.zip", "0.5.7");
+        var crash2Prepared = Begin(journal, root, installRoot, crash2Package, "0.5.7");
+        var crash2Plan = protocol.Prepare(crash2Prepared);
+        var crash2Candidate = preparer.Prepare(crash2Plan);
+        var crashAfterPromote = new DeploymentSlotActivator(journal, preparer, point => { if (point == "after-candidate-promote") throw new SimulatedCrashException(); });
+        ExpectThrows<SimulatedCrashException>(() => crashAfterPromote.Activate(crash2Plan, crash2Candidate), "failure injection interrupts activation after candidate promotion");
+        var recovered2 = new DeploymentSlotActivator(journal, preparer).RecoverApplying(crash2Plan);
+        Expect(recovered2.State == "rolled-back", "recovery prefers rollback over forward resume after ambiguous promotion crash");
+        Expect(File.ReadAllText(Path.Combine(crash2Plan.CurrentRoot, "version.txt")) == "OLD-AFTER-PROMOTE", "ambiguous promotion crash restores known-good Previous slot");
+        Expect(Directory.Exists(Path.Combine(crash2Plan.CandidateRoot, "AbandonedCurrent")), "ambiguous promoted candidate is quarantined for diagnostics");
+    }
+
+    private static string CreateActivationPackage(string root, string fileName, string version)
+    {
+        var path = Path.Combine(root, fileName);
+        CreatePackage(path, version, "SWIR.Desktop.Host.exe", new Dictionary<string, byte[]>
+        {
+            ["SWIR.Desktop.Host.exe"] = Encoding.UTF8.GetBytes("HOST-" + version),
+            ["assets/runtime.txt"] = Encoding.UTF8.GetBytes("RUNTIME-" + version)
+        });
+        return path;
+    }
+
+    private static void ResetDeployment(string deploymentRoot, string marker)
+    {
+        var current = Path.Combine(deploymentRoot, "Current");
+        var previous = Path.Combine(deploymentRoot, "Previous");
+        if (Directory.Exists(current)) Directory.Delete(current, true);
+        if (Directory.Exists(previous)) Directory.Delete(previous, true);
+        Directory.CreateDirectory(current);
+        File.WriteAllText(Path.Combine(current, "version.txt"), marker);
     }
 
     private static UpdateTransactionJournal.TransactionState Begin(UpdateTransactionJournal journal, string root, string installRoot, string packagePath, string targetVersion)
@@ -152,4 +224,17 @@ internal static class UpdaterWorkerSelfTests
         }
         throw new Exception($"FAILED: {name}; expected {code}");
     }
+
+    private static void ExpectThrows<T>(Action action, string name) where T : Exception
+    {
+        try { action(); }
+        catch (T)
+        {
+            Expect(true, name);
+            return;
+        }
+        throw new Exception($"FAILED: {name}; expected {typeof(T).Name}");
+    }
+
+    private sealed class SimulatedCrashException : Exception { }
 }
