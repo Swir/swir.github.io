@@ -23,6 +23,18 @@ internal sealed class HostShutdownHandoff
         _sleep = sleep ?? Thread.Sleep;
     }
 
+    public static string CaptureNonceFromEnvironment()
+    {
+        var nonce = Environment.GetEnvironmentVariable(NonceEnvironmentVariable);
+        // The shutdown nonce authorizes a single updater handoff. Clear it before any
+        // candidate process can inherit the worker environment.
+        Environment.SetEnvironmentVariable(NonceEnvironmentVariable, null);
+        if (string.IsNullOrWhiteSpace(nonce))
+            throw new UpdateSecurityException("UPDATE_SHUTDOWN_NONCE_REQUIRED", "Updater activation requires a shutdown nonce supplied by the exiting Desktop Host.");
+        ValidateNonce(nonce);
+        return nonce;
+    }
+
     public ShutdownTicket Issue(UpdateTransactionJournal.TransactionState state, int hostProcessId, TimeSpan ttl)
     {
         ArgumentNullException.ThrowIfNull(state);
@@ -70,8 +82,7 @@ internal sealed class HostShutdownHandoff
         if (!string.Equals(canonical.TransactionId, state.TransactionId, StringComparison.Ordinal)
             || !string.Equals(canonical.State, "prepared", StringComparison.Ordinal))
             throw new UpdateSecurityException("UPDATE_SHUTDOWN_STATE_INVALID", "Shutdown verification requires the canonical prepared transaction.");
-        if (string.IsNullOrWhiteSpace(nonce) || nonce.Length != 64 || !nonce.All(Uri.IsHexDigit))
-            throw new UpdateSecurityException("UPDATE_SHUTDOWN_NONCE_INVALID", "Shutdown nonce is invalid.");
+        ValidateNonce(nonce);
         if (waitTimeout < TimeSpan.Zero || waitTimeout > TimeSpan.FromMinutes(5))
             throw new UpdateSecurityException("UPDATE_SHUTDOWN_WAIT_INVALID", "Shutdown wait timeout is invalid.");
 
@@ -131,6 +142,12 @@ internal sealed class HostShutdownHandoff
             throw new UpdateSecurityException("UPDATE_SHUTDOWN_ALREADY_CONSUMED", "Shutdown handoff was already consumed.");
         File.Move(actualPath, consumedPath);
         return new VerifiedShutdown(canonical.TransactionId, canonical.TargetVersion, metadata.HostProcessId, consumedPath, DateTimeOffset.UtcNow);
+    }
+
+    private static void ValidateNonce(string? nonce)
+    {
+        if (string.IsNullOrWhiteSpace(nonce) || nonce.Length != 64 || !nonce.All(Uri.IsHexDigit))
+            throw new UpdateSecurityException("UPDATE_SHUTDOWN_NONCE_INVALID", "Shutdown nonce is invalid.");
     }
 
     private static bool IsProcessAlive(int processId)
