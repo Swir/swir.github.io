@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://swir.github.io/system/contracts/hardware-snapshot.schema.json",
+  "title": "SWIR Hardware Snapshot 0.1",
+  "type": "object",
+  "required": ["schema", "generatedAt", "host", "devices"],
+  "properties": {
+    "schema": { "const": "swir.hardware-snapshot/0.1" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "host": {
+      "type": "object",
+      "required": ["platform", "arch", "readOnly"],
+      "properties": {
+        "platform": { "type": "string", "minLength": 1 },
+        "arch": { "type": "string", "minLength": 1 },
+        "kernel": { "type": "string" },
+        "readOnly": { "const": true }
+      },
+      "additionalProperties": false
+    },
+    "devices": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/device" }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "device": {
+      "type": "object",
+      "required": ["key", "bus", "ids", "driver", "catalog"],
+      "properties": {
+        "key": { "type": "string", "minLength": 1 },
+        "bus": { "enum": ["pci", "usb", "platform"] },
+        "sysfsPath": { "type": ["string", "null"] },
+        "ids": {
+          "type": "object",
+          "additionalProperties": { "type": "string", "pattern": "^[0-9a-f]{4,8}$" }
+        },
+        "driver": {
+          "type": "object",
+          "required": ["status", "module"],
+          "properties": {
+            "status": { "enum": ["loaded", "unbound", "unknown"] },
+            "module": { "type": ["string", "null"] }
+          },
+          "additionalProperties": false
+        },
+        "catalog": {
+          "type": "object",
+          "required": ["matched", "entryIds", "recommendedSources"],
+          "properties": {
+            "matched": { "type": "boolean" },
+            "entryIds": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+            "recommendedSources": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["class", "ref"],
+                "properties": {
+                  "class": { "enum": ["kernel-in-tree", "linux-firmware", "distribution-repository", "fwupd-lvfs", "vendor-official-repository"] },
+                  "ref": { "type": "string", "minLength": 1 },
+                  "repositoryId": { "type": "string" },
+                  "rollback": { "type": "boolean" }
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
