@@ -17,6 +17,7 @@ on:
       - 'swir-chat.html'
       - 'swir-chat-api.php'
       - 'swir-updates.html'
+      - 'sw.js'
       - '.github/workflows/desktop-windows-build.yml'
   pull_request:
     paths:
@@ -33,6 +34,7 @@ on:
       - 'swir-chat.html'
       - 'swir-chat-api.php'
       - 'swir-updates.html'
+      - 'sw.js'
       - '.github/workflows/desktop-windows-build.yml'
 
 permissions:
