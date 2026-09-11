@@ -17,13 +17,20 @@ function assert(condition, message) {
 }
 
 const hardware = readJson('hardware-catalog.schema.json');
+const snapshot = readJson('hardware-snapshot.schema.json');
 const providers = readJson('package-provider.schema.json');
 const trust = readJson('trusted-sources.json');
+const baselineCatalog = JSON.parse(fs.readFileSync(path.join(ROOT, 'hardware', 'hardware-catalog.json'), 'utf8'));
 
 assert(hardware.$schema?.includes('2020-12'), 'hardware schema must use JSON Schema 2020-12');
 assert(hardware.properties?.schema?.const === 'swir.hardware-catalog/0.1', 'hardware schema ID mismatch');
+assert(snapshot.$schema?.includes('2020-12'), 'snapshot schema must use JSON Schema 2020-12');
+assert(snapshot.properties?.schema?.const === 'swir.hardware-snapshot/0.1', 'snapshot schema ID mismatch');
+assert(snapshot.properties?.host?.properties?.readOnly?.const === true, 'Hardware Service snapshot must remain read-only');
 assert(providers.properties?.schema?.const === 'swir.package-provider/0.1', 'provider schema ID mismatch');
 assert(trust.schema === 'swir.trusted-sources/0.1', 'trusted source schema mismatch');
+assert(baselineCatalog.schema === 'swir.hardware-catalog/0.1', 'baseline Hardware Catalog schema mismatch');
+assert(Array.isArray(baselineCatalog.entries), 'baseline Hardware Catalog entries must be an array');
 
 const allowedDriverClasses = new Set([
   'kernel-in-tree',
@@ -33,10 +40,24 @@ const allowedDriverClasses = new Set([
   'vendor-official-repository'
 ]);
 const catalogClasses = new Set(hardware.$defs.entry.properties.sources.items.properties.class.enum);
+const snapshotClasses = new Set(snapshot.$defs.device.properties.catalog.properties.recommendedSources.items.properties.class.enum);
 const policyClasses = new Set(trust.driverSourceClasses);
 assert([...catalogClasses].every(x => allowedDriverClasses.has(x)), 'hardware schema exposes unapproved driver source class');
+assert([...snapshotClasses].every(x => allowedDriverClasses.has(x)), 'snapshot schema exposes unapproved driver source class');
 assert([...policyClasses].every(x => allowedDriverClasses.has(x)), 'trusted-sources exposes unapproved driver source class');
 assert(allowedDriverClasses.size === policyClasses.size, 'trusted-sources driver classes must match Architecture 0.1 allowlist');
+assert(snapshotClasses.size === allowedDriverClasses.size, 'snapshot driver classes must match trusted source allowlist');
+
+for (const entry of baselineCatalog.entries) {
+  assert(typeof entry.id === 'string' && entry.id.length > 0, 'Hardware Catalog entry requires id');
+  assert(['pci', 'usb', 'platform'].includes(entry.match?.bus), `Hardware Catalog ${entry.id} has unsupported bus`);
+  assert(Array.isArray(entry.match?.ids) && entry.match.ids.length > 0, `Hardware Catalog ${entry.id} requires match IDs`);
+  assert(Array.isArray(entry.sources) && entry.sources.length > 0, `Hardware Catalog ${entry.id} requires trusted sources`);
+  for (const source of entry.sources) {
+    assert(allowedDriverClasses.has(source.class), `Hardware Catalog ${entry.id} exposes unapproved source ${source.class}`);
+    assert(typeof source.ref === 'string' && source.ref.length > 0, `Hardware Catalog ${entry.id} source requires ref`);
+  }
+}
 
 const providerIds = new Set(providers.properties.provider.enum);
 const reserved = new Set(trust.reservedProviders);
@@ -59,6 +80,10 @@ for (const ext of ['.exe', '.msi', '.sys']) {
   assert(forbidden.has(ext), `missing forbidden automatic driver artifact ${ext}`);
 }
 
+const serviceSource = fs.readFileSync(path.join(ROOT, 'hardware', 'hardware-service.mjs'), 'utf8');
+assert(serviceSource.includes("readOnly: true"), 'Hardware Service must explicitly emit readOnly=true');
+assert(!serviceSource.includes('execSync(') && !serviceSource.includes('spawnSync('), 'Hardware Service 0.1 must not execute system commands');
+
 const doc = fs.readFileSync(path.join(ROOT, 'SWIR-SYSTEM-EDITION-ARCHITECTURE-0.1.md'), 'utf8');
 for (const phrase of ['Wine / Proton', 'Hardware Service', 'SWIR Driver Center', 'fwupd', 'linux-firmware']) {
   assert(doc.includes(phrase), `architecture document missing required concept: ${phrase}`);
@@ -67,3 +92,4 @@ for (const phrase of ['Wine / Proton', 'Hardware Service', 'SWIR Driver Center',
 console.log('SWIR System Edition contract validation: OK');
 console.log(`Driver source classes: ${[...policyClasses].join(', ')}`);
 console.log(`Reserved providers: ${[...providerIds].join(', ')}`);
+console.log(`Hardware Catalog entries: ${baselineCatalog.entries.length}`);
