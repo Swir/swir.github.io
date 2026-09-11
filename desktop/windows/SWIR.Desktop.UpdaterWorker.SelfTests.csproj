@@ -15,6 +15,7 @@
     <Compile Include="UpdaterWorkerProtocol.cs" />
     <Compile Include="CandidatePackagePreparer.cs" />
     <Compile Include="DeploymentSlotActivator.cs" />
+    <Compile Include="UpdateActivationCoordinator.cs" />
     <Compile Include="UpdateRecoveryCoordinator.cs" />
     <Compile Include="UpdaterWorkerSelfTests.cs" />
   </ItemGroup>
