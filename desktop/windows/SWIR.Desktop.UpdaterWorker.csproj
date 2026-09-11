@@ -15,6 +15,7 @@
     <Compile Include="UpdateTransactionJournal.cs" />
     <Compile Include="UpdaterWorkerProtocol.cs" />
     <Compile Include="CandidatePackagePreparer.cs" />
+    <Compile Include="DeploymentSlotActivator.cs" />
     <Compile Include="UpdaterWorkerMain.cs" />
   </ItemGroup>
 </Project>
