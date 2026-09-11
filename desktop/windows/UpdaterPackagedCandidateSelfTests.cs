@@ -51,6 +51,14 @@ internal static class UpdaterPackagedCandidateSelfTests
             if (!string.Equals(state.TransactionId, transactionId, StringComparison.Ordinal))
                 return 73;
 
+            if (string.Equals(mode, "no-health", StringComparison.OrdinalIgnoreCase))
+            {
+                // Simulate a Candidate that starts successfully and survives the launch probe,
+                // but never proves shell health. Startup recovery must later roll it back.
+                Thread.Sleep(TimeSpan.FromSeconds(4));
+                return 0;
+            }
+
             var committed = new UpdateHealthBroker(journal).Confirm(state, token, targetVersion);
             if (!string.Equals(committed.State, "committed", StringComparison.Ordinal))
                 return 74;

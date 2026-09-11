@@ -13,7 +13,10 @@ internal sealed class DesktopStartupRecovery
     private readonly UpdaterWorkerProtocol _protocol;
     private readonly UpdateRecoveryCoordinator _recovery;
 
-    public DesktopStartupRecovery(string? transactionsRoot = null, string? deploymentRoot = null)
+    public DesktopStartupRecovery(
+        string? transactionsRoot = null,
+        string? deploymentRoot = null,
+        Func<DateTimeOffset>? clock = null)
     {
         var canonicalTransactionsRoot = Path.GetFullPath(transactionsRoot ?? DesktopUpdatePaths.TransactionsRoot);
         var canonicalDeploymentRoot = Path.GetFullPath(deploymentRoot ?? DesktopUpdatePaths.DeploymentRoot);
@@ -21,7 +24,7 @@ internal sealed class DesktopStartupRecovery
         _protocol = new UpdaterWorkerProtocol(_journal, canonicalDeploymentRoot);
         _recovery = new UpdateRecoveryCoordinator(
             _journal,
-            new UpdateHealthBroker(_journal),
+            new UpdateHealthBroker(_journal, clock),
             new DeploymentSlotActivator(_journal));
     }
 

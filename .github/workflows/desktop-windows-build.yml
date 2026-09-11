@@ -139,6 +139,9 @@ jobs:
       - name: Run packaged two-slot activation and rollback E2E
         run: dotnet run --project SWIR.Desktop.Updater.PackagedActivation.SelfTests.csproj --configuration Release -- "${{ github.workspace }}\desktop\windows\bin\Release\net8.0\SWIR.Desktop.UpdaterWorker.exe" "${{ runner.temp }}\swir-e2e-candidate"
 
+      - name: Run packaged health-timeout startup recovery E2E
+        run: dotnet run --project SWIR.Desktop.Updater.PackagedRecovery.SelfTests.csproj --configuration Release -- "${{ github.workspace }}\desktop\windows\bin\Release\net8.0\SWIR.Desktop.UpdaterWorker.exe" "${{ runner.temp }}\swir-e2e-candidate"
+
       - name: Restore
         run: dotnet restore SWIR.Desktop.Host.csproj
 
