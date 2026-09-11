@@ -23,6 +23,7 @@
     <Compile Remove="HostShutdownHandoffSelfTests.cs" />
     <Compile Remove="UpdateRestartLauncherSelfTests.cs" />
     <Compile Remove="DesktopStartupRecoverySelfTests.cs" />
+    <Compile Remove="DesktopUpdateRestartLifecycleSelfTests.cs" />
   </ItemGroup>
 
   <ItemGroup>
