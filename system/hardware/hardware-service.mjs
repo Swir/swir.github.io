@@ -46,7 +46,7 @@ function pciIds(devicePath) {
     vendor: normalizeHex(safeRead(path.join(devicePath, 'vendor'))),
     device: normalizeHex(safeRead(path.join(devicePath, 'device'))),
     subsystemVendor: normalizeHex(safeRead(path.join(devicePath, 'subsystem_vendor'))),
-    subsystemDevice: normalizeHex(safeRead(path.join(devicePath, 'subsystem_device')),
+    subsystemDevice: normalizeHex(safeRead(path.join(devicePath, 'subsystem_device')))
   };
 }
 
@@ -116,7 +116,7 @@ export function deviceMatchTokens(device) {
 function wildcardMatch(pattern, value) {
   const escaped = pattern
     .toLowerCase()
-    .replace(/[.+?^${}()|[\]\\]/g, '\\$&')
+    .replace(/[-/\\^$+?.()|[\]{}]/g, '\\$&')
     .replace(/\*/g, '.*');
   return new RegExp(`^${escaped}$`, 'i').test(value);
 }
