@@ -90,6 +90,9 @@ jobs:
       - name: Run activation health rollback self-tests
         run: dotnet run --project SWIR.Desktop.ActivationCoordinator.SelfTests.csproj --configuration Release
 
+      - name: Run controlled candidate launcher self-tests
+        run: dotnet run --project SWIR.Desktop.CandidateLauncher.SelfTests.csproj --configuration Release
+
       - name: Run updater worker contract self-tests
         run: dotnet run --project SWIR.Desktop.UpdaterWorker.SelfTests.csproj --configuration Release
 
