@@ -19,7 +19,31 @@ internal sealed class DesktopUpdateRestartLifecycle
 
     public bool IsRestartInProgress => Volatile.Read(ref _inProgress) != 0;
 
-    public async Task<RestartLifecycleResult> RestartAsync(
+    /// <summary>
+    /// Production entry point. The host never accepts deployment/update roots from
+    /// WebView or mutable transaction metadata; it uses DesktopUpdatePaths only.
+    /// </summary>
+    public Task<RestartLifecycleResult> RestartCanonicalAsync(
+        UpdateTransactionJournal.TransactionState state,
+        Func<CancellationToken, Task> quiesceAsync,
+        Func<CancellationToken, Task> prepareForExitAsync,
+        Action requestHostExit,
+        Func<CancellationToken, Task>? resumeAfterFailureAsync = null,
+        TimeSpan? ticketTtl = null,
+        CancellationToken cancellationToken = default)
+        => RestartAsync(
+            state,
+            DesktopUpdatePaths.UpdaterWorkerPath,
+            DesktopUpdatePaths.TransactionsRoot,
+            DesktopUpdatePaths.DeploymentRoot,
+            quiesceAsync,
+            prepareForExitAsync,
+            requestHostExit,
+            resumeAfterFailureAsync,
+            ticketTtl,
+            cancellationToken);
+
+    internal async Task<RestartLifecycleResult> RestartAsync(
         UpdateTransactionJournal.TransactionState state,
         string updaterWorkerPath,
         string transactionsRoot,
