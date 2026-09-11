@@ -18,6 +18,7 @@
     <Compile Remove="UpdaterWorkerMain.cs" />
     <Compile Remove="UpdaterWorkerSelfTests.cs" />
     <Compile Remove="UpdateActivationCoordinatorSelfTests.cs" />
+    <Compile Remove="ControlledCandidateLauncherSelfTests.cs" />
   </ItemGroup>
 
   <ItemGroup>
