@@ -102,6 +102,9 @@ jobs:
       - name: Run desktop update restart launcher self-tests
         run: dotnet run --project SWIR.Desktop.UpdateRestart.SelfTests.csproj --configuration Release
 
+      - name: Run Desktop restart lifecycle failure-injection self-tests
+        run: dotnet run --project SWIR.Desktop.RestartLifecycle.SelfTests.csproj --configuration Release
+
       - name: Run Desktop startup recovery self-tests
         run: dotnet run --project SWIR.Desktop.StartupRecovery.SelfTests.csproj --configuration Release
 
