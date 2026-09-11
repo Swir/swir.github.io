@@ -99,6 +99,9 @@ jobs:
       - name: Run host shutdown handoff self-tests
         run: dotnet run --project SWIR.Desktop.HostShutdown.SelfTests.csproj --configuration Release
 
+      - name: Run desktop update restart launcher self-tests
+        run: dotnet run --project SWIR.Desktop.UpdateRestart.SelfTests.csproj --configuration Release
+
       - name: Run updater worker contract self-tests
         run: dotnet run --project SWIR.Desktop.UpdaterWorker.SelfTests.csproj --configuration Release
 
