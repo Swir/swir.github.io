@@ -1,0 +1,9 @@
+{
+  "Schema": "swir.desktop-update-policy/0.1",
+  "Enabled": false,
+  "Channel": "stable",
+  "ManifestUrl": null,
+  "ManifestHosts": [],
+  "PackageHosts": [],
+  "PublicKeyPem": null
+}
