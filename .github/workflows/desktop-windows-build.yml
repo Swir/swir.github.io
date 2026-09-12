@@ -94,6 +94,9 @@ jobs:
       - name: Run end-to-end update preparation self-tests
         run: dotnet run --project SWIR.Desktop.UpdatePreparation.SelfTests.csproj --configuration Release
 
+      - name: Run Desktop update preparation bridge and release policy self-tests
+        run: dotnet run --project SWIR.Desktop.UpdatePreparationBridge.SelfTests.csproj --configuration Release
+
       - name: Run update transaction recovery self-tests
         run: dotnet run --project SWIR.Desktop.Transaction.SelfTests.csproj --configuration Release
 
