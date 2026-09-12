@@ -86,6 +86,7 @@ $required = @(
     'swir-i18n.js',
     'swir-os.js',
     'swir-runtime.js',
+    'swir-file-storage.js',
     'swir-apps.js',
     'swir-app-bridge.js',
     'swir-app-bridge-host.js',
