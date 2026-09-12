@@ -39,10 +39,18 @@ internal static class PermissionBrokerSelfTests
             Require(broker.Can(chatToken, "filesystem.sandbox.write"), "swir.chat did not receive sandbox write from storage");
             Require(broker.Can(shellToken, "updates.inspect"), "trusted shell did not receive updates.inspect");
             Require(broker.Can(shellToken, "updates.apply"), "trusted shell did not receive updates.apply");
-            broker.Authorize(shellToken, "updates", "readiness");
-            broker.Authorize(shellToken, "updates", "applyAndRestart");
-            ExpectCode("PERMISSION_DENIED", () => broker.Authorize(codeToken, "updates", "readiness"));
-            ExpectCode("PERMISSION_DENIED", () => broker.Authorize(codeToken, "updates", "applyAndRestart"));
+
+            foreach (var method in new[] { "readiness", "check", "preparationStatus" })
+            {
+                broker.Authorize(shellToken, "updates", method);
+                ExpectCode("PERMISSION_DENIED", () => broker.Authorize(codeToken, "updates", method));
+            }
+
+            foreach (var method in new[] { "prepare", "cancelPrepare", "resetPreparation", "applyAndRestart" })
+            {
+                broker.Authorize(shellToken, "updates", method);
+                ExpectCode("PERMISSION_DENIED", () => broker.Authorize(codeToken, "updates", method));
+            }
 
             broker.AuthorizePackageTarget(codeToken, "swir.code", "appdata", "get");
             broker.AuthorizePackageTarget(chatToken, "swir.chat", "appdata", "set");
@@ -85,8 +93,8 @@ internal static class PermissionBrokerSelfTests
 
             Console.WriteLine("SWIR Permission Broker self-tests: PASS");
             Console.WriteLine("- package permission projection");
-            Console.WriteLine("- trusted-shell update inspect/apply permissions");
-            Console.WriteLine("- package denial for native update control");
+            Console.WriteLine("- trusted-shell update inspect/apply workflow permissions");
+            Console.WriteLine("- package denial for signed check, preparation and native apply");
             Console.WriteLine("- cross-package App Data denial");
             Console.WriteLine("- undeclared grant escalation denial");
             Console.WriteLine("- capability owner isolation and revocation");
