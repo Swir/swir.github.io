@@ -48,6 +48,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: desktop-release-contract-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   verify-release-contract:
     runs-on: windows-latest
