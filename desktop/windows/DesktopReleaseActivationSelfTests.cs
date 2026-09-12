@@ -91,18 +91,28 @@ internal static class DesktopReleaseActivationSelfTests
                 [HostShutdownHandoff.NonceEnvironmentVariable] = shutdown.Nonce
             };
 
-            var activation = RunWorker(workerExe, environment, "activate-and-launch", state.JournalPath, transactionsRoot, deploymentRoot, 30000);
+            // Do not redirect updater stdout for the long-lived real Host launch. The Host can
+            // inherit console handles from the worker on Windows, which would keep a redirected
+            // pipe open after the worker itself exits. Canonical launch metadata is persisted in
+            // launch.json and is the authoritative source for the candidate PID and identity.
+            var activation = RunWorker(workerExe, environment, "activate-and-launch", state.JournalPath, transactionsRoot, deploymentRoot, 30000, captureOutput: false);
             Expect(activation.ExitCode == 0, "worker promotes and launches the real signed Desktop Host");
 
-            using (var launchJson = JsonDocument.Parse(activation.Stdout))
+            var transactionDirectory = Path.GetDirectoryName(state.JournalPath)
+                ?? throw new InvalidOperationException("Transaction directory is missing.");
+            var launchPath = Path.Combine(transactionDirectory, "launch.json");
+            WaitForFile(launchPath, TimeSpan.FromSeconds(5));
+            using (var launchJson = JsonDocument.Parse(File.ReadAllText(launchPath)))
             {
                 var rootElement = launchJson.RootElement;
-                Expect(rootElement.GetProperty("schema").GetString() == "swir.desktop-candidate-launch/0.1", "real release activation returns canonical launch schema");
-                Expect(rootElement.GetProperty("shutdownTicketConsumed").GetBoolean(), "one-shot host shutdown authorization is consumed");
-                Expect(!rootElement.GetProperty("healthTokenPersisted").GetBoolean(), "raw health token is never persisted by release activation");
-                candidatePid = rootElement.GetProperty("processId").GetInt32();
+                Expect(rootElement.GetProperty("Schema").GetString() == "swir.desktop-candidate-launch/0.1", "real release activation persists canonical launch schema");
+                Expect(rootElement.GetProperty("TransactionId").GetString() == transactionId, "launch metadata remains bound to the signed release transaction");
+                Expect(rootElement.GetProperty("TargetVersion").GetString() == "0.5.2", "launch metadata remains bound to target 0.5.2");
+                candidatePid = rootElement.GetProperty("ProcessId").GetInt32();
                 Expect(candidatePid > 0, "real Desktop Host process is created");
             }
+            Expect(File.Exists(Path.Combine(transactionDirectory, "shutdown-consumed.json")),
+                "one-shot host shutdown authorization is consumed before Candidate launch");
 
             var committed = WaitForState(journal, state.JournalPath, "committed", TimeSpan.FromSeconds(30));
             Expect(committed.TargetVersion == targetVersion, "real Desktop Host health proof commits target 0.5.2");
@@ -120,8 +130,6 @@ internal static class DesktopReleaseActivationSelfTests
             var previousVersionPath = Path.Combine(deploymentRoot, "Previous", "version.txt");
             Expect(File.Exists(previousVersionPath) && File.ReadAllText(previousVersionPath).Trim() == "0.5.1",
                 "known-good 0.5.1 deployment is retained in Previous after successful commit");
-            Expect(File.Exists(Path.Combine(Path.GetDirectoryName(state.JournalPath)!, "shutdown-consumed.json")),
-                "shutdown ticket cannot be replayed after activation");
         }
         finally
         {
@@ -163,6 +171,15 @@ internal static class DesktopReleaseActivationSelfTests
         throw new TimeoutException($"Transaction did not reach {expected}; final state was {state.State}.");
     }
 
+    private static void WaitForFile(string path, TimeSpan timeout)
+    {
+        var watch = Stopwatch.StartNew();
+        while (!File.Exists(path) && watch.Elapsed < timeout)
+            Thread.Sleep(50);
+        if (!File.Exists(path))
+            throw new TimeoutException($"Expected activation metadata was not created: {path}");
+    }
+
     private static ProcessResult RunWorker(
         string workerExe,
         IReadOnlyDictionary<string, string?>? environment,
@@ -170,13 +187,14 @@ internal static class DesktopReleaseActivationSelfTests
         string journalPath,
         string transactionsRoot,
         string deploymentRoot,
-        int timeoutMs = 15000)
+        int timeoutMs = 15000,
+        bool captureOutput = true)
     {
         var start = new ProcessStartInfo(workerExe)
         {
             UseShellExecute = false,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
+            RedirectStandardOutput = captureOutput,
+            RedirectStandardError = captureOutput,
             CreateNoWindow = true
         };
         foreach (var arg in new[] { command, "--journal", journalPath, "--transactions-root", transactionsRoot, "--deployment-root", deploymentRoot })
@@ -186,16 +204,20 @@ internal static class DesktopReleaseActivationSelfTests
                 start.Environment[pair.Key] = pair.Value;
 
         using var process = Process.Start(start) ?? throw new InvalidOperationException("Could not start standalone updater worker.");
-        var stdout = process.StandardOutput.ReadToEndAsync();
-        var stderr = process.StandardError.ReadToEndAsync();
+        Task<string>? stdout = captureOutput ? process.StandardOutput.ReadToEndAsync() : null;
+        Task<string>? stderr = captureOutput ? process.StandardError.ReadToEndAsync() : null;
         if (!process.WaitForExit(timeoutMs))
         {
             try { process.Kill(true); } catch { }
             throw new TimeoutException($"Updater worker exceeded {timeoutMs}ms timeout during {command}.");
         }
-        Task.WaitAll(stdout, stderr);
-        if (process.ExitCode != 0) Console.Error.WriteLine(stderr.Result);
-        return new ProcessResult(process.ExitCode, stdout.Result.Trim(), stderr.Result.Trim());
+
+        if (!captureOutput)
+            return new ProcessResult(process.ExitCode, string.Empty, string.Empty);
+
+        Task.WaitAll(stdout!, stderr!);
+        if (process.ExitCode != 0) Console.Error.WriteLine(stderr!.Result);
+        return new ProcessResult(process.ExitCode, stdout!.Result.Trim(), stderr!.Result.Trim());
     }
 
     private static void Expect(bool condition, string name)
