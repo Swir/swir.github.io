@@ -1,0 +1,203 @@
+name: SWIR Desktop Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Desktop Host version, for example 0.5.2'
+        required: true
+        type: string
+      channel:
+        description: 'Release channel'
+        required: true
+        default: preview
+        type: choice
+        options:
+          - preview
+          - stable
+      key_id:
+        description: 'Public signing key identifier configured in Desktop update policy'
+        required: true
+        type: string
+      publish_release:
+        description: 'Publish verified bundle as a GitHub Release (main branch only)'
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: swir-desktop-release-${{ inputs.version }}-${{ inputs.channel }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-verify:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: desktop/windows
+    env:
+      SWIR_RELEASE_VERSION: ${{ inputs.version }}
+      SWIR_RELEASE_CHANNEL: ${{ inputs.channel }}
+      SWIR_RELEASE_KEY_ID: ${{ inputs.key_id }}
+      SWIR_RELEASE_PRIVATE_KEY_PEM: ${{ secrets.SWIR_DESKTOP_RELEASE_PRIVATE_KEY_PEM }}
+
+    steps:
+      - name: Checkout exact release commit
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Validate release inputs
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $version = [Version]::Parse($env:SWIR_RELEASE_VERSION)
+          if ($version -le [Version]'0.0') { throw 'Release version must be positive.' }
+          if ($env:SWIR_RELEASE_CHANNEL -notin @('preview', 'stable')) { throw 'Unsupported release channel.' }
+          if ($env:SWIR_RELEASE_KEY_ID -notmatch '^[A-Za-z0-9._-]{1,128}$') { throw 'Invalid release key id.' }
+          if ([string]::IsNullOrWhiteSpace($env:SWIR_RELEASE_PRIVATE_KEY_PEM)) { throw 'SWIR_DESKTOP_RELEASE_PRIVATE_KEY_PEM secret is not configured.' }
+
+      - name: Build release and verification tools
+        run: |
+          dotnet build SWIR.Desktop.ReleaseBundleTool.csproj --configuration Release
+          dotnet build SWIR.Desktop.ReleaseBundleVerifierTool.csproj --configuration Release
+
+      - name: Publish Desktop Host
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $publish = Join-Path '${{ runner.temp }}' 'swir-release-publish'
+          dotnet publish SWIR.Desktop.Host.csproj --configuration Release --output $publish
+          if (-not (Test-Path (Join-Path $publish 'SWIR.Desktop.Host.exe'))) { throw 'Desktop Host publish output is missing the entry point.' }
+
+      - name: Materialize ephemeral signing key and public verifier key
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $privateKey = Join-Path '${{ runner.temp }}' 'swir-release-private.pem'
+          $publicKey = Join-Path '${{ runner.temp }}' 'swir-release-public.pem'
+          [System.IO.File]::WriteAllText($privateKey, $env:SWIR_RELEASE_PRIVATE_KEY_PEM)
+          $rsa = [System.Security.Cryptography.RSA]::Create()
+          try {
+            $rsa.ImportFromPem($env:SWIR_RELEASE_PRIVATE_KEY_PEM)
+            if ($rsa.KeySize -lt 2048) { throw 'Release signing RSA key must be at least 2048 bits.' }
+            [System.IO.File]::WriteAllText($publicKey, $rsa.ExportSubjectPublicKeyInfoPem())
+          } finally {
+            $rsa.Dispose()
+          }
+
+      - name: Build transactional signed release bundle
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $version = $env:SWIR_RELEASE_VERSION
+          $channel = $env:SWIR_RELEASE_CHANNEL
+          $tag = "desktop-v$version-$channel"
+          $packageName = "SWIR-Desktop-$version-$channel.zip"
+          $packageUrl = "https://github.com/$env:GITHUB_REPOSITORY/releases/download/$tag/$packageName"
+          $publish = Join-Path '${{ runner.temp }}' 'swir-release-publish'
+          $bundle = Join-Path '${{ runner.temp }}' 'swir-release-bundle'
+          $privateKey = Join-Path '${{ runner.temp }}' 'swir-release-private.pem'
+          dotnet run --project SWIR.Desktop.ReleaseBundleTool.csproj --configuration Release -- `
+            --source $publish `
+            --output-dir $bundle `
+            --version $version `
+            --entry-point SWIR.Desktop.Host.exe `
+            --package-url $packageUrl `
+            --channel $channel `
+            --key-id $env:SWIR_RELEASE_KEY_ID `
+            --private-key $privateKey
+
+      - name: Independently verify signed release bundle
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $bundle = Join-Path '${{ runner.temp }}' 'swir-release-bundle'
+          $publicKey = Join-Path '${{ runner.temp }}' 'swir-release-public.pem'
+          dotnet run --project SWIR.Desktop.ReleaseBundleVerifierTool.csproj --configuration Release -- `
+            --bundle-dir $bundle `
+            --version $env:SWIR_RELEASE_VERSION `
+            --channel $env:SWIR_RELEASE_CHANNEL `
+            --public-key $publicKey `
+            --package-host github.com
+
+      - name: Validate final release artifact set
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $bundle = Join-Path '${{ runner.temp }}' 'swir-release-bundle'
+          $package = Join-Path $bundle "SWIR-Desktop-$env:SWIR_RELEASE_VERSION-$env:SWIR_RELEASE_CHANNEL.zip"
+          $manifest = Join-Path $bundle "desktop-update-$env:SWIR_RELEASE_CHANNEL.json"
+          $metadata = Join-Path $bundle 'release-bundle.json'
+          foreach ($file in @($package, $manifest, $metadata)) {
+            if (-not (Test-Path $file -PathType Leaf)) { throw "Missing release artifact: $file" }
+            if ((Get-Item $file).Length -le 0) { throw "Release artifact is empty: $file" }
+          }
+
+      - name: Upload verified release bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: swir-desktop-${{ inputs.version }}-${{ inputs.channel }}
+          path: ${{ runner.temp }}\swir-release-bundle\*
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Remove signing material
+        if: always()
+        shell: pwsh
+        run: |
+          Remove-Item (Join-Path '${{ runner.temp }}' 'swir-release-private.pem') -Force -ErrorAction SilentlyContinue
+          Remove-Item (Join-Path '${{ runner.temp }}' 'swir-release-public.pem') -Force -ErrorAction SilentlyContinue
+
+  publish-github-release:
+    if: ${{ inputs.publish_release && github.ref == 'refs/heads/main' }}
+    needs: build-and-verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SWIR_RELEASE_VERSION: ${{ inputs.version }}
+      SWIR_RELEASE_CHANNEL: ${{ inputs.channel }}
+
+    steps:
+      - name: Download verified release bundle
+        uses: actions/download-artifact@v4
+        with:
+          name: swir-desktop-${{ inputs.version }}-${{ inputs.channel }}
+          path: release-bundle
+
+      - name: Refuse release overwrite
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="desktop-v${SWIR_RELEASE_VERSION}-${SWIR_RELEASE_CHANNEL}"
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release $tag already exists; refusing to overwrite it." >&2
+            exit 1
+          fi
+
+      - name: Publish immutable GitHub Release assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="desktop-v${SWIR_RELEASE_VERSION}-${SWIR_RELEASE_CHANNEL}"
+          prerelease=()
+          if [[ "$SWIR_RELEASE_CHANNEL" == "preview" ]]; then prerelease+=(--prerelease); fi
+          gh release create "$tag" \
+            release-bundle/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "SWIR Desktop ${SWIR_RELEASE_VERSION} (${SWIR_RELEASE_CHANNEL})" \
+            --generate-notes \
+            "${prerelease[@]}"

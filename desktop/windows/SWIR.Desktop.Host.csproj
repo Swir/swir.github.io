@@ -20,6 +20,8 @@
     <Compile Remove="DesktopPackageTool.cs" />
     <Compile Remove="DesktopReleaseBundleBuilder.cs" />
     <Compile Remove="DesktopReleaseBundleTool.cs" />
+    <Compile Remove="DesktopReleaseBundleVerifier.cs" />
+    <Compile Remove="DesktopReleaseBundleVerifierTool.cs" />
     <Compile Remove="AppDataSelfTests.cs" />
     <Compile Remove="AppDataSelfTests.BridgeException.cs" />
     <Compile Remove="PermissionBrokerSelfTests.cs" />
