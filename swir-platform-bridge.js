@@ -6,7 +6,10 @@
   const NATIVE_VFS_MANIFEST='.swir-file-explorer-v1.json';
   const NATIVE_VFS_SCHEMA='swir.file-explorer-state/1.0';
   let fileSyncInFlight=null;
+  let fileSyncQueued=false;
+  let hydrateNativeQueued=false;
   let fileProvider='web-platform';
+  let lastNativeRevision=0;
 
   function parse(key,fallback=[]){try{const v=JSON.parse(localStorage.getItem(key)||'null');return v??fallback}catch{return fallback}}
   function normalizeFiles(value){
@@ -29,20 +32,35 @@
     }catch{return null}
   }
 
-  async function loadNativeExplorerState(filesystem){
-    const record=await filesystem.get(NATIVE_VFS_MANIFEST);
+  function parseNativeExplorerState(record){
     if(!record?.content)return null;
     let parsed;
     try{parsed=JSON.parse(record.content)}catch{throw new Error('Native File Explorer state is not valid JSON')}
     if(parsed?.schema!==NATIVE_VFS_SCHEMA||!Array.isArray(parsed.items))throw new Error('Native File Explorer state has an unsupported schema');
-    return normalizeFiles(parsed.items);
+    const revision=Number.isSafeInteger(parsed.revision)&&parsed.revision>=0?parsed.revision:0;
+    lastNativeRevision=Math.max(lastNativeRevision,revision);
+    return {items:normalizeFiles(parsed.items),revision,updatedAt:parsed.updatedAt||null};
+  }
+
+  async function loadNativeExplorerState(filesystem){
+    return parseNativeExplorerState(await filesystem.get(NATIVE_VFS_MANIFEST));
   }
 
   async function saveNativeExplorerState(filesystem,items){
     const normalized=normalizeFiles(items);
-    const content=JSON.stringify({schema:NATIVE_VFS_SCHEMA,version:1,updatedAt:new Date().toISOString(),items:normalized});
+    let persistedRevision=lastNativeRevision;
+    try{
+      const current=parseNativeExplorerState(await filesystem.get(NATIVE_VFS_MANIFEST));
+      if(current)persistedRevision=Math.max(persistedRevision,current.revision);
+    }catch{
+      // Existing malformed state is surfaced by hydrate. During a later save we still
+      // replace it atomically through the hardened native filesystem broker.
+    }
+    const revision=persistedRevision+1;
+    const content=JSON.stringify({schema:NATIVE_VFS_SCHEMA,version:1,revision,updatedAt:new Date().toISOString(),items:normalized});
     await filesystem.save({id:NATIVE_VFS_MANIFEST,name:NATIVE_VFS_MANIFEST,content});
-    return normalized;
+    lastNativeRevision=revision;
+    return {items:normalized,revision};
   }
 
   async function syncPlatformFiles(items){
@@ -64,14 +82,12 @@
     if(filesystem){
       fileProvider='desktop-native-manifest';
       if(hydrateNative){
-        const nativeItems=await loadNativeExplorerState(filesystem);
-        if(nativeItems!==null){
-          legacy=nativeItems;
-          localStorage.setItem(VFS_KEY,JSON.stringify(nativeItems));
-        }else if(legacy.length){
-          await saveNativeExplorerState(filesystem,legacy);
+        const nativeState=await loadNativeExplorerState(filesystem);
+        if(nativeState!==null){
+          legacy=nativeState.items;
+          localStorage.setItem(VFS_KEY,JSON.stringify(nativeState.items));
         }else{
-          await saveNativeExplorerState(filesystem,[]);
+          await saveNativeExplorerState(filesystem,legacy);
         }
       }else{
         await saveNativeExplorerState(filesystem,legacy);
@@ -83,12 +99,26 @@
     await syncPlatformFiles(legacy);
     await api.storage.set('compat.vfs.lastSync',Date.now());
     await api.storage.set('compat.vfs.provider',fileProvider);
-    return {provider:fileProvider,count:legacy.length,nativeManifest:filesystem?NATIVE_VFS_MANIFEST:null};
+    await api.storage.set('compat.vfs.nativeRevision',lastNativeRevision);
+    return {provider:fileProvider,count:legacy.length,nativeManifest:filesystem?NATIVE_VFS_MANIFEST:null,revision:lastNativeRevision};
+  }
+
+  async function drainFileSyncQueue(){
+    let result=null;
+    do{
+      const hydrateNative=hydrateNativeQueued;
+      fileSyncQueued=false;
+      hydrateNativeQueued=false;
+      result=await performFileSync({hydrateNative});
+    }while(fileSyncQueued||hydrateNativeQueued);
+    return result;
   }
 
   function syncFiles(options={}){
+    fileSyncQueued=true;
+    if(options.hydrateNative)hydrateNativeQueued=true;
     if(fileSyncInFlight)return fileSyncInFlight;
-    fileSyncInFlight=performFileSync(options).finally(()=>{fileSyncInFlight=null});
+    fileSyncInFlight=drainFileSyncQueue().finally(()=>{fileSyncInFlight=null});
     return fileSyncInFlight;
   }
 
@@ -115,7 +145,7 @@
   window.SwirPlatformBridge={
     syncFiles,
     syncNotes,
-    storageInfo:()=>({provider:fileProvider,nativeManifest:fileProvider==='desktop-native-manifest'?NATIVE_VFS_MANIFEST:null,schema:NATIVE_VFS_SCHEMA})
+    storageInfo:()=>({provider:fileProvider,nativeManifest:fileProvider==='desktop-native-manifest'?NATIVE_VFS_MANIFEST:null,schema:NATIVE_VFS_SCHEMA,revision:lastNativeRevision,syncing:!!fileSyncInFlight,queued:fileSyncQueued||hydrateNativeQueued})
   };
   initial();
 })();
