@@ -56,6 +56,13 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
+      - name: Assert pinned .NET SDK line
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $sdk = dotnet --version
+          if ($sdk -notmatch '^8\.0\.4\d{2}$') { throw "Expected .NET SDK 8.0.4xx, got $sdk" }
+
       - name: Validate release inputs
         shell: pwsh
         run: |
@@ -107,7 +114,9 @@ jobs:
           $publish = Join-Path '${{ runner.temp }}' 'swir-release-publish'
           $bundle = Join-Path '${{ runner.temp }}' 'swir-release-bundle'
           $privateKey = Join-Path '${{ runner.temp }}' 'swir-release-private.pem'
-          dotnet run --project SWIR.Desktop.ReleaseBundleTool.csproj --configuration Release -- `
+          $bundleTool = Join-Path (Get-Location) 'bin\Release\net8.0\SWIR.Desktop.ReleaseBundleTool.dll'
+          if (-not (Test-Path $bundleTool -PathType Leaf)) { throw "Release bundle tool missing: $bundleTool" }
+          dotnet $bundleTool `
             --source $publish `
             --output-dir $bundle `
             --version $version `
@@ -116,6 +125,7 @@ jobs:
             --channel $channel `
             --key-id $env:SWIR_RELEASE_KEY_ID `
             --private-key $privateKey
+          if ($LASTEXITCODE -ne 0) { throw "Release bundle tool failed with exit code $LASTEXITCODE" }
 
       - name: Independently verify signed release bundle
         shell: pwsh
@@ -123,12 +133,15 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $bundle = Join-Path '${{ runner.temp }}' 'swir-release-bundle'
           $publicKey = Join-Path '${{ runner.temp }}' 'swir-release-public.pem'
-          dotnet run --project SWIR.Desktop.ReleaseBundleVerifierTool.csproj --configuration Release -- `
+          $verifyTool = Join-Path (Get-Location) 'bin\Release\net8.0\SWIR.Desktop.ReleaseBundleVerifierTool.dll'
+          if (-not (Test-Path $verifyTool -PathType Leaf)) { throw "Release verifier tool missing: $verifyTool" }
+          dotnet $verifyTool `
             --bundle-dir $bundle `
             --version $env:SWIR_RELEASE_VERSION `
             --channel $env:SWIR_RELEASE_CHANNEL `
             --public-key $publicKey `
             --package-host github.com
+          if ($LASTEXITCODE -ne 0) { throw "Release verifier tool failed with exit code $LASTEXITCODE" }
 
       - name: Validate final release artifact set
         shell: pwsh
