@@ -1,8 +1,9 @@
-/* SWIR App SDK 1.6 — Web Edition bridge */
+/* SWIR App SDK 1.6.1 — Web Edition bridge */
 (() => {
   'use strict';
   const catalog = () => Array.isArray(window.SWIR_PACKAGE_CATALOG) ? window.SWIR_PACKAGE_CATALOG : [];
   const platform = () => window.SwirPlatform;
+  const localeService = () => window.SwirI18n;
 
   function manifest(id) { return catalog().find(x => x.id === id || x.packageId === id) || null; }
   function installedSync(id) {
@@ -72,9 +73,18 @@
   async function secureInstall(value,options={}){const svc=installPipeline();if(!svc)throw new Error('Install Pipeline unavailable');return svc.install(resolveManifest(value),options)}
   async function secureRemove(value,options={}){const svc=installPipeline();if(!svc)throw new Error('Install Pipeline unavailable');return svc.remove(resolveManifest(value),options)}
   function installPipelineInfo(){const svc=installPipeline();if(!svc)throw new Error('Install Pipeline unavailable');return svc.info()}
+  function localeRequired(){const svc=localeService();if(!svc)throw new Error('SWIR locale service unavailable');return svc}
+  function localeInfo(){const svc=localeRequired();return Object.freeze({contract:svc.contract,version:svc.version,locale:svc.locale,language:svc.language,direction:svc.direction,fallbackLocale:svc.fallbackLocale,messageLocales:svc.messageLocales()})}
+  function localeTranslate(key,vars,options){return localeRequired().t(key,vars,options)}
+  function localeSet(value,options){return localeRequired().setLocale(value,options)}
+  function localeDate(value,options,locale){return localeRequired().formatDate(value,options,locale)}
+  function localeNumber(value,options,locale){return localeRequired().formatNumber(value,options,locale)}
+  function localeCurrency(value,currency,options,locale){return localeRequired().formatCurrency(value,currency,options,locale)}
+  function localeRelative(value,unit,options,locale){return localeRequired().formatRelativeTime(value,unit,options,locale)}
+  function localeList(items,options,locale){return localeRequired().formatList(items,options,locale)}
 
   window.SwirAppSDK = Object.freeze({
-    meta: Object.freeze({ name: 'SWIR App SDK', version: '1.6.0', schema: 'swir.app/1.0', os: 'SWIR OS 1.7', edition: 'WEB' }),
+    meta: Object.freeze({ name: 'SWIR App SDK', version: '1.6.1', schema: 'swir.app/1.0', os: 'SWIR OS 1.7', edition: 'WEB' }),
     catalog,
     manifest,
     installed,
@@ -82,6 +92,7 @@
     permissions: Object.freeze({ has: hasPermission }),
     storage: Object.freeze({ namespace }),
     identity: Object.freeze({ active: activeIdentity }),
+    locale: Object.freeze({ info:localeInfo, translate:localeTranslate, set:localeSet, formatDate:localeDate, formatNumber:localeNumber, formatCurrency:localeCurrency, formatRelativeTime:localeRelative, formatList:localeList }),
     files: Object.freeze({ open:openFile, consumeOpen, handlersFor, defaultFor, setDefault, extension, appData }),
     notifications: Object.freeze({ send:sendNotification, history:notificationHistory, clear:clearNotifications }),
     packages: Object.freeze({ check:checkPackage, planInstall, planRemove, audit:packageAudit, runtime:packageRuntime, compareVersions, fingerprint:packageFingerprint, verifyManifest, verifyEntry, verifySignature, integrityPlan, validateSignatureDescriptor, trustInfo, trustedKeys, trustedKey, trustFor, prepareInstall, secureInstall, secureRemove, installPipelineInfo }),
