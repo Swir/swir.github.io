@@ -1,0 +1,45 @@
+name: SWIR i18n Contract
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'swir-i18n.js'
+      - 'index.html'
+      - 'sw.js'
+      - 'desktop/windows/stage-desktop-runtime.ps1'
+      - 'scripts/validate-i18n.mjs'
+      - '.github/workflows/i18n-contract.yml'
+  pull_request:
+    paths:
+      - 'swir-i18n.js'
+      - 'index.html'
+      - 'sw.js'
+      - 'desktop/windows/stage-desktop-runtime.ps1'
+      - 'scripts/validate-i18n.mjs'
+      - '.github/workflows/i18n-contract.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate-i18n:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Check locale runtime syntax
+        run: node --check swir-i18n.js
+
+      - name: Check i18n validator syntax
+        run: node --check scripts/validate-i18n.mjs
+
+      - name: Validate locale runtime integration contract
+        run: node scripts/validate-i18n.mjs
