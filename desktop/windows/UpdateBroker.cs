@@ -90,8 +90,10 @@ internal sealed class UpdateBroker
             throw new UpdateSecurityException("UPDATE_CHANNEL_MISMATCH", "Update manifest does not match the configured release channel.");
         if (!Version.TryParse(payload.Version, out var candidateVersion))
             throw new UpdateSecurityException("UPDATE_VERSION_INVALID", "Update version is invalid.");
-        if (candidateVersion <= currentVersion)
-            throw new UpdateSecurityException("UPDATE_DOWNGRADE_BLOCKED", "Update version must be newer than the installed Desktop Host version.");
+        if (candidateVersion == currentVersion)
+            throw new UpdateSecurityException("UPDATE_NOT_NEWER", "Signed update manifest matches the installed Desktop Host version.");
+        if (candidateVersion < currentVersion)
+            throw new UpdateSecurityException("UPDATE_DOWNGRADE_BLOCKED", "Update version is older than the installed Desktop Host version.");
         if (payload.PublishedAt == default || payload.PublishedAt > DateTimeOffset.UtcNow.AddHours(24))
             throw new UpdateSecurityException("UPDATE_TIMESTAMP_INVALID", "Update publication timestamp is invalid.");
         if (payload.Package is null)
