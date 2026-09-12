@@ -12,6 +12,7 @@ on:
       - 'desktop/windows/app-policy.json'
       - 'desktop/windows/desktop-update-policy.example.json'
       - 'desktop/windows/stage-desktop-runtime.ps1'
+      - 'desktop/windows/publish-desktop-host.ps1'
       - 'desktop/windows/DesktopReleaseBundle*.cs'
       - 'desktop/windows/DesktopReleaseToCandidate*.cs'
       - 'desktop/windows/SWIR.Desktop.ReleaseBundle*.csproj'
@@ -30,6 +31,7 @@ on:
       - 'desktop/windows/app-policy.json'
       - 'desktop/windows/desktop-update-policy.example.json'
       - 'desktop/windows/stage-desktop-runtime.ps1'
+      - 'desktop/windows/publish-desktop-host.ps1'
       - 'desktop/windows/DesktopReleaseBundle*.cs'
       - 'desktop/windows/DesktopReleaseToCandidate*.cs'
       - 'desktop/windows/SWIR.Desktop.ReleaseBundle*.csproj'
@@ -93,11 +95,16 @@ jobs:
           $worker = Join-Path $toolDir 'SWIR.Desktop.UpdaterWorker.exe'
           $releaseToCandidate = Join-Path $toolDir 'SWIR.Desktop.ReleaseToCandidate.SelfTests.dll'
           $runtimeStage = Join-Path (Get-Location) 'stage-desktop-runtime.ps1'
-          foreach ($required in @($bundleTool, $verifyTool, $worker, $releaseToCandidate, $runtimeStage)) {
+          $hostPublish = Join-Path (Get-Location) 'publish-desktop-host.ps1'
+          foreach ($required in @($bundleTool, $verifyTool, $worker, $releaseToCandidate, $runtimeStage, $hostPublish)) {
             if (-not (Test-Path $required -PathType Leaf)) { throw "Required Desktop release/runtime tool missing: $required" }
           }
 
-          dotnet publish SWIR.Desktop.Host.csproj --configuration Release --output $publish
+          & $hostPublish `
+            -PublishDir $publish `
+            -ReleaseVersion '0.5.2' `
+            -Channel 'preview' `
+            -SourceCommit $env:GITHUB_SHA
           & $runtimeStage -PublishDir $publish -SourceRoot '${{ github.workspace }}'
           Copy-Item -LiteralPath $worker -Destination (Join-Path $publish 'SWIR.Desktop.UpdaterWorker.exe') -Force
           Copy-Item -LiteralPath (Join-Path (Get-Location) 'desktop-update-policy.example.json') `
@@ -107,11 +114,19 @@ jobs:
             (Join-Path $publish 'index.html'),
             (Join-Path $publish 'desktop\windows\app-policy.json'),
             (Join-Path $publish 'desktop-runtime.json'),
+            (Join-Path $publish 'desktop-host-build.json'),
             (Join-Path $publish 'SWIR.Desktop.UpdaterWorker.exe'),
             (Join-Path $publish 'desktop-update-policy.json')
           )) {
             if (-not (Test-Path $required -PathType Leaf)) { throw "Self-contained Desktop publish is missing: $required" }
           }
+
+          $hostBuild = Get-Content (Join-Path $publish 'desktop-host-build.json') -Raw | ConvertFrom-Json
+          if ($hostBuild.schema -ne 'swir.desktop-host-build/0.1') { throw 'Unexpected Desktop Host build manifest schema.' }
+          if ($hostBuild.releaseVersion -ne '0.5.2' -or $hostBuild.channel -ne 'preview' -or $hostBuild.hostVersion -ne '0.5.2-preview') {
+            throw 'Desktop Host build identity is not bound to the signed release identity.'
+          }
+          if ($hostBuild.sourceCommit -ne $env:GITHUB_SHA.ToLowerInvariant()) { throw 'Desktop Host build source commit does not match workflow SHA.' }
 
           $runtimeManifestPath = Join-Path $publish 'desktop-runtime.json'
           $runtimeManifest = Get-Content $runtimeManifestPath -Raw | ConvertFrom-Json
