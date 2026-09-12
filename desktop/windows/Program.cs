@@ -29,6 +29,7 @@ internal sealed class MainWindow : Form
     private readonly DesktopHostRestartHooks _restartHooks;
     private readonly DesktopUpdateBridgeCoordinator _updateBridgeCoordinator;
     private readonly DesktopUpdatePreparationHostService _updatePreparationHost;
+    private readonly NativeFileSystemBroker _nativeFileSystem;
     private readonly string _repoRoot;
     private readonly string _dataRoot;
     private CoreWebView2? _core;
@@ -65,6 +66,7 @@ internal sealed class MainWindow : Form
         _permissions = new PermissionBroker(_capabilities, _policyCatalog);
         _dataRoot = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SWIR", "DesktopHost", "Data");
         Directory.CreateDirectory(_dataRoot);
+        _nativeFileSystem = new NativeFileSystemBroker(_dataRoot);
         Controls.Add(_web);
         Shown += async (_, _) => await StartAsync();
         FormClosed += (_, _) => DetachBridge();
@@ -372,10 +374,11 @@ internal sealed class MainWindow : Form
     {
         object? result = method switch
         {
-            "list" => ListFiles(),
-            "get" => GetFile(ArgString(args, 0)),
-            "save" => SaveFile(ArgObject(args, 0)),
-            "remove" => RemoveFile(ArgString(args, 0)),
+            "info" => _nativeFileSystem.Describe(),
+            "list" => _nativeFileSystem.List(),
+            "get" => _nativeFileSystem.Get(ArgString(args, 0)),
+            "save" => SaveNativeFile(ArgObject(args, 0)),
+            "remove" => _nativeFileSystem.Remove(ArgString(args, 0)),
             "pickFile" => PickFile(Owner(args, 0)),
             "pickDirectory" => PickDirectory(Owner(args, 0)),
             "capabilityInfo" => _capabilities.Describe(ArgString(args, 0), Owner(args, 1)),
@@ -430,36 +433,13 @@ internal sealed class MainWindow : Form
         return Task.FromResult(result);
     }
 
-    private object[] ListFiles() => Directory.EnumerateFiles(_dataRoot, "*", SearchOption.TopDirectoryOnly)
-        .Where(path => !path.EndsWith(".tmp", StringComparison.OrdinalIgnoreCase))
-        .Select(path => new FileInfo(path)).Select(info => new object[] { info.Name, info.Length, info.LastWriteTimeUtc }).ToArray();
-
-    private object? GetFile(string id)
-    {
-        var path = SafeDataPath(id);
-        if (!File.Exists(path)) return null;
-        var info = new FileInfo(path);
-        return new { id = info.Name, name = info.Name, content = File.ReadAllText(path), size = info.Length, modified = info.LastWriteTimeUtc };
-    }
-
-    private object SaveFile(JsonElement file)
+    private object SaveNativeFile(JsonElement file)
     {
         var name = file.TryGetProperty("id", out var idProp) ? idProp.GetString() : null;
         name ??= file.TryGetProperty("name", out var nameProp) ? nameProp.GetString() : null;
         if (string.IsNullOrWhiteSpace(name)) throw new BridgeException("INVALID_ARGUMENT", "File id/name is required.");
         var content = file.TryGetProperty("content", out var contentProp) ? contentProp.GetString() ?? string.Empty : string.Empty;
-        var path = SafeDataPath(name);
-        File.WriteAllText(path, content);
-        var info = new FileInfo(path);
-        return new { id = info.Name, name = info.Name, size = info.Length, modified = info.LastWriteTimeUtc };
-    }
-
-    private bool RemoveFile(string id)
-    {
-        var path = SafeDataPath(id);
-        if (!File.Exists(path)) return false;
-        File.Delete(path);
-        return true;
+        return _nativeFileSystem.Save(name, content);
     }
 
     private object? PickFile(string ownerAppId)
@@ -476,14 +456,6 @@ internal sealed class MainWindow : Form
 
     private static bool WriteClipboard(string text) { Clipboard.SetText(text ?? string.Empty); return true; }
     private static bool ClearClipboard() { Clipboard.Clear(); return true; }
-
-    private string SafeDataPath(string id)
-    {
-        var safeName = Path.GetFileName(id);
-        if (string.IsNullOrWhiteSpace(safeName) || !string.Equals(safeName, id, StringComparison.Ordinal))
-            throw new BridgeException("INVALID_PATH", "Only sandboxed file names are accepted by the preview host.");
-        return Path.Combine(_dataRoot, safeName);
-    }
 
     private static PermissionBroker.PackageContextRequest[] ParsePackageContexts(JsonElement args)
     {
@@ -578,6 +550,7 @@ internal sealed class MainWindow : Form
     private static string MapErrorCode(Exception ex) => ex switch
     {
         BridgeException bridge => bridge.Code,
+        NativeFileSystemException nativeFileSystem => nativeFileSystem.Code,
         DesktopUpdateBridgeCommandException updateBridge => updateBridge.Code,
         UpdateSecurityException updateSecurity => updateSecurity.Code,
         _ => "NATIVE_HOST_ERROR"
@@ -642,8 +615,8 @@ internal sealed class MainWindow : Form
   const surface = (name, methods) => Object.freeze(Object.fromEntries(methods.map(method => [method, (...args) => call(name, method, ...args)])));
   window.SWIR_NATIVE_HOST = Object.freeze({
     edition: 'DESKTOP', version: '0.5.1-preview', contract: 'swir.runtime/1.0', sessionId: '__SESSION_ID__',
-    features: Object.freeze({ packageContextBroker: true, appIsolationRouting: true, appIsolationState: 'APP_BRIDGE_VERIFIED', nativeAppData: true, guardedUpdateRestartLifecycle: true, nativeUpdateBridge: true, nativeUpdatePreparation: true }),
-    filesystem: surface('filesystem', ['list','get','save','remove','pickFile','pickDirectory','capabilityInfo','readCapabilityText','revokeCapability','revokeOwnerCapabilities','pruneCapabilities','capabilityStatus']),
+    features: Object.freeze({ packageContextBroker: true, appIsolationRouting: true, appIsolationState: 'APP_BRIDGE_VERIFIED', nativeAppData: true, nativeFilesystem: true, guardedUpdateRestartLifecycle: true, nativeUpdateBridge: true, nativeUpdatePreparation: true }),
+    filesystem: surface('filesystem', ['info','list','get','save','remove','pickFile','pickDirectory','capabilityInfo','readCapabilityText','revokeCapability','revokeOwnerCapabilities','pruneCapabilities','capabilityStatus']),
     appData: surface('appdata', ['info','list','get','set','remove']),
     clipboard: surface('clipboard', ['readText','writeText','clear']),
     processes: surface('processes', ['list','open','kill','spawn']),
