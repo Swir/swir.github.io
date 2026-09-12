@@ -28,6 +28,7 @@ internal sealed class MainWindow : Form
     private readonly DesktopUpdateRestartController _updateRestartController;
     private readonly DesktopHostRestartHooks _restartHooks;
     private readonly DesktopUpdateBridgeCoordinator _updateBridgeCoordinator;
+    private readonly DesktopUpdatePreparationHostService _updatePreparationHost;
     private readonly string _repoRoot;
     private readonly string _dataRoot;
     private CoreWebView2? _core;
@@ -56,6 +57,7 @@ internal sealed class MainWindow : Form
             DescribeUpdateRestartReadiness,
             () => { _ = updateSelector.RequireReady(); },
             async cancellationToken => { _ = await ApplyPreparedUpdateAndRestartAsync(cancellationToken).ConfigureAwait(false); });
+        _updatePreparationHost = new DesktopUpdatePreparationHostService();
 
         _repoRoot = ResolveRepoRoot();
         _policyCatalog = new ExecutionPolicyCatalog(Path.Combine(_repoRoot, "desktop", "windows", "app-policy.json"));
@@ -147,6 +149,7 @@ internal sealed class MainWindow : Form
         }
 
         var executeQueuedUpdateRestart = false;
+        var executeQueuedUpdatePreparation = false;
         using (bridgeLease)
         {
             BridgeResponse response;
@@ -170,14 +173,38 @@ internal sealed class MainWindow : Form
             }
 
             var responsePosted = PostBridgeResponse(response);
-            if (response.Ok
-                && string.Equals(request.Surface, "updates", StringComparison.Ordinal)
-                && string.Equals(request.Method, "applyAndRestart", StringComparison.Ordinal))
+            if (response.Ok && string.Equals(request.Surface, "updates", StringComparison.Ordinal))
             {
-                if (responsePosted)
-                    executeQueuedUpdateRestart = true;
-                else
-                    _updateBridgeCoordinator.CancelQueuedAfterResponseFailure();
+                if (string.Equals(request.Method, "applyAndRestart", StringComparison.Ordinal))
+                {
+                    if (responsePosted)
+                        executeQueuedUpdateRestart = true;
+                    else
+                        _updateBridgeCoordinator.CancelQueuedAfterResponseFailure();
+                }
+                else if (string.Equals(request.Method, "prepare", StringComparison.Ordinal))
+                {
+                    if (responsePosted)
+                        executeQueuedUpdatePreparation = true;
+                    else
+                        _updatePreparationHost.CancelQueuedAfterResponseFailure();
+                }
+            }
+        }
+
+        if (executeQueuedUpdatePreparation)
+        {
+            try
+            {
+                var result = await _updatePreparationHost.ExecuteQueuedAsync();
+                PostNativeHostEvent(new NativeHostEvent("swir-native-event", "updates.preparationCompleted", result));
+            }
+            catch (Exception ex)
+            {
+                PostNativeHostEvent(new NativeHostEvent(
+                    "swir-native-event",
+                    "updates.preparationFailed",
+                    new { code = MapErrorCode(ex), message = ex.Message }));
             }
         }
 
@@ -310,15 +337,19 @@ internal sealed class MainWindow : Form
         };
     }
 
-    private Task<object?> DispatchUpdatesAsync(string method, bool trustedShell)
+    private async Task<object?> DispatchUpdatesAsync(string method, bool trustedShell)
     {
-        object? result = method switch
+        return method switch
         {
             "readiness" => _updateBridgeCoordinator.Describe(),
+            "check" => await _updatePreparationHost.CheckAsync(trustedShell).ConfigureAwait(false),
+            "preparationStatus" => _updatePreparationHost.Describe(),
+            "prepare" => _updatePreparationHost.QueuePrepare(trustedShell),
+            "cancelPrepare" => _updatePreparationHost.Cancel(trustedShell),
+            "resetPreparation" => _updatePreparationHost.ResetTerminalState(trustedShell),
             "applyAndRestart" => _updateBridgeCoordinator.PrepareApply(trustedShell),
             _ => throw new BridgeException("RUNTIME_UNSUPPORTED", $"Unsupported updates method: {method}")
         };
-        return Task.FromResult(result);
     }
 
     private Task<object?> DispatchAppDataAsync(string method, JsonElement args, string? callerToken)
@@ -572,6 +603,10 @@ internal sealed class MainWindow : Form
     } catch { return null; }
     return frame;
   };
+  const forwardUpdateEvent = (name, detail) => {
+    const frame = updateFrame();
+    frame?.contentWindow?.postMessage({ type: 'swir-update-host-event', name, detail: detail || {} }, location.origin);
+  };
   chrome.webview.addEventListener('message', event => {
     const msg = event.data;
     if (!msg) return;
@@ -582,8 +617,12 @@ internal sealed class MainWindow : Form
     }
     if (msg.type === 'swir-native-event' && msg.name === 'updates.restartFailed') {
       window.dispatchEvent(new CustomEvent('swir:native-update-restart-failed', { detail: msg.detail || {} }));
-      const frame = updateFrame();
-      frame?.contentWindow?.postMessage({ type: 'swir-update-restart-failed', detail: msg.detail || {} }, location.origin);
+      forwardUpdateEvent(msg.name, msg.detail);
+      return;
+    }
+    if (msg.type === 'swir-native-event' && (msg.name === 'updates.preparationCompleted' || msg.name === 'updates.preparationFailed')) {
+      window.dispatchEvent(new CustomEvent(`swir:native-${msg.name.replaceAll('.', '-')}`, { detail: msg.detail || {} }));
+      forwardUpdateEvent(msg.name, msg.detail);
     }
   });
   window.addEventListener('message', async event => {
@@ -591,9 +630,10 @@ internal sealed class MainWindow : Form
     if (!msg || msg.type !== 'swir-system-update-command' || typeof msg.id !== 'string') return;
     const frame = updateFrame();
     if (!frame || event.source !== frame.contentWindow || event.origin !== location.origin) return;
-    if (msg.method !== 'applyAndRestart') return;
+    const allowed = new Set(['check','preparationStatus','prepare','cancelPrepare','resetPreparation','applyAndRestart']);
+    if (!allowed.has(msg.method)) return;
     try {
-      const result = await call('updates', 'applyAndRestart');
+      const result = await call('updates', msg.method);
       frame.contentWindow?.postMessage({ type: 'swir-system-update-result', id: msg.id, ok: true, result }, location.origin);
     } catch (error) {
       frame.contentWindow?.postMessage({ type: 'swir-system-update-result', id: msg.id, ok: false, error: { code: error?.code || 'NATIVE_HOST_ERROR', message: error?.message || 'Native host error' } }, location.origin);
@@ -602,7 +642,7 @@ internal sealed class MainWindow : Form
   const surface = (name, methods) => Object.freeze(Object.fromEntries(methods.map(method => [method, (...args) => call(name, method, ...args)])));
   window.SWIR_NATIVE_HOST = Object.freeze({
     edition: 'DESKTOP', version: '0.5.1-preview', contract: 'swir.runtime/1.0', sessionId: '__SESSION_ID__',
-    features: Object.freeze({ packageContextBroker: true, appIsolationRouting: true, appIsolationState: 'APP_BRIDGE_VERIFIED', nativeAppData: true, guardedUpdateRestartLifecycle: true, nativeUpdateBridge: true }),
+    features: Object.freeze({ packageContextBroker: true, appIsolationRouting: true, appIsolationState: 'APP_BRIDGE_VERIFIED', nativeAppData: true, guardedUpdateRestartLifecycle: true, nativeUpdateBridge: true, nativeUpdatePreparation: true }),
     filesystem: surface('filesystem', ['list','get','save','remove','pickFile','pickDirectory','capabilityInfo','readCapabilityText','revokeCapability','revokeOwnerCapabilities','pruneCapabilities','capabilityStatus']),
     appData: surface('appdata', ['info','list','get','set','remove']),
     clipboard: surface('clipboard', ['readText','writeText','clear']),
