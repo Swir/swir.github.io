@@ -65,6 +65,9 @@ jobs:
       - name: Validate Desktop package policy
         run: node validate-policy.mjs
 
+      - name: Validate deterministic Desktop package contract
+        run: node validate-desktop-package-contract.mjs
+
       - name: Validate App Bridge isolation readiness
         run: node validate-app-isolation.mjs
 
@@ -99,6 +102,22 @@ jobs:
 
       - name: Run signed Update Broker self-tests
         run: dotnet run --project SWIR.Desktop.Update.SelfTests.csproj --configuration Release
+
+      - name: Run deterministic Desktop package builder self-tests
+        run: dotnet run --project SWIR.Desktop.PackageBuilder.SelfTests.csproj --configuration Release
+
+      - name: Build Desktop package tool
+        run: dotnet build SWIR.Desktop.PackageTool.csproj --configuration Release
+
+      - name: Build real Desktop Host package smoke artifact
+        shell: pwsh
+        run: |
+          $publish = Join-Path '${{ runner.temp }}' 'swir-desktop-publish'
+          $package = Join-Path '${{ runner.temp }}' 'swir-desktop-smoke.zip'
+          dotnet publish SWIR.Desktop.Host.csproj --configuration Release --output $publish
+          dotnet run --project SWIR.Desktop.PackageTool.csproj --configuration Release -- $publish $package 0.5.1 SWIR.Desktop.Host.exe
+          if (-not (Test-Path $package)) { throw 'Desktop package tool did not create the smoke package.' }
+          if ((Get-Item $package).Length -le 0) { throw 'Desktop smoke package is empty.' }
 
       - name: Run Desktop signed release builder self-tests
         run: dotnet run --project SWIR.Desktop.ReleaseBuilder.SelfTests.csproj --configuration Release
