@@ -8,6 +8,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="UpdateBroker.cs" />
+    <Compile Include="DesktopPackageBuilder.cs" />
+    <Compile Include="DesktopUpdateReleaseBuilder.cs" />
     <Compile Include="DesktopReleaseBundleBuilder.cs" />
     <Compile Include="DesktopReleaseBundleVerifier.cs" />
     <Compile Include="UpdateHandoffBroker.cs" />
