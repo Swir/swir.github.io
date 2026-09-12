@@ -5,18 +5,28 @@ on:
     branches: [main]
     paths:
       - 'swir-i18n.js'
+      - 'swir-settings.html'
+      - 'swir-sdk.js'
+      - 'swir-app-bridge.js'
+      - 'swir-app-bridge-host.js'
       - 'index.html'
       - 'sw.js'
       - 'desktop/windows/stage-desktop-runtime.ps1'
       - 'scripts/validate-i18n.mjs'
+      - 'SWIR-OS-ARCHITECTURE.md'
       - '.github/workflows/i18n-contract.yml'
   pull_request:
     paths:
       - 'swir-i18n.js'
+      - 'swir-settings.html'
+      - 'swir-sdk.js'
+      - 'swir-app-bridge.js'
+      - 'swir-app-bridge-host.js'
       - 'index.html'
       - 'sw.js'
       - 'desktop/windows/stage-desktop-runtime.ps1'
       - 'scripts/validate-i18n.mjs'
+      - 'SWIR-OS-ARCHITECTURE.md'
       - '.github/workflows/i18n-contract.yml'
 
 permissions:
@@ -37,6 +47,12 @@ jobs:
 
       - name: Check locale runtime syntax
         run: node --check swir-i18n.js
+
+      - name: Check App SDK and bridge syntax
+        run: |
+          node --check swir-sdk.js
+          node --check swir-app-bridge.js
+          node --check swir-app-bridge-host.js
 
       - name: Check i18n validator syntax
         run: node --check scripts/validate-i18n.mjs
