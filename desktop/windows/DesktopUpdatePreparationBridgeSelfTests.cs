@@ -13,6 +13,8 @@ internal static class DesktopUpdatePreparationBridgeSelfTests
         PolicyAcceptsPinnedHttpsFeed();
         TrustedShellAndConfigurationGate();
         await QueueAcknowledgeAndComplete();
+        await TerminalStateRequiresExplicitReset();
+        await CancellationIsTrustedAndDeterministic();
         await FailureAndRetry();
         Console.WriteLine($"Desktop update preparation bridge self-tests passed: {_passed}");
     }
@@ -65,6 +67,7 @@ internal static class DesktopUpdatePreparationBridgeSelfTests
         var disabled = new DesktopUpdatePreparationBridgeCoordinator(() => false, _ => Task.FromResult<object?>(new { ok = true }));
         ExpectCode("UPDATE_BRIDGE_TRUST_REQUIRED", () => disabled.QueuePrepare(false), "untrusted caller rejected before preparation");
         ExpectCode("UPDATE_RELEASE_FEED_NOT_CONFIGURED", () => disabled.QueuePrepare(true), "disabled release feed rejected fail closed");
+        ExpectCode("UPDATE_BRIDGE_TRUST_REQUIRED", () => disabled.CancelActive(false), "untrusted caller cannot cancel update preparation");
     }
 
     private static async Task QueueAcknowledgeAndComplete()
@@ -74,20 +77,68 @@ internal static class DesktopUpdatePreparationBridgeSelfTests
             () => true,
             _ => { calls++; return Task.FromResult<object?>(new { ready = true, targetVersion = "0.5.2" }); });
 
-        var accepted = coordinator.QueuePrepare(true);
+        _ = coordinator.QueuePrepare(true);
+        var queued = JsonSerializer.Serialize(coordinator.Describe());
+        Expect(queued.Contains("\"schema\":\"swir.desktop-update-preparation-bridge/0.2\"", StringComparison.Ordinal), "bridge exposes lifecycle schema 0.2");
+        Expect(queued.Contains("\"queuedAt\":", StringComparison.Ordinal), "queued lifecycle exposes timestamp");
         Expect(calls == 0, "preparation does not start before bridge acknowledgement is released");
         ExpectCode("UPDATE_PREPARATION_ALREADY_RUNNING", () => coordinator.QueuePrepare(true), "single-flight rejects duplicate queue");
         var result = await coordinator.ExecuteQueuedAsync();
         Expect(calls == 1 && result is not null, "acknowledged preparation executes exactly once");
         var state = JsonSerializer.Serialize(coordinator.Describe());
         Expect(state.Contains("\"state\":\"ready\"", StringComparison.Ordinal), "successful preparation reaches ready state");
+        Expect(state.Contains("\"completedAt\":", StringComparison.Ordinal), "successful preparation exposes completion timestamp");
 
         coordinator.ResetTerminalState();
         coordinator.QueuePrepare(true);
         coordinator.CancelQueuedAfterResponseFailure();
         Expect(calls == 1, "failed bridge response cancels queued preparation before side effects");
         await ExpectCodeAsync("UPDATE_PREPARATION_NOT_QUEUED", coordinator.ExecuteQueuedAsync, "cancelled queue cannot execute");
-        _ = accepted;
+    }
+
+    private static async Task TerminalStateRequiresExplicitReset()
+    {
+        var coordinator = new DesktopUpdatePreparationBridgeCoordinator(
+            () => true,
+            _ => Task.FromResult<object?>(new { ready = true }));
+        coordinator.QueuePrepare(true);
+        await coordinator.ExecuteQueuedAsync();
+        ExpectCode("UPDATE_PREPARATION_TERMINAL_STATE", () => coordinator.QueuePrepare(true), "ready state cannot be silently overwritten by another preparation");
+        coordinator.ResetTerminalState();
+        coordinator.QueuePrepare(true);
+        coordinator.CancelQueuedAfterResponseFailure();
+        Expect(JsonSerializer.Serialize(coordinator.Describe()).Contains("\"state\":\"idle\"", StringComparison.Ordinal), "explicit reset allows a new operation");
+    }
+
+    private static async Task CancellationIsTrustedAndDeterministic()
+    {
+        var entered = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var coordinator = new DesktopUpdatePreparationBridgeCoordinator(
+            () => true,
+            async token =>
+            {
+                entered.TrySetResult(true);
+                await Task.Delay(TimeSpan.FromSeconds(30), token);
+                return new { ready = true };
+            });
+
+        coordinator.QueuePrepare(true);
+        var run = coordinator.ExecuteQueuedAsync();
+        await entered.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        var running = JsonSerializer.Serialize(coordinator.Describe());
+        Expect(running.Contains("\"cancellable\":true", StringComparison.Ordinal), "running preparation advertises cancellability");
+        var cancelled = coordinator.CancelActive(true);
+        Expect(cancelled is not null, "trusted shell can request cancellation");
+        try { await run; throw new InvalidOperationException("FAILED: running preparation cancellation"); }
+        catch (OperationCanceledException) { _passed++; }
+        var final = JsonSerializer.Serialize(coordinator.Describe());
+        Expect(final.Contains("UPDATE_PREPARATION_CANCELLED", StringComparison.Ordinal), "cancellation preserves a stable diagnostic code");
+        Expect(final.Contains("\"state\":\"idle\"", StringComparison.Ordinal), "cancelled preparation returns to idle");
+
+        coordinator.QueuePrepare(true);
+        var queuedCancel = coordinator.CancelActive(true);
+        Expect(queuedCancel is not null, "trusted shell can cancel queued preparation before execution");
+        await ExpectCodeAsync("UPDATE_PREPARATION_NOT_QUEUED", coordinator.ExecuteQueuedAsync, "cancelled queued operation cannot execute later");
     }
 
     private static async Task FailureAndRetry()
@@ -103,6 +154,7 @@ internal static class DesktopUpdatePreparationBridgeSelfTests
         await ExpectCodeAsync("UPDATE_SIGNATURE_INVALID", coordinator.ExecuteQueuedAsync, "preparation security failure propagated");
         var failedState = JsonSerializer.Serialize(coordinator.Describe());
         Expect(failedState.Contains("UPDATE_SIGNATURE_INVALID", StringComparison.Ordinal), "failure state preserves security code");
+        ExpectCode("UPDATE_PREPARATION_TERMINAL_STATE", () => coordinator.QueuePrepare(true), "failed state also requires explicit reset");
         coordinator.ResetTerminalState();
         fail = false;
         coordinator.QueuePrepare(true);
