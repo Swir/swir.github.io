@@ -89,8 +89,31 @@ internal static class DesktopReleaseToCandidateSelfTests
             var candidateStatePath = Path.Combine(candidateRoot, "candidate-state.json");
             Expect(Directory.Exists(candidateRoot), "Candidate slot is created inside deployment sandbox");
             Expect(File.Exists(Path.Combine(payloadRoot, "SWIR.Desktop.Host.exe")), "shipping Desktop Host entry point is present in Candidate payload");
+            Expect(File.Exists(Path.Combine(payloadRoot, "SWIR.Desktop.UpdaterWorker.exe")), "standalone Updater Worker ships beside the Desktop Host");
+            Expect(File.Exists(Path.Combine(payloadRoot, "desktop-update-policy.json")), "fail-closed Desktop update policy ships inside Candidate");
+            Expect(File.Exists(Path.Combine(payloadRoot, "index.html")), "Web Edition shell ships inside the standalone Candidate");
+            Expect(File.Exists(Path.Combine(payloadRoot, "swir-os.js")), "Web Edition OS runtime ships inside the standalone Candidate");
+            Expect(File.Exists(Path.Combine(payloadRoot, "swir-runtime.js")), "portable Runtime Adapter ships inside the standalone Candidate");
+            Expect(File.Exists(Path.Combine(payloadRoot, "swir-updates.html")), "Update Center UI ships inside the standalone Candidate");
+            Expect(File.Exists(Path.Combine(payloadRoot, "desktop", "windows", "app-policy.json")), "Desktop permission policy ships with the Web runtime");
+            var runtimeManifestPath = Path.Combine(payloadRoot, "desktop-runtime.json");
+            Expect(File.Exists(runtimeManifestPath), "Desktop web runtime provenance manifest ships inside Candidate");
             Expect(File.Exists(candidateStatePath), "Candidate verification state is persisted");
             Expect(File.ReadAllText(Path.Combine(currentRoot, "version.txt")).Trim() == "0.5.1", "preparation does not mutate Current before guarded activation");
+
+            using (var runtimeManifest = JsonDocument.Parse(File.ReadAllText(runtimeManifestPath)))
+            {
+                Expect(runtimeManifest.RootElement.GetProperty("schema").GetString() == "swir.desktop-web-runtime/0.1", "bundled Web runtime keeps canonical provenance schema");
+                Expect(runtimeManifest.RootElement.GetProperty("fileCount").GetInt32() >= 9, "bundled Web runtime contains required tracked assets");
+                var commit = runtimeManifest.RootElement.GetProperty("sourceCommit").GetString();
+                Expect(!string.IsNullOrWhiteSpace(commit) && commit.Length == 40, "bundled Web runtime is bound to a Git source commit");
+            }
+
+            using (var updatePolicy = JsonDocument.Parse(File.ReadAllText(Path.Combine(payloadRoot, "desktop-update-policy.json"))))
+            {
+                Expect(updatePolicy.RootElement.GetProperty("Schema").GetString() == "swir.desktop-update-policy/0.1", "packaged update policy keeps canonical schema");
+                Expect(!updatePolicy.RootElement.GetProperty("Enabled").GetBoolean(), "packaged default update policy fails closed until a signed channel is configured");
+            }
 
             using var candidateState = JsonDocument.Parse(File.ReadAllText(candidateStatePath));
             var rootElement = candidateState.RootElement;
