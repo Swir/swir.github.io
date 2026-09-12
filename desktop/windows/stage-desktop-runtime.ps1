@@ -83,6 +83,7 @@ foreach ($relativeRaw in ($tracked | Sort-Object -Unique)) {
 
 $required = @(
     'index.html',
+    'swir-i18n.js',
     'swir-os.js',
     'swir-runtime.js',
     'swir-apps.js',
