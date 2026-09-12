@@ -8,7 +8,8 @@ namespace Swir.Desktop.Host;
 /// </summary>
 internal sealed class DesktopUpdatePreparationHostService
 {
-    public const string HostServiceSchema = "swir.desktop-update-preparation-host/0.1";
+    public const string HostServiceSchema = "swir.desktop-update-preparation-host/0.2";
+    public const string CheckSchema = "swir.desktop-update-check/0.1";
     public static readonly Version CurrentDesktopVersion = new(0, 5, 1);
 
     private readonly string _policyPath;
@@ -17,20 +18,23 @@ internal sealed class DesktopUpdatePreparationHostService
     private readonly string _deploymentRoot;
     private readonly string _transactionsRoot;
     private readonly DesktopUpdatePreparationBridgeCoordinator _bridge;
+    private readonly Func<UpdateBroker, Uri, IEnumerable<string>, UpdateManifestClient> _manifestClientFactory;
 
     public DesktopUpdatePreparationHostService(
         string? policyPath = null,
         string? currentInstallRoot = null,
         string? updaterWorkerPath = null,
         string? deploymentRoot = null,
-        string? transactionsRoot = null)
+        string? transactionsRoot = null,
+        Func<UpdateBroker, Uri, IEnumerable<string>, UpdateManifestClient>? manifestClientFactory = null)
     {
         _policyPath = Path.GetFullPath(policyPath ?? Path.Combine(AppContext.BaseDirectory, "desktop-update-policy.json"));
         _deploymentRoot = Path.GetFullPath(deploymentRoot ?? DesktopUpdatePaths.DeploymentRoot);
         _transactionsRoot = Path.GetFullPath(transactionsRoot ?? DesktopUpdatePaths.TransactionsRoot);
         _currentInstallRoot = Path.GetFullPath(currentInstallRoot ?? Path.Combine(_deploymentRoot, "Current"));
         _updaterWorkerPath = Path.GetFullPath(updaterWorkerPath ?? DesktopUpdatePaths.UpdaterWorkerPath);
-        _bridge = new DesktopUpdatePreparationBridgeCoordinator(IsConfigured, PrepareCoreAsync);
+        _manifestClientFactory = manifestClientFactory ?? ((broker, uri, hosts) => new UpdateManifestClient(broker, uri, hosts));
+        _bridge = new DesktopUpdatePreparationBridgeCoordinator(IsPreparationConfigured, PrepareCoreAsync);
     }
 
     public object Describe()
@@ -43,6 +47,7 @@ internal sealed class DesktopUpdatePreparationHostService
             {
                 schema = HostServiceSchema,
                 configured = false,
+                feedConfigured = false,
                 failClosed = true,
                 currentVersion = CurrentDesktopVersion.ToString(),
                 policy = new { enabled = false, invalid = true, code = ex.Code, message = ex.Message },
@@ -54,13 +59,55 @@ internal sealed class DesktopUpdatePreparationHostService
         return new
         {
             schema = HostServiceSchema,
-            configured = IsConfigured(policy),
+            configured = IsPreparationConfigured(policy),
+            feedConfigured = IsReleaseFeedConfigured(policy),
             failClosed = true,
             currentVersion = CurrentDesktopVersion.ToString(),
             policy = policy.Describe(),
             environment = DescribeEnvironment(),
             preparation = _bridge.Describe()
         };
+    }
+
+    public async Task<object> CheckAsync(bool trustedShell, CancellationToken cancellationToken = default)
+    {
+        if (!trustedShell)
+            throw new DesktopUpdateBridgeCommandException("UPDATE_BRIDGE_TRUST_REQUIRED", "Only the trusted SWIR system shell may check Desktop release feeds.");
+
+        var policy = DesktopUpdateReleasePolicy.Load(_policyPath);
+        if (!IsReleaseFeedConfigured(policy))
+            throw new DesktopUpdateBridgeCommandException("UPDATE_RELEASE_FEED_NOT_CONFIGURED", "Desktop update check requires an enabled signed release policy.");
+
+        var broker = new UpdateBroker(policy.PublicKeyPem!, policy.PackageHosts);
+        using var manifestClient = _manifestClientFactory(broker, policy.ManifestUri!, policy.ManifestHosts);
+        try
+        {
+            var update = await manifestClient.FetchAndVerifyAsync(CurrentDesktopVersion, policy.Channel, cancellationToken).ConfigureAwait(false);
+            return new
+            {
+                schema = CheckSchema,
+                updateAvailable = true,
+                currentVersion = CurrentDesktopVersion.ToString(),
+                targetVersion = update.Version.ToString(),
+                channel = update.Channel,
+                publishedAt = update.PublishedAt,
+                package = new { host = update.PackageUri.Host, size = update.Size, sha256 = update.Sha256, keyId = update.KeyId },
+                verified = true
+            };
+        }
+        catch (UpdateSecurityException ex) when (ex.Code == "UPDATE_NOT_NEWER")
+        {
+            return new
+            {
+                schema = CheckSchema,
+                updateAvailable = false,
+                currentVersion = CurrentDesktopVersion.ToString(),
+                targetVersion = CurrentDesktopVersion.ToString(),
+                channel = policy.Channel,
+                verified = true,
+                status = "current"
+            };
+        }
     }
 
     public object QueuePrepare(bool trustedShell) => _bridge.QueuePrepare(trustedShell);
@@ -70,16 +117,21 @@ internal sealed class DesktopUpdatePreparationHostService
     public Task<object?> ExecuteQueuedAsync(CancellationToken cancellationToken = default)
         => _bridge.ExecuteQueuedAsync(cancellationToken);
 
-    private bool IsConfigured()
+    private bool IsPreparationConfigured()
     {
-        try { return IsConfigured(DesktopUpdateReleasePolicy.Load(_policyPath)); }
+        try { return IsPreparationConfigured(DesktopUpdateReleasePolicy.Load(_policyPath)); }
         catch { return false; }
     }
 
-    private bool IsConfigured(DesktopUpdateReleasePolicy policy)
+    private static bool IsReleaseFeedConfigured(DesktopUpdateReleasePolicy policy)
         => policy.Enabled
            && policy.ManifestUri is not null
            && !string.IsNullOrWhiteSpace(policy.PublicKeyPem)
+           && policy.ManifestHosts.Count > 0
+           && policy.PackageHosts.Count > 0;
+
+    private bool IsPreparationConfigured(DesktopUpdateReleasePolicy policy)
+        => IsReleaseFeedConfigured(policy)
            && File.Exists(_updaterWorkerPath)
            && Directory.Exists(_currentInstallRoot)
            && IsCanonicalCurrentSlot(_currentInstallRoot, _deploymentRoot);
@@ -87,13 +139,13 @@ internal sealed class DesktopUpdatePreparationHostService
     private async Task<object?> PrepareCoreAsync(CancellationToken cancellationToken)
     {
         var policy = DesktopUpdateReleasePolicy.Load(_policyPath);
-        if (!IsConfigured(policy))
+        if (!IsPreparationConfigured(policy))
             throw new DesktopUpdateBridgeCommandException(
                 "UPDATE_RELEASE_FEED_NOT_CONFIGURED",
                 "Desktop update preparation requires an enabled signed release policy, packaged Current slot and Updater Worker.");
 
         var broker = new UpdateBroker(policy.PublicKeyPem!, policy.PackageHosts);
-        using var manifestClient = new UpdateManifestClient(broker, policy.ManifestUri!, policy.ManifestHosts);
+        using var manifestClient = _manifestClientFactory(broker, policy.ManifestUri!, policy.ManifestHosts);
         var staging = new UpdateStagingBroker();
         using var downloadClient = new UpdateDownloadClient(staging);
         var handoff = new UpdateHandoffBroker();
