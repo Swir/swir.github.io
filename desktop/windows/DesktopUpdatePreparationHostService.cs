@@ -8,7 +8,7 @@ namespace Swir.Desktop.Host;
 /// </summary>
 internal sealed class DesktopUpdatePreparationHostService
 {
-    public const string HostServiceSchema = "swir.desktop-update-preparation-host/0.2";
+    public const string HostServiceSchema = "swir.desktop-update-preparation-host/0.3";
     public const string CheckSchema = "swir.desktop-update-check/0.1";
     public static readonly Version CurrentDesktopVersion = new(0, 5, 1);
 
@@ -113,7 +113,15 @@ internal sealed class DesktopUpdatePreparationHostService
     public object QueuePrepare(bool trustedShell) => _bridge.QueuePrepare(trustedShell);
     public object Cancel(bool trustedShell) => _bridge.CancelActive(trustedShell);
     public void CancelQueuedAfterResponseFailure() => _bridge.CancelQueuedAfterResponseFailure();
-    public void ResetTerminalState() => _bridge.ResetTerminalState();
+
+    public object ResetTerminalState(bool trustedShell)
+    {
+        if (!trustedShell)
+            throw new DesktopUpdateBridgeCommandException("UPDATE_BRIDGE_TRUST_REQUIRED", "Only the trusted SWIR system shell may reset Desktop update preparation state.");
+        _bridge.ResetTerminalState();
+        return Describe();
+    }
+
     public Task<object?> ExecuteQueuedAsync(CancellationToken cancellationToken = default)
         => _bridge.ExecuteQueuedAsync(cancellationToken);
 
