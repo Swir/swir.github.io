@@ -27,6 +27,7 @@ internal sealed class MainWindow : Form
     private readonly DesktopUpdateRestartSession _restartSession;
     private readonly DesktopUpdateRestartController _updateRestartController;
     private readonly DesktopHostRestartHooks _restartHooks;
+    private readonly DesktopUpdateBridgeCoordinator _updateBridgeCoordinator;
     private readonly string _repoRoot;
     private readonly string _dataRoot;
     private CoreWebView2? _core;
@@ -46,12 +47,15 @@ internal sealed class MainWindow : Form
         var restartLauncher = new UpdateRestartLauncher(new HostShutdownHandoff(updateJournal));
         var restartLifecycle = new DesktopUpdateRestartLifecycle(restartLauncher);
         _restartSession = new DesktopUpdateRestartSession(restartLifecycle);
-        _updateRestartController = new DesktopUpdateRestartController(
-            new DesktopPreparedUpdateSelector(updateJournal),
-            _restartSession);
+        var updateSelector = new DesktopPreparedUpdateSelector(updateJournal);
+        _updateRestartController = new DesktopUpdateRestartController(updateSelector, _restartSession);
         _restartHooks = new DesktopHostRestartHooks(
             SuspendHostForUpdateRestartAsync,
             ResumeHostAfterUpdateRestartFailureAsync);
+        _updateBridgeCoordinator = new DesktopUpdateBridgeCoordinator(
+            DescribeUpdateRestartReadiness,
+            () => { _ = updateSelector.RequireReady(); },
+            async cancellationToken => { _ = await ApplyPreparedUpdateAndRestartAsync(cancellationToken).ConfigureAwait(false); });
 
         _repoRoot = ResolveRepoRoot();
         _policyCatalog = new ExecutionPolicyCatalog(Path.Combine(_repoRoot, "desktop", "windows", "app-policy.json"));
@@ -142,27 +146,52 @@ internal sealed class MainWindow : Form
             return;
         }
 
+        var executeQueuedUpdateRestart = false;
         using (bridgeLease)
         {
             BridgeResponse response;
             try
             {
+                var trustedShell = IsTrustedShellSource(e.Source);
                 string? effectiveToken;
-                if (IsTrustedShellSource(e.Source))
+                if (trustedShell)
                     effectiveToken = request.ContextToken;
                 else if (_isolation.TryResolveEntrySource(e.Source, out var packageId) && packageId is not null)
                     effectiveToken = _permissions.RequirePackageExecutionToken(packageId);
                 else
                     return;
 
-                var result = await DispatchAsync(request, effectiveToken);
+                var result = await DispatchAsync(request, effectiveToken, trustedShell);
                 response = new BridgeResponse("swir-native-result", request.Id, true, result, null);
             }
             catch (Exception ex)
             {
                 response = new BridgeResponse("swir-native-result", request.Id, false, null, new BridgeError(MapErrorCode(ex), ex.Message));
             }
-            PostBridgeResponse(response);
+
+            var responsePosted = PostBridgeResponse(response);
+            if (response.Ok
+                && string.Equals(request.Surface, "updates", StringComparison.Ordinal)
+                && string.Equals(request.Method, "applyAndRestart", StringComparison.Ordinal))
+            {
+                if (responsePosted)
+                    executeQueuedUpdateRestart = true;
+                else
+                    _updateBridgeCoordinator.CancelQueuedAfterResponseFailure();
+            }
+        }
+
+        if (!executeQueuedUpdateRestart) return;
+        try
+        {
+            await _updateBridgeCoordinator.ExecuteQueuedAsync();
+        }
+        catch (Exception ex)
+        {
+            PostNativeHostEvent(new NativeHostEvent(
+                "swir-native-event",
+                "updates.restartFailed",
+                new { code = MapErrorCode(ex), message = ex.Message }));
         }
     }
 
@@ -240,15 +269,31 @@ internal sealed class MainWindow : Form
         return completion.Task;
     }
 
-    private void PostBridgeResponse(BridgeResponse response)
+    private bool PostBridgeResponse(BridgeResponse response)
     {
         var core = _core;
-        if (core is null || IsDisposed || Disposing) return;
-        try { core.PostWebMessageAsJson(JsonSerializer.Serialize(response, JsonOptions)); }
-        catch (InvalidOperationException) when (!_bridgeAttached || IsDisposed || Disposing) { }
+        if (core is null || IsDisposed || Disposing) return false;
+        try
+        {
+            core.PostWebMessageAsJson(JsonSerializer.Serialize(response, JsonOptions));
+            return true;
+        }
+        catch (InvalidOperationException) when (!_bridgeAttached || IsDisposed || Disposing) { return false; }
     }
 
-    private Task<object?> DispatchAsync(BridgeRequest request, string? effectiveToken)
+    private bool PostNativeHostEvent(NativeHostEvent hostEvent)
+    {
+        var core = _core;
+        if (core is null || IsDisposed || Disposing || !_bridgeAttached) return false;
+        try
+        {
+            core.PostWebMessageAsJson(JsonSerializer.Serialize(hostEvent, JsonOptions));
+            return true;
+        }
+        catch (InvalidOperationException) when (!_bridgeAttached || IsDisposed || Disposing) { return false; }
+    }
+
+    private Task<object?> DispatchAsync(BridgeRequest request, string? effectiveToken, bool trustedShell)
     {
         if (string.Equals(request.Surface, "appdata", StringComparison.Ordinal))
             return DispatchAppDataAsync(request.Method, request.Args, effectiveToken);
@@ -260,8 +305,20 @@ internal sealed class MainWindow : Form
             "clipboard" => DispatchClipboardAsync(request.Method, request.Args),
             "processes" => DispatchProcessesAsync(request.Method, request.Args),
             "security" => DispatchSecurityAsync(request.Method, request.Args, effectiveToken),
+            "updates" => DispatchUpdatesAsync(request.Method, trustedShell),
             _ => throw new BridgeException("RUNTIME_UNSUPPORTED", $"Unsupported native surface: {request.Surface}")
         };
+    }
+
+    private Task<object?> DispatchUpdatesAsync(string method, bool trustedShell)
+    {
+        object? result = method switch
+        {
+            "readiness" => _updateBridgeCoordinator.Describe(),
+            "applyAndRestart" => _updateBridgeCoordinator.PrepareApply(trustedShell),
+            _ => throw new BridgeException("RUNTIME_UNSUPPORTED", $"Unsupported updates method: {method}")
+        };
+        return Task.FromResult(result);
     }
 
     private Task<object?> DispatchAppDataAsync(string method, JsonElement args, string? callerToken)
@@ -487,7 +544,13 @@ internal sealed class MainWindow : Form
         throw new DirectoryNotFoundException("Could not find SWIR OS repository root containing index.html.");
     }
 
-    private static string MapErrorCode(Exception ex) => ex is BridgeException bridge ? bridge.Code : "NATIVE_HOST_ERROR";
+    private static string MapErrorCode(Exception ex) => ex switch
+    {
+        BridgeException bridge => bridge.Code,
+        DesktopUpdateBridgeCommandException updateBridge => updateBridge.Code,
+        UpdateSecurityException updateSecurity => updateSecurity.Code,
+        _ => "NATIVE_HOST_ERROR"
+    };
 
     private const string NativeBridgeScript = """
 (() => {
@@ -500,21 +563,52 @@ internal sealed class MainWindow : Form
     const id = `swir-${Date.now()}-${++seq}`; pending.set(id, { resolve, reject });
     postMessage({ type: 'swir-native-call', id, surface, method, args, contextToken: executionToken });
   });
+  const updateFrame = () => {
+    const frame = document.querySelector('.os-window[data-window="updates"] iframe');
+    if (!(frame instanceof HTMLIFrameElement)) return null;
+    try {
+      const url = new URL(frame.src, location.href);
+      if (url.origin !== location.origin || url.pathname !== '/swir-updates.html') return null;
+    } catch { return null; }
+    return frame;
+  };
   chrome.webview.addEventListener('message', event => {
     const msg = event.data;
-    if (!msg || msg.type !== 'swir-native-result' || !pending.has(msg.id)) return;
-    const p = pending.get(msg.id); pending.delete(msg.id);
-    if (msg.ok) p.resolve(msg.result); else { const error = new Error(msg.error?.message || 'Native host error'); error.code = msg.error?.code || 'NATIVE_HOST_ERROR'; p.reject(error); }
+    if (!msg) return;
+    if (msg.type === 'swir-native-result' && pending.has(msg.id)) {
+      const p = pending.get(msg.id); pending.delete(msg.id);
+      if (msg.ok) p.resolve(msg.result); else { const error = new Error(msg.error?.message || 'Native host error'); error.code = msg.error?.code || 'NATIVE_HOST_ERROR'; p.reject(error); }
+      return;
+    }
+    if (msg.type === 'swir-native-event' && msg.name === 'updates.restartFailed') {
+      window.dispatchEvent(new CustomEvent('swir:native-update-restart-failed', { detail: msg.detail || {} }));
+      const frame = updateFrame();
+      frame?.contentWindow?.postMessage({ type: 'swir-update-restart-failed', detail: msg.detail || {} }, location.origin);
+    }
+  });
+  window.addEventListener('message', async event => {
+    const msg = event.data;
+    if (!msg || msg.type !== 'swir-system-update-command' || typeof msg.id !== 'string') return;
+    const frame = updateFrame();
+    if (!frame || event.source !== frame.contentWindow || event.origin !== location.origin) return;
+    if (msg.method !== 'applyAndRestart') return;
+    try {
+      const result = await call('updates', 'applyAndRestart');
+      frame.contentWindow?.postMessage({ type: 'swir-system-update-result', id: msg.id, ok: true, result }, location.origin);
+    } catch (error) {
+      frame.contentWindow?.postMessage({ type: 'swir-system-update-result', id: msg.id, ok: false, error: { code: error?.code || 'NATIVE_HOST_ERROR', message: error?.message || 'Native host error' } }, location.origin);
+    }
   });
   const surface = (name, methods) => Object.freeze(Object.fromEntries(methods.map(method => [method, (...args) => call(name, method, ...args)])));
   window.SWIR_NATIVE_HOST = Object.freeze({
     edition: 'DESKTOP', version: '0.5.1-preview', contract: 'swir.runtime/1.0', sessionId: '__SESSION_ID__',
-    features: Object.freeze({ packageContextBroker: true, appIsolationRouting: true, appIsolationState: 'APP_BRIDGE_VERIFIED', nativeAppData: true, guardedUpdateRestartLifecycle: true }),
+    features: Object.freeze({ packageContextBroker: true, appIsolationRouting: true, appIsolationState: 'APP_BRIDGE_VERIFIED', nativeAppData: true, guardedUpdateRestartLifecycle: true, nativeUpdateBridge: true }),
     filesystem: surface('filesystem', ['list','get','save','remove','pickFile','pickDirectory','capabilityInfo','readCapabilityText','revokeCapability','revokeOwnerCapabilities','pruneCapabilities','capabilityStatus']),
     appData: surface('appdata', ['info','list','get','set','remove']),
     clipboard: surface('clipboard', ['readText','writeText','clear']),
     processes: surface('processes', ['list','open','kill','spawn']),
-    security: surface('security', ['contextInfo','can','policyCatalog','appUrl','isolationInfo','syncPackageContexts','packageContexts'])
+    security: surface('security', ['contextInfo','can','policyCatalog','appUrl','isolationInfo','syncPackageContexts','packageContexts']),
+    updates: surface('updates', ['readiness'])
   });
   window.dispatchEvent(new CustomEvent('swir:native-host-ready', { detail: { edition: 'DESKTOP', version: '0.5.1-preview', sessionId: '__SESSION_ID__' } }));
 })();
@@ -526,4 +620,5 @@ internal sealed class MainWindow : Form
 internal sealed record BridgeRequest(string Type, string Id, string Surface, string Method, JsonElement Args, string? ContextToken);
 internal sealed record BridgeResponse(string Type, string Id, bool Ok, object? Result, BridgeError? Error);
 internal sealed record BridgeError(string Code, string Message);
+internal sealed record NativeHostEvent(string Type, string Name, object? Detail);
 internal sealed class BridgeException(string code, string message) : Exception(message) { public string Code { get; } = code; }
