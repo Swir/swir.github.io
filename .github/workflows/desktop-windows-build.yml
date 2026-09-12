@@ -91,6 +91,12 @@ jobs:
       - name: Run signed Update Broker self-tests
         run: dotnet run --project SWIR.Desktop.Update.SelfTests.csproj --configuration Release
 
+      - name: Run Desktop signed release builder self-tests
+        run: dotnet run --project SWIR.Desktop.ReleaseBuilder.SelfTests.csproj --configuration Release
+
+      - name: Build Desktop signed release tool
+        run: dotnet build SWIR.Desktop.ReleaseTool.csproj --configuration Release
+
       - name: Run end-to-end update preparation self-tests
         run: dotnet run --project SWIR.Desktop.UpdatePreparation.SelfTests.csproj --configuration Release
 
