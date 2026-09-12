@@ -37,7 +37,7 @@ internal static class DesktopPackageBuilderSelfTests
                 var manifestEntry = archive.GetEntry(DesktopPackageBuilder.ManifestEntryName) ?? throw new Exception("manifest missing");
                 using var manifestStream = manifestEntry.Open();
                 var manifest = JsonSerializer.Deserialize<DesktopPackageBuilder.PackageManifest>(manifestStream) ?? throw new Exception("manifest invalid");
-                Expect(manifest.Schema == CandidatePackagePreparer.PackageManifestSchema, "manifest schema matches runtime candidate verifier", ref passed);
+                Expect(manifest.Schema == "swir.desktop-package/0.1", "manifest schema matches candidate package contract", ref passed);
                 Expect(manifest.Version == version.ToString() && manifest.EntryPoint == "SWIR.Desktop.Host.exe", "manifest release identity", ref passed);
                 Expect(manifest.Files.Select(file => file.Path).SequenceEqual(new[] { "Assets/shell.bin", "SWIR.Desktop.Host.exe" }), "manifest file list sorted", ref passed);
 
