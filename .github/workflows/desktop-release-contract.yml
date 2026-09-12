@@ -5,6 +5,12 @@ on:
     branches: [main]
     paths:
       - 'global.json'
+      - 'index.html'
+      - 'swir-*.js'
+      - 'swir-*.html'
+      - 'sw.js'
+      - 'desktop/windows/app-policy.json'
+      - 'desktop/windows/stage-desktop-runtime.ps1'
       - 'desktop/windows/DesktopReleaseBundle*.cs'
       - 'desktop/windows/DesktopReleaseToCandidate*.cs'
       - 'desktop/windows/SWIR.Desktop.ReleaseBundle*.csproj'
@@ -16,6 +22,12 @@ on:
   pull_request:
     paths:
       - 'global.json'
+      - 'index.html'
+      - 'swir-*.js'
+      - 'swir-*.html'
+      - 'sw.js'
+      - 'desktop/windows/app-policy.json'
+      - 'desktop/windows/stage-desktop-runtime.ps1'
       - 'desktop/windows/DesktopReleaseBundle*.cs'
       - 'desktop/windows/DesktopReleaseToCandidate*.cs'
       - 'desktop/windows/SWIR.Desktop.ReleaseBundle*.csproj'
@@ -31,7 +43,7 @@ permissions:
 jobs:
   verify-release-contract:
     runs-on: windows-latest
-    timeout-minutes: 12
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: desktop/windows
@@ -65,7 +77,7 @@ jobs:
           dotnet build SWIR.Desktop.UpdaterWorker.csproj --configuration Release
           dotnet build SWIR.Desktop.ReleaseToCandidate.SelfTests.csproj --configuration Release
 
-      - name: Run signed 0.5.2-preview release to Candidate round-trip
+      - name: Run signed self-contained 0.5.2-preview release to Candidate round-trip
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
@@ -78,11 +90,22 @@ jobs:
           $verifyTool = Join-Path $toolDir 'SWIR.Desktop.ReleaseBundleVerifierTool.dll'
           $worker = Join-Path $toolDir 'SWIR.Desktop.UpdaterWorker.exe'
           $releaseToCandidate = Join-Path $toolDir 'SWIR.Desktop.ReleaseToCandidate.SelfTests.dll'
-          foreach ($required in @($bundleTool, $verifyTool, $worker, $releaseToCandidate)) {
+          $runtimeStage = Join-Path (Get-Location) 'stage-desktop-runtime.ps1'
+          foreach ($required in @($bundleTool, $verifyTool, $worker, $releaseToCandidate, $runtimeStage)) {
             if (-not (Test-Path $required -PathType Leaf)) { throw "Required Desktop release/runtime tool missing: $required" }
           }
 
           dotnet publish SWIR.Desktop.Host.csproj --configuration Release --output $publish
+          & $runtimeStage -PublishDir $publish -SourceRoot '${{ github.workspace }}'
+          if (-not (Test-Path (Join-Path $publish 'index.html') -PathType Leaf)) { throw 'Self-contained Desktop publish is missing index.html.' }
+          if (-not (Test-Path (Join-Path $publish 'desktop\windows\app-policy.json') -PathType Leaf)) { throw 'Self-contained Desktop publish is missing app-policy.json.' }
+          $runtimeManifestPath = Join-Path $publish 'desktop-runtime.json'
+          if (-not (Test-Path $runtimeManifestPath -PathType Leaf)) { throw 'Self-contained Desktop publish is missing desktop-runtime.json.' }
+          $runtimeManifest = Get-Content $runtimeManifestPath -Raw | ConvertFrom-Json
+          if ($runtimeManifest.schema -ne 'swir.desktop-web-runtime/0.1') { throw 'Unexpected Desktop web runtime manifest schema.' }
+          if ($runtimeManifest.sourceCommit -ne $env:GITHUB_SHA.ToLowerInvariant()) { throw 'Desktop web runtime source commit does not match workflow SHA.' }
+          if ([int]$runtimeManifest.fileCount -lt 9) { throw 'Desktop web runtime manifest contains too few files.' }
+
           $rsa = [System.Security.Cryptography.RSA]::Create(2048)
           try {
             [System.IO.File]::WriteAllText($privateKey, $rsa.ExportRSAPrivateKeyPem())
