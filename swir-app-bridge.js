@@ -1,4 +1,4 @@
-/* SWIR OS App Bridge 0.5.1 — package-side portable API */
+/* SWIR OS App Bridge 0.5.2 — package-side portable API */
 (() => {
   'use strict';
   if (window.SwirAppBridge) return;
@@ -59,15 +59,25 @@
       return result.data;
     }
   });
+  const locale = Object.freeze({
+    info: () => call('locale.info'),
+    translate: (key, vars = null, options = {}) => call('locale.translate', key, vars, options),
+    formatDate: (value, options = {}, localeTag) => call('locale.formatDate', value, options, localeTag),
+    formatNumber: (value, options = {}, localeTag) => call('locale.formatNumber', value, options, localeTag),
+    formatCurrency: (value, currency, options = {}, localeTag) => call('locale.formatCurrency', value, currency, options, localeTag),
+    formatRelativeTime: (value, unit, options = {}, localeTag) => call('locale.formatRelativeTime', value, unit, options, localeTag),
+    formatList: (items, options = {}, localeTag) => call('locale.formatList', items, options, localeTag)
+  });
   const sdk = Object.freeze({
     files,
     network,
+    locale,
     identity: Object.freeze({ active: () => call('identity.active') }),
     notifications: Object.freeze({ send: options => call('notifications.send', options) }),
     shell: Object.freeze({ notify: (title, message) => call('shell.notify', title, message) }),
     bridge: Object.freeze({ info: () => call('bridge.info') })
   });
-  const platform = Object.freeze({ storage, network });
-  window.SwirAppBridge = Object.freeze({ version: '0.5.1-preview', packageId, appId, call, storage, files, network, sdk, platform });
+  const platform = Object.freeze({ storage, network, locale });
+  window.SwirAppBridge = Object.freeze({ version: '0.5.2-preview', packageId, appId, call, storage, files, network, locale, sdk, platform });
   dispatchEvent(new CustomEvent('swir:app-bridge-ready', { detail: { packageId, appId } }));
 })();
