@@ -125,6 +125,35 @@ jobs:
       - name: Build Desktop signed release tool
         run: dotnet build SWIR.Desktop.ReleaseTool.csproj --configuration Release
 
+      - name: Run transactional Desktop release bundle self-tests
+        run: dotnet run --project SWIR.Desktop.ReleaseBundle.SelfTests.csproj --configuration Release
+
+      - name: Build Desktop release bundle tool
+        run: dotnet build SWIR.Desktop.ReleaseBundleTool.csproj --configuration Release
+
+      - name: Build signed Desktop release bundle smoke artifact
+        shell: pwsh
+        run: |
+          $publish = Join-Path '${{ runner.temp }}' 'swir-release-publish'
+          $bundle = Join-Path '${{ runner.temp }}' 'swir-release-bundle'
+          $key = Join-Path '${{ runner.temp }}' 'swir-release-test-key.pem'
+          dotnet publish SWIR.Desktop.Host.csproj --configuration Release --output $publish
+          $rsa = [System.Security.Cryptography.RSA]::Create(2048)
+          try { [System.IO.File]::WriteAllText($key, $rsa.ExportRSAPrivateKeyPem()) } finally { $rsa.Dispose() }
+          dotnet run --project SWIR.Desktop.ReleaseBundleTool.csproj --configuration Release -- `
+            --source $publish `
+            --output-dir $bundle `
+            --version 0.5.1 `
+            --entry-point SWIR.Desktop.Host.exe `
+            --package-url https://updates.example.test/SWIR-Desktop-0.5.1-ci.zip `
+            --channel ci `
+            --key-id ci-ephemeral `
+            --private-key $key
+          if (-not (Test-Path (Join-Path $bundle 'SWIR-Desktop-0.5.1-ci.zip'))) { throw 'Release bundle package missing.' }
+          if (-not (Test-Path (Join-Path $bundle 'desktop-update-ci.json'))) { throw 'Release bundle signed manifest missing.' }
+          if (-not (Test-Path (Join-Path $bundle 'release-bundle.json'))) { throw 'Release bundle metadata missing.' }
+          Remove-Item $key -Force
+
       - name: Run end-to-end update preparation self-tests
         run: dotnet run --project SWIR.Desktop.UpdatePreparation.SelfTests.csproj --configuration Release
 
