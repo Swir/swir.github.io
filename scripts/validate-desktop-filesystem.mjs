@@ -5,6 +5,9 @@ const program = read('desktop/windows/Program.cs');
 const broker = read('desktop/windows/NativeFileSystemBroker.cs');
 const runtime = read('swir-runtime.js');
 
+// Parse the portable runtime without executing browser-only globals.
+new Function(runtime);
+
 const requireText = (text, needle, label) => {
   if (!text.includes(needle)) throw new Error(`Missing ${label}: ${needle}`);
 };
