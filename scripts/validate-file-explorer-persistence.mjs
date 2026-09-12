@@ -2,7 +2,9 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import assert from 'node:assert/strict';
 
+const adapter = fs.readFileSync('swir-file-storage.js', 'utf8');
 const bridge = fs.readFileSync('swir-platform-bridge.js', 'utf8');
+new Function(adapter);
 new Function(bridge);
 
 const MANIFEST = '.swir-file-explorer-v1.json';
@@ -56,6 +58,7 @@ async function boot({ legacy = [], nativeItems = null, saveDelayMs = 0 } = {}) {
     addEventListener(type, fn) { listeners.set(type, fn); }
   };
   const context = vm.createContext({ window, localStorage, setTimeout, clearTimeout, Date, JSON, console, structuredClone });
+  vm.runInContext(adapter, context, { filename: 'swir-file-storage.js' });
   vm.runInContext(bridge, context, { filename: 'swir-platform-bridge.js' });
   await new Promise(resolve => setTimeout(resolve, 50 + saveDelayMs));
   return { window, localStorage, native, platformFiles, storageWrites, listeners, getSaveCount: () => saveCount };
@@ -112,11 +115,14 @@ async function boot({ legacy = [], nativeItems = null, saveDelayMs = 0 } = {}) {
   assert.ok(state.getSaveCount() >= 2, 'queue race scenario must execute more than one native save');
 }
 
-assert.match(bridge, /NATIVE_VFS_MANIFEST='\.swir-file-explorer-v1\.json'/);
-assert.match(bridge, /filesystem\.save\(\{id:NATIVE_VFS_MANIFEST/);
-assert.match(bridge, /hydrateNative:true/);
+assert.match(adapter, /NATIVE_MANIFEST='\.swir-file-explorer-v1\.json'/);
+assert.match(adapter, /indexedDB\.open\(DB_NAME,DB_VERSION\)/);
+assert.match(adapter, /provider='web-indexeddb'/);
+assert.match(adapter, /provider='desktop-native-manifest'/);
+assert.match(adapter, /await fs\.save\(\{id:NATIVE_MANIFEST/);
+assert.match(bridge, /await storage\.load\(\{legacyItems:items\}\)/);
+assert.match(bridge, /await storage\.save\(items\)/);
 assert.match(bridge, /drainFileSyncQueue/);
-assert.match(bridge, /revision/);
-assert.doesNotMatch(bridge, /filesystem\.remove\([^)]*NATIVE_VFS_MANIFEST/);
+assert.doesNotMatch(bridge, /filesystem\.save/);
 
 console.log('SWIR File Explorer Desktop persistence contract: OK');
