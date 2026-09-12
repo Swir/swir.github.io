@@ -10,6 +10,7 @@
   let dbPromise=null;
   let provider='initializing';
   let revision=0;
+  let memoryState=null;
 
   function normalize(items){
     if(!Array.isArray(items))return[];
@@ -29,6 +30,10 @@
   }
 
   async function waitForRuntime(timeoutMs=5000){
+    if(window.SwirRuntime?.filesystem)return window.SwirRuntime.filesystem;
+    // Normal Web Edition must not pause boot waiting for a native runtime that cannot exist.
+    // WebView2 exposes chrome.webview before the injected SWIR runtime becomes available.
+    if(!window.chrome?.webview)return null;
     const started=Date.now();
     while(!window.SwirRuntime?.filesystem&&Date.now()-started<timeoutMs)await new Promise(resolve=>setTimeout(resolve,25));
     return window.SwirRuntime?.filesystem||null;
@@ -75,10 +80,14 @@
     }
     provider='web-indexeddb';
     let existing=null;
-    try{existing=parseState(await idbGet())}catch(err){if(String(err?.message||err).includes('schema'))throw err;provider='web-memory-fallback'}
+    try{existing=parseState(await idbGet())}catch(err){
+      if(String(err?.message||err).includes('schema'))throw err;
+      provider='web-memory-fallback';
+      existing=parseState(memoryState);
+    }
     if(existing)return existing;
     const state=makeState(legacyItems,revision+1);
-    if(provider==='web-indexeddb')await idbPut(state);
+    if(provider==='web-indexeddb')await idbPut(state);else memoryState=state;
     revision=state.revision;
     return state;
   }
@@ -94,11 +103,16 @@
       revision=state.revision;
       return state;
     }
-    provider='web-indexeddb';
+
     let current=null;
-    try{current=parseState(await idbGet())}catch{}
+    provider='web-indexeddb';
+    try{current=parseState(await idbGet())}catch(err){
+      if(String(err?.message||err).includes('schema'))throw err;
+      provider='web-memory-fallback';
+      current=parseState(memoryState);
+    }
     const state=makeState(items,Math.max(revision,current?.revision||0)+1);
-    await idbPut(state);
+    if(provider==='web-indexeddb')await idbPut(state);else memoryState=state;
     revision=state.revision;
     return state;
   }
@@ -109,6 +123,6 @@
     load,
     save,
     normalize,
-    info:()=>({provider,schema:SCHEMA,nativeManifest:provider==='desktop-native-manifest'?NATIVE_MANIFEST:null,revision,database:provider==='web-indexeddb'?DB_NAME:null})
+    info:()=>({provider,schema:SCHEMA,nativeManifest:provider==='desktop-native-manifest'?NATIVE_MANIFEST:null,revision,database:provider==='web-indexeddb'?DB_NAME:null,persistent:provider!=='web-memory-fallback'})
   };
 })();
