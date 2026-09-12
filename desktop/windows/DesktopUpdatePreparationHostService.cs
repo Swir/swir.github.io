@@ -135,8 +135,8 @@ internal sealed class DesktopUpdatePreparationHostService
         => policy.Enabled
            && policy.ManifestUri is not null
            && !string.IsNullOrWhiteSpace(policy.PublicKeyPem)
-           && policy.ManifestHosts.Count > 0
-           && policy.PackageHosts.Count > 0;
+           && policy.ManifestHosts.Length > 0
+           && policy.PackageHosts.Length > 0;
 
     private bool IsPreparationConfigured(DesktopUpdateReleasePolicy policy)
         => IsReleaseFeedConfigured(policy)
