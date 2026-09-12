@@ -15,8 +15,10 @@ on:
       - 'desktop/windows/publish-desktop-host.ps1'
       - 'desktop/windows/DesktopReleaseBundle*.cs'
       - 'desktop/windows/DesktopReleaseToCandidate*.cs'
+      - 'desktop/windows/DesktopReleaseActivation*.cs'
       - 'desktop/windows/SWIR.Desktop.ReleaseBundle*.csproj'
       - 'desktop/windows/SWIR.Desktop.ReleaseToCandidate*.csproj'
+      - 'desktop/windows/SWIR.Desktop.ReleaseActivation*.csproj'
       - 'desktop/windows/SWIR.Desktop.UpdaterWorker.csproj'
       - 'desktop/windows/SWIR.Desktop.Host.csproj'
       - '.github/workflows/desktop-release.yml'
@@ -34,8 +36,10 @@ on:
       - 'desktop/windows/publish-desktop-host.ps1'
       - 'desktop/windows/DesktopReleaseBundle*.cs'
       - 'desktop/windows/DesktopReleaseToCandidate*.cs'
+      - 'desktop/windows/DesktopReleaseActivation*.cs'
       - 'desktop/windows/SWIR.Desktop.ReleaseBundle*.csproj'
       - 'desktop/windows/SWIR.Desktop.ReleaseToCandidate*.csproj'
+      - 'desktop/windows/SWIR.Desktop.ReleaseActivation*.csproj'
       - 'desktop/windows/SWIR.Desktop.UpdaterWorker.csproj'
       - 'desktop/windows/SWIR.Desktop.Host.csproj'
       - '.github/workflows/desktop-release.yml'
@@ -47,7 +51,7 @@ permissions:
 jobs:
   verify-release-contract:
     runs-on: windows-latest
-    timeout-minutes: 15
+    timeout-minutes: 18
     defaults:
       run:
         working-directory: desktop/windows
@@ -80,8 +84,9 @@ jobs:
           dotnet build SWIR.Desktop.ReleaseBundleVerifierTool.csproj --configuration Release
           dotnet build SWIR.Desktop.UpdaterWorker.csproj --configuration Release
           dotnet build SWIR.Desktop.ReleaseToCandidate.SelfTests.csproj --configuration Release
+          dotnet build SWIR.Desktop.ReleaseActivation.SelfTests.csproj --configuration Release
 
-      - name: Run signed self-contained 0.5.2-preview release to Candidate round-trip
+      - name: Run signed self-contained 0.5.2-preview release through Candidate and real Host health commit
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
@@ -94,9 +99,10 @@ jobs:
           $verifyTool = Join-Path $toolDir 'SWIR.Desktop.ReleaseBundleVerifierTool.dll'
           $worker = Join-Path $toolDir 'SWIR.Desktop.UpdaterWorker.exe'
           $releaseToCandidate = Join-Path $toolDir 'SWIR.Desktop.ReleaseToCandidate.SelfTests.dll'
+          $releaseActivation = Join-Path $toolDir 'SWIR.Desktop.ReleaseActivation.SelfTests.dll'
           $runtimeStage = Join-Path (Get-Location) 'stage-desktop-runtime.ps1'
           $hostPublish = Join-Path (Get-Location) 'publish-desktop-host.ps1'
-          foreach ($required in @($bundleTool, $verifyTool, $worker, $releaseToCandidate, $runtimeStage, $hostPublish)) {
+          foreach ($required in @($bundleTool, $verifyTool, $worker, $releaseToCandidate, $releaseActivation, $runtimeStage, $hostPublish)) {
             if (-not (Test-Path $required -PathType Leaf)) { throw "Required Desktop release/runtime tool missing: $required" }
           }
 
@@ -164,6 +170,9 @@ jobs:
 
             dotnet $releaseToCandidate $worker $bundle $publicKey
             if ($LASTEXITCODE -ne 0) { throw "Release-to-Candidate E2E failed with exit code $LASTEXITCODE" }
+
+            dotnet $releaseActivation $worker $bundle $publicKey
+            if ($LASTEXITCODE -ne 0) { throw "Real signed release activation/health E2E failed with exit code $LASTEXITCODE" }
 
             $package = Join-Path $bundle 'SWIR-Desktop-0.5.2-preview.zip'
             $manifest = Join-Path $bundle 'desktop-update-preview.json'
