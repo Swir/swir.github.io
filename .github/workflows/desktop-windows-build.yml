@@ -100,6 +100,9 @@ jobs:
       - name: Run packaged Desktop update preparation host self-tests
         run: dotnet run --project SWIR.Desktop.UpdatePreparationHost.SelfTests.csproj --configuration Release
 
+      - name: Run signed Desktop update check host self-tests
+        run: dotnet run --project SWIR.Desktop.UpdateCheckHost.SelfTests.csproj --configuration Release
+
       - name: Run update transaction recovery self-tests
         run: dotnet run --project SWIR.Desktop.Transaction.SelfTests.csproj --configuration Release
 
