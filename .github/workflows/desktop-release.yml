@@ -68,7 +68,7 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           $version = [Version]::Parse($env:SWIR_RELEASE_VERSION)
-          if ($version -le [Version]'0.0') { throw 'Release version must be positive.' }
+          if ($version.Build -lt 0 -or $version -le [Version]'0.0.0') { throw 'Release version must be a positive three-part numeric version.' }
           if ($env:SWIR_RELEASE_CHANNEL -notin @('preview', 'stable')) { throw 'Unsupported release channel.' }
           if ($env:SWIR_RELEASE_KEY_ID -notmatch '^[A-Za-z0-9._-]{1,128}$') { throw 'Invalid release key id.' }
           if ([string]::IsNullOrWhiteSpace($env:SWIR_RELEASE_PRIVATE_KEY_PEM)) { throw 'SWIR_DESKTOP_RELEASE_PRIVATE_KEY_PEM secret is not configured.' }
@@ -79,13 +79,18 @@ jobs:
           dotnet build SWIR.Desktop.ReleaseBundleVerifierTool.csproj --configuration Release
           dotnet build SWIR.Desktop.UpdaterWorker.csproj --configuration Release
 
-      - name: Publish self-contained Desktop Host runtime
+      - name: Publish version-bound self-contained Desktop Host runtime
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           $publish = Join-Path '${{ runner.temp }}' 'swir-release-publish'
-          dotnet publish SWIR.Desktop.Host.csproj --configuration Release --output $publish
-          if (-not (Test-Path (Join-Path $publish 'SWIR.Desktop.Host.exe'))) { throw 'Desktop Host publish output is missing the entry point.' }
+          $hostPublish = Join-Path (Get-Location) 'publish-desktop-host.ps1'
+          if (-not (Test-Path $hostPublish -PathType Leaf)) { throw "Desktop Host publish helper is missing: $hostPublish" }
+          & $hostPublish `
+            -PublishDir $publish `
+            -ReleaseVersion $env:SWIR_RELEASE_VERSION `
+            -Channel $env:SWIR_RELEASE_CHANNEL `
+            -SourceCommit $env:GITHUB_SHA
 
           $runtimeStage = Join-Path (Get-Location) 'stage-desktop-runtime.ps1'
           if (-not (Test-Path $runtimeStage -PathType Leaf)) { throw "Desktop runtime staging tool is missing: $runtimeStage" }
@@ -108,11 +113,20 @@ jobs:
             (Join-Path $publish 'swir-updates.html'),
             (Join-Path $publish 'desktop\windows\app-policy.json'),
             (Join-Path $publish 'desktop-runtime.json'),
+            (Join-Path $publish 'desktop-host-build.json'),
             (Join-Path $publish 'SWIR.Desktop.UpdaterWorker.exe'),
             (Join-Path $publish 'desktop-update-policy.json')
           )) {
             if (-not (Test-Path $required -PathType Leaf)) { throw "Desktop runtime asset is missing: $required" }
           }
+
+          $hostBuild = Get-Content (Join-Path $publish 'desktop-host-build.json') -Raw | ConvertFrom-Json
+          $expectedHostVersion = "$env:SWIR_RELEASE_VERSION-$env:SWIR_RELEASE_CHANNEL"
+          if ($hostBuild.schema -ne 'swir.desktop-host-build/0.1') { throw 'Unexpected Desktop Host build manifest schema.' }
+          if ($hostBuild.releaseVersion -ne $env:SWIR_RELEASE_VERSION -or $hostBuild.channel -ne $env:SWIR_RELEASE_CHANNEL -or $hostBuild.hostVersion -ne $expectedHostVersion) {
+            throw 'Desktop Host build identity does not match the requested release identity.'
+          }
+          if ($hostBuild.sourceCommit -ne $env:GITHUB_SHA.ToLowerInvariant()) { throw 'Desktop Host build source commit does not match the release commit.' }
 
           $runtimeManifest = Get-Content (Join-Path $publish 'desktop-runtime.json') -Raw | ConvertFrom-Json
           if ($runtimeManifest.schema -ne 'swir.desktop-web-runtime/0.1') { throw 'Unexpected Desktop web runtime manifest schema.' }
