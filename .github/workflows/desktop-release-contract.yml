@@ -6,7 +6,10 @@ on:
     paths:
       - 'global.json'
       - 'desktop/windows/DesktopReleaseBundle*.cs'
+      - 'desktop/windows/DesktopReleaseToCandidate*.cs'
       - 'desktop/windows/SWIR.Desktop.ReleaseBundle*.csproj'
+      - 'desktop/windows/SWIR.Desktop.ReleaseToCandidate*.csproj'
+      - 'desktop/windows/SWIR.Desktop.UpdaterWorker.csproj'
       - 'desktop/windows/SWIR.Desktop.Host.csproj'
       - '.github/workflows/desktop-release.yml'
       - '.github/workflows/desktop-release-contract.yml'
@@ -14,7 +17,10 @@ on:
     paths:
       - 'global.json'
       - 'desktop/windows/DesktopReleaseBundle*.cs'
+      - 'desktop/windows/DesktopReleaseToCandidate*.cs'
       - 'desktop/windows/SWIR.Desktop.ReleaseBundle*.csproj'
+      - 'desktop/windows/SWIR.Desktop.ReleaseToCandidate*.csproj'
+      - 'desktop/windows/SWIR.Desktop.UpdaterWorker.csproj'
       - 'desktop/windows/SWIR.Desktop.Host.csproj'
       - '.github/workflows/desktop-release.yml'
       - '.github/workflows/desktop-release-contract.yml'
@@ -25,7 +31,7 @@ permissions:
 jobs:
   verify-release-contract:
     runs-on: windows-latest
-    timeout-minutes: 10
+    timeout-minutes: 12
     defaults:
       run:
         working-directory: desktop/windows
@@ -52,12 +58,14 @@ jobs:
       - name: Run release bundle verifier self-tests
         run: dotnet run --project SWIR.Desktop.ReleaseBundleVerifier.SelfTests.csproj --configuration Release
 
-      - name: Build release bundle tools
+      - name: Build release and runtime update tools
         run: |
           dotnet build SWIR.Desktop.ReleaseBundleTool.csproj --configuration Release
           dotnet build SWIR.Desktop.ReleaseBundleVerifierTool.csproj --configuration Release
+          dotnet build SWIR.Desktop.UpdaterWorker.csproj --configuration Release
+          dotnet build SWIR.Desktop.ReleaseToCandidate.SelfTests.csproj --configuration Release
 
-      - name: Run signed bundle round-trip verification
+      - name: Run signed 0.5.2-preview release to Candidate round-trip
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
@@ -68,30 +76,46 @@ jobs:
           $toolDir = Join-Path (Get-Location) 'bin\Release\net8.0'
           $bundleTool = Join-Path $toolDir 'SWIR.Desktop.ReleaseBundleTool.dll'
           $verifyTool = Join-Path $toolDir 'SWIR.Desktop.ReleaseBundleVerifierTool.dll'
-          if (-not (Test-Path $bundleTool -PathType Leaf)) { throw "Release bundle tool missing: $bundleTool" }
-          if (-not (Test-Path $verifyTool -PathType Leaf)) { throw "Release verifier tool missing: $verifyTool" }
+          $worker = Join-Path $toolDir 'SWIR.Desktop.UpdaterWorker.exe'
+          $releaseToCandidate = Join-Path $toolDir 'SWIR.Desktop.ReleaseToCandidate.SelfTests.dll'
+          foreach ($required in @($bundleTool, $verifyTool, $worker, $releaseToCandidate)) {
+            if (-not (Test-Path $required -PathType Leaf)) { throw "Required Desktop release/runtime tool missing: $required" }
+          }
+
           dotnet publish SWIR.Desktop.Host.csproj --configuration Release --output $publish
           $rsa = [System.Security.Cryptography.RSA]::Create(2048)
           try {
             [System.IO.File]::WriteAllText($privateKey, $rsa.ExportRSAPrivateKeyPem())
             [System.IO.File]::WriteAllText($publicKey, $rsa.ExportSubjectPublicKeyInfoPem())
+
             dotnet $bundleTool `
               --source $publish `
               --output-dir $bundle `
-              --version 0.5.1 `
+              --version 0.5.2 `
               --entry-point SWIR.Desktop.Host.exe `
-              --package-url https://github.com/Swir/swir.github.io/releases/download/desktop-v0.5.1-ci/SWIR-Desktop-0.5.1-ci.zip `
-              --channel ci `
-              --key-id ci-contract `
+              --package-url https://github.com/Swir/swir.github.io/releases/download/desktop-v0.5.2-preview/SWIR-Desktop-0.5.2-preview.zip `
+              --channel preview `
+              --key-id ci-preview-contract `
               --private-key $privateKey
             if ($LASTEXITCODE -ne 0) { throw "Release bundle tool failed with exit code $LASTEXITCODE" }
+
             dotnet $verifyTool `
               --bundle-dir $bundle `
-              --version 0.5.1 `
-              --channel ci `
+              --version 0.5.2 `
+              --channel preview `
               --public-key $publicKey `
               --package-host github.com
             if ($LASTEXITCODE -ne 0) { throw "Release verifier tool failed with exit code $LASTEXITCODE" }
+
+            dotnet $releaseToCandidate $worker $bundle $publicKey
+            if ($LASTEXITCODE -ne 0) { throw "Release-to-Candidate E2E failed with exit code $LASTEXITCODE" }
+
+            $package = Join-Path $bundle 'SWIR-Desktop-0.5.2-preview.zip'
+            $manifest = Join-Path $bundle 'desktop-update-preview.json'
+            $metadata = Join-Path $bundle 'release-bundle.json'
+            foreach ($artifact in @($package, $manifest, $metadata)) {
+              if (-not (Test-Path $artifact -PathType Leaf)) { throw "Expected verified release artifact missing: $artifact" }
+            }
           } finally {
             $rsa.Dispose()
             Remove-Item $privateKey, $publicKey -Force -ErrorAction SilentlyContinue
