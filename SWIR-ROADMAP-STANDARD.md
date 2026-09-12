@@ -4,7 +4,7 @@ This document defines the default roadmap format for current and future SWIR pro
 
 ## Required dashboard
 
-Every active project should have a roadmap containing one protected progress block:
+Every active project must have a roadmap containing one protected progress block:
 
 ```md
 <!-- SWIR-ROADMAP-STANDARD:v1 -->
@@ -53,6 +53,51 @@ Hourly or recurring project agents must preserve the dashboard structure and the
 
 They must not replace the dashboard with another format, remove the CI-style badges, remove the table, move the progress block away from the top of the roadmap, or claim progress from subjective estimates.
 
+## Missing-roadmap rule
+
+An active project without a Roadmap is considered structurally incomplete. Before substantial implementation continues, create its Roadmap using SWIR Roadmap Standard v1.
+
+If an automated development process discovers an active project directory with no Roadmap, it must create the Roadmap first instead of continuing for another hour without progress tracking.
+
+## Single-project repositories
+
+A repository containing one product/game normally uses one authoritative project Roadmap, typically `ROADMAP.md` or the repository's established roadmap path.
+
+That Roadmap owns the product's 0–100% state.
+
+## Multi-project / multi-game repositories
+
+Repositories containing multiple independent projects or games must use **two levels** of Roadmap:
+
+1. **Master Roadmap** — repository-level queue/index of projects.
+2. **Project Roadmap** — one independent 0–100% Roadmap inside every active project directory.
+
+Example:
+
+```text
+repo/
+  docs/ROADMAP.md                 <- Master Roadmap
+  projects/
+    002_game_a/
+      README.md
+      ROADMAP.md                  <- Game A: own 0–100%
+    003_game_b/
+      README.md
+      ROADMAP.md                  <- Game B: own 0–100%
+```
+
+The Master Roadmap must not merge all internal tasks from all projects into one giant percentage. Instead it should:
+
+- keep the ordered project/game queue,
+- permanently record completed projects at 100%,
+- identify the current active project,
+- mirror the current project's own percentage/dashboard,
+- advance to the next project only after the current project has reached verified 100% or has been explicitly archived/cancelled.
+
+Completed projects keep their 100% state permanently. Starting a new project does not reduce a previously completed project's percentage.
+
 ## New-project rule
 
 For every new SWIR project, create a Roadmap at project start using this standard before long-running autonomous development begins. If the project has CI, show the real workflow badge. If CI does not exist yet, omit only the CI badge until a real workflow is added; keep the rest of the dashboard unchanged.
+
+For multi-project repositories, also add the new project to the Master Roadmap queue before or together with implementation work.
