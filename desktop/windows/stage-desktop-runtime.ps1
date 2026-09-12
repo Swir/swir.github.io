@@ -20,9 +20,10 @@ if ($publishWithSep.StartsWith($sourceWithSep, [System.StringComparison]::Ordina
     throw 'Desktop publish output must be outside the repository source tree.'
 }
 
-$webRoot = Join-Path $publish 'Web'
-if (Test-Path $webRoot) { Remove-Item $webRoot -Recurse -Force }
-New-Item -ItemType Directory -Path $webRoot -Force | Out-Null
+# Runtime web assets live beside SWIR.Desktop.Host.exe. Program.ResolveRepoRoot() deliberately
+# resolves index.html from AppContext.BaseDirectory first, so the signed package is standalone
+# and does not depend on a Git checkout after installation.
+$runtimeRoot = $publish
 
 # Only tracked files can enter a Desktop release. This prevents local secrets, build outputs
 # and unreviewed files from being silently bundled into a signed SWIR Desktop package.
@@ -64,7 +65,10 @@ foreach ($relativeRaw in ($tracked | Sort-Object -Unique)) {
         throw "Reparse/symlink runtime files are not allowed in Desktop releases: $relative"
     }
 
-    $destination = Join-Path $webRoot $relative
+    $destination = Join-Path $runtimeRoot $relative
+    if (Test-Path $destination -PathType Leaf) {
+        throw "Tracked web runtime would overwrite Desktop publish output: $relative"
+    }
     $destinationDir = Split-Path $destination -Parent
     New-Item -ItemType Directory -Path $destinationDir -Force | Out-Null
     Copy-Item -LiteralPath $sourcePath -Destination $destination -Force
@@ -89,7 +93,7 @@ $required = @(
     'desktop/windows/app-policy.json'
 )
 foreach ($relative in $required) {
-    if (-not (Test-Path (Join-Path $webRoot $relative) -PathType Leaf)) {
+    if (-not (Test-Path (Join-Path $runtimeRoot $relative) -PathType Leaf)) {
         throw "Required Desktop web runtime file was not staged: $relative"
     }
 }
@@ -103,10 +107,11 @@ $manifest = [ordered]@{
     fileCount = $manifestFiles.Count
     files = @($manifestFiles)
 }
-$manifestPath = Join-Path $webRoot 'desktop-runtime.json'
+$manifestPath = Join-Path $runtimeRoot 'desktop-runtime.json'
+if (Test-Path $manifestPath) { throw 'Desktop publish output already contains reserved desktop-runtime.json.' }
 $manifestJson = $manifest | ConvertTo-Json -Depth 5 -Compress
 [System.IO.File]::WriteAllText($manifestPath, $manifestJson, [System.Text.UTF8Encoding]::new($false))
 
 Write-Host "Staged SWIR Desktop web runtime: $($manifestFiles.Count) tracked files"
-Write-Host "Runtime root: $webRoot"
+Write-Host "Runtime root: $runtimeRoot"
 Write-Host "Runtime manifest: $manifestPath"
