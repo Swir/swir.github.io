@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
     paths:
+      - 'global.json'
       - 'desktop/windows/DesktopReleaseBundle*.cs'
       - 'desktop/windows/SWIR.Desktop.ReleaseBundle*.csproj'
       - 'desktop/windows/SWIR.Desktop.Host.csproj'
@@ -11,6 +12,7 @@ on:
       - '.github/workflows/desktop-release-contract.yml'
   pull_request:
     paths:
+      - 'global.json'
       - 'desktop/windows/DesktopReleaseBundle*.cs'
       - 'desktop/windows/SWIR.Desktop.ReleaseBundle*.csproj'
       - 'desktop/windows/SWIR.Desktop.Host.csproj'
@@ -36,14 +38,24 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
+      - name: Assert pinned .NET SDK line
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $sdk = dotnet --version
+          if ($sdk -notmatch '^8\.0\.4\d{2}$') { throw "Expected .NET SDK 8.0.4xx, got $sdk" }
+          dotnet --info
+
       - name: Build shipping Desktop Host
         run: dotnet build SWIR.Desktop.Host.csproj --configuration Release
 
       - name: Run release bundle verifier self-tests
         run: dotnet run --project SWIR.Desktop.ReleaseBundleVerifier.SelfTests.csproj --configuration Release
 
-      - name: Build release bundle verifier tool
-        run: dotnet build SWIR.Desktop.ReleaseBundleVerifierTool.csproj --configuration Release
+      - name: Build release bundle tools
+        run: |
+          dotnet build SWIR.Desktop.ReleaseBundleTool.csproj --configuration Release
+          dotnet build SWIR.Desktop.ReleaseBundleVerifierTool.csproj --configuration Release
 
       - name: Run signed bundle round-trip verification
         shell: pwsh
@@ -53,27 +65,34 @@ jobs:
           $bundle = Join-Path '${{ runner.temp }}' 'swir-release-contract-bundle'
           $privateKey = Join-Path '${{ runner.temp }}' 'swir-release-contract-private.pem'
           $publicKey = Join-Path '${{ runner.temp }}' 'swir-release-contract-public.pem'
+          $toolDir = Join-Path (Get-Location) 'bin\Release\net8.0'
+          $bundleTool = Join-Path $toolDir 'SWIR.Desktop.ReleaseBundleTool.dll'
+          $verifyTool = Join-Path $toolDir 'SWIR.Desktop.ReleaseBundleVerifierTool.dll'
+          if (-not (Test-Path $bundleTool -PathType Leaf)) { throw "Release bundle tool missing: $bundleTool" }
+          if (-not (Test-Path $verifyTool -PathType Leaf)) { throw "Release verifier tool missing: $verifyTool" }
           dotnet publish SWIR.Desktop.Host.csproj --configuration Release --output $publish
           $rsa = [System.Security.Cryptography.RSA]::Create(2048)
           try {
             [System.IO.File]::WriteAllText($privateKey, $rsa.ExportRSAPrivateKeyPem())
             [System.IO.File]::WriteAllText($publicKey, $rsa.ExportSubjectPublicKeyInfoPem())
+            dotnet $bundleTool `
+              --source $publish `
+              --output-dir $bundle `
+              --version 0.5.1 `
+              --entry-point SWIR.Desktop.Host.exe `
+              --package-url https://github.com/Swir/swir.github.io/releases/download/desktop-v0.5.1-ci/SWIR-Desktop-0.5.1-ci.zip `
+              --channel ci `
+              --key-id ci-contract `
+              --private-key $privateKey
+            if ($LASTEXITCODE -ne 0) { throw "Release bundle tool failed with exit code $LASTEXITCODE" }
+            dotnet $verifyTool `
+              --bundle-dir $bundle `
+              --version 0.5.1 `
+              --channel ci `
+              --public-key $publicKey `
+              --package-host github.com
+            if ($LASTEXITCODE -ne 0) { throw "Release verifier tool failed with exit code $LASTEXITCODE" }
           } finally {
             $rsa.Dispose()
+            Remove-Item $privateKey, $publicKey -Force -ErrorAction SilentlyContinue
           }
-          dotnet run --project SWIR.Desktop.ReleaseBundleTool.csproj --configuration Release -- `
-            --source $publish `
-            --output-dir $bundle `
-            --version 0.5.1 `
-            --entry-point SWIR.Desktop.Host.exe `
-            --package-url https://github.com/Swir/swir.github.io/releases/download/desktop-v0.5.1-ci/SWIR-Desktop-0.5.1-ci.zip `
-            --channel ci `
-            --key-id ci-contract `
-            --private-key $privateKey
-          dotnet run --project SWIR.Desktop.ReleaseBundleVerifierTool.csproj --configuration Release -- `
-            --bundle-dir $bundle `
-            --version 0.5.1 `
-            --channel ci `
-            --public-key $publicKey `
-            --package-host github.com
-          Remove-Item $privateKey, $publicKey -Force
