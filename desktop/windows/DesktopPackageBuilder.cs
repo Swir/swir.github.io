@@ -7,9 +7,17 @@ namespace Swir.Desktop.Host;
 internal static class DesktopPackageBuilder
 {
     public const string BuilderSchema = "swir.desktop-package-builder/0.1";
+    public const string PackageManifestSchema = "swir.desktop-package/0.1";
+    public const string ManifestEntryName = "desktop-package.json";
+    public const int MaxFiles = 4096;
+    public const long MaxExpandedBytes = 1024L * 1024L * 1024L;
+    public const long MaxSingleFileBytes = 512L * 1024L * 1024L;
+
     private static readonly DateTimeOffset DeterministicTimestamp = new(2000, 1, 1, 0, 0, 0, TimeSpan.Zero);
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
 
+    internal sealed record PackageFile(string Path, string Sha256, long Size);
+    internal sealed record PackageManifest(string Schema, string Version, string EntryPoint, List<PackageFile> Files);
     internal sealed record PackageBuildResult(string Schema, string PackagePath, string Version, string EntryPoint, int FileCount, long ExpandedBytes, string Sha256);
 
     public static PackageBuildResult Build(string sourceDirectory, string outputPackagePath, Version version, string entryPoint)
@@ -32,7 +40,7 @@ internal static class DesktopPackageBuilder
         var normalizedEntryPoint = NormalizeRelativePath(entryPoint);
         ValidateRelativePath(normalizedEntryPoint);
 
-        var files = new List<CandidatePackagePreparer.PackageFile>();
+        var files = new List<PackageFile>();
         long expandedBytes = 0;
         foreach (var path in Directory.EnumerateFiles(sourceRoot, "*", SearchOption.AllDirectories))
         {
@@ -42,31 +50,27 @@ internal static class DesktopPackageBuilder
 
             var relative = NormalizeRelativePath(Path.GetRelativePath(sourceRoot, path));
             ValidateRelativePath(relative);
-            if (string.Equals(relative, CandidatePackagePreparer.ManifestEntryName, StringComparison.OrdinalIgnoreCase))
-                throw new UpdateSecurityException("UPDATE_PACKAGE_RESERVED_PATH", $"Source tree contains reserved package path: {CandidatePackagePreparer.ManifestEntryName}");
-            if (info.Length < 0 || info.Length > CandidatePackagePreparer.MaxSingleFileBytes)
+            if (string.Equals(relative, ManifestEntryName, StringComparison.OrdinalIgnoreCase))
+                throw new UpdateSecurityException("UPDATE_PACKAGE_RESERVED_PATH", $"Source tree contains reserved package path: {ManifestEntryName}");
+            if (info.Length < 0 || info.Length > MaxSingleFileBytes)
                 throw new UpdateSecurityException("UPDATE_PACKAGE_FILE_SIZE_INVALID", $"Desktop package file is outside the supported size range: {relative}");
 
             checked { expandedBytes += info.Length; }
-            if (expandedBytes > CandidatePackagePreparer.MaxExpandedBytes)
+            if (expandedBytes > MaxExpandedBytes)
                 throw new UpdateSecurityException("UPDATE_PACKAGE_EXPANDED_LIMIT", "Desktop package exceeds the maximum expanded size.");
 
             using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 128 * 1024, FileOptions.SequentialScan);
             var sha256 = Convert.ToHexString(SHA256.HashData(stream)).ToLowerInvariant();
-            files.Add(new CandidatePackagePreparer.PackageFile(relative, sha256, info.Length));
+            files.Add(new PackageFile(relative, sha256, info.Length));
         }
 
         files.Sort((left, right) => StringComparer.Ordinal.Compare(left.Path, right.Path));
-        if (files.Count == 0 || files.Count > CandidatePackagePreparer.MaxFiles)
+        if (files.Count == 0 || files.Count > MaxFiles)
             throw new UpdateSecurityException("UPDATE_PACKAGE_FILE_COUNT_INVALID", "Desktop package must contain between 1 and the supported maximum number of files.");
         if (!files.Any(file => string.Equals(file.Path, normalizedEntryPoint, StringComparison.Ordinal)))
             throw new UpdateSecurityException("UPDATE_PACKAGE_ENTRYPOINT_MISSING", "Desktop package entry point does not exist in the source tree.");
 
-        var manifest = new CandidatePackagePreparer.PackageManifest(
-            CandidatePackagePreparer.PackageManifestSchema,
-            version.ToString(),
-            normalizedEntryPoint,
-            files);
+        var manifest = new PackageManifest(PackageManifestSchema, version.ToString(), normalizedEntryPoint, files);
         var manifestBytes = JsonSerializer.SerializeToUtf8Bytes(manifest, JsonOptions);
 
         var outputDirectory = Path.GetDirectoryName(outputPath)
@@ -79,7 +83,7 @@ internal static class DesktopPackageBuilder
             using (var stream = new FileStream(tempPath, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None))
             using (var archive = new ZipArchive(stream, ZipArchiveMode.Create, leaveOpen: false))
             {
-                WriteEntry(archive, CandidatePackagePreparer.ManifestEntryName, manifestBytes);
+                WriteEntry(archive, ManifestEntryName, manifestBytes);
                 foreach (var file in files)
                 {
                     var fullPath = SafeChild(sourceRoot, file.Path.Replace('/', Path.DirectorySeparatorChar));
