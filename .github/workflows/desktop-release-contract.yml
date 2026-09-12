@@ -10,6 +10,7 @@ on:
       - 'swir-*.html'
       - 'sw.js'
       - 'desktop/windows/app-policy.json'
+      - 'desktop/windows/desktop-update-policy.example.json'
       - 'desktop/windows/stage-desktop-runtime.ps1'
       - 'desktop/windows/DesktopReleaseBundle*.cs'
       - 'desktop/windows/DesktopReleaseToCandidate*.cs'
@@ -27,6 +28,7 @@ on:
       - 'swir-*.html'
       - 'sw.js'
       - 'desktop/windows/app-policy.json'
+      - 'desktop/windows/desktop-update-policy.example.json'
       - 'desktop/windows/stage-desktop-runtime.ps1'
       - 'desktop/windows/DesktopReleaseBundle*.cs'
       - 'desktop/windows/DesktopReleaseToCandidate*.cs'
@@ -97,14 +99,29 @@ jobs:
 
           dotnet publish SWIR.Desktop.Host.csproj --configuration Release --output $publish
           & $runtimeStage -PublishDir $publish -SourceRoot '${{ github.workspace }}'
-          if (-not (Test-Path (Join-Path $publish 'index.html') -PathType Leaf)) { throw 'Self-contained Desktop publish is missing index.html.' }
-          if (-not (Test-Path (Join-Path $publish 'desktop\windows\app-policy.json') -PathType Leaf)) { throw 'Self-contained Desktop publish is missing app-policy.json.' }
+          Copy-Item -LiteralPath $worker -Destination (Join-Path $publish 'SWIR.Desktop.UpdaterWorker.exe') -Force
+          Copy-Item -LiteralPath (Join-Path (Get-Location) 'desktop-update-policy.example.json') `
+            -Destination (Join-Path $publish 'desktop-update-policy.json') -Force
+
+          foreach ($required in @(
+            (Join-Path $publish 'index.html'),
+            (Join-Path $publish 'desktop\windows\app-policy.json'),
+            (Join-Path $publish 'desktop-runtime.json'),
+            (Join-Path $publish 'SWIR.Desktop.UpdaterWorker.exe'),
+            (Join-Path $publish 'desktop-update-policy.json')
+          )) {
+            if (-not (Test-Path $required -PathType Leaf)) { throw "Self-contained Desktop publish is missing: $required" }
+          }
+
           $runtimeManifestPath = Join-Path $publish 'desktop-runtime.json'
-          if (-not (Test-Path $runtimeManifestPath -PathType Leaf)) { throw 'Self-contained Desktop publish is missing desktop-runtime.json.' }
           $runtimeManifest = Get-Content $runtimeManifestPath -Raw | ConvertFrom-Json
           if ($runtimeManifest.schema -ne 'swir.desktop-web-runtime/0.1') { throw 'Unexpected Desktop web runtime manifest schema.' }
           if ($runtimeManifest.sourceCommit -ne $env:GITHUB_SHA.ToLowerInvariant()) { throw 'Desktop web runtime source commit does not match workflow SHA.' }
           if ([int]$runtimeManifest.fileCount -lt 9) { throw 'Desktop web runtime manifest contains too few files.' }
+          $updatePolicy = Get-Content (Join-Path $publish 'desktop-update-policy.json') -Raw | ConvertFrom-Json
+          if ($updatePolicy.Schema -ne 'swir.desktop-update-policy/0.1' -or $updatePolicy.Enabled -ne $false) {
+            throw 'Packaged default update policy must be valid and fail-closed.'
+          }
 
           $rsa = [System.Security.Cryptography.RSA]::Create(2048)
           try {
