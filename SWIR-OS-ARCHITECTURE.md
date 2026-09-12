@@ -8,14 +8,26 @@ SWIR OS is designed in three editions sharing one application model and platform
 2. **SWIR OS Desktop Edition** — native desktop build with real files, processes, networking and OS integrations.
 3. **SWIR OS System Edition** — future bootable Linux-based system with the SWIR shell, services, accounts, native Linux applications and a managed Windows compatibility layer.
 
+<!-- SWIR-ROADMAP-STANDARD:v1 -->
 <!-- ROADMAP-PROGRESS:START -->
-## Overall roadmap progress
+<p align="center">
+  <a href="https://github.com/Swir/swir.github.io/actions/workflows/system-contracts.yml"><img alt="CI" src="https://github.com/Swir/swir.github.io/actions/workflows/system-contracts.yml/badge.svg"></a>
+  <img alt="Roadmap progress" src="https://img.shields.io/badge/ROADMAP-35.8%25-2ea043?style=for-the-badge">
+  <img alt="Completed" src="https://img.shields.io/badge/DONE-19%2F53-1f6feb?style=for-the-badge">
+  <img alt="Status" src="https://img.shields.io/badge/STATUS-IN%20PROGRESS-7c3aed?style=for-the-badge">
+</p>
 
-**19 / 53 tracked roadmap deliverables complete — 35.8%**
+## 📊 Overall progress
 
-`███████░░░░░░░░░░░░░ 35.8%`
+```text
+███████░░░░░░░░░░░░░ 35.8%
+```
 
-The percentage is calculated from the explicit `[x]` / `[ ]` deliverables in the **Version roadmap** section. It measures the full Web → Desktop → System plan, so future Desktop/System work is intentionally included in the denominator. A task is checked only when the roadmap declares that deliverable implemented; whenever a task changes state, recalculate this block.
+| ✅ Completed | ⏳ Remaining | 📦 Total | 🎯 Progress |
+|---:|---:|---:|---:|
+| **19** | **34** | **53** | **35.8%** |
+
+> **Progress rule:** the explicit `[x]/[ ]` deliverables in **Version roadmap** are the source of truth for the full Web → Desktop → System plan. Update the checklist first, then badges, numbers, percentage and the 20-segment bar. A prototype does not count as complete until the described deliverable is actually implemented and verified.
 <!-- ROADMAP-PROGRESS:END -->
 
 ```text
@@ -105,9 +117,6 @@ SWIR File Explorer
        |
        v
 extension / MIME lookup
-       |
-       v
-SWIR File Association Service
        |
        +--> saved default handler
        +--> first installed compatible package
