@@ -17,6 +17,7 @@
     <Compile Include="UpdateTransactionJournal.cs" />
     <Compile Include="CandidatePackagePreparer.cs" />
     <Compile Include="UpdaterWorkerProtocol.cs" />
+    <Compile Include="HostShutdownHandoff.cs" />
     <Compile Include="DesktopReleaseToCandidateSelfTests.cs" />
   </ItemGroup>
 </Project>
