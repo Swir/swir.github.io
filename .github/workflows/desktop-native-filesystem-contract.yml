@@ -9,10 +9,15 @@ on:
       - 'desktop/windows/NativeFileSystemBrokerSelfTests.cs'
       - 'desktop/windows/SWIR.Desktop.NativeFileSystem.SelfTests.csproj'
       - 'desktop/windows/SWIR.Desktop.Host.csproj'
+      - 'desktop/windows/stage-desktop-runtime.ps1'
       - 'swir-runtime.js'
+      - 'swir-file-storage.js'
       - 'swir-platform-bridge.js'
+      - 'index.html'
+      - 'sw.js'
       - 'scripts/validate-desktop-filesystem.mjs'
       - 'scripts/validate-file-explorer-persistence.mjs'
+      - 'scripts/validate-file-storage-adapter.mjs'
       - '.github/workflows/desktop-native-filesystem-contract.yml'
   pull_request:
     paths:
@@ -21,10 +26,15 @@ on:
       - 'desktop/windows/NativeFileSystemBrokerSelfTests.cs'
       - 'desktop/windows/SWIR.Desktop.NativeFileSystem.SelfTests.csproj'
       - 'desktop/windows/SWIR.Desktop.Host.csproj'
+      - 'desktop/windows/stage-desktop-runtime.ps1'
       - 'swir-runtime.js'
+      - 'swir-file-storage.js'
       - 'swir-platform-bridge.js'
+      - 'index.html'
+      - 'sw.js'
       - 'scripts/validate-desktop-filesystem.mjs'
       - 'scripts/validate-file-explorer-persistence.mjs'
+      - 'scripts/validate-file-storage-adapter.mjs'
       - '.github/workflows/desktop-native-filesystem-contract.yml'
 
 permissions:
@@ -59,6 +69,10 @@ jobs:
       - name: Validate shipping filesystem integration contract
         working-directory: .
         run: node scripts/validate-desktop-filesystem.mjs
+
+      - name: Validate File Explorer storage adapter contract
+        working-directory: .
+        run: node scripts/validate-file-storage-adapter.mjs
 
       - name: Validate File Explorer Desktop persistence contract
         working-directory: .
