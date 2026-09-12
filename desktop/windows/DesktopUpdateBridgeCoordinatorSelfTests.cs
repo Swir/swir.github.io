@@ -8,6 +8,7 @@ internal static class DesktopUpdateBridgeCoordinatorSelfTests
         {
             await RejectsUntrustedShell();
             await KeepsPrepareReadOnlyAndSingleFlight();
+            await ResponseFailureCancelsQueuedApply();
             await ReadinessFailureReopensGate();
             await ExecutionFailureReopensGate();
             await SuccessfulExecutionLatchesHandoff();
@@ -15,6 +16,7 @@ internal static class DesktopUpdateBridgeCoordinatorSelfTests
             Console.WriteLine("- trusted-shell gate");
             Console.WriteLine("- read-only prepare / execute-after-response split");
             Console.WriteLine("- single-flight queueing");
+            Console.WriteLine("- response-delivery failure cancels queued mutation");
             Console.WriteLine("- readiness failure retry");
             Console.WriteLine("- pre-handoff execution failure retry");
             Console.WriteLine("- successful handoff latch");
@@ -45,6 +47,25 @@ internal static class DesktopUpdateBridgeCoordinatorSelfTests
         ExpectCode("UPDATE_RESTART_ALREADY_QUEUED", () => coordinator.PrepareApply(true));
         await coordinator.ExecuteQueuedAsync();
         Require(executeCalls() == 1, "queued restart did not execute exactly once");
+    }
+
+    private static async Task ResponseFailureCancelsQueuedApply()
+    {
+        var coordinator = Create(out var readinessCalls, out var executeCalls);
+        coordinator.PrepareApply(true);
+        Require(coordinator.CancelQueuedAfterResponseFailure(), "queued request was not cancelled after response delivery failure");
+        Require(!coordinator.CancelQueuedAfterResponseFailure(), "cancel must be one-shot");
+        Require(executeCalls() == 0, "cancelling acknowledgement must not execute restart work");
+        try
+        {
+            await coordinator.ExecuteQueuedAsync();
+            throw new InvalidOperationException("cancelled queued request unexpectedly executed");
+        }
+        catch (Swir.Desktop.Host.DesktopUpdateBridgeCommandException ex) when (ex.Code == "UPDATE_RESTART_NOT_QUEUED") { }
+        coordinator.PrepareApply(true);
+        await coordinator.ExecuteQueuedAsync();
+        Require(readinessCalls() == 2, "retry after cancelled acknowledgement did not re-run readiness");
+        Require(executeCalls() == 1, "retry after cancelled acknowledgement did not execute exactly once");
     }
 
     private static Task ReadinessFailureReopensGate()
