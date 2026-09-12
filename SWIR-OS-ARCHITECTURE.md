@@ -8,6 +8,16 @@ SWIR OS is designed in three editions sharing one application model and platform
 2. **SWIR OS Desktop Edition** — native desktop build with real files, processes, networking and OS integrations.
 3. **SWIR OS System Edition** — future bootable Linux-based system with the SWIR shell, services, accounts, native Linux applications and a managed Windows compatibility layer.
 
+<!-- ROADMAP-PROGRESS:START -->
+## Overall roadmap progress
+
+**19 / 53 tracked roadmap deliverables complete — 35.8%**
+
+`███████░░░░░░░░░░░░░ 35.8%`
+
+The percentage is calculated from the explicit `[x]` / `[ ]` deliverables in the **Version roadmap** section. It measures the full Web → Desktop → System plan, so future Desktop/System work is intentionally included in the denominator. A task is checked only when the roadmap declares that deliverable implemented; whenever a task changes state, recalculate this block.
+<!-- ROADMAP-PROGRESS:END -->
+
 ```text
 SWIR Application
       |
@@ -289,72 +299,72 @@ The detailed foundation and machine-readable contract schemas live under `system
 
 ### Web Edition 1.x — implemented foundation
 
-- desktop shell / window manager
-- launcher / taskbar
-- First Boot / OOBE
-- Identity & Session Core
-- Device Manager
-- Network Center
-- System Settings
-- File Explorer / virtual filesystem
-- Notes / Calculator / Player / Matrix
-- SWIR Chat + downloadable backend
-- Task Manager / SWIR Services
-- permissions / clipboard / Update Center
-- **SWIR App SDK 1.3**
-- **SWIR App Package 1.0**
-- **SWIR Store 2.2 dependency-aware lifecycle**
-- **package compatibility + dependency resolver**
-- **file associations / Default Apps / Open With**
-- **App Data namespaces**
-- **permission-aware application notification API**
+- [x] desktop shell / window manager
+- [x] launcher / taskbar
+- [x] First Boot / OOBE
+- [x] Identity & Session Core
+- [x] Device Manager
+- [x] Network Center
+- [x] System Settings
+- [x] File Explorer / virtual filesystem
+- [x] Notes / Calculator / Player / Matrix
+- [x] SWIR Chat + downloadable backend
+- [x] Task Manager / SWIR Services
+- [x] permissions / clipboard / Update Center
+- [x] **SWIR App SDK 1.3**
+- [x] **SWIR App Package 1.0**
+- [x] **SWIR Store 2.2 dependency-aware lifecycle**
+- [x] **package compatibility + dependency resolver**
+- [x] **file associations / Default Apps / Open With**
+- [x] **App Data namespaces**
+- [x] **permission-aware application notification API**
 
 ### Next Web Edition work
 
-- signed catalog metadata prototype
-- widgets as installable packages
-- application developer template / SDK examples
-- larger binary/file storage on IndexedDB instead of localStorage mirror
-- package update transactions / rollback metadata
-- native-ready notification actions and persistence adapter
+- [ ] signed catalog metadata prototype
+- [ ] widgets as installable packages
+- [ ] application developer template / SDK examples
+- [ ] larger binary/file storage on IndexedDB instead of localStorage mirror
+- [ ] package update transactions / rollback metadata
+- [ ] native-ready notification actions and persistence adapter
 
 ### Desktop Edition 2.x
 
 Active direction:
 
-- lightweight native runtime
-- native filesystem adapter
-- native device/network adapters
-- native account/session backend
-- process/service manager
-- native clipboard and tray
-- global shortcuts and native file associations
-- `.swirapp` payload installer/updater
-- package dependency resolver shared with Web Edition
-- package signatures and integrity verification
-- sandboxed permissions
-- native notification adapter
-- guarded update activation, health proof, rollback and restart handoff
+- [ ] lightweight native runtime
+- [ ] native filesystem adapter
+- [ ] native device/network adapters
+- [ ] native account/session backend
+- [ ] process/service manager
+- [ ] native clipboard and tray
+- [ ] global shortcuts and native file associations
+- [ ] `.swirapp` payload installer/updater
+- [ ] package dependency resolver shared with Web Edition
+- [ ] package signatures and integrity verification
+- [ ] sandboxed permissions
+- [ ] native notification adapter
+- [ ] guarded update activation, health proof, rollback and restart handoff
 
 ### System Edition 3.x
 
 Planned:
 
-- maintained Linux base/kernel and bootable image
-- SWIR boot splash and login/session manager
-- SWIR desktop shell
-- NetworkManager integration
-- native Linux application execution
-- common Package Provider layer for distribution packages and later Flatpak/AppImage
-- managed Wine/Proton compatibility service for Windows user applications
-- Hardware Service with PCI/USB inventory
-- SWIR Driver Center / Hardware Catalog
-- in-tree Linux drivers + linux-firmware as primary hardware path
-- fwupd/LVFS firmware updates where supported
-- allowlisted official vendor repositories for exceptional proprietary components
-- dependency-aware system package manager/updater
-- journaled driver/firmware/package transactions
-- filesystem integration and recovery mode
+- [ ] maintained Linux base/kernel and bootable image
+- [ ] SWIR boot splash and login/session manager
+- [ ] SWIR desktop shell
+- [ ] NetworkManager integration
+- [ ] native Linux application execution
+- [ ] common Package Provider layer for distribution packages and later Flatpak/AppImage
+- [ ] managed Wine/Proton compatibility service for Windows user applications
+- [ ] Hardware Service with PCI/USB inventory
+- [ ] SWIR Driver Center / Hardware Catalog
+- [ ] in-tree Linux drivers + linux-firmware as primary hardware path
+- [ ] fwupd/LVFS firmware updates where supported
+- [ ] allowlisted official vendor repositories for exceptional proprietary components
+- [ ] dependency-aware system package manager/updater
+- [ ] journaled driver/firmware/package transactions
+- [ ] filesystem integration and recovery mode
 
 ---
 
