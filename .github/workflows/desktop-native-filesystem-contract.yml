@@ -10,7 +10,9 @@ on:
       - 'desktop/windows/SWIR.Desktop.NativeFileSystem.SelfTests.csproj'
       - 'desktop/windows/SWIR.Desktop.Host.csproj'
       - 'swir-runtime.js'
+      - 'swir-platform-bridge.js'
       - 'scripts/validate-desktop-filesystem.mjs'
+      - 'scripts/validate-file-explorer-persistence.mjs'
       - '.github/workflows/desktop-native-filesystem-contract.yml'
   pull_request:
     paths:
@@ -20,7 +22,9 @@ on:
       - 'desktop/windows/SWIR.Desktop.NativeFileSystem.SelfTests.csproj'
       - 'desktop/windows/SWIR.Desktop.Host.csproj'
       - 'swir-runtime.js'
+      - 'swir-platform-bridge.js'
       - 'scripts/validate-desktop-filesystem.mjs'
+      - 'scripts/validate-file-explorer-persistence.mjs'
       - '.github/workflows/desktop-native-filesystem-contract.yml'
 
 permissions:
@@ -55,6 +59,10 @@ jobs:
       - name: Validate shipping filesystem integration contract
         working-directory: .
         run: node scripts/validate-desktop-filesystem.mjs
+
+      - name: Validate File Explorer Desktop persistence contract
+        working-directory: .
+        run: node scripts/validate-file-explorer-persistence.mjs
 
       - name: Build shipping Desktop Host
         run: dotnet build SWIR.Desktop.Host.csproj --configuration Release
