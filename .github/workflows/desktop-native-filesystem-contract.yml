@@ -4,17 +4,23 @@ on:
   push:
     branches: [main]
     paths:
+      - 'desktop/windows/Program.cs'
       - 'desktop/windows/NativeFileSystemBroker.cs'
       - 'desktop/windows/NativeFileSystemBrokerSelfTests.cs'
       - 'desktop/windows/SWIR.Desktop.NativeFileSystem.SelfTests.csproj'
       - 'desktop/windows/SWIR.Desktop.Host.csproj'
+      - 'swir-runtime.js'
+      - 'scripts/validate-desktop-filesystem.mjs'
       - '.github/workflows/desktop-native-filesystem-contract.yml'
   pull_request:
     paths:
+      - 'desktop/windows/Program.cs'
       - 'desktop/windows/NativeFileSystemBroker.cs'
       - 'desktop/windows/NativeFileSystemBrokerSelfTests.cs'
       - 'desktop/windows/SWIR.Desktop.NativeFileSystem.SelfTests.csproj'
       - 'desktop/windows/SWIR.Desktop.Host.csproj'
+      - 'swir-runtime.js'
+      - 'scripts/validate-desktop-filesystem.mjs'
       - '.github/workflows/desktop-native-filesystem-contract.yml'
 
 permissions:
@@ -45,6 +51,10 @@ jobs:
         run: |
           $version = dotnet --version
           if ($version -notmatch '^8\.0\.4\d\d$') { throw "Expected pinned .NET 8.0.4xx SDK, got $version" }
+
+      - name: Validate shipping filesystem integration contract
+        working-directory: .
+        run: node scripts/validate-desktop-filesystem.mjs
 
       - name: Build shipping Desktop Host
         run: dotnet build SWIR.Desktop.Host.csproj --configuration Release
