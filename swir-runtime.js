@@ -58,6 +58,7 @@
   }
 
   const filesystem = Object.freeze({
+    info: () => call('filesystem', 'info', [], async () => ({ schema: 'swir.desktop-filesystem/web', provider: 'web-adapter', native: false })),
     list: (...args) => call('filesystem', 'list', args, (...a) => platform()?.files?.list?.(...a) ?? []),
     get: (...args) => call('filesystem', 'get', args, (...a) => platform()?.files?.get?.(...a) ?? null),
     save: (...args) => call('filesystem', 'save', args, (...a) => platform()?.files?.save?.(...a)),
