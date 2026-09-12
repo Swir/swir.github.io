@@ -85,16 +85,19 @@ internal static class DesktopReleaseToCandidateSelfTests
             Expect(prepare.ExitCode == 0, "standalone updater worker prepares Candidate from release ZIP");
 
             var candidateRoot = Path.Combine(deploymentRoot, "Candidate", transactionId);
+            var payloadRoot = Path.Combine(candidateRoot, "Payload");
+            var candidateStatePath = Path.Combine(candidateRoot, "candidate-state.json");
             Expect(Directory.Exists(candidateRoot), "Candidate slot is created inside deployment sandbox");
-            Expect(File.Exists(Path.Combine(candidateRoot, "SWIR.Desktop.Host.exe")), "shipping Desktop Host entry point is present in Candidate");
-            Expect(File.Exists(Path.Combine(candidateRoot, CandidatePackagePreparer.CandidateStateFileName)), "Candidate verification state is persisted");
+            Expect(File.Exists(Path.Combine(payloadRoot, "SWIR.Desktop.Host.exe")), "shipping Desktop Host entry point is present in Candidate payload");
+            Expect(File.Exists(candidateStatePath), "Candidate verification state is persisted");
             Expect(File.ReadAllText(Path.Combine(currentRoot, "version.txt")).Trim() == "0.5.1", "preparation does not mutate Current before guarded activation");
 
-            using var candidateState = JsonDocument.Parse(File.ReadAllText(Path.Combine(candidateRoot, CandidatePackagePreparer.CandidateStateFileName)));
+            using var candidateState = JsonDocument.Parse(File.ReadAllText(candidateStatePath));
             var rootElement = candidateState.RootElement;
             Expect(rootElement.GetProperty("Schema").GetString() == CandidatePackagePreparer.CandidateStateSchema, "Candidate state uses canonical schema");
-            Expect(rootElement.GetProperty("Version").GetString() == "0.5.2", "Candidate state remains bound to signed release version");
-            Expect(rootElement.GetProperty("Verified").GetBoolean(), "Candidate state records successful package verification");
+            Expect(rootElement.GetProperty("TargetVersion").GetString() == "0.5.2", "Candidate state remains bound to signed release version");
+            Expect(rootElement.GetProperty("PackageSha256").GetString() == verified.PackageSha256, "Candidate state remains bound to signed release package hash");
+            Expect(rootElement.GetProperty("EntryPoint").GetString() == "SWIR.Desktop.Host.exe", "Candidate state keeps shipping Host as canonical entry point");
         }
         finally
         {
