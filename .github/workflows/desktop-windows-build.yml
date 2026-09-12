@@ -82,6 +82,15 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
+      # Compile the shipping host before running the expensive updater/recovery matrix.
+      # This catches accidental second entry points, missing production references and
+      # other host-integration regressions immediately instead of several minutes later.
+      - name: Restore Desktop Host compile gate
+        run: dotnet restore SWIR.Desktop.Host.csproj
+
+      - name: Build Desktop Host compile gate
+        run: dotnet build SWIR.Desktop.Host.csproj --configuration Release --no-restore
+
       - name: Run native App Data isolation self-tests
         run: dotnet run --project SWIR.Desktop.AppData.SelfTests.csproj --configuration Release
 
@@ -168,9 +177,3 @@ jobs:
 
       - name: Run packaged interrupted-swap and rollback-pending recovery E2E
         run: dotnet run --project SWIR.Desktop.Updater.PackagedCrashRecovery.SelfTests.csproj --configuration Release -- "${{ github.workspace }}\desktop\windows\bin\Release\net8.0\SWIR.Desktop.UpdaterWorker.exe" "${{ runner.temp }}\swir-e2e-candidate" "${{ github.workspace }}\desktop\windows\bin\Release\net8.0\SWIR.Desktop.Updater.ActivationCrashHarness.exe"
-
-      - name: Restore
-        run: dotnet restore SWIR.Desktop.Host.csproj
-
-      - name: Build
-        run: dotnet build SWIR.Desktop.Host.csproj --configuration Release --no-restore
