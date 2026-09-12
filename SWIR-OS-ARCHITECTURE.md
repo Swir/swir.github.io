@@ -118,6 +118,9 @@ SWIR File Explorer
        v
 extension / MIME lookup
        |
+       v
+SWIR File Association Service
+       |
        +--> saved default handler
        +--> first installed compatible package
        |
