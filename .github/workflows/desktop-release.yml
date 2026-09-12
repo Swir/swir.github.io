@@ -73,10 +73,11 @@ jobs:
           if ($env:SWIR_RELEASE_KEY_ID -notmatch '^[A-Za-z0-9._-]{1,128}$') { throw 'Invalid release key id.' }
           if ([string]::IsNullOrWhiteSpace($env:SWIR_RELEASE_PRIVATE_KEY_PEM)) { throw 'SWIR_DESKTOP_RELEASE_PRIVATE_KEY_PEM secret is not configured.' }
 
-      - name: Build release and verification tools
+      - name: Build release, verification and updater tools
         run: |
           dotnet build SWIR.Desktop.ReleaseBundleTool.csproj --configuration Release
           dotnet build SWIR.Desktop.ReleaseBundleVerifierTool.csproj --configuration Release
+          dotnet build SWIR.Desktop.UpdaterWorker.csproj --configuration Release
 
       - name: Publish self-contained Desktop Host runtime
         shell: pwsh
@@ -90,6 +91,15 @@ jobs:
           if (-not (Test-Path $runtimeStage -PathType Leaf)) { throw "Desktop runtime staging tool is missing: $runtimeStage" }
           & $runtimeStage -PublishDir $publish -SourceRoot '${{ github.workspace }}'
 
+          $worker = Join-Path (Get-Location) 'bin\Release\net8.0\SWIR.Desktop.UpdaterWorker.exe'
+          if (-not (Test-Path $worker -PathType Leaf)) { throw "Updater worker is missing: $worker" }
+          Copy-Item -LiteralPath $worker -Destination (Join-Path $publish 'SWIR.Desktop.UpdaterWorker.exe') -Force
+
+          # Until a channel feed + public verification key is explicitly configured, releases
+          # ship fail-closed with updates disabled rather than trusting an implicit endpoint.
+          Copy-Item -LiteralPath (Join-Path (Get-Location) 'desktop-update-policy.example.json') `
+            -Destination (Join-Path $publish 'desktop-update-policy.json') -Force
+
           foreach ($required in @(
             (Join-Path $publish 'index.html'),
             (Join-Path $publish 'swir-os.js'),
@@ -97,7 +107,9 @@ jobs:
             (Join-Path $publish 'swir-apps.js'),
             (Join-Path $publish 'swir-updates.html'),
             (Join-Path $publish 'desktop\windows\app-policy.json'),
-            (Join-Path $publish 'desktop-runtime.json')
+            (Join-Path $publish 'desktop-runtime.json'),
+            (Join-Path $publish 'SWIR.Desktop.UpdaterWorker.exe'),
+            (Join-Path $publish 'desktop-update-policy.json')
           )) {
             if (-not (Test-Path $required -PathType Leaf)) { throw "Desktop runtime asset is missing: $required" }
           }
@@ -105,6 +117,10 @@ jobs:
           $runtimeManifest = Get-Content (Join-Path $publish 'desktop-runtime.json') -Raw | ConvertFrom-Json
           if ($runtimeManifest.schema -ne 'swir.desktop-web-runtime/0.1') { throw 'Unexpected Desktop web runtime manifest schema.' }
           if ($runtimeManifest.sourceCommit -ne $env:GITHUB_SHA.ToLowerInvariant()) { throw 'Desktop runtime source commit does not match the release commit.' }
+          $updatePolicy = Get-Content (Join-Path $publish 'desktop-update-policy.json') -Raw | ConvertFrom-Json
+          if ($updatePolicy.Schema -ne 'swir.desktop-update-policy/0.1' -or $updatePolicy.Enabled -ne $false) {
+            throw 'Default packaged update policy must remain valid and fail-closed until a signed channel is configured.'
+          }
 
       - name: Materialize ephemeral signing key and public verifier key
         shell: pwsh
