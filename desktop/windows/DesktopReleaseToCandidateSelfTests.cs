@@ -87,6 +87,7 @@ internal static class DesktopReleaseToCandidateSelfTests
             var candidateRoot = Path.Combine(deploymentRoot, "Candidate", transactionId);
             var payloadRoot = Path.Combine(candidateRoot, "Payload");
             var candidateStatePath = Path.Combine(candidateRoot, "candidate-state.json");
+            var hostBuildManifestPath = Path.Combine(payloadRoot, "desktop-host-build.json");
             Expect(Directory.Exists(candidateRoot), "Candidate slot is created inside deployment sandbox");
             Expect(File.Exists(Path.Combine(payloadRoot, "SWIR.Desktop.Host.exe")), "shipping Desktop Host entry point is present in Candidate payload");
             Expect(File.Exists(Path.Combine(payloadRoot, "SWIR.Desktop.UpdaterWorker.exe")), "standalone Updater Worker ships beside the Desktop Host");
@@ -98,8 +99,20 @@ internal static class DesktopReleaseToCandidateSelfTests
             Expect(File.Exists(Path.Combine(payloadRoot, "desktop", "windows", "app-policy.json")), "Desktop permission policy ships with the Web runtime");
             var runtimeManifestPath = Path.Combine(payloadRoot, "desktop-runtime.json");
             Expect(File.Exists(runtimeManifestPath), "Desktop web runtime provenance manifest ships inside Candidate");
+            Expect(File.Exists(hostBuildManifestPath), "Desktop Host build identity manifest ships inside Candidate");
             Expect(File.Exists(candidateStatePath), "Candidate verification state is persisted");
             Expect(File.ReadAllText(Path.Combine(currentRoot, "version.txt")).Trim() == "0.5.1", "preparation does not mutate Current before guarded activation");
+
+            using (var hostBuildManifest = JsonDocument.Parse(File.ReadAllText(hostBuildManifestPath)))
+            {
+                var hostBuild = hostBuildManifest.RootElement;
+                Expect(hostBuild.GetProperty("schema").GetString() == "swir.desktop-host-build/0.1", "Desktop Host build identity uses canonical schema");
+                Expect(hostBuild.GetProperty("releaseVersion").GetString() == targetVersion.ToString(), "Desktop Host binary release identity matches signed target version");
+                Expect(hostBuild.GetProperty("channel").GetString() == channel, "Desktop Host binary release identity matches signed channel");
+                Expect(hostBuild.GetProperty("hostVersion").GetString() == "0.5.2-preview", "Desktop Host reports the same preview identity as the signed release");
+                var sourceCommit = hostBuild.GetProperty("sourceCommit").GetString();
+                Expect(!string.IsNullOrWhiteSpace(sourceCommit) && sourceCommit.Length == 40, "Desktop Host binary identity is bound to a Git source commit");
+            }
 
             using (var runtimeManifest = JsonDocument.Parse(File.ReadAllText(runtimeManifestPath)))
             {
