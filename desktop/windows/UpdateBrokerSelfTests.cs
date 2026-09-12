@@ -24,7 +24,7 @@ internal static class UpdateBrokerSelfTests
 
         ExpectCode("UPDATE_SIGNATURE_INVALID", () => broker.VerifyManifest(TamperPayload(envelope), current, "stable"), "tampered payload rejected");
         ExpectCode("UPDATE_CHANNEL_MISMATCH", () => broker.VerifyManifest(envelope, current, "preview"), "channel mismatch rejected");
-        ExpectCode("UPDATE_DOWNGRADE_BLOCKED", () => broker.VerifyManifest(Sign(rsa, "0.5.1", "stable", "https://downloads.swir.example/a.zip", hash, package.Length), current, "stable"), "same version rejected");
+        ExpectCode("UPDATE_NOT_NEWER", () => broker.VerifyManifest(Sign(rsa, "0.5.1", "stable", "https://downloads.swir.example/a.zip", hash, package.Length), current, "stable"), "same version reported distinctly from downgrade");
         ExpectCode("UPDATE_DOWNGRADE_BLOCKED", () => broker.VerifyManifest(Sign(rsa, "0.4.9", "stable", "https://downloads.swir.example/a.zip", hash, package.Length), current, "stable"), "downgrade rejected");
         ExpectCode("UPDATE_URL_INVALID", () => broker.VerifyManifest(Sign(rsa, "0.5.2", "stable", "http://downloads.swir.example/a.zip", hash, package.Length), current, "stable"), "HTTP package URL rejected");
         ExpectCode("UPDATE_HOST_DENIED", () => broker.VerifyManifest(Sign(rsa, "0.5.2", "stable", "https://evil.example/a.zip", hash, package.Length), current, "stable"), "untrusted package host rejected");
