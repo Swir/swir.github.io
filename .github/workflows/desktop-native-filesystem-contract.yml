@@ -1,0 +1,53 @@
+name: Desktop Native Filesystem Contract
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'desktop/windows/NativeFileSystemBroker.cs'
+      - 'desktop/windows/NativeFileSystemBrokerSelfTests.cs'
+      - 'desktop/windows/SWIR.Desktop.NativeFileSystem.SelfTests.csproj'
+      - 'desktop/windows/SWIR.Desktop.Host.csproj'
+      - '.github/workflows/desktop-native-filesystem-contract.yml'
+  pull_request:
+    paths:
+      - 'desktop/windows/NativeFileSystemBroker.cs'
+      - 'desktop/windows/NativeFileSystemBrokerSelfTests.cs'
+      - 'desktop/windows/SWIR.Desktop.NativeFileSystem.SelfTests.csproj'
+      - 'desktop/windows/SWIR.Desktop.Host.csproj'
+      - '.github/workflows/desktop-native-filesystem-contract.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-native-filesystem-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract:
+    runs-on: windows-latest
+    timeout-minutes: 8
+    defaults:
+      run:
+        working-directory: desktop/windows
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Assert pinned .NET SDK line
+        shell: pwsh
+        run: |
+          $version = dotnet --version
+          if ($version -notmatch '^8\.0\.4\d\d$') { throw "Expected pinned .NET 8.0.4xx SDK, got $version" }
+
+      - name: Build shipping Desktop Host
+        run: dotnet build SWIR.Desktop.Host.csproj --configuration Release
+
+      - name: Run hardened native filesystem self-tests
+        run: dotnet run --project SWIR.Desktop.NativeFileSystem.SelfTests.csproj --configuration Release
