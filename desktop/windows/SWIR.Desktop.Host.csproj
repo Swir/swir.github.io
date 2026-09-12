@@ -10,12 +10,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Self-test executables live beside production sources for focused CI projects.
-         Keep every *SelfTests*.cs file out of the shipping Desktop Host so newly-added
-         harnesses cannot accidentally introduce a second entry point. Dedicated E2E
-         helper executables are excluded explicitly as well. -->
+    <!-- Self-test and standalone executable sources live beside production sources for focused CI projects.
+         Keep them out of the shipping Desktop Host so newly-added harnesses/tools cannot accidentally
+         introduce a second entry point or ship release-only functionality in the runtime host. -->
     <Compile Remove="*SelfTests*.cs" />
     <Compile Remove="UpdaterActivationCrashHarness.cs" />
+    <Compile Remove="DesktopUpdateReleaseTool.cs" />
     <Compile Remove="AppDataSelfTests.cs" />
     <Compile Remove="AppDataSelfTests.BridgeException.cs" />
     <Compile Remove="PermissionBrokerSelfTests.cs" />
