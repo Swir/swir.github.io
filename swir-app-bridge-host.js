@@ -109,6 +109,18 @@
     return webStorage(pkg)?.remove?.(normalizedKey);
   }
 
+  function localeInfo() {
+    const svc = window.SwirI18n;
+    if (!svc) throw bridgeError('LOCALE_UNAVAILABLE', 'SWIR locale service unavailable.');
+    return { contract:svc.contract, version:svc.version, locale:svc.locale, language:svc.language, direction:svc.direction, fallbackLocale:svc.fallbackLocale, messageLocales:svc.messageLocales() };
+  }
+
+  function localeService() {
+    const svc = window.SwirI18n;
+    if (!svc) throw bridgeError('LOCALE_UNAVAILABLE', 'SWIR locale service unavailable.');
+    return svc;
+  }
+
   function isPrivateHostname(hostname) {
     const h = String(hostname || '').toLowerCase().replace(/^\[|\]$/g, '');
     if (!h || h === 'localhost' || h === '::1' || h.endsWith('.localhost') || h.endsWith('.local')) return true;
@@ -184,6 +196,13 @@
     switch (method) {
       case 'bridge.info':
         return { version: VERSION, packageId: pkg.packageId, appId: pkg.id, edition: window.SWIR_NATIVE_HOST?.edition || 'WEB', nativeAppData: !!nativeAppData() };
+      case 'locale.info': return localeInfo();
+      case 'locale.translate': return localeService().t(String(args?.[0] || ''), args?.[1] || null, args?.[2] || {});
+      case 'locale.formatDate': return localeService().formatDate(args?.[0], args?.[1] || {}, args?.[2]);
+      case 'locale.formatNumber': return localeService().formatNumber(args?.[0], args?.[1] || {}, args?.[2]);
+      case 'locale.formatCurrency': return localeService().formatCurrency(args?.[0], String(args?.[1] || 'USD'), args?.[2] || {}, args?.[3]);
+      case 'locale.formatRelativeTime': return localeService().formatRelativeTime(args?.[0], String(args?.[1] || 'second'), args?.[2] || {}, args?.[3]);
+      case 'locale.formatList': return localeService().formatList(Array.isArray(args?.[0]) ? args[0] : [], args?.[1] || {}, args?.[2]);
       case 'storage.get':
         await requireAnyPermission(pkg, ['storage', 'files.read']);
         return storageGet(pkg, args?.[0], args?.[1] ?? null);
