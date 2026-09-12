@@ -1,7 +1,7 @@
 namespace Swir.Desktop.Host;
 
 /// <summary>
-/// Fail-closed command gate for the future WebView updates surface.
+/// Fail-closed command gate for the trusted-shell WebView updates surface.
 ///
 /// The critical invariant is that a mutating update restart is never executed while
 /// the WebMessage request lease is still held. The bridge first calls PrepareApply()
@@ -11,7 +11,7 @@ namespace Swir.Desktop.Host;
 /// </summary>
 internal sealed class DesktopUpdateBridgeCoordinator
 {
-    public const string CoordinatorSchema = "swir.desktop-update-bridge/0.1";
+    public const string CoordinatorSchema = "swir.desktop-update-bridge/0.2";
 
     private readonly Func<object> _describeRestart;
     private readonly Action _verifyReady;
@@ -70,6 +70,14 @@ internal sealed class DesktopUpdateBridgeCoordinator
             throw;
         }
     }
+
+    /// <summary>
+    /// Releases a queued request only if execution has not started. This is used when
+    /// the host cannot deliver the acknowledgement to WebView; the updater must never
+    /// mutate installation slots for a command whose bridge response was not delivered.
+    /// </summary>
+    public bool CancelQueuedAfterResponseFailure()
+        => Interlocked.CompareExchange(ref _state, 0, 1) == 1;
 
     /// <summary>
     /// Must be called only after the WebMessage response has been posted and its bridge
