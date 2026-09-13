@@ -9,14 +9,20 @@ on:
       - 'desktop/windows/DesktopPackageBridge.cs'
       - 'desktop/windows/DesktopPackageBridgeSelfTests.cs'
       - 'desktop/windows/DesktopPackageBridgeSelfTestShim.cs'
+      - 'desktop/windows/DesktopPackageDependencyResolver.cs'
+      - 'desktop/windows/DesktopPackageDependencyResolverSelfTests.cs'
       - 'desktop/windows/SWIR.Desktop.AppPackage.SelfTests.csproj'
       - 'desktop/windows/SWIR.Desktop.PackageBridge.SelfTests.csproj'
+      - 'desktop/windows/SWIR.Desktop.DependencyResolver.SelfTests.csproj'
       - 'desktop/windows/CapabilityBroker.cs'
       - 'desktop/windows/PermissionBroker.cs'
       - 'desktop/windows/Program.cs'
       - 'desktop/windows/SWIR.Desktop.Host.csproj'
+      - 'contracts/swir-dependency-vectors.json'
+      - 'swir-package-resolver.js'
       - 'swir-runtime.js'
       - 'scripts/validate-desktop-package-runtime.mjs'
+      - 'scripts/validate-shared-dependency-contract.mjs'
       - '.github/workflows/desktop-app-package-contract.yml'
   pull_request:
     paths:
@@ -25,14 +31,20 @@ on:
       - 'desktop/windows/DesktopPackageBridge.cs'
       - 'desktop/windows/DesktopPackageBridgeSelfTests.cs'
       - 'desktop/windows/DesktopPackageBridgeSelfTestShim.cs'
+      - 'desktop/windows/DesktopPackageDependencyResolver.cs'
+      - 'desktop/windows/DesktopPackageDependencyResolverSelfTests.cs'
       - 'desktop/windows/SWIR.Desktop.AppPackage.SelfTests.csproj'
       - 'desktop/windows/SWIR.Desktop.PackageBridge.SelfTests.csproj'
+      - 'desktop/windows/SWIR.Desktop.DependencyResolver.SelfTests.csproj'
       - 'desktop/windows/CapabilityBroker.cs'
       - 'desktop/windows/PermissionBroker.cs'
       - 'desktop/windows/Program.cs'
       - 'desktop/windows/SWIR.Desktop.Host.csproj'
+      - 'contracts/swir-dependency-vectors.json'
+      - 'swir-package-resolver.js'
       - 'swir-runtime.js'
       - 'scripts/validate-desktop-package-runtime.mjs'
+      - 'scripts/validate-shared-dependency-contract.mjs'
       - '.github/workflows/desktop-app-package-contract.yml'
 
 permissions:
@@ -72,6 +84,10 @@ jobs:
         working-directory: .
         run: node scripts/validate-desktop-package-runtime.mjs
 
+      - name: Validate Web dependency resolver shared vectors
+        working-directory: .
+        run: node scripts/validate-shared-dependency-contract.mjs
+
       - name: Build shipping Desktop Host
         run: dotnet build SWIR.Desktop.Host.csproj --configuration Release
 
@@ -80,3 +96,6 @@ jobs:
 
       - name: Run capability-bound package bridge self-tests
         run: dotnet run --project SWIR.Desktop.PackageBridge.SelfTests.csproj --configuration Release
+
+      - name: Run Desktop dependency resolver shared-vector self-tests
+        run: dotnet run --project SWIR.Desktop.DependencyResolver.SelfTests.csproj --configuration Release
