@@ -7,6 +7,7 @@ const bridge = read('desktop/windows/DesktopPackageBridge.cs');
 const resolver = read('desktop/windows/DesktopPackageDependencyResolver.cs');
 const catalogTrust = read('desktop/windows/DesktopCatalogTrustVerifier.cs');
 const trustRoots = read('desktop/windows/DesktopCatalogTrustRootStore.cs');
+const trustRootTemplate = read('desktop/windows/catalog-trust-roots.json');
 const hostProject = read('desktop/windows/SWIR.Desktop.Host.csproj');
 const runtime = read('swir-runtime.js');
 
@@ -37,6 +38,8 @@ const checks = [
   [bridge.includes('signedIdentityBinding = true'), 'package bridge advertises signed identity binding'],
   [trustRoots.includes('swir.catalog-trust-roots/1.0') && trustRoots.includes('catalog:official'), 'native trust-root store validates catalog-only root scope'],
   [trustRoots.includes('SWIR_CATALOG_TRUST_ROOTS'), 'native trust-root path supports explicit deployment provisioning'],
+  [trustRoots.includes('RequireSignedCatalog') && trustRoots.includes('CATALOG_TRUST_ROOT_REQUIRED'), 'release trust lock fails closed when signed catalog is required but roots are missing'],
+  [trustRootTemplate.includes('"requireSignedCatalog": false'), 'source trust-root template explicitly identifies preview fallback policy'],
   [catalogTrust.includes('CATALOG_ROLLBACK_DETECTED') && catalogTrust.includes('CATALOG_BAD_SIGNATURE'), 'native catalog verifier remains fail-closed for rollback and bad signatures'],
   [hostProject.includes('catalog-trust-roots.json') && hostProject.includes('CopyToOutputDirectory="PreserveNewest"'), 'shipping host carries trust-root provisioning document'],
   [resolver.includes('public const string Contract = "swir.dependencies/1.0"'), 'Desktop resolver implements shared dependency schema'],
