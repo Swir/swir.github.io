@@ -10,6 +10,11 @@ on:
       - 'scripts/build-signed-catalog-release.mjs'
       - 'desktop/windows/DesktopCatalogTrustRootStore.cs'
       - 'desktop/windows/DesktopCatalogTrustVerifier.cs'
+      - 'desktop/windows/DesktopPackageBridge.cs'
+      - 'desktop/windows/DesktopAppPackageInstaller.cs'
+      - 'desktop/windows/DesktopPackageDependencyResolver.cs'
+      - 'desktop/windows/DesktopCatalogCutoverLifecycleSelfTests.cs'
+      - 'desktop/windows/SWIR.Desktop.CatalogCutoverLifecycle.SelfTests.csproj'
       - '.github/workflows/desktop-release.yml'
       - '.github/workflows/desktop-catalog-cutover-contract.yml'
   pull_request:
@@ -20,6 +25,11 @@ on:
       - 'scripts/build-signed-catalog-release.mjs'
       - 'desktop/windows/DesktopCatalogTrustRootStore.cs'
       - 'desktop/windows/DesktopCatalogTrustVerifier.cs'
+      - 'desktop/windows/DesktopPackageBridge.cs'
+      - 'desktop/windows/DesktopAppPackageInstaller.cs'
+      - 'desktop/windows/DesktopPackageDependencyResolver.cs'
+      - 'desktop/windows/DesktopCatalogCutoverLifecycleSelfTests.cs'
+      - 'desktop/windows/SWIR.Desktop.CatalogCutoverLifecycle.SelfTests.csproj'
       - '.github/workflows/desktop-release.yml'
       - '.github/workflows/desktop-catalog-cutover-contract.yml'
 
@@ -31,7 +41,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  verify-cutover:
+  verify-cutover-policy:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -52,3 +62,18 @@ jobs:
         run: node scripts/verify-catalog-root-rotation.mjs --self-test
       - name: Verify restart-safe current-to-next cutover
         run: node scripts/test-catalog-root-cutover-e2e.mjs
+
+  verify-native-package-cutover:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Build native catalog cutover lifecycle self-tests
+        run: dotnet build desktop/windows/SWIR.Desktop.CatalogCutoverLifecycle.SelfTests.csproj -c Release
+      - name: Run signed install-update-restart-rollback root cutover lifecycle
+        run: dotnet run --project desktop/windows/SWIR.Desktop.CatalogCutoverLifecycle.SelfTests.csproj -c Release --no-build
