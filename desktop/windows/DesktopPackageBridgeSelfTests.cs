@@ -27,10 +27,12 @@ internal static class DesktopPackageBridgeSelfTests
             var token = TokenOf(capabilities.RegisterFile(bundle, Shell));
             var installed = JsonSerializer.Serialize(bridge.InstallFromCapability(token, hash, Shell));
             Require(installed.Contains("swir.demo", StringComparison.Ordinal), "install result should identify package");
+            Require(installed.Contains("VERIFIED", StringComparison.Ordinal), "install result should expose verified staged health");
             ExpectBridgeCode(() => capabilities.Describe(token, Shell), "CAPABILITY_INVALID");
 
             var status = JsonSerializer.Serialize(bridge.Status("swir.demo", Shell));
             Require(status.Contains("1.0.0", StringComparison.Ordinal), "status should expose installed version");
+            Require(status.Contains("app/index.html", StringComparison.Ordinal), "status should expose verified package entry");
 
             var badToken = TokenOf(capabilities.RegisterFile(bundle, Shell));
             ExpectPackageCode(() => bridge.InstallFromCapability(badToken, new string('0', 64), Shell), "PACKAGE_HASH_MISMATCH");
@@ -60,7 +62,17 @@ internal static class DesktopPackageBridgeSelfTests
         using var archive = ZipFile.Open(path, ZipArchiveMode.Create);
         var manifest = archive.CreateEntry("swir-package.json");
         using (var writer = new StreamWriter(manifest.Open(), new UTF8Encoding(false)))
-            writer.Write(JsonSerializer.Serialize(new { schema = "swir.app/1.0", packageId, version }));
+            writer.Write(JsonSerializer.Serialize(new
+            {
+                schema = "swir.app/1.0",
+                id = packageId,
+                packageId,
+                name = "SWIR demo",
+                version,
+                author = "SWIR",
+                type = "iframe",
+                entry = "app/index.html"
+            }));
         var payload = archive.CreateEntry("app/index.html");
         using var payloadWriter = new StreamWriter(payload.Open(), new UTF8Encoding(false));
         payloadWriter.Write("<!doctype html><title>SWIR demo</title>");
