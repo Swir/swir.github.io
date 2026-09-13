@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using System.Text.Json;
 
 namespace Swir.Desktop.Host;
@@ -5,11 +6,50 @@ namespace Swir.Desktop.Host;
 internal sealed class DesktopPackageDependencyResolver
 {
     public const string Contract = "swir.dependencies/1.0";
+    private const long MaxManifestBytes = 1024 * 1024;
     private readonly RuntimeInfo _runtime;
 
     public DesktopPackageDependencyResolver(RuntimeInfo runtime)
     {
         _runtime = runtime;
+    }
+
+    public DependencyResult EvaluateBundle(string bundlePath, Func<string, InstalledPackageInfo?> lookupInstalled)
+    {
+        if (!File.Exists(bundlePath))
+            throw new DesktopPackageException("PACKAGE_NOT_FOUND", "Dependency preflight package bundle does not exist.");
+
+        PackageMetadata package;
+        try
+        {
+            using var archive = ZipFile.OpenRead(bundlePath);
+            var entries = archive.Entries.Where(x => string.Equals(x.FullName.Replace('\\', '/'), "swir-package.json", StringComparison.Ordinal)).ToList();
+            if (entries.Count != 1)
+                throw new DesktopPackageException("PACKAGE_MANIFEST_INVALID", "Dependency preflight requires exactly one root swir-package.json.");
+            var entry = entries[0];
+            if (entry.Length <= 0 || entry.Length > MaxManifestBytes)
+                throw new DesktopPackageException("PACKAGE_MANIFEST_INVALID", "Package manifest exceeds dependency preflight size limits.");
+            using var stream = entry.Open();
+            package = JsonSerializer.Deserialize<PackageMetadata>(stream, JsonOptions)
+                ?? throw new DesktopPackageException("PACKAGE_MANIFEST_INVALID", "Package manifest is empty.");
+        }
+        catch (DesktopPackageException) { throw; }
+        catch (InvalidDataException ex) { throw new DesktopPackageException("PACKAGE_ARCHIVE_INVALID", ex.Message); }
+        catch (JsonException ex) { throw new DesktopPackageException("PACKAGE_MANIFEST_INVALID", ex.Message); }
+
+        if (!string.Equals(package.Schema, "swir.app/1.0", StringComparison.Ordinal))
+            throw new DesktopPackageException("PACKAGE_MANIFEST_INVALID", "Package manifest schema must be swir.app/1.0.");
+
+        var inventory = new List<InstalledPackageInfo>();
+        foreach (var dependency in (package.Dependencies ?? []).Concat(package.OptionalDependencies ?? []))
+        {
+            var key = DependencyKey(dependency);
+            if (key == "<invalid>") continue;
+            var found = lookupInstalled(key);
+            if (found is not null && !inventory.Any(x => string.Equals(x.PackageId, found.PackageId, StringComparison.Ordinal) || string.Equals(x.Id, found.Id, StringComparison.Ordinal)))
+                inventory.Add(found);
+        }
+        return Evaluate(package, inventory);
     }
 
     public DependencyResult EvaluateManifest(string manifestPath, IEnumerable<InstalledPackageInfo> installed)
