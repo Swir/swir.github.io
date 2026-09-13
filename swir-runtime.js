@@ -1,13 +1,14 @@
 /* =============================================================
-   SWIR OS 1.7.13 — RUNTIME ADAPTER CONTRACT 1.6.0
+   SWIR OS 1.7.13 — RUNTIME ADAPTER CONTRACT 1.7.0
    Portable Web -> Desktop -> System host boundary.
    ============================================================= */
 (() => {
   'use strict';
 
-  const META = Object.freeze({ name: 'SWIR Runtime', version: '1.6.0', contract: 'swir.runtime/1.0' });
+  const META = Object.freeze({ name: 'SWIR Runtime', version: '1.7.0', contract: 'swir.runtime/1.0' });
   const SHELL_APP_ID = 'swir.system.shell';
   const DESKTOP_CATALOG_AUTH_SCHEMA = 'swir.desktop-catalog-authorization/1.0';
+  const SIGNED_RELEASE_ARTIFACT_REF = 'release:verified-catalog-artifact';
   const host = () => window.SWIR_NATIVE_HOST || null;
   const platform = () => window.SwirPlatform || null;
   const listeners = new Map();
@@ -119,6 +120,7 @@
     catalogAuthorization,
     installFromCapability: (capabilityToken, trustInput) => call('packages', 'installFromCapability', [String(capabilityToken || ''), packageTrustInput(trustInput), SHELL_APP_ID]),
     installAuthorizedFromCapability: (capabilityToken, packageId, version, catalog, envelope) => call('packages', 'installFromCapability', [String(capabilityToken || ''), JSON.stringify(catalogAuthorization(packageId, version, catalog, envelope)), SHELL_APP_ID]),
+    installAuthorizedReleaseArtifact: (packageId, version, catalog, envelope) => call('packages', 'installFromCapability', [SIGNED_RELEASE_ARTIFACT_REF, JSON.stringify(catalogAuthorization(packageId, version, catalog, envelope)), SHELL_APP_ID]),
     status: packageId => call('packages', 'status', [packageIdOf(packageId), SHELL_APP_ID]),
     rollback: packageId => call('packages', 'rollback', [packageIdOf(packageId), SHELL_APP_ID])
   });
