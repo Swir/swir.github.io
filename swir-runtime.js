@@ -1,12 +1,13 @@
 /* =============================================================
-   SWIR OS 1.7.13 — RUNTIME ADAPTER CONTRACT 1.5.0
+   SWIR OS 1.7.13 — RUNTIME ADAPTER CONTRACT 1.6.0
    Portable Web -> Desktop -> System host boundary.
    ============================================================= */
 (() => {
   'use strict';
 
-  const META = Object.freeze({ name: 'SWIR Runtime', version: '1.5.0', contract: 'swir.runtime/1.0' });
+  const META = Object.freeze({ name: 'SWIR Runtime', version: '1.6.0', contract: 'swir.runtime/1.0' });
   const SHELL_APP_ID = 'swir.system.shell';
+  const DESKTOP_CATALOG_AUTH_SCHEMA = 'swir.desktop-catalog-authorization/1.0';
   const host = () => window.SWIR_NATIVE_HOST || null;
   const platform = () => window.SwirPlatform || null;
   const listeners = new Map();
@@ -40,6 +41,22 @@
     const id = String(value || '').trim();
     if (!/^[a-zA-Z0-9._-]{1,128}$/.test(id)) throw Object.assign(new Error('Invalid SWIR package identity'), { code: 'INVALID_APP_ID' });
     return id;
+  }
+  function versionOf(value) {
+    const version = String(value || '').trim();
+    if (!version || version.length > 64) throw Object.assign(new Error('Invalid SWIR package version'), { code: 'INVALID_PACKAGE_VERSION' });
+    return version;
+  }
+  function catalogAuthorization(packageId, version, catalog, envelope) {
+    const id = packageIdOf(packageId);
+    const ver = versionOf(version);
+    if (!Array.isArray(catalog)) throw Object.assign(new Error('Signed catalog array required'), { code: 'CATALOG_AUTHORIZATION_INVALID' });
+    if (!envelope || typeof envelope !== 'object' || Array.isArray(envelope)) throw Object.assign(new Error('Signed catalog envelope required'), { code: 'CATALOG_AUTHORIZATION_INVALID' });
+    return Object.freeze({ schema: DESKTOP_CATALOG_AUTH_SCHEMA, packageId: id, version: ver, catalog: JSON.parse(JSON.stringify(catalog)), envelope: JSON.parse(JSON.stringify(envelope)) });
+  }
+  function packageTrustInput(value) {
+    if (value && typeof value === 'object') return JSON.stringify(value);
+    return String(value || '');
   }
 
   async function pickFile(options = {}, context = {}) {
@@ -99,7 +116,9 @@
 
   const packages = Object.freeze({
     info: () => call('packages', 'info', [], async () => ({ schema: 'swir.desktop-package-bridge/web', provider: 'web', native: false, supported: false })),
-    installFromCapability: (capabilityToken, expectedSha256) => call('packages', 'installFromCapability', [String(capabilityToken || ''), String(expectedSha256 || ''), SHELL_APP_ID]),
+    catalogAuthorization,
+    installFromCapability: (capabilityToken, trustInput) => call('packages', 'installFromCapability', [String(capabilityToken || ''), packageTrustInput(trustInput), SHELL_APP_ID]),
+    installAuthorizedFromCapability: (capabilityToken, packageId, version, catalog, envelope) => call('packages', 'installFromCapability', [String(capabilityToken || ''), JSON.stringify(catalogAuthorization(packageId, version, catalog, envelope)), SHELL_APP_ID]),
     status: packageId => call('packages', 'status', [packageIdOf(packageId), SHELL_APP_ID]),
     rollback: packageId => call('packages', 'rollback', [packageIdOf(packageId), SHELL_APP_ID])
   });
