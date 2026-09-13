@@ -11,9 +11,12 @@ on:
       - 'desktop/windows/DesktopPackageBridgeSelfTestShim.cs'
       - 'desktop/windows/DesktopPackageDependencyResolver.cs'
       - 'desktop/windows/DesktopPackageDependencyResolverSelfTests.cs'
+      - 'desktop/windows/DesktopCatalogTrustVerifier.cs'
+      - 'desktop/windows/DesktopCatalogTrustVerifierSelfTests.cs'
       - 'desktop/windows/SWIR.Desktop.AppPackage.SelfTests.csproj'
       - 'desktop/windows/SWIR.Desktop.PackageBridge.SelfTests.csproj'
       - 'desktop/windows/SWIR.Desktop.DependencyResolver.SelfTests.csproj'
+      - 'desktop/windows/SWIR.Desktop.CatalogTrust.SelfTests.csproj'
       - 'desktop/windows/CapabilityBroker.cs'
       - 'desktop/windows/PermissionBroker.cs'
       - 'desktop/windows/Program.cs'
@@ -33,9 +36,12 @@ on:
       - 'desktop/windows/DesktopPackageBridgeSelfTestShim.cs'
       - 'desktop/windows/DesktopPackageDependencyResolver.cs'
       - 'desktop/windows/DesktopPackageDependencyResolverSelfTests.cs'
+      - 'desktop/windows/DesktopCatalogTrustVerifier.cs'
+      - 'desktop/windows/DesktopCatalogTrustVerifierSelfTests.cs'
       - 'desktop/windows/SWIR.Desktop.AppPackage.SelfTests.csproj'
       - 'desktop/windows/SWIR.Desktop.PackageBridge.SelfTests.csproj'
       - 'desktop/windows/SWIR.Desktop.DependencyResolver.SelfTests.csproj'
+      - 'desktop/windows/SWIR.Desktop.CatalogTrust.SelfTests.csproj'
       - 'desktop/windows/CapabilityBroker.cs'
       - 'desktop/windows/PermissionBroker.cs'
       - 'desktop/windows/Program.cs'
@@ -57,7 +63,7 @@ concurrency:
 jobs:
   contract:
     runs-on: windows-latest
-    timeout-minutes: 8
+    timeout-minutes: 10
     defaults:
       run:
         working-directory: desktop/windows
@@ -99,3 +105,6 @@ jobs:
 
       - name: Run Desktop dependency resolver shared-vector self-tests
         run: dotnet run --project SWIR.Desktop.DependencyResolver.SelfTests.csproj --configuration Release
+
+      - name: Run native Ed25519 catalog trust self-tests
+        run: dotnet run --project SWIR.Desktop.CatalogTrust.SelfTests.csproj --configuration Release
