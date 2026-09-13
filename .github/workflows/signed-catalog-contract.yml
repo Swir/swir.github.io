@@ -13,8 +13,11 @@ on:
       - 'sw.js'
       - 'scripts/validate-signed-catalog.mjs'
       - 'scripts/build-signed-catalog-release.mjs'
+      - 'scripts/verify-catalog-root-pin.mjs'
       - 'SWIR-SIGNED-CATALOG-1.0.md'
       - '.github/workflows/signed-catalog-contract.yml'
+      - '.github/workflows/signed-catalog-release.yml'
+      - '.github/workflows/desktop-release.yml'
   pull_request:
     paths:
       - 'swir-packages.js'
@@ -26,8 +29,11 @@ on:
       - 'sw.js'
       - 'scripts/validate-signed-catalog.mjs'
       - 'scripts/build-signed-catalog-release.mjs'
+      - 'scripts/verify-catalog-root-pin.mjs'
       - 'SWIR-SIGNED-CATALOG-1.0.md'
       - '.github/workflows/signed-catalog-contract.yml'
+      - '.github/workflows/signed-catalog-release.yml'
+      - '.github/workflows/desktop-release.yml'
 
 concurrency:
   group: swir-signed-catalog-${{ github.ref }}
@@ -51,9 +57,12 @@ jobs:
           node --check swir-catalog-trust-state.js
           node --check swir-signed-catalog-release.js
           node --check scripts/build-signed-catalog-release.mjs
+          node --check scripts/verify-catalog-root-pin.mjs
           node --check swir-v17.js
           node --check sw.js
       - name: Verify signed catalog freshness, cryptography and anti-rollback
         run: node scripts/validate-signed-catalog.mjs
       - name: Verify production release builder with ephemeral Ed25519 key
         run: node scripts/build-signed-catalog-release.mjs --self-test
+      - name: Verify fail-closed public-root pinning
+        run: node scripts/verify-catalog-root-pin.mjs --self-test

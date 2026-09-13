@@ -64,6 +64,7 @@ jobs:
       SWIR_CATALOG_VERSION: ${{ inputs.catalog_version }}
       SWIR_CATALOG_VALID_HOURS: ${{ inputs.catalog_valid_hours }}
       SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM: ${{ secrets.SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM }}
+      SWIR_CATALOG_EXPECTED_ROOT_SHA256: ${{ secrets.SWIR_CATALOG_SIGNING_PUBLIC_KEY_SHA256 }}
 
     steps:
       - name: Checkout exact release commit
@@ -103,6 +104,7 @@ jobs:
           if ([string]::IsNullOrWhiteSpace($env:SWIR_CATALOG_VERSION)) { throw 'Catalog version is required.' }
           if ([string]::IsNullOrWhiteSpace($env:SWIR_RELEASE_PRIVATE_KEY_PEM)) { throw 'SWIR_DESKTOP_RELEASE_PRIVATE_KEY_PEM secret is not configured.' }
           if ([string]::IsNullOrWhiteSpace($env:SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM)) { throw 'SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM secret is not configured.' }
+          if ($env:SWIR_CATALOG_EXPECTED_ROOT_SHA256 -notmatch '^[A-Fa-f0-9]{64}$') { throw 'SWIR_CATALOG_SIGNING_PUBLIC_KEY_SHA256 secret must be a 64-hex SHA-256 fingerprint.' }
 
       - name: Build release, verification and updater tools
         run: |
@@ -136,6 +138,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "Signed catalog builder failed with exit code $LASTEXITCODE" }
           $trust = Get-Content (Join-Path $catalog 'catalog-trust-roots.json') -Raw | ConvertFrom-Json
           if ($trust.schema -ne 'swir.catalog-trust-roots/1.0' -or $trust.requireSignedCatalog -ne $true -or @($trust.roots).Count -ne 1) { throw 'Catalog trust bundle is not fail-closed.' }
+          node scripts/verify-catalog-root-pin.mjs (Join-Path $catalog 'catalog-trust-roots.json') $env:SWIR_CATALOG_EXPECTED_ROOT_SHA256 $env:SWIR_CATALOG_KEY_ID
+          if ($LASTEXITCODE -ne 0) { throw "Pinned catalog root verification failed with exit code $LASTEXITCODE" }
 
       - name: Publish version-bound self-contained Desktop Host runtime
         shell: pwsh
@@ -228,6 +232,8 @@ jobs:
           $verifyTool = Join-Path (Get-Location) 'bin\Release\net8.0\SWIR.Desktop.ReleaseBundleVerifierTool.dll'
           dotnet $verifyTool --bundle-dir $bundle --version $env:SWIR_RELEASE_VERSION --channel $env:SWIR_RELEASE_CHANNEL --public-key $publicKey --package-host github.com
           if ($LASTEXITCODE -ne 0) { throw "Release verifier tool failed with exit code $LASTEXITCODE" }
+          node '${{ github.workspace }}\scripts\verify-catalog-root-pin.mjs' (Join-Path $bundle 'catalog-trust-roots.json') $env:SWIR_CATALOG_EXPECTED_ROOT_SHA256 $env:SWIR_CATALOG_KEY_ID
+          if ($LASTEXITCODE -ne 0) { throw "Final bundle catalog root pin verification failed with exit code $LASTEXITCODE" }
 
       - name: Validate final release artifact set
         shell: pwsh
@@ -261,6 +267,7 @@ jobs:
           Remove-Item (Join-Path '${{ runner.temp }}' 'swir-release-public.pem') -Force -ErrorAction SilentlyContinue
           Remove-Item Env:SWIR_RELEASE_PRIVATE_KEY_PEM -ErrorAction SilentlyContinue
           Remove-Item Env:SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM -ErrorAction SilentlyContinue
+          Remove-Item Env:SWIR_CATALOG_EXPECTED_ROOT_SHA256 -ErrorAction SilentlyContinue
 
   publish-github-release:
     if: ${{ inputs.publish_release && github.ref == 'refs/heads/main' }}

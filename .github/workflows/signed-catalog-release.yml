@@ -38,6 +38,7 @@ jobs:
     timeout-minutes: 8
     env:
       SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM: ${{ secrets.SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM }}
+      SWIR_CATALOG_EXPECTED_ROOT_SHA256: ${{ secrets.SWIR_CATALOG_SIGNING_PUBLIC_KEY_SHA256 }}
     steps:
       - name: Checkout exact catalog source
         uses: actions/checkout@v4
@@ -57,6 +58,7 @@ jobs:
           [[ '${{ inputs.sequence }}' =~ ^[1-9][0-9]*$ ]] || { echo 'sequence must be a positive integer' >&2; exit 1; }
           [[ '${{ inputs.valid_hours }}' =~ ^[0-9]+$ ]] || { echo 'valid_hours must be numeric' >&2; exit 1; }
           test -n "$SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM" || { echo 'SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM secret is not configured' >&2; exit 1; }
+          [[ "$SWIR_CATALOG_EXPECTED_ROOT_SHA256" =~ ^[A-Fa-f0-9]{64}$ ]] || { echo 'SWIR_CATALOG_SIGNING_PUBLIC_KEY_SHA256 secret must be a 64-hex SHA-256 fingerprint' >&2; exit 1; }
           mkdir -p "$RUNNER_TEMP/swir-catalog-release"
           cat > "$RUNNER_TEMP/swir-catalog-artifacts.json" <<'SWIR_ARTIFACTS_EOF'
           ${{ inputs.artifact_map_json }}
@@ -75,6 +77,15 @@ jobs:
             --sequence '${{ inputs.sequence }}' \
             --catalog-version '${{ inputs.catalog_version }}' \
             --valid-hours '${{ inputs.valid_hours }}'
+
+      - name: Verify pinned catalog public root
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/verify-catalog-root-pin.mjs \
+            "$RUNNER_TEMP/swir-catalog-release/catalog-trust-roots.json" \
+            "$SWIR_CATALOG_EXPECTED_ROOT_SHA256" \
+            '${{ inputs.key_id }}'
 
       - name: Verify public output and fail-closed trust policy
         shell: bash
@@ -109,3 +120,4 @@ jobs:
         run: |
           rm -f "$RUNNER_TEMP/swir-catalog-artifacts.json"
           unset SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM || true
+          unset SWIR_CATALOG_EXPECTED_ROOT_SHA256 || true
