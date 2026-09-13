@@ -6,15 +6,18 @@ internal sealed class DesktopPackageBridge
 {
     private const string ShellOwner = "swir.system.shell";
     private const string AuthorizationSchema = "swir.desktop-catalog-authorization/1.0";
+    private const string ReleaseArtifactReference = "release:verified-catalog-artifact";
     private readonly CapabilityBroker _capabilities;
     private readonly DesktopAppPackageInstaller _installer;
     private readonly DesktopPackageDependencyResolver _dependencies;
     private readonly DesktopCatalogTrustVerifier? _catalogTrust;
+    private readonly string _releaseRoot;
 
     private sealed record TrustedInstallAuthorization(
         string Sha256,
         string? PackageId,
         string? Version,
+        string? ArtifactUrl,
         string Mode,
         long? CatalogSequence = null,
         string? CatalogVersion = null,
@@ -26,20 +29,21 @@ internal sealed class DesktopPackageBridge
     {
     }
 
-    internal DesktopPackageBridge(CapabilityBroker capabilities, DesktopAppPackageInstaller installer, DesktopCatalogTrustVerifier? catalogTrust)
+    internal DesktopPackageBridge(CapabilityBroker capabilities, DesktopAppPackageInstaller installer, DesktopCatalogTrustVerifier? catalogTrust, string? releaseRoot = null)
     {
         _capabilities = capabilities ?? throw new ArgumentNullException(nameof(capabilities));
         _installer = installer ?? throw new ArgumentNullException(nameof(installer));
         _catalogTrust = catalogTrust;
+        _releaseRoot = Path.GetFullPath(releaseRoot ?? AppContext.BaseDirectory);
         _dependencies = new DesktopPackageDependencyResolver(
             new DesktopPackageDependencyResolver.RuntimeInfo("1.7.13", "1.3.0", 2, "DESKTOP"));
     }
 
     public object Describe() => new
     {
-        schema = "swir.desktop-package-bridge/1.2",
+        schema = "swir.desktop-package-bridge/1.3",
         provider = "desktop-native",
-        input = "owner-bound-file-capability",
+        input = "owner-bound-file-capability-or-signed-release-artifact",
         installer = _installer.Describe(),
         dependencySchema = DesktopPackageDependencyResolver.Contract,
         dependencyPreflight = true,
@@ -48,6 +52,8 @@ internal sealed class DesktopPackageBridge
         signedCatalogAuthorization = _catalogTrust is not null,
         catalogAuthorizationSchema = AuthorizationSchema,
         signedIdentityBinding = true,
+        signedReleaseArtifactRouting = true,
+        releaseArtifactRoot = "packages/",
         legacySha256Fallback = _catalogTrust is null,
         trustMode = _catalogTrust is null ? "LEGACY_SHA_UNTIL_ROOT_PROVISIONED" : "SIGNED_CATALOG_REQUIRED"
     };
@@ -55,10 +61,13 @@ internal sealed class DesktopPackageBridge
     public object InstallFromCapability(string capabilityToken, string trustInput, string ownerAppId)
     {
         RequireShellOwner(ownerAppId);
-        var path = _capabilities.RequireFilePath(capabilityToken, ownerAppId);
+        var trust = ResolveTrust(trustInput);
+        var releaseArtifact = string.Equals(capabilityToken, ReleaseArtifactReference, StringComparison.Ordinal);
+        var path = releaseArtifact
+            ? ResolveReleaseArtifactPath(trust)
+            : _capabilities.RequireFilePath(capabilityToken, ownerAppId);
         try
         {
-            var trust = ResolveTrust(trustInput);
             var plan = _dependencies.EvaluateBundle(path, InstalledPackage);
             BindAuthorizationToBundle(trust, plan);
             if (!plan.Ok)
@@ -67,7 +76,7 @@ internal sealed class DesktopPackageBridge
         }
         finally
         {
-            TryRevoke(capabilityToken, ownerAppId);
+            if (!releaseArtifact) TryRevoke(capabilityToken, ownerAppId);
         }
     }
 
@@ -108,6 +117,7 @@ internal sealed class DesktopPackageBridge
                     authorization.Sha256,
                     authorization.PackageId,
                     authorization.Version,
+                    authorization.ArtifactUrl,
                     "SIGNED_CATALOG",
                     authorization.Sequence,
                     authorization.CatalogVersion,
@@ -120,7 +130,27 @@ internal sealed class DesktopPackageBridge
 
         if (_catalogTrust is not null)
             throw new DesktopPackageException("CATALOG_AUTHORIZATION_REQUIRED", "Provisioned catalog trust roots require signed catalog authorization; arbitrary UI/runtime SHA-256 input is disabled.");
-        return new TrustedInstallAuthorization(input, null, null, "LEGACY_SHA");
+        return new TrustedInstallAuthorization(input, null, null, null, "LEGACY_SHA");
+    }
+
+    private string ResolveReleaseArtifactPath(TrustedInstallAuthorization trust)
+    {
+        if (!string.Equals(trust.Mode, "SIGNED_CATALOG", StringComparison.Ordinal))
+            throw new DesktopPackageException("CATALOG_AUTHORIZATION_REQUIRED", "Release artifact routing requires a verified signed catalog authorization.");
+        if (string.IsNullOrWhiteSpace(trust.ArtifactUrl))
+            throw new DesktopPackageException("CATALOG_ARTIFACT_URL_REQUIRED", "Verified signed catalog entry does not provide a Desktop release artifact URL.");
+        if (!DesktopCatalogTrustVerifier.IsSafeDesktopArtifactUrl(trust.ArtifactUrl))
+            throw new DesktopPackageException("CATALOG_ARTIFACT_URL_INVALID", "Signed Desktop artifact URL is outside the supported release-local packages directory.");
+
+        var relative = trust.ArtifactUrl.Replace('/', Path.DirectorySeparatorChar);
+        var path = Path.GetFullPath(Path.Combine(_releaseRoot, relative));
+        var packagesRoot = Path.GetFullPath(Path.Combine(_releaseRoot, "packages"));
+        var prefix = packagesRoot.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+        if (!path.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            throw new DesktopPackageException("CATALOG_ARTIFACT_PATH_ESCAPE", "Signed Desktop artifact resolved outside the trusted release packages directory.");
+        if (!File.Exists(path))
+            throw new DesktopPackageException("CATALOG_ARTIFACT_MISSING", "Signed Desktop artifact is not present in the trusted release packages directory.");
+        return path;
     }
 
     private static void BindAuthorizationToBundle(TrustedInstallAuthorization trust, DesktopPackageDependencyResolver.DependencyResult plan)
