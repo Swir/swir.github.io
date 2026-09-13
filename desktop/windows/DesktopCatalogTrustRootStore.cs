@@ -7,8 +7,8 @@ internal static class DesktopCatalogTrustRootStore
     public const string Schema = "swir.catalog-trust-roots/1.0";
     private const string DefaultFileName = "catalog-trust-roots.json";
 
-    internal sealed record LoadResult(string Source, IReadOnlyList<DesktopCatalogTrustVerifier.TrustRoot> Roots);
-    private sealed record RootDocument(string? Schema, RootRecord[]? Roots);
+    internal sealed record LoadResult(string Source, IReadOnlyList<DesktopCatalogTrustVerifier.TrustRoot> Roots, bool RequireSignedCatalog);
+    private sealed record RootDocument(string? Schema, RootRecord[]? Roots, bool RequireSignedCatalog = false);
     private sealed record RootRecord(string? KeyId, string? Name, string? Algorithm, string? Format, string? PublicKey, string[]? Scope, bool Enabled = true);
 
     public static LoadResult LoadProvisioned()
@@ -17,7 +17,7 @@ internal static class DesktopCatalogTrustRootStore
         var path = string.IsNullOrWhiteSpace(configured)
             ? Path.Combine(AppContext.BaseDirectory, DefaultFileName)
             : Path.GetFullPath(configured);
-        if (!File.Exists(path)) return new LoadResult(path, Array.Empty<DesktopCatalogTrustVerifier.TrustRoot>());
+        if (!File.Exists(path)) return new LoadResult(path, Array.Empty<DesktopCatalogTrustVerifier.TrustRoot>(), false);
 
         RootDocument? document;
         try { document = JsonSerializer.Deserialize<RootDocument>(File.ReadAllText(path), JsonOptions); }
@@ -45,7 +45,13 @@ internal static class DesktopCatalogTrustRootStore
                 throw new DesktopPackageException("CATALOG_TRUST_ROOTS_INVALID", $"Catalog trust root {keyId} must be scoped to catalog:official.");
             roots.Add(new DesktopCatalogTrustVerifier.TrustRoot(keyId, string.IsNullOrWhiteSpace(record.Name) ? keyId : record.Name.Trim(), publicKey, scope));
         }
-        return new LoadResult(path, roots);
+
+        if (document.RequireSignedCatalog && roots.Count == 0)
+            throw new DesktopPackageException(
+                "CATALOG_TRUST_ROOT_REQUIRED",
+                "This Desktop release requires signed package catalogs, but no enabled catalog:official trust root is provisioned.");
+
+        return new LoadResult(path, roots, document.RequireSignedCatalog);
     }
 
     public static DesktopCatalogTrustVerifier? CreateVerifier(string dataRoot)
