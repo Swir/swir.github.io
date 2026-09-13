@@ -28,6 +28,8 @@ internal sealed class DesktopAppPackageInstaller
         provider = "desktop-native",
         format = ".swirapp",
         integrity = "sha256-required",
+        manifestSchema = "swir.app/1.0",
+        stagedHealthVerification = true,
         transactionalSlots = true,
         rollback = true,
         maxEntries = MaxEntries,
@@ -58,9 +60,8 @@ internal sealed class DesktopAppPackageInstaller
                 manifest = ReadManifest(stage);
             }
 
-            var packageId = ValidatePackageId(manifest.PackageId ?? manifest.Id);
-            var version = ValidateVersion(manifest.Version);
-            var packageRoot = Path.Combine(_packagesRoot, packageId);
+            var health = ValidateStagedPackage(stage, manifest);
+            var packageRoot = Path.Combine(_packagesRoot, health.PackageId);
             var current = Path.Combine(packageRoot, "Current");
             var previous = Path.Combine(packageRoot, "Previous");
             var incoming = Path.Combine(packageRoot, ".incoming-" + Guid.NewGuid().ToString("N"));
@@ -83,21 +84,26 @@ internal sealed class DesktopAppPackageInstaller
 
             var deployment = new DeploymentRecord(
                 Contract,
-                packageId,
-                version,
+                health.PackageId,
+                health.Version,
                 actual,
                 DateTimeOffset.UtcNow,
                 hadCurrent,
-                Directory.Exists(previous));
+                Directory.Exists(previous),
+                health.Type,
+                health.Entry);
             WriteDeployment(current, deployment);
             return new
             {
                 ok = true,
                 schema = Contract,
-                packageId,
-                version,
+                packageId = health.PackageId,
+                version = health.Version,
+                type = health.Type,
+                entry = health.Entry,
                 bundleSha256 = actual,
                 state = hadCurrent ? "UPDATED" : "INSTALLED",
+                health = "VERIFIED",
                 rollbackAvailable = Directory.Exists(previous)
             };
         }
@@ -125,7 +131,7 @@ internal sealed class DesktopAppPackageInstaller
             Directory.Move(previous, current);
             if (Directory.Exists(swap)) Directory.Move(swap, previous);
             var deployment = ReadDeployment(current);
-            return new { ok = true, schema = Contract, packageId, version = deployment?.Version, state = "ROLLED_BACK", rollbackAvailable = Directory.Exists(previous) };
+            return new { ok = true, schema = Contract, packageId, version = deployment?.Version, type = deployment?.Type, entry = deployment?.Entry, state = "ROLLED_BACK", health = deployment is null ? "UNKNOWN" : "VERIFIED", rollbackAvailable = Directory.Exists(previous) };
         }
         catch (Exception ex)
         {
@@ -148,9 +154,32 @@ internal sealed class DesktopAppPackageInstaller
             packageId,
             installed = Directory.Exists(current),
             version = deployment?.Version,
+            type = deployment?.Type,
+            entry = deployment?.Entry,
+            health = deployment is null ? "UNKNOWN" : "VERIFIED",
             bundleSha256 = deployment?.BundleSha256,
             rollbackAvailable = Directory.Exists(previous)
         };
+    }
+
+    private static StagedPackageHealth ValidateStagedPackage(string stage, PackageManifest manifest)
+    {
+        var packageId = ValidatePackageId(manifest.PackageId ?? manifest.Id);
+        var version = ValidateVersion(manifest.Version);
+        RequireText(manifest.Name, "name");
+        RequireText(manifest.Author, "author");
+        var type = RequireText(manifest.Type, "type");
+        var entry = ValidateEntry(manifest.Entry);
+        var stageRoot = Path.GetFullPath(stage) + Path.DirectorySeparatorChar;
+        var entryPath = Path.GetFullPath(Path.Combine(stage, entry.Replace('/', Path.DirectorySeparatorChar)));
+        if (!entryPath.StartsWith(stageRoot, StringComparison.OrdinalIgnoreCase))
+            throw new DesktopPackageException("PACKAGE_ENTRY_INVALID", "Package entry must remain inside the staged payload.");
+        if (!File.Exists(entryPath))
+            throw new DesktopPackageException("PACKAGE_ENTRY_MISSING", $"Declared package entry does not exist: {entry}");
+        var attributes = File.GetAttributes(entryPath);
+        if ((attributes & FileAttributes.ReparsePoint) != 0)
+            throw new DesktopPackageException("PACKAGE_ENTRY_INVALID", "Package entry cannot be a reparse point.");
+        return new StagedPackageHealth(packageId, version, type, entry);
     }
 
     private static void ValidateArchive(ZipArchive archive)
@@ -249,6 +278,26 @@ internal sealed class DesktopAppPackageInstaller
         return version;
     }
 
+    private static string RequireText(string? value, string field)
+    {
+        var text = (value ?? string.Empty).Trim();
+        if (text.Length is < 1 or > 256)
+            throw new DesktopPackageException("PACKAGE_MANIFEST_INVALID", $"Package manifest field '{field}' is required and must be at most 256 characters.");
+        return text;
+    }
+
+    private static string ValidateEntry(string? value)
+    {
+        var entry = (value ?? string.Empty).Trim().Replace('\\', '/');
+        if (entry.StartsWith("./", StringComparison.Ordinal)) entry = entry[2..];
+        if (string.IsNullOrWhiteSpace(entry) || entry.StartsWith('/') || entry.Contains(':'))
+            throw new DesktopPackageException("PACKAGE_ENTRY_INVALID", "Package entry must be a relative payload path.");
+        var segments = entry.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        if (segments.Length == 0 || segments.Any(segment => segment is "." or ".."))
+            throw new DesktopPackageException("PACKAGE_ENTRY_INVALID", "Package entry traversal is not permitted.");
+        return string.Join('/', segments);
+    }
+
     private static string NormalizeHash(string value)
     {
         var hash = (value ?? string.Empty).Trim().ToLowerInvariant();
@@ -274,8 +323,9 @@ internal sealed class DesktopAppPackageInstaller
         catch { return null; }
     }
 
-    private sealed record PackageManifest(string? Schema, string? Id, string? PackageId, string? Version);
-    private sealed record DeploymentRecord(string Schema, string PackageId, string Version, string BundleSha256, DateTimeOffset InstalledAt, bool Updated, bool RollbackAvailable);
+    private sealed record PackageManifest(string? Schema, string? Id, string? PackageId, string? Name, string? Version, string? Author, string? Type, string? Entry);
+    private sealed record StagedPackageHealth(string PackageId, string Version, string Type, string Entry);
+    private sealed record DeploymentRecord(string Schema, string PackageId, string Version, string BundleSha256, DateTimeOffset InstalledAt, bool Updated, bool RollbackAvailable, string Type, string Entry);
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web) { PropertyNameCaseInsensitive = true, WriteIndented = true };
 }
 
