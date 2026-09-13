@@ -24,33 +24,46 @@ internal static class DesktopCatalogTrustVerifierSelfTests
                 new { schema="swir.app/1.0", id="demo", packageId="swir.demo", version="1.0.0", artifacts=new { desktop=new { sha256=packageHash } } }
             });
             var now = new DateTimeOffset(2026, 9, 13, 8, 0, 0, TimeSpan.Zero);
-            var envelope = Envelope(signingKey, catalog, 41, packageHash, now.AddMinutes(-1), now.AddHours(1));
+            var envelope = Envelope(signingKey, catalog, 41, now.AddMinutes(-1), now.AddHours(1));
 
             var auth = verifier.VerifyAndAuthorize(catalog, envelope, "swir.demo", "1.0.0", now);
             Require(auth.Sha256 == packageHash, "authorized digest mismatch");
             Require(auth.Sequence == 41, "authorized sequence mismatch");
 
             ExpectCode(() => verifier.VerifyAndAuthorize(catalog, Tamper(envelope, "signature", Convert.ToBase64String(new byte[64])), "swir.demo", "1.0.0", now), "CATALOG_BAD_SIGNATURE");
-            ExpectCode(() => verifier.VerifyAndAuthorize(catalog, Envelope(signingKey, catalog, 40, packageHash, now.AddMinutes(-1), now.AddHours(1)), "swir.demo", "1.0.0", now), "CATALOG_ROLLBACK_DETECTED");
+            ExpectCode(() => verifier.VerifyAndAuthorize(catalog, Envelope(signingKey, catalog, 40, now.AddMinutes(-1), now.AddHours(1)), "swir.demo", "1.0.0", now), "CATALOG_ROLLBACK_DETECTED");
 
             var catalog42 = JsonSerializer.Serialize(new object[]
             {
                 new { schema="swir.app/1.0", id="demo", packageId="swir.demo", version="1.1.0", artifacts=new { desktop=new { sha256=new string('b',64) } } }
             });
-            var env42 = Envelope(signingKey, catalog42, 42, new string('b',64), now, now.AddHours(1));
+            var env42 = Envelope(signingKey, catalog42, 42, now, now.AddHours(1));
             var auth42 = verifier.VerifyAndAuthorize(catalog42, env42, "swir.demo", "1.1.0", now.AddMinutes(1));
             Require(auth42.Sequence == 42, "sequence 42 should advance native high-water mark");
             ExpectCode(() => verifier.VerifyAndAuthorize(catalog, envelope, "swir.demo", "1.0.0", now.AddMinutes(2)), "CATALOG_ROLLBACK_DETECTED");
 
             var missingArtifactCatalog = JsonSerializer.Serialize(new object[] { new { id="demo", packageId="swir.nohash", version="1.0.0" } });
-            var missingEnv = Envelope(signingKey, missingArtifactCatalog, 43, "", now, now.AddHours(1));
+            var missingEnv = Envelope(signingKey, missingArtifactCatalog, 43, now, now.AddHours(1));
             ExpectCode(() => verifier.VerifyAndAuthorize(missingArtifactCatalog, missingEnv, "swir.nohash", "1.0.0", now.AddMinutes(2)), "CATALOG_ARTIFACT_UNTRUSTED");
 
-            var expiredEnv = Envelope(signingKey, catalog42, 44, new string('b',64), now.AddHours(-2), now.AddHours(-1));
+            var expiredEnv = Envelope(signingKey, catalog42, 44, now.AddHours(-2), now.AddHours(-1));
             ExpectCode(() => verifier.VerifyAndAuthorize(catalog42, expiredEnv, "swir.demo", "1.1.0", now), "CATALOG_EXPIRED");
 
             var unknownVerifier = new DesktopCatalogTrustVerifier(Path.Combine(root, "unknown"), Array.Empty<DesktopCatalogTrustVerifier.TrustRoot>());
             ExpectCode(() => unknownVerifier.VerifyAndAuthorize(catalog, envelope, "swir.demo", "1.0.0", now), "CATALOG_UNKNOWN_KEY");
+
+            using var nextSigningKey = new Key(algorithm, new KeyCreationParameters { ExportPolicy = KeyExportPolicies.AllowPlaintextExport });
+            var currentRotationRoot = new DesktopCatalogTrustVerifier.TrustRoot(
+                "rotation-current", "Rotation current", publicKey, new[] { "catalog:official" }, 1, 100);
+            var nextRotationRoot = new DesktopCatalogTrustVerifier.TrustRoot(
+                "rotation-next", "Rotation next", nextSigningKey.PublicKey.Export(KeyBlobFormat.RawPublicKey), new[] { "catalog:official" }, 100, null);
+            var rotationVerifier = new DesktopCatalogTrustVerifier(Path.Combine(root, "rotation"), new[] { currentRotationRoot, nextRotationRoot });
+            var beforeCutover = Envelope(nextSigningKey, catalog, 99, now, now.AddHours(1), "rotation-next");
+            ExpectCode(() => rotationVerifier.VerifyAndAuthorize(catalog, beforeCutover, "swir.demo", "1.0.0", now), "CATALOG_KEY_NOT_ACTIVE");
+            var overlap = Envelope(nextSigningKey, catalog, 100, now, now.AddHours(1), "rotation-next");
+            Require(rotationVerifier.VerifyAndAuthorize(catalog, overlap, "swir.demo", "1.0.0", now).KeyId == "rotation-next", "next root should activate at overlap sequence");
+            var retiredCurrent = Envelope(signingKey, catalog42, 101, now, now.AddHours(1), "rotation-current");
+            ExpectCode(() => rotationVerifier.VerifyAndAuthorize(catalog42, retiredCurrent, "swir.demo", "1.1.0", now), "CATALOG_KEY_RETIRED");
 
             Console.WriteLine("Desktop native catalog trust verifier self-tests passed.");
             return 0;
@@ -58,7 +71,7 @@ internal static class DesktopCatalogTrustVerifierSelfTests
         finally { try { Directory.Delete(root, true); } catch { } }
     }
 
-    private static string Envelope(Key signingKey, string catalogJson, long sequence, string ignored, DateTimeOffset generatedAt, DateTimeOffset expiresAt)
+    private static string Envelope(Key signingKey, string catalogJson, long sequence, DateTimeOffset generatedAt, DateTimeOffset expiresAt, string keyId = "test-release")
     {
         using var doc = JsonDocument.Parse(catalogJson);
         var canonicalCatalog = CanonicalCatalog(doc.RootElement);
@@ -74,7 +87,7 @@ internal static class DesktopCatalogTrustVerifierSelfTests
         {
             schema=DesktopCatalogTrustVerifier.SignatureSchema, catalogId="official", catalogVersion=$"2026.09.13.{sequence}", sequence,
             generatedAt=generatedAt.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'"), expiresAt=expiresAt.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'"),
-            algorithm="Ed25519", keyId="test-release", catalogSha256=digest, signature=Convert.ToBase64String(signature)
+            algorithm="Ed25519", keyId, catalogSha256=digest, signature=Convert.ToBase64String(signature)
         });
     }
 
