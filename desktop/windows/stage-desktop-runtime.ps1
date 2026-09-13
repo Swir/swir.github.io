@@ -2,7 +2,9 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$PublishDir,
 
-    [string]$SourceRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
+    [string]$SourceRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path,
+
+    [string]$CatalogReleaseDir = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -13,6 +15,17 @@ $publish = [System.IO.Path]::GetFullPath($PublishDir)
 if (-not (Test-Path $source -PathType Container)) { throw "SWIR source root does not exist: $source" }
 if (-not (Test-Path (Join-Path $source 'index.html') -PathType Leaf)) { throw "SWIR source root is missing index.html: $source" }
 if (-not (Test-Path $publish -PathType Container)) { throw "Desktop publish directory does not exist: $publish" }
+
+$catalogRelease = $null
+if (-not [string]::IsNullOrWhiteSpace($CatalogReleaseDir)) {
+    $catalogRelease = [System.IO.Path]::GetFullPath($CatalogReleaseDir)
+    if (-not (Test-Path $catalogRelease -PathType Container)) { throw "Catalog release directory does not exist: $catalogRelease" }
+    foreach ($requiredCatalogFile in @('swir-signed-catalog-release.js', 'catalog-trust-roots.json', 'catalog-envelope.json', 'catalog.json')) {
+        if (-not (Test-Path (Join-Path $catalogRelease $requiredCatalogFile) -PathType Leaf)) {
+            throw "Catalog release directory is incomplete; missing $requiredCatalogFile"
+        }
+    }
+}
 
 $sourceWithSep = $source.TrimEnd([System.IO.Path]::DirectorySeparatorChar) + [System.IO.Path]::DirectorySeparatorChar
 $publishWithSep = $publish.TrimEnd([System.IO.Path]::DirectorySeparatorChar) + [System.IO.Path]::DirectorySeparatorChar
@@ -65,13 +78,29 @@ foreach ($relativeRaw in ($tracked | Sort-Object -Unique)) {
         throw "Reparse/symlink runtime files are not allowed in Desktop releases: $relative"
     }
 
+    $copySource = $sourcePath
+    if ($catalogRelease -and $relative.Equals('swir-signed-catalog-release.js', [System.StringComparison]::OrdinalIgnoreCase)) {
+        $copySource = Join-Path $catalogRelease 'swir-signed-catalog-release.js'
+    }
+
     $destination = Join-Path $runtimeRoot $relative
     if (Test-Path $destination -PathType Leaf) {
         throw "Tracked web runtime would overwrite Desktop publish output: $relative"
     }
     $destinationDir = Split-Path $destination -Parent
     New-Item -ItemType Directory -Path $destinationDir -Force | Out-Null
-    Copy-Item -LiteralPath $sourcePath -Destination $destination -Force
+    Copy-Item -LiteralPath $copySource -Destination $destination -Force
+
+    # Shipping Desktop Store loads public release metadata before the coordinator. Web/source
+    # builds do not need this extra script tag and keep their fail-closed null release slot.
+    if ($catalogRelease -and $relative.Equals('swir-store.html', [System.StringComparison]::OrdinalIgnoreCase)) {
+        $html = Get-Content -LiteralPath $destination -Raw
+        $needle = '<script src="./swir-store-desktop.js"></script>'
+        $replacement = '<script src="./swir-signed-catalog-release.js"></script>' + [Environment]::NewLine + $needle
+        if (-not $html.Contains($needle)) { throw 'Could not locate Desktop Store coordinator script tag for signed catalog injection.' }
+        $html = $html.Replace($needle, $replacement)
+        [System.IO.File]::WriteAllText($destination, $html, [System.Text.UTF8Encoding]::new($false))
+    }
 
     $hash = (Get-FileHash -LiteralPath $destination -Algorithm SHA256).Hash.ToLowerInvariant()
     $manifestFiles.Add([ordered]@{
@@ -79,6 +108,14 @@ foreach ($relativeRaw in ($tracked | Sort-Object -Unique)) {
         sha256 = $hash
         size = [long](Get-Item -LiteralPath $destination).Length
     })
+}
+
+if ($catalogRelease) {
+    # The Host project ships a fail-closed source template. A production catalog release may
+    # replace only the PUBLIC trust-root document; private key material never enters PublishDir.
+    Copy-Item -LiteralPath (Join-Path $catalogRelease 'catalog-trust-roots.json') -Destination (Join-Path $runtimeRoot 'catalog-trust-roots.json') -Force
+    Copy-Item -LiteralPath (Join-Path $catalogRelease 'catalog-envelope.json') -Destination (Join-Path $runtimeRoot 'catalog-envelope.json') -Force
+    Copy-Item -LiteralPath (Join-Path $catalogRelease 'catalog.json') -Destination (Join-Path $runtimeRoot 'catalog.json') -Force
 }
 
 $required = @(
@@ -92,11 +129,22 @@ $required = @(
     'swir-app-bridge-host.js',
     'swir-updates.html',
     'sw.js',
+    'swir-store-desktop.js',
+    'swir-signed-catalog-release.js',
     'desktop/windows/app-policy.json'
 )
 foreach ($relative in $required) {
     if (-not (Test-Path (Join-Path $runtimeRoot $relative) -PathType Leaf)) {
         throw "Required Desktop web runtime file was not staged: $relative"
+    }
+}
+if ($catalogRelease) {
+    foreach ($relative in @('catalog-trust-roots.json', 'catalog-envelope.json', 'catalog.json')) {
+        if (-not (Test-Path (Join-Path $runtimeRoot $relative) -PathType Leaf)) { throw "Signed catalog runtime file was not staged: $relative" }
+    }
+    $trust = Get-Content (Join-Path $runtimeRoot 'catalog-trust-roots.json') -Raw | ConvertFrom-Json
+    if ($trust.schema -ne 'swir.catalog-trust-roots/1.0' -or $trust.requireSignedCatalog -ne $true -or @($trust.roots).Count -lt 1) {
+        throw 'Production signed catalog trust roots must require signed catalogs and contain at least one root.'
     }
 }
 
@@ -115,5 +163,6 @@ $manifestJson = $manifest | ConvertTo-Json -Depth 5 -Compress
 [System.IO.File]::WriteAllText($manifestPath, $manifestJson, [System.Text.UTF8Encoding]::new($false))
 
 Write-Host "Staged SWIR Desktop web runtime: $($manifestFiles.Count) tracked files"
+if ($catalogRelease) { Write-Host "Signed catalog release: $catalogRelease" }
 Write-Host "Runtime root: $runtimeRoot"
 Write-Host "Runtime manifest: $manifestPath"
