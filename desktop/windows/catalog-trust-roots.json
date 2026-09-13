@@ -1,4 +1,5 @@
 {
   "schema": "swir.catalog-trust-roots/1.0",
+  "requireSignedCatalog": false,
   "roots": []
 }
