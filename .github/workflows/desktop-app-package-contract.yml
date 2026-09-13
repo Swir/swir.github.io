@@ -6,7 +6,11 @@ on:
     paths:
       - 'desktop/windows/DesktopAppPackageInstaller.cs'
       - 'desktop/windows/DesktopAppPackageInstallerSelfTests.cs'
+      - 'desktop/windows/DesktopPackageBridge.cs'
+      - 'desktop/windows/DesktopPackageBridgeSelfTests.cs'
+      - 'desktop/windows/DesktopPackageBridgeSelfTestShim.cs'
       - 'desktop/windows/SWIR.Desktop.AppPackage.SelfTests.csproj'
+      - 'desktop/windows/SWIR.Desktop.PackageBridge.SelfTests.csproj'
       - 'desktop/windows/CapabilityBroker.cs'
       - 'desktop/windows/SWIR.Desktop.Host.csproj'
       - '.github/workflows/desktop-app-package-contract.yml'
@@ -14,7 +18,11 @@ on:
     paths:
       - 'desktop/windows/DesktopAppPackageInstaller.cs'
       - 'desktop/windows/DesktopAppPackageInstallerSelfTests.cs'
+      - 'desktop/windows/DesktopPackageBridge.cs'
+      - 'desktop/windows/DesktopPackageBridgeSelfTests.cs'
+      - 'desktop/windows/DesktopPackageBridgeSelfTestShim.cs'
       - 'desktop/windows/SWIR.Desktop.AppPackage.SelfTests.csproj'
+      - 'desktop/windows/SWIR.Desktop.PackageBridge.SelfTests.csproj'
       - 'desktop/windows/CapabilityBroker.cs'
       - 'desktop/windows/SWIR.Desktop.Host.csproj'
       - '.github/workflows/desktop-app-package-contract.yml'
@@ -53,3 +61,6 @@ jobs:
 
       - name: Run hardened swirapp payload self-tests
         run: dotnet run --project SWIR.Desktop.AppPackage.SelfTests.csproj --configuration Release
+
+      - name: Run capability-bound package bridge self-tests
+        run: dotnet run --project SWIR.Desktop.PackageBridge.SelfTests.csproj --configuration Release
