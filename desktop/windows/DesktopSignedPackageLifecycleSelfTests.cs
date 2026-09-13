@@ -10,6 +10,7 @@ internal static class DesktopSignedPackageLifecycleSelfTests
 {
     private const string Shell = "swir.system.shell";
     private const string KeyId = "signed-lifecycle-root";
+    private sealed record BridgeContext(DesktopPackageBridge Bridge, CapabilityBroker Capabilities);
 
     public static int Main()
     {
@@ -31,34 +32,35 @@ internal static class DesktopSignedPackageLifecycleSelfTests
             CreateBundle(v2, "swir.lifecycle", "2.0.0", "v2");
 
             // Signed install, then reconstruct all native bridge objects to model a Host restart.
-            var bridge = NewBridge(packageData, trustData);
-            InstallSigned(bridge, v1, signingKey, "1.0.0", 501);
-            Require(StatusJson(bridge).Contains("1.0.0", StringComparison.Ordinal), "signed v1 install should be visible before restart");
+            var context = NewBridge(packageData, trustData);
+            InstallSigned(context, v1, signingKey, "1.0.0", 501);
+            Require(StatusJson(context.Bridge).Contains("1.0.0", StringComparison.Ordinal), "signed v1 install should be visible before restart");
 
-            bridge = NewBridge(packageData, trustData);
-            Require(StatusJson(bridge).Contains("1.0.0", StringComparison.Ordinal), "signed v1 must survive Host restart");
+            context = NewBridge(packageData, trustData);
+            Require(StatusJson(context.Bridge).Contains("1.0.0", StringComparison.Ordinal), "signed v1 must survive Host restart");
 
             // Signed update through a strictly newer catalog sequence.
-            InstallSigned(bridge, v2, signingKey, "2.0.0", 502);
-            Require(StatusJson(bridge).Contains("2.0.0", StringComparison.Ordinal), "signed v2 update should become current");
+            InstallSigned(context, v2, signingKey, "2.0.0", 502);
+            Require(StatusJson(context.Bridge).Contains("2.0.0", StringComparison.Ordinal), "signed v2 update should become current");
 
-            bridge = NewBridge(packageData, trustData);
-            Require(StatusJson(bridge).Contains("2.0.0", StringComparison.Ordinal), "signed v2 must survive Host restart");
+            context = NewBridge(packageData, trustData);
+            Require(StatusJson(context.Bridge).Contains("2.0.0", StringComparison.Ordinal), "signed v2 must survive Host restart");
 
             // Native rollback must restore the previously verified payload and survive another restart.
-            var rollback = JsonSerializer.Serialize(bridge.Rollback("swir.lifecycle", Shell));
+            var rollback = JsonSerializer.Serialize(context.Bridge.Rollback("swir.lifecycle", Shell));
             Require(rollback.Contains("1.0.0", StringComparison.Ordinal), "rollback should restore v1 metadata");
 
-            bridge = NewBridge(packageData, trustData);
-            Require(StatusJson(bridge).Contains("1.0.0", StringComparison.Ordinal), "rolled-back v1 must survive Host restart");
+            context = NewBridge(packageData, trustData);
+            Require(StatusJson(context.Bridge).Contains("1.0.0", StringComparison.Ordinal), "rolled-back v1 must survive Host restart");
 
             // Rolling the payload back must never roll the catalog trust high-water mark back.
-            var staleToken = Register(bridge, v1);
+            var staleToken = Register(context.Capabilities, v1);
             var staleAuthorization = CreateSignedAuthorization(signingKey, "swir.lifecycle", "1.0.0", Sha256(v1), 501);
-            ExpectPackageCode(() => bridge.InstallFromCapability(staleToken, staleAuthorization, Shell), "CATALOG_ROLLBACK_DETECTED");
+            ExpectPackageCode(() => context.Bridge.InstallFromCapability(staleToken, staleAuthorization, Shell), "CATALOG_ROLLBACK_DETECTED");
+            ExpectBridgeCode(() => context.Capabilities.Describe(staleToken, Shell), "CAPABILITY_INVALID");
 
-            bridge = NewBridge(packageData, trustData);
-            Require(StatusJson(bridge).Contains("1.0.0", StringComparison.Ordinal), "rejected stale catalog must not mutate rolled-back payload");
+            context = NewBridge(packageData, trustData);
+            Require(StatusJson(context.Bridge).Contains("1.0.0", StringComparison.Ordinal), "rejected stale catalog must not mutate rolled-back payload");
 
             Console.WriteLine("Signed Desktop package lifecycle self-tests passed.");
             return 0;
@@ -70,27 +72,29 @@ internal static class DesktopSignedPackageLifecycleSelfTests
         }
     }
 
-    private static DesktopPackageBridge NewBridge(string packageData, string trustData)
+    private static BridgeContext NewBridge(string packageData, string trustData)
     {
         var verifier = DesktopCatalogTrustRootStore.CreateVerifier(trustData)
             ?? throw new Exception("Provisioned signed lifecycle root was not loaded.");
-        return new DesktopPackageBridge(new CapabilityBroker(), new DesktopAppPackageInstaller(packageData), verifier);
+        var capabilities = new CapabilityBroker();
+        var bridge = new DesktopPackageBridge(capabilities, new DesktopAppPackageInstaller(packageData), verifier);
+        var info = JsonSerializer.Serialize(bridge.Describe());
+        Require(info.Contains("SIGNED_CATALOG_REQUIRED", StringComparison.Ordinal), "lifecycle bridge must remain locked to signed catalog authorization after restart");
+        return new BridgeContext(bridge, capabilities);
     }
 
-    private static void InstallSigned(DesktopPackageBridge bridge, string bundle, Key key, string version, long sequence)
+    private static void InstallSigned(BridgeContext context, string bundle, Key key, string version, long sequence)
     {
-        var token = Register(bridge, bundle);
+        var token = Register(context.Capabilities, bundle);
         var authorization = CreateSignedAuthorization(key, "swir.lifecycle", version, Sha256(bundle), sequence);
-        var result = JsonSerializer.Serialize(bridge.InstallFromCapability(token, authorization, Shell));
+        var result = JsonSerializer.Serialize(context.Bridge.InstallFromCapability(token, authorization, Shell));
         Require(result.Contains(version, StringComparison.Ordinal), $"signed install result should contain {version}");
         Require(result.Contains("VERIFIED", StringComparison.Ordinal), "signed install must retain installer health verification");
+        ExpectBridgeCode(() => context.Capabilities.Describe(token, Shell), "CAPABILITY_INVALID");
     }
 
-    private static string Register(DesktopPackageBridge bridge, string bundle)
+    private static string Register(CapabilityBroker broker, string bundle)
     {
-        var field = typeof(DesktopPackageBridge).GetField("_capabilities", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
-            ?? throw new Exception("DesktopPackageBridge capability broker field not found.");
-        var broker = (CapabilityBroker)(field.GetValue(bridge) ?? throw new Exception("Capability broker unavailable."));
         using var doc = JsonDocument.Parse(JsonSerializer.Serialize(broker.RegisterFile(bundle, Shell)));
         return doc.RootElement.GetProperty("token").GetString() ?? throw new Exception("Capability token missing.");
     }
@@ -204,6 +208,12 @@ internal static class DesktopSignedPackageLifecycleSelfTests
     {
         try { action(); throw new Exception($"Expected {code}."); }
         catch (DesktopPackageException ex) when (ex.Code == code) { }
+    }
+
+    private static void ExpectBridgeCode(Action action, string code)
+    {
+        try { action(); throw new Exception($"Expected {code}."); }
+        catch (BridgeException ex) when (ex.Code == code) { }
     }
 
     private static void Require(bool condition, string message)
