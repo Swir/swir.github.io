@@ -18,7 +18,7 @@ on:
         required: true
         type: string
       catalog_key_id:
-        description: 'Ed25519 public catalog key identifier provisioned for catalog:official'
+        description: 'Ed25519 current catalog key identifier provisioned for catalog:official'
         required: true
         type: string
       catalog_sequence:
@@ -33,6 +33,16 @@ on:
         description: 'Signed catalog validity window in hours (1-744)'
         required: true
         default: '168'
+        type: string
+      enable_catalog_root_rotation:
+        description: 'Stage protected current+next catalog roots in the Desktop release'
+        required: true
+        default: false
+        type: boolean
+      catalog_next_key_id:
+        description: 'Next Ed25519 catalog key id; required only when catalog root rotation is enabled'
+        required: false
+        default: ''
         type: string
       publish_release:
         description: 'Publish verified bundle as a GitHub Release (main branch only)'
@@ -63,8 +73,14 @@ jobs:
       SWIR_CATALOG_SEQUENCE: ${{ inputs.catalog_sequence }}
       SWIR_CATALOG_VERSION: ${{ inputs.catalog_version }}
       SWIR_CATALOG_VALID_HOURS: ${{ inputs.catalog_valid_hours }}
+      SWIR_CATALOG_ROTATION_ENABLED: ${{ inputs.enable_catalog_root_rotation }}
+      SWIR_CATALOG_NEXT_KEY_ID: ${{ inputs.catalog_next_key_id }}
       SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM: ${{ secrets.SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM }}
       SWIR_CATALOG_EXPECTED_ROOT_SHA256: ${{ secrets.SWIR_CATALOG_SIGNING_PUBLIC_KEY_SHA256 }}
+      SWIR_CATALOG_NEXT_PUBLIC_KEY_BASE64: ${{ secrets.SWIR_CATALOG_NEXT_PUBLIC_KEY_BASE64 }}
+      SWIR_CATALOG_NEXT_EXPECTED_ROOT_SHA256: ${{ secrets.SWIR_CATALOG_NEXT_SIGNING_PUBLIC_KEY_SHA256 }}
+      SWIR_CATALOG_ROTATION_CUTOVER_SEQUENCE: ${{ secrets.SWIR_CATALOG_ROTATION_CUTOVER_SEQUENCE }}
+      SWIR_CATALOG_CURRENT_RETIRE_AFTER_SEQUENCE: ${{ secrets.SWIR_CATALOG_CURRENT_RETIRE_AFTER_SEQUENCE }}
 
     steps:
       - name: Checkout exact release commit
@@ -105,6 +121,19 @@ jobs:
           if ([string]::IsNullOrWhiteSpace($env:SWIR_RELEASE_PRIVATE_KEY_PEM)) { throw 'SWIR_DESKTOP_RELEASE_PRIVATE_KEY_PEM secret is not configured.' }
           if ([string]::IsNullOrWhiteSpace($env:SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM)) { throw 'SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM secret is not configured.' }
           if ($env:SWIR_CATALOG_EXPECTED_ROOT_SHA256 -notmatch '^[A-Fa-f0-9]{64}$') { throw 'SWIR_CATALOG_SIGNING_PUBLIC_KEY_SHA256 secret must be a 64-hex SHA-256 fingerprint.' }
+          if ($env:SWIR_CATALOG_ROTATION_ENABLED -eq 'true') {
+            if ($env:SWIR_CATALOG_NEXT_KEY_ID -notmatch '^[A-Za-z0-9._-]{1,128}$') { throw 'catalog_next_key_id is required and invalid when rotation is enabled.' }
+            if ($env:SWIR_CATALOG_NEXT_KEY_ID -eq $env:SWIR_CATALOG_KEY_ID) { throw 'catalog_next_key_id must differ from catalog_key_id.' }
+            if ([string]::IsNullOrWhiteSpace($env:SWIR_CATALOG_NEXT_PUBLIC_KEY_BASE64)) { throw 'SWIR_CATALOG_NEXT_PUBLIC_KEY_BASE64 secret is not configured.' }
+            if ($env:SWIR_CATALOG_NEXT_EXPECTED_ROOT_SHA256 -notmatch '^[A-Fa-f0-9]{64}$') { throw 'SWIR_CATALOG_NEXT_SIGNING_PUBLIC_KEY_SHA256 secret must be a 64-hex SHA-256 fingerprint.' }
+            if ($env:SWIR_CATALOG_ROTATION_CUTOVER_SEQUENCE -notmatch '^[1-9][0-9]*$') { throw 'SWIR_CATALOG_ROTATION_CUTOVER_SEQUENCE secret must be a positive integer.' }
+            if ($env:SWIR_CATALOG_CURRENT_RETIRE_AFTER_SEQUENCE -notmatch '^[1-9][0-9]*$') { throw 'SWIR_CATALOG_CURRENT_RETIRE_AFTER_SEQUENCE secret must be a positive integer.' }
+            $sequence = [Int64]$env:SWIR_CATALOG_SEQUENCE
+            $cutover = [Int64]$env:SWIR_CATALOG_ROTATION_CUTOVER_SEQUENCE
+            $retire = [Int64]$env:SWIR_CATALOG_CURRENT_RETIRE_AFTER_SEQUENCE
+            if ($retire -lt $cutover) { throw 'Current root retirement must not precede next-root cutover.' }
+            if ($sequence -gt $retire) { throw 'Current signing root cannot sign beyond its protected retirement sequence.' }
+          }
 
       - name: Build release, verification and updater tools
         run: |
@@ -136,10 +165,35 @@ jobs:
             --catalog-version $env:SWIR_CATALOG_VERSION `
             --valid-hours $env:SWIR_CATALOG_VALID_HOURS
           if ($LASTEXITCODE -ne 0) { throw "Signed catalog builder failed with exit code $LASTEXITCODE" }
+
+          if ($env:SWIR_CATALOG_ROTATION_ENABLED -eq 'true') {
+            node scripts/apply-catalog-root-rotation.mjs `
+              (Join-Path $catalog 'catalog-trust-roots.json') `
+              $env:SWIR_CATALOG_EXPECTED_ROOT_SHA256 `
+              $env:SWIR_CATALOG_KEY_ID `
+              $env:SWIR_CATALOG_NEXT_PUBLIC_KEY_BASE64 `
+              $env:SWIR_CATALOG_NEXT_EXPECTED_ROOT_SHA256 `
+              $env:SWIR_CATALOG_NEXT_KEY_ID `
+              $env:SWIR_CATALOG_ROTATION_CUTOVER_SEQUENCE `
+              $env:SWIR_CATALOG_CURRENT_RETIRE_AFTER_SEQUENCE
+            if ($LASTEXITCODE -ne 0) { throw "Catalog root rotation applicator failed with exit code $LASTEXITCODE" }
+            node scripts/verify-catalog-root-rotation.mjs `
+              (Join-Path $catalog 'catalog-trust-roots.json') `
+              $env:SWIR_CATALOG_EXPECTED_ROOT_SHA256 `
+              $env:SWIR_CATALOG_KEY_ID `
+              $env:SWIR_CATALOG_NEXT_EXPECTED_ROOT_SHA256 `
+              $env:SWIR_CATALOG_NEXT_KEY_ID `
+              $env:SWIR_CATALOG_ROTATION_CUTOVER_SEQUENCE `
+              $env:SWIR_CATALOG_CURRENT_RETIRE_AFTER_SEQUENCE
+            if ($LASTEXITCODE -ne 0) { throw "Catalog root rotation verification failed with exit code $LASTEXITCODE" }
+          } else {
+            node scripts/verify-catalog-root-pin.mjs (Join-Path $catalog 'catalog-trust-roots.json') $env:SWIR_CATALOG_EXPECTED_ROOT_SHA256 $env:SWIR_CATALOG_KEY_ID
+            if ($LASTEXITCODE -ne 0) { throw "Pinned catalog root verification failed with exit code $LASTEXITCODE" }
+          }
+
           $trust = Get-Content (Join-Path $catalog 'catalog-trust-roots.json') -Raw | ConvertFrom-Json
-          if ($trust.schema -ne 'swir.catalog-trust-roots/1.0' -or $trust.requireSignedCatalog -ne $true -or @($trust.roots).Count -ne 1) { throw 'Catalog trust bundle is not fail-closed.' }
-          node scripts/verify-catalog-root-pin.mjs (Join-Path $catalog 'catalog-trust-roots.json') $env:SWIR_CATALOG_EXPECTED_ROOT_SHA256 $env:SWIR_CATALOG_KEY_ID
-          if ($LASTEXITCODE -ne 0) { throw "Pinned catalog root verification failed with exit code $LASTEXITCODE" }
+          $expectedRoots = if ($env:SWIR_CATALOG_ROTATION_ENABLED -eq 'true') { 2 } else { 1 }
+          if ($trust.schema -ne 'swir.catalog-trust-roots/1.0' -or $trust.requireSignedCatalog -ne $true -or @($trust.roots).Count -ne $expectedRoots) { throw "Catalog trust bundle is not fail-closed or root count != $expectedRoots." }
 
       - name: Publish version-bound self-contained Desktop Host runtime
         shell: pwsh
@@ -193,6 +247,19 @@ jobs:
             if ($actual -ne [string]$artifact.desktop.sha256 -or $record[0].artifacts.desktop.sha256 -ne $actual) { throw "Signed artifact digest mismatch: $relative" }
           }
 
+      - name: Verify staged catalog root policy
+        shell: pwsh
+        working-directory: .
+        run: |
+          $trustPath = Join-Path '${{ runner.temp }}' 'swir-release-publish\catalog-trust-roots.json'
+          if ($env:SWIR_CATALOG_ROTATION_ENABLED -eq 'true') {
+            node scripts/verify-catalog-root-rotation.mjs $trustPath $env:SWIR_CATALOG_EXPECTED_ROOT_SHA256 $env:SWIR_CATALOG_KEY_ID $env:SWIR_CATALOG_NEXT_EXPECTED_ROOT_SHA256 $env:SWIR_CATALOG_NEXT_KEY_ID $env:SWIR_CATALOG_ROTATION_CUTOVER_SEQUENCE $env:SWIR_CATALOG_CURRENT_RETIRE_AFTER_SEQUENCE
+            if ($LASTEXITCODE -ne 0) { throw "Staged catalog root rotation verification failed with exit code $LASTEXITCODE" }
+          } else {
+            node scripts/verify-catalog-root-pin.mjs $trustPath $env:SWIR_CATALOG_EXPECTED_ROOT_SHA256 $env:SWIR_CATALOG_KEY_ID
+            if ($LASTEXITCODE -ne 0) { throw "Staged catalog root pin verification failed with exit code $LASTEXITCODE" }
+          }
+
       - name: Materialize ephemeral Desktop update signing key and public verifier key
         shell: pwsh
         run: |
@@ -226,14 +293,21 @@ jobs:
 
       - name: Independently verify signed release bundle
         shell: pwsh
+        working-directory: .
         run: |
           $bundle = Join-Path '${{ runner.temp }}' 'swir-release-bundle'
           $publicKey = Join-Path '${{ runner.temp }}' 'swir-release-public.pem'
-          $verifyTool = Join-Path (Get-Location) 'bin\Release\net8.0\SWIR.Desktop.ReleaseBundleVerifierTool.dll'
+          $verifyTool = Join-Path '${{ github.workspace }}' 'desktop\windows\bin\Release\net8.0\SWIR.Desktop.ReleaseBundleVerifierTool.dll'
           dotnet $verifyTool --bundle-dir $bundle --version $env:SWIR_RELEASE_VERSION --channel $env:SWIR_RELEASE_CHANNEL --public-key $publicKey --package-host github.com
           if ($LASTEXITCODE -ne 0) { throw "Release verifier tool failed with exit code $LASTEXITCODE" }
-          node '${{ github.workspace }}\scripts\verify-catalog-root-pin.mjs' (Join-Path $bundle 'catalog-trust-roots.json') $env:SWIR_CATALOG_EXPECTED_ROOT_SHA256 $env:SWIR_CATALOG_KEY_ID
-          if ($LASTEXITCODE -ne 0) { throw "Final bundle catalog root pin verification failed with exit code $LASTEXITCODE" }
+          $trustPath = Join-Path $bundle 'catalog-trust-roots.json'
+          if ($env:SWIR_CATALOG_ROTATION_ENABLED -eq 'true') {
+            node scripts/verify-catalog-root-rotation.mjs $trustPath $env:SWIR_CATALOG_EXPECTED_ROOT_SHA256 $env:SWIR_CATALOG_KEY_ID $env:SWIR_CATALOG_NEXT_EXPECTED_ROOT_SHA256 $env:SWIR_CATALOG_NEXT_KEY_ID $env:SWIR_CATALOG_ROTATION_CUTOVER_SEQUENCE $env:SWIR_CATALOG_CURRENT_RETIRE_AFTER_SEQUENCE
+            if ($LASTEXITCODE -ne 0) { throw "Final bundle catalog root rotation verification failed with exit code $LASTEXITCODE" }
+          } else {
+            node scripts/verify-catalog-root-pin.mjs $trustPath $env:SWIR_CATALOG_EXPECTED_ROOT_SHA256 $env:SWIR_CATALOG_KEY_ID
+            if ($LASTEXITCODE -ne 0) { throw "Final bundle catalog root pin verification failed with exit code $LASTEXITCODE" }
+          }
 
       - name: Validate final release artifact set
         shell: pwsh
@@ -268,6 +342,10 @@ jobs:
           Remove-Item Env:SWIR_RELEASE_PRIVATE_KEY_PEM -ErrorAction SilentlyContinue
           Remove-Item Env:SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM -ErrorAction SilentlyContinue
           Remove-Item Env:SWIR_CATALOG_EXPECTED_ROOT_SHA256 -ErrorAction SilentlyContinue
+          Remove-Item Env:SWIR_CATALOG_NEXT_PUBLIC_KEY_BASE64 -ErrorAction SilentlyContinue
+          Remove-Item Env:SWIR_CATALOG_NEXT_EXPECTED_ROOT_SHA256 -ErrorAction SilentlyContinue
+          Remove-Item Env:SWIR_CATALOG_ROTATION_CUTOVER_SEQUENCE -ErrorAction SilentlyContinue
+          Remove-Item Env:SWIR_CATALOG_CURRENT_RETIRE_AFTER_SEQUENCE -ErrorAction SilentlyContinue
 
   publish-github-release:
     if: ${{ inputs.publish_release && github.ref == 'refs/heads/main' }}
