@@ -1,0 +1,160 @@
+{
+  "schema": "swir.dependencies.vectors/1.0",
+  "runtime": {
+    "os": "1.7.13",
+    "sdk": "1.3.0",
+    "platformApi": 2,
+    "edition": "DESKTOP"
+  },
+  "cases": [
+    {
+      "name": "compatible-no-dependencies",
+      "package": {
+        "schema": "swir.app/1.0",
+        "id": "demo",
+        "packageId": "swir.demo",
+        "name": "Demo",
+        "version": "1.0.0",
+        "author": "SWIR",
+        "type": "iframe",
+        "entry": "index.html",
+        "compatibility": { "minOS": "1.7.0", "minSDK": "1.3.0", "platformApi": 2, "editions": ["WEB", "DESKTOP"] },
+        "dependencies": [],
+        "optionalDependencies": []
+      },
+      "installed": [],
+      "ok": true,
+      "errorCount": 0,
+      "warningCount": 0
+    },
+    {
+      "name": "blocked-by-min-os",
+      "package": {
+        "schema": "swir.app/1.0",
+        "id": "future",
+        "packageId": "swir.future",
+        "name": "Future",
+        "version": "1.0.0",
+        "author": "SWIR",
+        "type": "iframe",
+        "entry": "index.html",
+        "compatibility": { "minOS": "2.0.0", "editions": ["DESKTOP"] },
+        "dependencies": []
+      },
+      "installed": [],
+      "ok": false,
+      "errorCount": 1,
+      "warningCount": 0
+    },
+    {
+      "name": "blocked-by-edition",
+      "package": {
+        "schema": "swir.app/1.0",
+        "id": "web-only",
+        "packageId": "swir.web-only",
+        "name": "Web only",
+        "version": "1.0.0",
+        "author": "SWIR",
+        "type": "iframe",
+        "entry": "index.html",
+        "compatibility": { "editions": ["WEB"] },
+        "dependencies": []
+      },
+      "installed": [],
+      "ok": false,
+      "errorCount": 1,
+      "warningCount": 0
+    },
+    {
+      "name": "required-dependency-satisfied",
+      "package": {
+        "schema": "swir.app/1.0",
+        "id": "consumer",
+        "packageId": "swir.consumer",
+        "name": "Consumer",
+        "version": "2.0.0",
+        "author": "SWIR",
+        "type": "iframe",
+        "entry": "index.html",
+        "compatibility": { "editions": ["DESKTOP"] },
+        "dependencies": [{ "packageId": "swir.runtime", "minVersion": "1.4.0" }]
+      },
+      "installed": [{ "id": "runtime", "packageId": "swir.runtime", "version": "1.4.2", "installed": true }],
+      "ok": true,
+      "errorCount": 0,
+      "warningCount": 0
+    },
+    {
+      "name": "required-dependency-too-old",
+      "package": {
+        "schema": "swir.app/1.0",
+        "id": "consumer",
+        "packageId": "swir.consumer",
+        "name": "Consumer",
+        "version": "2.0.0",
+        "author": "SWIR",
+        "type": "iframe",
+        "entry": "index.html",
+        "dependencies": [{ "packageId": "swir.runtime", "minVersion": "1.5.0" }]
+      },
+      "installed": [{ "id": "runtime", "packageId": "swir.runtime", "version": "1.4.9", "installed": true }],
+      "ok": false,
+      "errorCount": 1,
+      "warningCount": 0
+    },
+    {
+      "name": "required-dependency-missing",
+      "package": {
+        "schema": "swir.app/1.0",
+        "id": "consumer",
+        "packageId": "swir.consumer",
+        "name": "Consumer",
+        "version": "2.0.0",
+        "author": "SWIR",
+        "type": "iframe",
+        "entry": "index.html",
+        "dependencies": [{ "packageId": "swir.runtime", "minVersion": "1.0.0" }]
+      },
+      "installed": [],
+      "ok": false,
+      "errorCount": 1,
+      "warningCount": 0
+    },
+    {
+      "name": "optional-dependency-warning",
+      "package": {
+        "schema": "swir.app/1.0",
+        "id": "optional-consumer",
+        "packageId": "swir.optional-consumer",
+        "name": "Optional Consumer",
+        "version": "1.0.0",
+        "author": "SWIR",
+        "type": "iframe",
+        "entry": "index.html",
+        "optionalDependencies": [{ "packageId": "swir.codec", "minVersion": "1.0.0" }]
+      },
+      "installed": [],
+      "ok": true,
+      "errorCount": 0,
+      "warningCount": 1
+    },
+    {
+      "name": "platform-api-too-old",
+      "package": {
+        "schema": "swir.app/1.0",
+        "id": "api3",
+        "packageId": "swir.api3",
+        "name": "API 3",
+        "version": "1.0.0",
+        "author": "SWIR",
+        "type": "iframe",
+        "entry": "index.html",
+        "compatibility": { "platformApi": 3 }
+      },
+      "installed": [],
+      "ok": false,
+      "errorCount": 1,
+      "warningCount": 0
+    }
+  ]
+}
