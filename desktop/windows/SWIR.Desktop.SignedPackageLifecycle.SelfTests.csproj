@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <StartupObject>Swir.Desktop.Host.DesktopSignedPackageLifecycleSelfTests</StartupObject>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="DesktopAppPackageInstaller.cs" />
+    <Compile Include="CapabilityBroker.cs" />
+    <Compile Include="DesktopPackageDependencyResolver.cs" />
+    <Compile Include="DesktopCatalogTrustVerifier.cs" />
+    <Compile Include="DesktopCatalogTrustRootStore.cs" />
+    <Compile Include="DesktopPackageBridge.cs" />
+    <Compile Include="DesktopSignedPackageLifecycleSelfTests.cs" />
+    <Compile Include="DesktopPackageBridgeSelfTestShim.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="NSec.Cryptography" Version="24.4.0" />
+  </ItemGroup>
+</Project>
