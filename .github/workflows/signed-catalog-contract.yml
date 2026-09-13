@@ -14,6 +14,8 @@ on:
       - 'scripts/validate-signed-catalog.mjs'
       - 'scripts/build-signed-catalog-release.mjs'
       - 'scripts/verify-catalog-root-pin.mjs'
+      - 'scripts/apply-catalog-root-rotation.mjs'
+      - 'scripts/verify-catalog-root-rotation.mjs'
       - 'scripts/validate-release-root-pin-wiring.mjs'
       - 'SWIR-SIGNED-CATALOG-1.0.md'
       - '.github/workflows/signed-catalog-contract.yml'
@@ -31,6 +33,8 @@ on:
       - 'scripts/validate-signed-catalog.mjs'
       - 'scripts/build-signed-catalog-release.mjs'
       - 'scripts/verify-catalog-root-pin.mjs'
+      - 'scripts/apply-catalog-root-rotation.mjs'
+      - 'scripts/verify-catalog-root-rotation.mjs'
       - 'scripts/validate-release-root-pin-wiring.mjs'
       - 'SWIR-SIGNED-CATALOG-1.0.md'
       - '.github/workflows/signed-catalog-contract.yml'
@@ -60,6 +64,8 @@ jobs:
           node --check swir-signed-catalog-release.js
           node --check scripts/build-signed-catalog-release.mjs
           node --check scripts/verify-catalog-root-pin.mjs
+          node --check scripts/apply-catalog-root-rotation.mjs
+          node --check scripts/verify-catalog-root-rotation.mjs
           node --check scripts/validate-release-root-pin-wiring.mjs
           node --check swir-v17.js
           node --check sw.js
@@ -69,5 +75,9 @@ jobs:
         run: node scripts/build-signed-catalog-release.mjs --self-test
       - name: Verify fail-closed public-root pinning
         run: node scripts/verify-catalog-root-pin.mjs --self-test
+      - name: Verify fail-closed root rotation bundle construction
+        run: node scripts/apply-catalog-root-rotation.mjs --self-test
+      - name: Verify sequence-bounded current-next rotation policy
+        run: node scripts/verify-catalog-root-rotation.mjs --self-test
       - name: Verify release workflow root-pin wiring
         run: node scripts/validate-release-root-pin-wiring.mjs
