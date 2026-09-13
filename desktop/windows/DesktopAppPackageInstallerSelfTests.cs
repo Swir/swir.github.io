@@ -19,16 +19,16 @@ internal static class DesktopAppPackageInstallerSelfTests
             var v1 = CreateBundle(root, "demo-v1.swirapp", "swir.test.demo", "1.0.0", "hello-v1");
             var v1Hash = Sha256(v1);
             installer.Install(v1, v1Hash);
-            AssertStatus(installer, "swir.test.demo", true, "1.0.0", false);
+            AssertStatus(installer, "swir.test.demo", true, "1.0.0", false, "payload/index.html");
             AssertPayload(dataRoot, "swir.test.demo", "hello-v1");
 
             var v2 = CreateBundle(root, "demo-v2.swirapp", "swir.test.demo", "2.0.0", "hello-v2");
             installer.Install(v2, Sha256(v2));
-            AssertStatus(installer, "swir.test.demo", true, "2.0.0", true);
+            AssertStatus(installer, "swir.test.demo", true, "2.0.0", true, "payload/index.html");
             AssertPayload(dataRoot, "swir.test.demo", "hello-v2");
 
             installer.Rollback("swir.test.demo");
-            AssertStatus(installer, "swir.test.demo", true, "1.0.0", true);
+            AssertStatus(installer, "swir.test.demo", true, "1.0.0", true, "payload/index.html");
             AssertPayload(dataRoot, "swir.test.demo", "hello-v1");
 
             ExpectCode("PACKAGE_HASH_MISMATCH", () => installer.Install(v2, new string('0', 64)));
@@ -51,6 +51,33 @@ internal static class DesktopAppPackageInstallerSelfTests
             }
             ExpectCode("PACKAGE_DUPLICATE_PATH", () => installer.Install(duplicate, Sha256(duplicate)));
 
+            var missingEntry = Path.Combine(root, "bad-entry.swirapp");
+            using (var zip = ZipFile.Open(missingEntry, ZipArchiveMode.Create))
+            {
+                WriteEntry(zip, "swir-package.json", Manifest("swir.test.missing", "1.0.0", "payload/missing.html"));
+                WriteEntry(zip, "payload/index.html", "present");
+            }
+            ExpectCode("PACKAGE_ENTRY_MISSING", () => installer.Install(missingEntry, Sha256(missingEntry)));
+            AssertNotInstalled(installer, "swir.test.missing");
+
+            var entryTraversal = Path.Combine(root, "bad-entry-traversal.swirapp");
+            using (var zip = ZipFile.Open(entryTraversal, ZipArchiveMode.Create))
+            {
+                WriteEntry(zip, "swir-package.json", Manifest("swir.test.entrytraversal", "1.0.0", "../outside.html"));
+                WriteEntry(zip, "payload/index.html", "present");
+            }
+            ExpectCode("PACKAGE_ENTRY_INVALID", () => installer.Install(entryTraversal, Sha256(entryTraversal)));
+            AssertNotInstalled(installer, "swir.test.entrytraversal");
+
+            var missingRequired = Path.Combine(root, "bad-manifest-required.swirapp");
+            using (var zip = ZipFile.Open(missingRequired, ZipArchiveMode.Create))
+            {
+                WriteEntry(zip, "swir-package.json", JsonSerializer.Serialize(new { schema = "swir.app/1.0", id = "swir.test.required", packageId = "swir.test.required", version = "1.0.0", entry = "payload/index.html" }));
+                WriteEntry(zip, "payload/index.html", "present");
+            }
+            ExpectCode("PACKAGE_MANIFEST_INVALID", () => installer.Install(missingRequired, Sha256(missingRequired)));
+            AssertNotInstalled(installer, "swir.test.required");
+
             Console.WriteLine("Desktop .swirapp payload installer self-tests passed.");
             return 0;
         }
@@ -70,16 +97,20 @@ internal static class DesktopAppPackageInstallerSelfTests
         var path = Path.Combine(root, name);
         using var zip = ZipFile.Open(path, ZipArchiveMode.Create);
         WriteEntry(zip, "swir-package.json", Manifest(id, version));
-        WriteEntry(zip, "payload/index.txt", payload);
+        WriteEntry(zip, "payload/index.html", payload);
         return path;
     }
 
-    private static string Manifest(string id, string version) => JsonSerializer.Serialize(new
+    private static string Manifest(string id, string version, string entry = "payload/index.html") => JsonSerializer.Serialize(new
     {
         schema = "swir.app/1.0",
         id,
         packageId = id,
-        version
+        name = "Self-test app",
+        version,
+        author = "SWIR",
+        type = "iframe",
+        entry
     });
 
     private static void WriteEntry(ZipArchive zip, string name, string content)
@@ -91,18 +122,26 @@ internal static class DesktopAppPackageInstallerSelfTests
 
     private static string Sha256(string path) => Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path))).ToLowerInvariant();
 
-    private static void AssertStatus(DesktopAppPackageInstaller installer, string id, bool installed, string version, bool rollback)
+    private static void AssertStatus(DesktopAppPackageInstaller installer, string id, bool installed, string version, bool rollback, string entry)
     {
         using var json = JsonDocument.Parse(JsonSerializer.Serialize(installer.Status(id)));
         var root = json.RootElement;
         if (root.GetProperty("installed").GetBoolean() != installed) throw new Exception("Unexpected installed state.");
         if (root.GetProperty("version").GetString() != version) throw new Exception("Unexpected package version.");
         if (root.GetProperty("rollbackAvailable").GetBoolean() != rollback) throw new Exception("Unexpected rollback state.");
+        if (root.GetProperty("entry").GetString() != entry) throw new Exception("Unexpected package entry.");
+        if (root.GetProperty("health").GetString() != "VERIFIED") throw new Exception("Package health was not persisted.");
+    }
+
+    private static void AssertNotInstalled(DesktopAppPackageInstaller installer, string id)
+    {
+        using var json = JsonDocument.Parse(JsonSerializer.Serialize(installer.Status(id)));
+        if (json.RootElement.GetProperty("installed").GetBoolean()) throw new Exception("Invalid package was promoted to Current.");
     }
 
     private static void AssertPayload(string dataRoot, string id, string expected)
     {
-        var path = Path.Combine(dataRoot, "Packages", "Installed", id, "Current", "payload", "index.txt");
+        var path = Path.Combine(dataRoot, "Packages", "Installed", id, "Current", "payload", "index.html");
         if (File.ReadAllText(path) != expected) throw new Exception("Unexpected current payload content.");
     }
 
