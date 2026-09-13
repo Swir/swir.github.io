@@ -30,6 +30,7 @@ internal sealed class MainWindow : Form
     private readonly DesktopUpdateBridgeCoordinator _updateBridgeCoordinator;
     private readonly DesktopUpdatePreparationHostService _updatePreparationHost;
     private readonly NativeFileSystemBroker _nativeFileSystem;
+    private readonly DesktopPackageBridge _packages;
     private readonly string _repoRoot;
     private readonly string _dataRoot;
     private CoreWebView2? _core;
@@ -67,6 +68,7 @@ internal sealed class MainWindow : Form
         _dataRoot = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SWIR", "DesktopHost", "Data");
         Directory.CreateDirectory(_dataRoot);
         _nativeFileSystem = new NativeFileSystemBroker(_dataRoot);
+        _packages = new DesktopPackageBridge(_capabilities, new DesktopAppPackageInstaller(_dataRoot));
         Controls.Add(_web);
         Shown += async (_, _) => await StartAsync();
         FormClosed += (_, _) => DetachBridge();
@@ -334,6 +336,7 @@ internal sealed class MainWindow : Form
             "clipboard" => DispatchClipboardAsync(request.Method, request.Args),
             "processes" => DispatchProcessesAsync(request.Method, request.Args),
             "security" => DispatchSecurityAsync(request.Method, request.Args, effectiveToken),
+            "packages" => DispatchPackagesAsync(request.Method, request.Args),
             "updates" => DispatchUpdatesAsync(request.Method, trustedShell),
             _ => throw new BridgeException("RUNTIME_UNSUPPORTED", $"Unsupported native surface: {request.Surface}")
         };
@@ -388,6 +391,19 @@ internal sealed class MainWindow : Form
             "pruneCapabilities" => _capabilities.PruneExpired(),
             "capabilityStatus" => _capabilities.Status(),
             _ => throw new BridgeException("RUNTIME_UNSUPPORTED", $"Unsupported filesystem method: {method}")
+        };
+        return Task.FromResult(result);
+    }
+
+    private Task<object?> DispatchPackagesAsync(string method, JsonElement args)
+    {
+        object? result = method switch
+        {
+            "info" => _packages.Describe(),
+            "installFromCapability" => _packages.InstallFromCapability(ArgString(args, 0), ArgString(args, 1), Owner(args, 2)),
+            "status" => _packages.Status(ArgString(args, 0), Owner(args, 1)),
+            "rollback" => _packages.Rollback(ArgString(args, 0), Owner(args, 1)),
+            _ => throw new BridgeException("RUNTIME_UNSUPPORTED", $"Unsupported packages method: {method}")
         };
         return Task.FromResult(result);
     }
@@ -489,14 +505,27 @@ internal sealed class MainWindow : Form
 
     private static string? RequestedOwner(BridgeRequest request)
     {
-        if (!string.Equals(request.Surface, "filesystem", StringComparison.Ordinal)) return null;
-        return request.Method switch
+        if (string.Equals(request.Surface, "filesystem", StringComparison.Ordinal))
         {
-            "pickFile" or "pickDirectory" => Owner(request.Args, 0),
-            "capabilityInfo" or "readCapabilityText" or "revokeCapability" => Owner(request.Args, 1),
-            "revokeOwnerCapabilities" => Owner(request.Args, 0),
-            _ => null
-        };
+            return request.Method switch
+            {
+                "pickFile" or "pickDirectory" => Owner(request.Args, 0),
+                "capabilityInfo" or "readCapabilityText" or "revokeCapability" => Owner(request.Args, 1),
+                "revokeOwnerCapabilities" => Owner(request.Args, 0),
+                _ => null
+            };
+        }
+
+        if (string.Equals(request.Surface, "packages", StringComparison.Ordinal))
+        {
+            return request.Method switch
+            {
+                "installFromCapability" => Owner(request.Args, 2),
+                "status" or "rollback" => Owner(request.Args, 1),
+                _ => null
+            };
+        }
+        return null;
     }
 
     private static string Owner(JsonElement args, int index)
@@ -551,6 +580,7 @@ internal sealed class MainWindow : Form
     {
         BridgeException bridge => bridge.Code,
         NativeFileSystemException nativeFileSystem => nativeFileSystem.Code,
+        DesktopPackageException package => package.Code,
         DesktopUpdateBridgeCommandException updateBridge => updateBridge.Code,
         UpdateSecurityException updateSecurity => updateSecurity.Code,
         _ => "NATIVE_HOST_ERROR"
@@ -615,9 +645,10 @@ internal sealed class MainWindow : Form
   const surface = (name, methods) => Object.freeze(Object.fromEntries(methods.map(method => [method, (...args) => call(name, method, ...args)])));
   window.SWIR_NATIVE_HOST = Object.freeze({
     edition: 'DESKTOP', version: '0.5.1-preview', contract: 'swir.runtime/1.0', sessionId: '__SESSION_ID__',
-    features: Object.freeze({ packageContextBroker: true, appIsolationRouting: true, appIsolationState: 'APP_BRIDGE_VERIFIED', nativeAppData: true, nativeFilesystem: true, guardedUpdateRestartLifecycle: true, nativeUpdateBridge: true, nativeUpdatePreparation: true }),
+    features: Object.freeze({ packageContextBroker: true, nativePackageBridge: true, appIsolationRouting: true, appIsolationState: 'APP_BRIDGE_VERIFIED', nativeAppData: true, nativeFilesystem: true, guardedUpdateRestartLifecycle: true, nativeUpdateBridge: true, nativeUpdatePreparation: true }),
     filesystem: surface('filesystem', ['info','list','get','save','remove','pickFile','pickDirectory','capabilityInfo','readCapabilityText','revokeCapability','revokeOwnerCapabilities','pruneCapabilities','capabilityStatus']),
     appData: surface('appdata', ['info','list','get','set','remove']),
+    packages: surface('packages', ['info','installFromCapability','status','rollback']),
     clipboard: surface('clipboard', ['readText','writeText','clear']),
     processes: surface('processes', ['list','open','kill','spawn']),
     security: surface('security', ['contextInfo','can','policyCatalog','appUrl','isolationInfo','syncPackageContexts','packageContexts']),
