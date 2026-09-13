@@ -122,6 +122,36 @@ The bridge also binds the verified catalog identity to the selected bundle manif
 
 The shipping bridge advertises `signedIdentityBinding: true` and remains fail-closed after trust-root provisioning. The legacy raw-SHA path exists only while no native catalog root has been provisioned, so preview builds remain usable before the real release trust chain is installed.
 
+## Runtime authorization transport
+
+`SwirRuntime 1.6.0` now carries signed Desktop authorization as a structured trust object instead of requiring Store/UI code to flatten trust into a caller-selected SHA-256.
+
+The Runtime exposes:
+
+```text
+SwirRuntime.packages.catalogAuthorization(packageId, version, catalog, envelope)
+SwirRuntime.packages.installAuthorizedFromCapability(capabilityToken, packageId, version, catalog, envelope)
+SwirRuntime.packages.installFromCapability(capabilityToken, trustInput)
+```
+
+`catalogAuthorization()` creates only the transport envelope:
+
+```json
+{
+  "schema": "swir.desktop-catalog-authorization/1.0",
+  "packageId": "swir.example",
+  "version": "1.2.3",
+  "catalog": [],
+  "envelope": {}
+}
+```
+
+The Runtime deliberately does **not** decide whether the catalog is trusted and does not extract a trusted Desktop hash. It serializes the complete catalog + signature envelope across the native boundary, where `DesktopCatalogTrustVerifier` repeats the cryptographic and anti-rollback checks independently. This avoids turning browser-side verification into a privileged authorization oracle.
+
+`installFromCapability()` remains backward compatible with a raw SHA string only for preview builds where the native trust-root store has not yet been provisioned. If an object is supplied, Runtime serializes it for the native bridge. `installAuthorizedFromCapability()` is the preferred Desktop Store path and always creates the structured schema before dispatch.
+
+`scripts/validate-desktop-package-authorization.mjs` executes the Runtime in an isolated Node VM with a fake native package surface and verifies structured serialization, package/version binding in transit, trusted-shell ownership, object transport, legacy preview compatibility and fail-closed rejection of malformed catalog input. The same test is part of `Desktop App Package Contract`.
+
 ## Release pipeline direction
 
 Production publishing should:
@@ -141,4 +171,4 @@ The repository intentionally does **not** contain a production private signing k
 
 ## Desktop/System requirement
 
-The native verifier, trust-root loader, signed-catalog enforcement switch and package-identity binding are implemented. The Desktop/System `package signatures and integrity verification` roadmap item remains **not complete** because the repository still deliberately lacks a provisioned production public root and protected production signing pipeline, and the official catalog is not yet released end-to-end with signed Desktop artifact hashes through a real Store install/update flow. Those release-chain requirements must be exercised through shipping install/update/restart/rollback E2E before the roadmap checkbox can become `[x]`.
+The native verifier, trust-root loader, signed-catalog enforcement switch, package-identity binding and Runtime structured authorization transport are implemented. The Desktop/System `package signatures and integrity verification` roadmap item remains **not complete** because the repository still deliberately lacks a provisioned production public root and protected production signing pipeline, and the official Store does not yet complete a real signed Desktop artifact install/update/restart/rollback E2E. Those release-chain requirements must be exercised through shipping install/update/restart/rollback E2E before the roadmap checkbox can become `[x]`.
