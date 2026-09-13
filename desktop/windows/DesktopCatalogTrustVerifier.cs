@@ -13,7 +13,14 @@ internal sealed class DesktopCatalogTrustVerifier
     private readonly string _statePath;
     private readonly IReadOnlyDictionary<string, TrustRoot> _roots;
 
-    internal sealed record TrustRoot(string KeyId, string Name, byte[] PublicKey, IReadOnlyList<string> Scope);
+    internal sealed record TrustRoot(
+        string KeyId,
+        string Name,
+        byte[] PublicKey,
+        IReadOnlyList<string> Scope,
+        long NotBeforeSequence = 1,
+        long? RetireAfterSequence = null);
+
     internal sealed record Authorization(string PackageId, string Version, string Sha256, string? ArtifactUrl, long Sequence, string CatalogVersion, string KeyId, DateTimeOffset ExpiresAt);
     private sealed record TrustState(string Schema, string CatalogId, string CatalogVersion, long Sequence, string CatalogSha256, string KeyId, string GeneratedAt, string ExpiresAt, string AcceptedAt);
 
@@ -33,6 +40,7 @@ internal sealed class DesktopCatalogTrustVerifier
         freshnessRequired = true,
         antiRollback = true,
         signedArtifactLocation = true,
+        sequenceBoundRootRotation = true,
         trustedRoots = _roots.Count,
         statePath = "PackageTrust/catalog-high-water.json"
     };
@@ -65,6 +73,11 @@ internal sealed class DesktopCatalogTrustVerifier
 
         if (!_roots.TryGetValue(keyId, out var root)) Fail("CATALOG_UNKNOWN_KEY", "Catalog signing key is not trusted by the Desktop Host.");
         if (!(root!.Scope.Contains("*") || root.Scope.Contains("catalog:official"))) Fail("CATALOG_KEY_OUT_OF_SCOPE", "Catalog signing key is outside catalog:official scope.");
+        if (sequence < root.NotBeforeSequence)
+            Fail("CATALOG_KEY_NOT_ACTIVE", $"Catalog signing key {keyId} is not active before sequence {root.NotBeforeSequence}.");
+        if (root.RetireAfterSequence is long retireAfter && sequence > retireAfter)
+            Fail("CATALOG_KEY_RETIRED", $"Catalog signing key {keyId} retired after sequence {retireAfter}.");
+
         var signature = Convert.FromBase64String(GetRequiredString(envelope, "signature", "CATALOG_SIGNATURE_INVALID"));
         var signedPayload = CanonicalObject(new SortedDictionary<string, object?>(StringComparer.Ordinal)
         {
