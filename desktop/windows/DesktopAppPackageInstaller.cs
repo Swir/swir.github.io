@@ -20,6 +20,7 @@ internal sealed class DesktopAppPackageInstaller
         _stagingRoot = Path.Combine(root, ".staging");
         Directory.CreateDirectory(_packagesRoot);
         Directory.CreateDirectory(_stagingRoot);
+        RecoverInterruptedState();
     }
 
     public object Describe() => new
@@ -30,6 +31,7 @@ internal sealed class DesktopAppPackageInstaller
         integrity = "sha256-required",
         manifestSchema = "swir.app/1.0",
         stagedHealthVerification = true,
+        startupRecovery = true,
         transactionalSlots = true,
         rollback = true,
         maxEntries = MaxEntries,
@@ -160,6 +162,44 @@ internal sealed class DesktopAppPackageInstaller
             bundleSha256 = deployment?.BundleSha256,
             rollbackAvailable = Directory.Exists(previous)
         };
+    }
+
+    private void RecoverInterruptedState()
+    {
+        foreach (var stage in Directory.EnumerateDirectories(_stagingRoot))
+        {
+            try { Directory.Delete(stage, true); } catch { }
+        }
+
+        foreach (var packageRoot in Directory.EnumerateDirectories(_packagesRoot))
+        {
+            foreach (var incoming in Directory.EnumerateDirectories(packageRoot, ".incoming-*"))
+            {
+                try { Directory.Delete(incoming, true); } catch { }
+            }
+            foreach (var rollback in Directory.EnumerateDirectories(packageRoot, ".rollback-*"))
+            {
+                var current = Path.Combine(packageRoot, "Current");
+                var previous = Path.Combine(packageRoot, "Previous");
+                try
+                {
+                    if (!Directory.Exists(current) && Directory.Exists(previous))
+                        Directory.Move(previous, current);
+                    if (Directory.Exists(rollback) && !Directory.Exists(previous))
+                        Directory.Move(rollback, previous);
+                    else if (Directory.Exists(rollback))
+                        Directory.Delete(rollback, true);
+                }
+                catch { }
+            }
+
+            var currentSlot = Path.Combine(packageRoot, "Current");
+            var previousSlot = Path.Combine(packageRoot, "Previous");
+            if (!Directory.Exists(currentSlot) && Directory.Exists(previousSlot))
+            {
+                try { Directory.Move(previousSlot, currentSlot); } catch { }
+            }
+        }
     }
 
     private static StagedPackageHealth ValidateStagedPackage(string stage, PackageManifest manifest)
