@@ -17,6 +17,7 @@ on:
       - 'scripts/apply-catalog-root-rotation.mjs'
       - 'scripts/verify-catalog-root-rotation.mjs'
       - 'scripts/validate-release-root-pin-wiring.mjs'
+      - 'scripts/validate-desktop-release-root-rotation-wiring.mjs'
       - 'SWIR-SIGNED-CATALOG-1.0.md'
       - '.github/workflows/signed-catalog-contract.yml'
       - '.github/workflows/signed-catalog-release.yml'
@@ -36,6 +37,7 @@ on:
       - 'scripts/apply-catalog-root-rotation.mjs'
       - 'scripts/verify-catalog-root-rotation.mjs'
       - 'scripts/validate-release-root-pin-wiring.mjs'
+      - 'scripts/validate-desktop-release-root-rotation-wiring.mjs'
       - 'SWIR-SIGNED-CATALOG-1.0.md'
       - '.github/workflows/signed-catalog-contract.yml'
       - '.github/workflows/signed-catalog-release.yml'
@@ -67,6 +69,7 @@ jobs:
           node --check scripts/apply-catalog-root-rotation.mjs
           node --check scripts/verify-catalog-root-rotation.mjs
           node --check scripts/validate-release-root-pin-wiring.mjs
+          node --check scripts/validate-desktop-release-root-rotation-wiring.mjs
           node --check swir-v17.js
           node --check sw.js
       - name: Verify signed catalog freshness, cryptography and anti-rollback
@@ -81,3 +84,5 @@ jobs:
         run: node scripts/verify-catalog-root-rotation.mjs --self-test
       - name: Verify release workflow root-pin wiring
         run: node scripts/validate-release-root-pin-wiring.mjs
+      - name: Verify Desktop release current-next root rotation wiring
+        run: node scripts/validate-desktop-release-root-rotation-wiring.mjs
