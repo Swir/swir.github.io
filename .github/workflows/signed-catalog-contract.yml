@@ -14,6 +14,7 @@ on:
       - 'scripts/validate-signed-catalog.mjs'
       - 'scripts/build-signed-catalog-release.mjs'
       - 'scripts/verify-catalog-root-pin.mjs'
+      - 'scripts/validate-release-root-pin-wiring.mjs'
       - 'SWIR-SIGNED-CATALOG-1.0.md'
       - '.github/workflows/signed-catalog-contract.yml'
       - '.github/workflows/signed-catalog-release.yml'
@@ -30,6 +31,7 @@ on:
       - 'scripts/validate-signed-catalog.mjs'
       - 'scripts/build-signed-catalog-release.mjs'
       - 'scripts/verify-catalog-root-pin.mjs'
+      - 'scripts/validate-release-root-pin-wiring.mjs'
       - 'SWIR-SIGNED-CATALOG-1.0.md'
       - '.github/workflows/signed-catalog-contract.yml'
       - '.github/workflows/signed-catalog-release.yml'
@@ -58,6 +60,7 @@ jobs:
           node --check swir-signed-catalog-release.js
           node --check scripts/build-signed-catalog-release.mjs
           node --check scripts/verify-catalog-root-pin.mjs
+          node --check scripts/validate-release-root-pin-wiring.mjs
           node --check swir-v17.js
           node --check sw.js
       - name: Verify signed catalog freshness, cryptography and anti-rollback
@@ -66,3 +69,5 @@ jobs:
         run: node scripts/build-signed-catalog-release.mjs --self-test
       - name: Verify fail-closed public-root pinning
         run: node scripts/verify-catalog-root-pin.mjs --self-test
+      - name: Verify release workflow root-pin wiring
+        run: node scripts/validate-release-root-pin-wiring.mjs
