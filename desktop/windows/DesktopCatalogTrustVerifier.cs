@@ -14,7 +14,7 @@ internal sealed class DesktopCatalogTrustVerifier
     private readonly IReadOnlyDictionary<string, TrustRoot> _roots;
 
     internal sealed record TrustRoot(string KeyId, string Name, byte[] PublicKey, IReadOnlyList<string> Scope);
-    internal sealed record Authorization(string PackageId, string Version, string Sha256, long Sequence, string CatalogVersion, string KeyId, DateTimeOffset ExpiresAt);
+    internal sealed record Authorization(string PackageId, string Version, string Sha256, string? ArtifactUrl, long Sequence, string CatalogVersion, string KeyId, DateTimeOffset ExpiresAt);
     private sealed record TrustState(string Schema, string CatalogId, string CatalogVersion, long Sequence, string CatalogSha256, string KeyId, string GeneratedAt, string ExpiresAt, string AcceptedAt);
 
     public DesktopCatalogTrustVerifier(string dataRoot, IEnumerable<TrustRoot> roots)
@@ -32,6 +32,7 @@ internal sealed class DesktopCatalogTrustVerifier
         failClosed = true,
         freshnessRequired = true,
         antiRollback = true,
+        signedArtifactLocation = true,
         trustedRoots = _roots.Count,
         statePath = "PackageTrust/catalog-high-water.json"
     };
@@ -96,10 +97,13 @@ internal sealed class DesktopCatalogTrustVerifier
         if (package.ValueKind == JsonValueKind.Undefined) Fail("CATALOG_PACKAGE_NOT_FOUND", "Requested package/version is not present in the verified catalog.");
         var sha256 = PackageSha256(package);
         if (sha256.Length != 64) Fail("CATALOG_ARTIFACT_UNTRUSTED", "Verified catalog entry does not contain a Desktop artifact SHA-256.");
+        var artifactUrl = PackageArtifactUrl(package);
+        if (artifactUrl is not null && !IsSafeDesktopArtifactUrl(artifactUrl))
+            Fail("CATALOG_ARTIFACT_URL_INVALID", "Verified catalog Desktop artifact URL must be a release-local packages/<name>.swirapp path.");
 
         WriteState(new TrustState(TrustStateSchema, "official", catalogVersion, sequence, expectedDigest, keyId,
             generatedAt.ToString("O"), expiresAt.ToString("O"), clock.ToString("O")));
-        return new Authorization(packageId, version, sha256, sequence, catalogVersion, keyId, expiresAt);
+        return new Authorization(packageId, version, sha256, artifactUrl, sequence, catalogVersion, keyId, expiresAt);
     }
 
     private TrustState? ReadState()
@@ -143,6 +147,26 @@ internal sealed class DesktopCatalogTrustVerifier
         if (item.TryGetProperty("artifacts", out var artifacts) && artifacts.ValueKind == JsonValueKind.Object && artifacts.TryGetProperty("desktop", out var desktop) && desktop.ValueKind == JsonValueKind.Object)
             return NormalizeDigest(OptionalString(desktop, "sha256") ?? string.Empty);
         return NormalizeDigest(OptionalString(item, "packageSha256") ?? string.Empty);
+    }
+    private static string? PackageArtifactUrl(JsonElement item)
+    {
+        if (item.TryGetProperty("artifacts", out var artifacts) && artifacts.ValueKind == JsonValueKind.Object && artifacts.TryGetProperty("desktop", out var desktop) && desktop.ValueKind == JsonValueKind.Object)
+        {
+            var value = OptionalString(desktop, "url")?.Trim();
+            return string.IsNullOrWhiteSpace(value) ? null : value.Replace('\\', '/');
+        }
+        return null;
+    }
+    internal static bool IsSafeDesktopArtifactUrl(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value) || value.Length > 240) return false;
+        var normalized = value.Replace('\\', '/');
+        if (!normalized.StartsWith("packages/", StringComparison.Ordinal)) return false;
+        if (normalized.Contains("//", StringComparison.Ordinal) || normalized.Contains("../", StringComparison.Ordinal) || normalized.Contains("./", StringComparison.Ordinal)) return false;
+        var fileName = normalized["packages/".Length..];
+        if (string.IsNullOrWhiteSpace(fileName) || fileName.Contains('/')) return false;
+        if (!fileName.EndsWith(".swirapp", StringComparison.OrdinalIgnoreCase)) return false;
+        return fileName.All(ch => char.IsLetterOrDigit(ch) || ch is '.' or '_' or '-');
     }
     private static string? OptionalString(JsonElement node, string name) => node.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
     private static string GetRequiredString(JsonElement node, string name, string code) => OptionalString(node, name) is { Length: > 0 } value ? value : throw new DesktopPackageException(code, $"{name} required.");
