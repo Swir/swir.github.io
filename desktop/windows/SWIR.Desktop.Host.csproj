@@ -42,6 +42,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="catalog-trust-roots.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3537.50" />
     <!-- Pinned .NET 8-compatible Ed25519 implementation. Production clients contain public verification material only. -->
     <PackageReference Include="NSec.Cryptography" Version="24.4.0" />
