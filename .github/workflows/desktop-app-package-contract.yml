@@ -27,6 +27,7 @@ on:
       - 'swir-package-resolver.js'
       - 'swir-runtime.js'
       - 'scripts/validate-desktop-package-runtime.mjs'
+      - 'scripts/validate-desktop-package-authorization.mjs'
       - 'scripts/validate-shared-dependency-contract.mjs'
       - '.github/workflows/desktop-app-package-contract.yml'
   pull_request:
@@ -54,6 +55,7 @@ on:
       - 'swir-package-resolver.js'
       - 'swir-runtime.js'
       - 'scripts/validate-desktop-package-runtime.mjs'
+      - 'scripts/validate-desktop-package-authorization.mjs'
       - 'scripts/validate-shared-dependency-contract.mjs'
       - '.github/workflows/desktop-app-package-contract.yml'
 
@@ -93,6 +95,10 @@ jobs:
       - name: Validate shipping package runtime wiring
         working-directory: .
         run: node scripts/validate-desktop-package-runtime.mjs
+
+      - name: Validate structured Desktop catalog authorization transport
+        working-directory: .
+        run: node scripts/validate-desktop-package-authorization.mjs
 
       - name: Validate Web dependency resolver shared vectors
         working-directory: .
