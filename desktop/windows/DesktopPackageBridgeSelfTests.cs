@@ -65,6 +65,7 @@ internal static class DesktopPackageBridgeSelfTests
 
             VerifyProvisionedRootDisablesArbitrarySha(root, bundle, hash);
             VerifySignedCatalogInstallAndIdentityBinding(root);
+            VerifyReleaseTrustLock(root);
 
             Console.WriteLine("Desktop package bridge self-tests passed.");
             return 0;
@@ -82,6 +83,7 @@ internal static class DesktopPackageBridgeSelfTests
         File.WriteAllText(rootsPath, JsonSerializer.Serialize(new
         {
             schema = DesktopCatalogTrustRootStore.Schema,
+            requireSignedCatalog = false,
             roots = new[]
             {
                 new
@@ -136,6 +138,21 @@ internal static class DesktopPackageBridgeSelfTests
         ExpectPackageCode(() => bridge.InstallFromCapability(mismatchToken, mismatchAuthorization, Shell), "CATALOG_PACKAGE_IDENTITY_MISMATCH");
         ExpectBridgeCode(() => capabilities.Describe(mismatchToken, Shell), "CAPABILITY_INVALID");
         Require(JsonSerializer.Serialize(bridge.Status("swir.actual", Shell)).Contains("\"installed\":false", StringComparison.OrdinalIgnoreCase), "identity mismatch must be rejected before package mutation");
+    }
+
+    private static void VerifyReleaseTrustLock(string root)
+    {
+        var lockedRootsPath = Path.Combine(root, "locked-empty-catalog-trust-roots.json");
+        File.WriteAllText(lockedRootsPath, JsonSerializer.Serialize(new
+        {
+            schema = DesktopCatalogTrustRootStore.Schema,
+            requireSignedCatalog = true,
+            roots = Array.Empty<object>()
+        }));
+        Environment.SetEnvironmentVariable("SWIR_CATALOG_TRUST_ROOTS", lockedRootsPath);
+        ExpectPackageCode(
+            () => _ = new DesktopPackageBridge(new CapabilityBroker(), new DesktopAppPackageInstaller(Path.Combine(root, "locked-data"))),
+            "CATALOG_TRUST_ROOT_REQUIRED");
     }
 
     private static string CreateSignedAuthorization(Key key, string keyId, string packageId, string version, string sha256, long sequence)
