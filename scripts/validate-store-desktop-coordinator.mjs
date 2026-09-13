@@ -27,20 +27,21 @@ function runtimeFixture({ trustMode='SIGNED_CATALOG_REQUIRED', failNative=false,
   return {runtime,calls,revoked};
 }
 
-function load(fixture, release=true, sharedStorage=null) {
+function load(fixture, release=true, sharedStorage=null, pipeline=null) {
   const memory=sharedStorage || new Map();
   const storage={
     async get(key,fallback){ return memory.has(key) ? JSON.parse(JSON.stringify(memory.get(key))) : fallback; },
     async set(key,value){ memory.set(key,JSON.parse(JSON.stringify(value))); return true; }
   };
   const parent={ SwirRuntime:fixture.runtime, SwirPlatform:{storage} };
+  if(pipeline) parent.SwirInstallPipeline=pipeline;
   if(release) parent.SWIR_SIGNED_CATALOG_RELEASE={ schema:'swir.signed-catalog-release/1.0', catalog:[{id:'demo',packageId:'swir.demo',version:'1.0.0',artifacts:{desktop:{sha256:'a'.repeat(64)}}}], envelope:{schema:'swir.catalog-signature/1.0',catalogId:'official',sequence:7,keyId:'release-root',signature:'TEST'} };
   const context={ console, structuredClone, window:null };
   context.window={ parent };
   context.window.window=context.window;
   vm.createContext(context);
   vm.runInContext(source, context, {filename:'swir-store-desktop.js'});
-  return {svc:context.window.SwirStoreDesktop,memory,parent};
+  return {svc:context.window.SwirStoreDesktop,memory,parent,window:context.window};
 }
 
 {
@@ -93,26 +94,26 @@ function load(fixture, release=true, sharedStorage=null) {
   if(!legacy||legacy[1]!=='cap-legacy'||legacy[2]!=='b'.repeat(64)) throw new Error('Legacy preview SHA transport failed');
 }
 
-// Simulate a hard process stop after the Web transaction committed but before native install.
+// Hard process stop after Web commit but before native commit -> startup must restore Web state.
 {
   const storage=new Map();
   storage.set('store.desktop.pending.v1',[{
     schema:'swir.store-desktop-recovery/1.0',id:'desktop-crash',packageId:'swir.demo',webPackageId:'demo',version:'1.0.0',webTransactionId:'tx-crash',state:'WEB_COMMITTED',createdAt:1000,updatedAt:1001
   }]);
   const fx=runtimeFixture({nativeInstalled:false});
-  const {svc}=load(fx,true,storage);
   const rolled=[];
   const pipeline={
     async transactions(){ return [{id:'tx-crash',packageId:'demo',toVersion:'1.0.0',status:'COMMITTED',startedAt:1000,rollback:{performed:false}}]; },
     async rollback(id,options){ rolled.push([id,options]); return {id,status:'ROLLED_BACK'}; }
   };
+  const {svc}=load(fx,true,storage);
   const result=await svc.reconcile({pipeline});
   if(!result.ok||result.repaired!==1||rolled.length!==1||rolled[0][0]!=='tx-crash') throw new Error('Restart reconciliation did not roll back WEB_COMMITTED / NATIVE_MISSING state');
   if(!String(rolled[0][1]?.reason||'').includes('DESKTOP_RECONCILE_NATIVE_MISSING')) throw new Error('Restart rollback reason missing native-missing classification');
   if((storage.get('store.desktop.pending.v1')||[]).length!==0) throw new Error('Restart reconciliation left stale recovery intent');
 }
 
-// Simulate native commit succeeding before the process died; startup should only clear the intent.
+// Native commit succeeded before process death -> startup clears only the durable intent, never rolls back good native state.
 {
   const storage=new Map();
   storage.set('store.desktop.pending.v1',[{
@@ -130,9 +131,27 @@ function load(fixture, release=true, sharedStorage=null) {
   if((storage.get('store.desktop.pending.v1')||[]).length!==0) throw new Error('Consistent restart state left stale recovery intent');
 }
 
+// Loading the coordinator in a real Store-like environment automatically executes recovery.
+{
+  const storage=new Map();
+  storage.set('store.desktop.pending.v1',[{
+    schema:'swir.store-desktop-recovery/1.0',id:'desktop-auto',packageId:'swir.demo',webPackageId:'demo',version:'1.0.0',webTransactionId:'tx-auto',state:'WEB_COMMITTED',createdAt:3000,updatedAt:3001
+  }]);
+  const fx=runtimeFixture({nativeInstalled:false});
+  let rollbackCalled=false;
+  const pipeline={
+    async transactions(){ return [{id:'tx-auto',packageId:'demo',toVersion:'1.0.0',status:'COMMITTED',startedAt:3000,rollback:{performed:false}}]; },
+    async rollback(){ rollbackCalled=true; return {status:'ROLLED_BACK'}; }
+  };
+  const loaded=load(fx,true,storage,pipeline);
+  if(!loaded.window.SWIR_STORE_DESKTOP_RECONCILIATION) throw new Error('Automatic startup reconciliation promise was not exposed');
+  const result=await loaded.window.SWIR_STORE_DESKTOP_RECONCILIATION;
+  if(!result.ok||result.repaired!==1||!rollbackCalled) throw new Error('Automatic startup reconciliation did not repair interrupted transaction');
+}
+
 if(!storeHtml.includes('swir-store-desktop.js')) throw new Error('SWIR Store does not load Desktop coordinator');
 if(!storeHtml.includes('desktopStore.installTransactional')) throw new Error('SWIR Store does not use transactional Desktop coordinator');
 if(!storeHtml.includes('pipeline.rollback')) throw new Error('SWIR Store does not wire Web rollback after native failure');
-if(!storeHtml.includes('desktopStore.reconcile')) throw new Error('SWIR Store does not run Desktop restart reconciliation at startup');
+if(!source.includes('SWIR_STORE_DESKTOP_RECONCILIATION')) throw new Error('Desktop coordinator does not schedule startup reconciliation');
 
 console.log('SWIR Store Desktop coordinator + restart reconciliation validation passed.');
