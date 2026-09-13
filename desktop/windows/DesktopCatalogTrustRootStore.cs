@@ -9,7 +9,16 @@ internal static class DesktopCatalogTrustRootStore
 
     internal sealed record LoadResult(string Source, IReadOnlyList<DesktopCatalogTrustVerifier.TrustRoot> Roots, bool RequireSignedCatalog);
     private sealed record RootDocument(string? Schema, RootRecord[]? Roots, bool RequireSignedCatalog = false);
-    private sealed record RootRecord(string? KeyId, string? Name, string? Algorithm, string? Format, string? PublicKey, string[]? Scope, bool Enabled = true);
+    private sealed record RootRecord(
+        string? KeyId,
+        string? Name,
+        string? Algorithm,
+        string? Format,
+        string? PublicKey,
+        string[]? Scope,
+        bool Enabled = true,
+        long NotBeforeSequence = 1,
+        long? RetireAfterSequence = null);
 
     public static LoadResult LoadProvisioned()
     {
@@ -43,7 +52,18 @@ internal static class DesktopCatalogTrustRootStore
             var scope = (record.Scope ?? Array.Empty<string>()).Select(x => x.Trim()).Where(x => x.Length > 0).Distinct(StringComparer.Ordinal).ToArray();
             if (!(scope.Contains("*", StringComparer.Ordinal) || scope.Contains("catalog:official", StringComparer.Ordinal)))
                 throw new DesktopPackageException("CATALOG_TRUST_ROOTS_INVALID", $"Catalog trust root {keyId} must be scoped to catalog:official.");
-            roots.Add(new DesktopCatalogTrustVerifier.TrustRoot(keyId, string.IsNullOrWhiteSpace(record.Name) ? keyId : record.Name.Trim(), publicKey, scope));
+            if (record.NotBeforeSequence < 1)
+                throw new DesktopPackageException("CATALOG_TRUST_ROOTS_INVALID", $"Catalog trust root {keyId} notBeforeSequence must be a positive integer.");
+            if (record.RetireAfterSequence is long retireAfter && retireAfter < record.NotBeforeSequence)
+                throw new DesktopPackageException("CATALOG_TRUST_ROOTS_INVALID", $"Catalog trust root {keyId} retireAfterSequence must be greater than or equal to notBeforeSequence.");
+
+            roots.Add(new DesktopCatalogTrustVerifier.TrustRoot(
+                keyId,
+                string.IsNullOrWhiteSpace(record.Name) ? keyId : record.Name.Trim(),
+                publicKey,
+                scope,
+                record.NotBeforeSequence,
+                record.RetireAfterSequence));
         }
 
         if (document.RequireSignedCatalog && roots.Count == 0)
