@@ -1,11 +1,11 @@
 /* =============================================================
-   SWIR OS 1.7.13 — RUNTIME ADAPTER CONTRACT 1.4.0
+   SWIR OS 1.7.13 — RUNTIME ADAPTER CONTRACT 1.5.0
    Portable Web -> Desktop -> System host boundary.
    ============================================================= */
 (() => {
   'use strict';
 
-  const META = Object.freeze({ name: 'SWIR Runtime', version: '1.4.0', contract: 'swir.runtime/1.0' });
+  const META = Object.freeze({ name: 'SWIR Runtime', version: '1.5.0', contract: 'swir.runtime/1.0' });
   const SHELL_APP_ID = 'swir.system.shell';
   const host = () => window.SWIR_NATIVE_HOST || null;
   const platform = () => window.SwirPlatform || null;
@@ -97,6 +97,13 @@
     })
   });
 
+  const packages = Object.freeze({
+    info: () => call('packages', 'info', [], async () => ({ schema: 'swir.desktop-package-bridge/web', provider: 'web', native: false, supported: false })),
+    installFromCapability: (capabilityToken, expectedSha256) => call('packages', 'installFromCapability', [String(capabilityToken || ''), String(expectedSha256 || ''), SHELL_APP_ID]),
+    status: packageId => call('packages', 'status', [packageIdOf(packageId), SHELL_APP_ID]),
+    rollback: packageId => call('packages', 'rollback', [packageIdOf(packageId), SHELL_APP_ID])
+  });
+
   const processes = Object.freeze({ list: (...args) => call('processes','list',args,(...a)=>platform()?.processes?.list?.(...a)??[]), open:(...args)=>call('processes','open',args,(...a)=>platform()?.processes?.open?.(...a)), kill:(...args)=>call('processes','kill',args,(...a)=>platform()?.processes?.kill?.(...a)??false), spawn:(...args)=>call('processes','spawn',args) });
   const clipboard = Object.freeze({ readText:(...args)=>call('clipboard','readText',args,(...a)=>platform()?.clipboard?.readText?.(...a)??''), writeText:(...args)=>call('clipboard','writeText',args,(...a)=>platform()?.clipboard?.writeText?.(...a)??false), clear:(...args)=>call('clipboard','clear',args,(...a)=>platform()?.clipboard?.clear?.(...a)) });
   const tray = Object.freeze({ set:(...args)=>call('tray','set',args,async options=>({ok:false,emulated:true,reason:'WEB_RUNTIME',options})), clear:(...args)=>call('tray','clear',args,async()=>({ok:false,emulated:true,reason:'WEB_RUNTIME'})) });
@@ -120,9 +127,9 @@
     async isAuthenticated(){const ctx=await security.context();return !!ctx?.trusted&&!!ctx?.sessionId}
   });
 
-  function capabilities(){ const native=!!host(); const surfaces=['filesystem','appData','processes','clipboard','tray','network','updater','security']; const result={}; for(const surface of surfaces){const impl=host()?.[surface];result[surface]={provider:impl?'native':'web',native:!!impl,methods:impl?Object.keys(impl).filter(k=>typeof impl[k]==='function'):Object.keys(api[surface]||{}).filter(k=>typeof api[surface][k]==='function')}} return {native,edition:native?String(host()?.edition||'DESKTOP').toUpperCase():'WEB',features:host()?.features||{},surfaces:result}; }
+  function capabilities(){ const native=!!host(); const surfaces=['filesystem','appData','packages','processes','clipboard','tray','network','updater','security']; const result={}; for(const surface of surfaces){const impl=host()?.[surface];result[surface]={provider:impl?'native':'web',native:!!impl,methods:impl?Object.keys(impl).filter(k=>typeof impl[k]==='function'):Object.keys(api[surface]||{}).filter(k=>typeof api[surface][k]==='function')}} return {native,edition:native?String(host()?.edition||'DESKTOP').toUpperCase():'WEB',features:host()?.features||{},surfaces:result}; }
   function info(){const caps=capabilities();return {...META,provider:caps.native?'native-host':'web-adapter',edition:caps.edition,nativeHost:caps.native,nativeSessionId:host()?.sessionId||null,nativeFeatures:caps.features,capabilities:caps.surfaces}}
 
-  const api=Object.freeze({meta:META,filesystem,appData,processes,clipboard,tray,network,updater,security,capabilities,info,events:Object.freeze({on,emit}),hasNativeHost:()=>!!host()});
+  const api=Object.freeze({meta:META,filesystem,appData,packages,processes,clipboard,tray,network,updater,security,capabilities,info,events:Object.freeze({on,emit}),hasNativeHost:()=>!!host()});
   window.SwirRuntime=api;window.SWIR_RUNTIME=api;emit('ready',info());
 })();
