@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#07080d">
-    <title>WojThom 4.3.1 - AUTO LANGUAGE</title>
+    <title>WojThom 4.3.2 - MOBILE DOCK</title>
     
-    <link rel="manifest" href="data:application/manifest+json,{&quot;name&quot;:&quot;WojThom 4.3.1 Mobile Smart Time List&quot;,&quot;short_name&quot;:&quot;WojThom431&quot;,&quot;display&quot;:&quot;standalone&quot;,&quot;background_color&quot;:&quot;#07080d&quot;,&quot;theme_color&quot;:&quot;#00f0ff&quot;}">
+    <link rel="manifest" href="data:application/manifest+json,{&quot;name&quot;:&quot;WojThom 4.3.2 Mobile Smart Time List&quot;,&quot;short_name&quot;:&quot;WojThom431&quot;,&quot;display&quot;:&quot;standalone&quot;,&quot;background_color&quot;:&quot;#07080d&quot;,&quot;theme_color&quot;:&quot;#00f0ff&quot;}">
     
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
@@ -305,6 +305,7 @@
             textarea { height:130px; min-height:130px; resize:vertical; }
             input[type="text"], input[type="number"], select, textarea { min-height:46px; padding:11px 12px; font-size:1rem; border-radius:10px; }
             .btn-container { gap:9px; margin-top:11px; }
+            .desktop-actions { display:none !important; }
             .btn-3d { min-width:0; min-height:46px; padding:10px 12px; font-size:.86rem; border-width:1px; border-radius:10px; box-shadow:0 3px 0 #007a80, 0 6px 12px rgba(0,0,0,.34); }
             .btn-3d:active { transform:translateY(3px); }
             .validation-panel { padding:10px; margin-bottom:10px; align-items:stretch; }
@@ -344,9 +345,10 @@
             .pdf-toggle-grid { grid-template-columns:1fr 1fr; gap:7px; }
             .pdf-toggle { min-height:44px; padding:8px; font-size:.9rem; }
 
-            .mobile-dock { position:fixed; left:0; right:0; bottom:0; z-index:1300; display:grid; grid-template-columns:repeat(3,1fr); gap:7px; padding:8px max(9px, env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) max(9px, env(safe-area-inset-left)); background:rgba(7,8,13,.96); border-top:1px solid rgba(0,240,255,.25); backdrop-filter:blur(14px); box-shadow:0 -8px 24px rgba(0,0,0,.35); }
+            .mobile-dock { position:fixed; left:0; right:0; bottom:0; z-index:1300; display:grid; grid-template-columns:repeat(4,1fr); gap:6px; padding:8px max(9px, env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) max(9px, env(safe-area-inset-left)); background:rgba(7,8,13,.96); border-top:1px solid rgba(0,240,255,.25); backdrop-filter:blur(14px); box-shadow:0 -8px 24px rgba(0,0,0,.35); }
             .mobile-dock button { min-height:47px; border-radius:12px; border:1px solid rgba(0,240,255,.28); background:rgba(0,240,255,.07); color:var(--text-main); font-family:var(--font-header); font-weight:700; font-size:.76rem; letter-spacing:.3px; }
             .mobile-dock button i { display:block; color:var(--primary); font-size:1rem; margin-bottom:4px; }
+            .mobile-dock button.clear i { color:var(--warning); }
             .mobile-dock button.fix i { color:var(--success); }
             .mobile-dock button.pdf i { color:var(--secondary); }
             body.light-theme .mobile-dock { background:rgba(241,245,249,.97); border-top-color:#94a3b8; }
@@ -354,6 +356,8 @@
 
         @media (max-width:420px) {
             .toolbar-brand span { font-size:.82rem; }
+            .mobile-dock { gap:4px; padding-left:6px; padding-right:6px; }
+            .mobile-dock button { font-size:.66rem; min-width:0; padding:6px 3px; }
             .quick-dashboard { grid-template-columns:repeat(2,1fr); }
             .pdf-toggle-grid { grid-template-columns:1fr; }
             #resultTable tr { grid-template-columns:1fr 1fr; padding:8px; }
@@ -364,7 +368,7 @@
 <body>
 
     <div class="toolbar">
-        <div class="toolbar-brand"><i class="fas fa-gamepad"></i> <span>WOJTHOM 4.3.1</span></div>
+        <div class="toolbar-brand"><i class="fas fa-gamepad"></i> <span>WOJTHOM 4.3.2</span></div>
         <div class="menu-items">
             <div class="dropdown-container">
                 <button class="toolbar-btn" onclick="toggleMenu('menuSystem')">
@@ -405,7 +409,7 @@
                 <label data-i18n="input_label">PASTE RAW DATA (Logs):</label>
                 <textarea id="rawInput" placeholder="DD.MM Client HH:MM-HH:MM&#10;Ex. 15.04 Project 08:00-16:00&#10;Ex. 16.04 Base 1:30&#10;Ex. 17.04 Base 0.75"></textarea>
             </div>
-            <div class="btn-container">
+            <div class="btn-container desktop-actions">
                 <button class="btn-3d" id="generateBtn"><i class="fas fa-bolt"></i> <span data-i18n="btn_generate">GENERATE LIST</span></button>
                 <button class="btn-3d warning" id="clearBtn"><i class="fas fa-eraser"></i> <span data-i18n="btn_clear">CLEAR</span></button>
                 <button class="btn-3d secondary" onclick="openModal('pdfLangModal')"><i class="fas fa-file-pdf"></i> <span data-i18n="export_pdf">EXPORT PDF</span></button>
@@ -454,7 +458,8 @@
     
     <div class="mobile-dock" aria-label="Quick actions">
         <button onclick="document.getElementById('generateBtn').click()"><i class="fas fa-bolt"></i><span id="dockGenerate">GENERUJ</span></button>
-        <button class="fix" onclick="autoFixAll()"><i class="fas fa-wand-magic-sparkles"></i><span id="dockFix">AUTO FIX</span></button>
+        <button class="clear" onclick="document.getElementById('clearBtn').click()"><i class="fas fa-eraser"></i><span id="dockClear">WYCZYŚĆ</span></button>
+        <button class="fix" onclick="autoFixAll()"><i class="fas fa-wand-magic-sparkles"></i><span id="dockFix">NAPRAW</span></button>
         <button class="pdf" onclick="openModal('pdfLangModal')"><i class="fas fa-file-pdf"></i><span>PDF</span></button>
     </div>
 
@@ -977,8 +982,9 @@
             const ic=document.getElementById('dashIssuesChip'), sc=document.getElementById('dashScoreChip');
             if(ic) ic.className='quick-chip '+(v.errorCount?'bad':v.warningCount?'warn':'good');
             if(sc) sc.className='quick-chip '+(score>=95?'good':score>=75?'warn':'bad');
-            const dockG=document.getElementById('dockGenerate'), dockF=document.getElementById('dockFix');
+            const dockG=document.getElementById('dockGenerate'), dockC=document.getElementById('dockClear'), dockF=document.getElementById('dockFix');
             if(dockG) dockG.textContent=currentLang==='pl'?'GENERUJ':currentLang==='no'?'GENERER':'GENERATE';
+            if(dockC) dockC.textContent=currentLang==='pl'?'WYCZYŚĆ':currentLang==='no'?'TØM':'CLEAR';
             if(dockF) dockF.textContent=currentLang==='pl'?'NAPRAW':currentLang==='no'?'RETT':'AUTO FIX';
         }
 
@@ -1215,7 +1221,7 @@
                 if(showHeader){
                     setFill(C.primary); doc.rect(0,0,pageWidth,5,'F');
                     setFont('bold'); setText(C.dark); doc.setFontSize(isFirstPage?19:10.5); doc.text(reportTitle,left,isFirstPage?18:14);
-                    if(isFirstPage){ setFont('normal');setText(C.muted);doc.setFontSize(9);doc.text(`${tx.report}  •  WOJTHOM 4.3.1 MOBILE SMART PDF`,left,24); }
+                    if(isFirstPage){ setFont('normal');setText(C.muted);doc.setFontSize(9);doc.text(`${tx.report}  •  WOJTHOM 4.3.2 MOBILE SMART PDF`,left,24); }
                     else { setFont('normal');setText(C.muted);doc.setFontSize(8.5);doc.text(tx.report,pageWidth-right,14,{align:'right'}); }
                     y=isFirstPage?29:18;
                 }
@@ -1244,7 +1250,7 @@
 
             function drawFooter(pageNo){
                 if(!showFooter) return;
-                const y=pageHeight-9;setDraw(C.line);doc.setLineWidth(.2);doc.line(left,y-5,pageWidth-right,y-5);setFont('normal');setText(C.muted);doc.setFontSize(7.8);doc.text('WojThom 4.3.1 • MOBILE SMART PDF',left,y);doc.text(`${tx.page} ${pageNo} ${tx.of} ${totalPagesExp}`,pageWidth-right,y,{align:'right'});
+                const y=pageHeight-9;setDraw(C.line);doc.setLineWidth(.2);doc.line(left,y-5,pageWidth-right,y-5);setFont('normal');setText(C.muted);doc.setFontSize(7.8);doc.text('WojThom 4.3.2 • MOBILE SMART PDF',left,y);doc.text(`${tx.page} ${pageNo} ${tx.of} ${totalPagesExp}`,pageWidth-right,y,{align:'right'});
             }
 
             let contentY=drawTopHeader(true);
