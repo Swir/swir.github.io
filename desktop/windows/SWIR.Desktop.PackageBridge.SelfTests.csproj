@@ -10,6 +10,7 @@
   <ItemGroup>
     <Compile Include="DesktopAppPackageInstaller.cs" />
     <Compile Include="CapabilityBroker.cs" />
+    <Compile Include="DesktopPackageDependencyResolver.cs" />
     <Compile Include="DesktopPackageBridge.cs" />
     <Compile Include="DesktopPackageBridgeSelfTests.cs" />
     <Compile Include="DesktopPackageBridgeSelfTestShim.cs" />
