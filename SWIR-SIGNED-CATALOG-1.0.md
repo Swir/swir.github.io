@@ -114,6 +114,14 @@ Native self-tests generate an ephemeral Ed25519 keypair and exercise valid autho
 
 The Desktop Host pins its Ed25519 verification library to a .NET 8-compatible version. Production private signing material is still deliberately absent from the repository.
 
+## Shipping Desktop authorization path
+
+`DesktopPackageBridge` consumes `swir.desktop-catalog-authorization/1.0` whenever at least one native `catalog:official` root is provisioned. In that mode, arbitrary SHA-256 values supplied by UI/runtime code are rejected. The bridge asks `DesktopCatalogTrustVerifier` to authorize an exact catalog `packageId` + `version`, receives the signed Desktop artifact digest, performs dependency preflight, and only then invokes the native `.swirapp` installer.
+
+The bridge also binds the verified catalog identity to the selected bundle manifest before payload mutation. A catalog entry for `packageA@1.0.0` cannot authorize a byte-identical or accidentally mispublished bundle whose `swir-package.json` declares another package or version; this fails with `CATALOG_PACKAGE_IDENTITY_MISMATCH` before installation. This is defense in depth on top of the signed SHA-256 binding and protects against catalog/build publication mistakes as well as confused-deputy behavior.
+
+The shipping bridge advertises `signedIdentityBinding: true` and remains fail-closed after trust-root provisioning. The legacy raw-SHA path exists only while no native catalog root has been provisioned, so preview builds remain usable before the real release trust chain is installed.
+
 ## Release pipeline direction
 
 Production publishing should:
@@ -124,11 +132,13 @@ Production publishing should:
 4. choose bounded `generatedAt` / `expiresAt` timestamps,
 5. sign the complete metadata envelope in a protected release environment,
 6. publish the catalog and envelope together,
-7. verify signature, freshness and anti-rollback policy before Store/Package Core accepts catalog mutations,
-8. preserve previous trusted metadata for rollback/audit without allowing it to become an install-trust downgrade path.
+7. publish signed `artifacts.desktop.sha256` for every Desktop-installable package,
+8. provision only the corresponding public `catalog:official` root in shipping Desktop builds,
+9. verify signature, freshness, anti-rollback policy, package identity and artifact digest before Package Core accepts mutation,
+10. preserve previous trusted metadata for rollback/audit without allowing it to become an install-trust downgrade path.
 
-The repository intentionally does **not** contain a production private signing key. CI self-tests generate an ephemeral Ed25519 keypair, sign fixtures, verify valid metadata, then verify that catalog tampering, unknown keys, bad signatures, expiry, future timestamps, rollback and same-sequence equivocation are rejected. The tests also advance a persisted high-water mark and prove that replaying an older signed catalog does not modify it.
+The repository intentionally does **not** contain a production private signing key. CI self-tests generate ephemeral Ed25519 keypairs, sign fixtures, verify valid metadata, then verify that catalog tampering, unknown keys, bad signatures, expiry, future timestamps, rollback, same-sequence equivocation and signed package-identity mismatch are rejected. The tests also advance a persisted high-water mark and prove that replaying an older signed catalog does not modify it.
 
 ## Desktop/System requirement
 
-The native trust verifier is now implemented and CI-verified, but the Desktop/System `package signatures and integrity verification` roadmap item remains **not complete**. The shipping package mutation path still needs to consume authorization from `DesktopCatalogTrustVerifier` instead of accepting an arbitrary digest supplied by UI/runtime code. The official catalog also still needs signed Desktop artifact hashes, production public-root provisioning and a protected release-signing pipeline. These requirements must be completed and exercised through shipping install/update E2E before the roadmap checkbox can become `[x]`.
+The native verifier, trust-root loader, signed-catalog enforcement switch and package-identity binding are implemented. The Desktop/System `package signatures and integrity verification` roadmap item remains **not complete** because the repository still deliberately lacks a provisioned production public root and protected production signing pipeline, and the official catalog is not yet released end-to-end with signed Desktop artifact hashes through a real Store install/update flow. Those release-chain requirements must be exercised through shipping install/update/restart/rollback E2E before the roadmap checkbox can become `[x]`.
