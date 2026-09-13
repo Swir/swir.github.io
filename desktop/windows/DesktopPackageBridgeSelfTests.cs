@@ -13,6 +13,7 @@ internal static class DesktopPackageBridgeSelfTests
     {
         var root = Path.Combine(Path.GetTempPath(), "swir-package-bridge-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(root);
+        var previousTrustRoots = Environment.GetEnvironmentVariable("SWIR_CATALOG_TRUST_ROOTS");
         try
         {
             var data = Path.Combine(root, "data");
@@ -61,13 +62,49 @@ internal static class DesktopPackageBridgeSelfTests
             ExpectPackageCode(() => bridge.InstallFromCapability(foreignToken, hash, "swir.demo"), "PACKAGE_BRIDGE_FORBIDDEN");
             Require(JsonSerializer.Serialize(capabilities.Describe(foreignToken, "swir.demo")).Contains("swir.demo", StringComparison.Ordinal), "forbidden caller capability must not be consumed");
 
+            VerifyProvisionedRootDisablesArbitrarySha(root, bundle, hash);
+
             Console.WriteLine("Desktop package bridge self-tests passed.");
             return 0;
         }
         finally
         {
+            Environment.SetEnvironmentVariable("SWIR_CATALOG_TRUST_ROOTS", previousTrustRoots);
             try { Directory.Delete(root, true); } catch { }
         }
+    }
+
+    private static void VerifyProvisionedRootDisablesArbitrarySha(string root, string bundle, string hash)
+    {
+        var rootsPath = Path.Combine(root, "catalog-trust-roots.json");
+        File.WriteAllText(rootsPath, JsonSerializer.Serialize(new
+        {
+            schema = DesktopCatalogTrustRootStore.Schema,
+            roots = new[]
+            {
+                new
+                {
+                    keyId = "test-catalog-root",
+                    name = "Test catalog root",
+                    algorithm = "Ed25519",
+                    format = "raw",
+                    publicKey = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)),
+                    scope = new[] { "catalog:official" },
+                    enabled = true
+                }
+            }
+        }));
+        Environment.SetEnvironmentVariable("SWIR_CATALOG_TRUST_ROOTS", rootsPath);
+
+        var capabilities = new CapabilityBroker();
+        var secureBridge = new DesktopPackageBridge(capabilities, new DesktopAppPackageInstaller(Path.Combine(root, "secure-data")));
+        var info = JsonSerializer.Serialize(secureBridge.Describe());
+        Require(info.Contains("SIGNED_CATALOG_REQUIRED", StringComparison.Ordinal), "provisioned root must switch package bridge to signed-catalog mode");
+        Require(info.Contains("\"signedCatalogAuthorization\":true", StringComparison.OrdinalIgnoreCase), "bridge must advertise signed catalog authorization");
+
+        var token = TokenOf(capabilities.RegisterFile(bundle, Shell));
+        ExpectPackageCode(() => secureBridge.InstallFromCapability(token, hash, Shell), "CATALOG_AUTHORIZATION_REQUIRED");
+        ExpectBridgeCode(() => capabilities.Describe(token, Shell), "CAPABILITY_INVALID");
     }
 
     private static string TokenOf(object descriptor)
