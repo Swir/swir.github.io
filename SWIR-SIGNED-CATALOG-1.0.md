@@ -69,28 +69,9 @@ acceptedAt
 
 `verifyAndAccept()` first reads the previous trusted state, feeds its sequence/digest into the verifier, and updates storage only after the new envelope passes cryptographic verification and policy checks. A rejected replay or rollback cannot lower the stored high-water mark.
 
-This storage is not a replacement for signature verification. It is persistent anti-rollback memory layered on top of Ed25519 trust.
-
 ## Runtime API
 
-`window.SwirCatalogIntegrity` exposes:
-
-```text
-fingerprintCatalog(catalog)
-validateEnvelope(envelope)
-signedPayload(envelope)
-verifyPolicy(envelope, policy)
-verify(envelope, catalog, trustStore, policy)
-describe(catalog)
-```
-
-`window.SwirCatalogTrustState` exposes:
-
-```text
-state()
-verifyAndAccept(envelope, catalog, trustStore, options)
-describe()
-```
+`window.SwirCatalogIntegrity` exposes `fingerprintCatalog`, envelope validation, policy validation, signature verification and catalog description. `window.SwirCatalogTrustState` exposes persisted `state()`, `verifyAndAccept()` and `describe()`.
 
 The terminal command `catalog` displays the current official catalog fingerprint and persistent trust high-water mark when one has been accepted. Diagnostic fingerprint output alone never converts an unsigned catalog into a trusted catalog.
 
@@ -98,77 +79,55 @@ The terminal command `catalog` displays the current official catalog fingerprint
 
 `desktop/windows/DesktopCatalogTrustVerifier.cs` is the native counterpart of the browser verifier. It independently validates the `swir.catalog-signature/1.0` envelope inside the .NET Desktop Host and does not depend on JavaScript trust decisions.
 
-It currently enforces:
-
-- canonical catalog SHA-256 verification,
-- Ed25519 signature verification against explicitly supplied public trust roots,
-- the `catalog:official` trust scope,
-- `generatedAt` / `expiresAt` freshness with bounded clock skew,
-- a persistent native sequence high-water mark under the Desktop Host data root,
-- rollback and same-sequence equivocation rejection,
-- exact `packageId` + `version` lookup only after the catalog is trusted,
-- extraction of the installer digest from signed `artifacts.desktop.sha256` metadata (with `packageSha256` retained as a compatibility field),
-- fail-closed rejection when a trusted Desktop artifact digest is absent.
-
-Native self-tests generate an ephemeral Ed25519 keypair and exercise valid authorization, bad signatures, unknown keys, expiry, rollback after restart-state advancement and missing Desktop artifact digests. The private test key exists only in the self-test process.
-
-The Desktop Host pins its Ed25519 verification library to a .NET 8-compatible version. Production private signing material is still deliberately absent from the repository.
+It enforces canonical catalog SHA-256, Ed25519 verification against scoped public roots, freshness, persistent native anti-rollback state, same-sequence equivocation rejection, exact `packageId` + `version` lookup and extraction of the installer digest from signed `artifacts.desktop.sha256` metadata. A missing trusted Desktop artifact digest fails closed.
 
 ## Shipping Desktop authorization path
 
-`DesktopPackageBridge` consumes `swir.desktop-catalog-authorization/1.0` whenever at least one native `catalog:official` root is provisioned. In that mode, arbitrary SHA-256 values supplied by UI/runtime code are rejected. The bridge asks `DesktopCatalogTrustVerifier` to authorize an exact catalog `packageId` + `version`, receives the signed Desktop artifact digest, performs dependency preflight, and only then invokes the native `.swirapp` installer.
+`DesktopPackageBridge` consumes `swir.desktop-catalog-authorization/1.0` whenever at least one native `catalog:official` root is provisioned. In that mode, arbitrary SHA-256 values supplied by UI/runtime code are rejected. The bridge asks `DesktopCatalogTrustVerifier` to authorize an exact catalog `packageId` + `version`, receives the signed Desktop artifact digest, binds that identity to the actual root `swir-package.json`, performs dependency preflight, and only then invokes the native `.swirapp` installer.
 
-The bridge also binds the verified catalog identity to the selected bundle manifest before payload mutation. A catalog entry for `packageA@1.0.0` cannot authorize a byte-identical or accidentally mispublished bundle whose `swir-package.json` declares another package or version; this fails with `CATALOG_PACKAGE_IDENTITY_MISMATCH` before installation. This is defense in depth on top of the signed SHA-256 binding and protects against catalog/build publication mistakes as well as confused-deputy behavior.
-
-The shipping bridge advertises `signedIdentityBinding: true` and remains fail-closed after trust-root provisioning. The legacy raw-SHA path exists only while no native catalog root has been provisioned, so preview builds remain usable before the real release trust chain is installed.
+The shipping bridge advertises `signedIdentityBinding: true` and remains fail-closed after trust-root provisioning. The legacy raw-SHA path exists only while no native catalog root has been provisioned.
 
 ## Runtime authorization transport
 
-`SwirRuntime 1.6.0` now carries signed Desktop authorization as a structured trust object instead of requiring Store/UI code to flatten trust into a caller-selected SHA-256.
+`SwirRuntime 1.6.0` carries signed Desktop authorization as a structured trust object instead of flattening trust into a caller-selected SHA-256. `catalogAuthorization()` and `installAuthorizedFromCapability()` transport the complete catalog and signature envelope across the native boundary. The Runtime does not decide whether the catalog is trusted; the native verifier repeats cryptographic, freshness and anti-rollback checks independently.
 
-The Runtime exposes:
+## Release-bound `.swirapp` artifact chain
 
-```text
-SwirRuntime.packages.catalogAuthorization(packageId, version, catalog, envelope)
-SwirRuntime.packages.installAuthorizedFromCapability(capabilityToken, packageId, version, catalog, envelope)
-SwirRuntime.packages.installFromCapability(capabilityToken, trustInput)
-```
+The Desktop release flow now has a concrete reviewed-package build stage instead of requiring a manually prepared hash map.
 
-`catalogAuthorization()` creates only the transport envelope:
+`desktop/windows/build-store-packages.ps1`:
 
-```json
-{
-  "schema": "swir.desktop-catalog-authorization/1.0",
-  "packageId": "swir.example",
-  "version": "1.2.3",
-  "catalog": [],
-  "envelope": {}
-}
-```
+1. evaluates the tracked `swir-packages.js` catalog in a constrained Node VM,
+2. selects only records explicitly marked `desktop:true`,
+3. validates schema, package identity, semantic version and a safe relative entry path,
+4. copies the reviewed local entry document and local `./...` dependencies it directly references,
+5. writes the catalog record into root `swir-package.json`,
+6. creates a ZIP-compatible `.swirapp`,
+7. reopens the produced archive and verifies one root manifest plus exact `packageId/version/entry`,
+8. computes the real artifact SHA-256,
+9. emits `swir.catalog-artifacts/1.0` bound to the exact Git commit.
 
-The Runtime deliberately does **not** decide whether the catalog is trusted and does not extract a trusted Desktop hash. It serializes the complete catalog + signature envelope across the native boundary, where `DesktopCatalogTrustVerifier` repeats the cryptographic and anti-rollback checks independently. This avoids turning browser-side verification into a privileged authorization oracle.
+The protected `SWIR Desktop Release` workflow consumes that generated artifact map directly. It signs the exact `.swirapp` digests with `build-signed-catalog-release.mjs`, stages the resulting public trust-root/catalog bundle into the self-contained Desktop runtime, copies the exact package bytes to `packages/`, and independently compares every staged package hash against both `catalog-artifacts.json` and the signed catalog before building the outer transactional Desktop release bundle.
 
-`installFromCapability()` remains backward compatible with a raw SHA string only for preview builds where the native trust-root store has not yet been provisioned. If an object is supplied, Runtime serializes it for the native bridge. `installAuthorizedFromCapability()` is the preferred Desktop Store path and always creates the structured schema before dispatch.
+The final GitHub release artifact set contains the signed Desktop Host bundle, public catalog metadata, artifact map and the individually signed-catalog-bound `.swirapp` files. The private RSA Desktop update key and private Ed25519 catalog key remain secret-only inputs and are not copied into release output.
 
-`scripts/validate-desktop-package-authorization.mjs` executes the Runtime in an isolated Node VM with a fake native package surface and verifies structured serialization, package/version binding in transit, trusted-shell ownership, object transport, legacy preview compatibility and fail-closed rejection of malformed catalog input. The same test is part of `Desktop App Package Contract`.
+`Desktop Release Contract` exercises the same chain with an ephemeral CI-only Ed25519 key: real package build → real artifact SHA map → signed catalog → fail-closed public root → signed catalog staging → digest cross-check → transactional Desktop bundle → Candidate → real Host health activation.
 
-## Release pipeline direction
+## Production publishing rules
 
-Production publishing should:
+A production release must:
 
-1. build the official catalog from reviewed package metadata,
-2. canonicalize and hash it,
+1. build reviewed `.swirapp` bytes from the exact release commit,
+2. calculate hashes from those final bytes rather than trusting caller-supplied digests,
 3. increment the monotonic catalog `sequence`,
-4. choose bounded `generatedAt` / `expiresAt` timestamps,
-5. sign the complete metadata envelope in a protected release environment,
-6. publish the catalog and envelope together,
-7. publish signed `artifacts.desktop.sha256` for every Desktop-installable package,
-8. provision only the corresponding public `catalog:official` root in shipping Desktop builds,
-9. verify signature, freshness, anti-rollback policy, package identity and artifact digest before Package Core accepts mutation,
-10. preserve previous trusted metadata for rollback/audit without allowing it to become an install-trust downgrade path.
+4. sign the catalog only inside the protected release environment,
+5. stage `requireSignedCatalog:true` plus at least one `catalog:official` public root,
+6. cross-check package identity and SHA-256 again before bundling,
+7. publish the signed catalog and exact `.swirapp` bytes together,
+8. retain previous trusted metadata for audit/rollback without permitting a trust downgrade.
 
-The repository intentionally does **not** contain a production private signing key. CI self-tests generate ephemeral Ed25519 keypairs, sign fixtures, verify valid metadata, then verify that catalog tampering, unknown keys, bad signatures, expiry, future timestamps, rollback, same-sequence equivocation and signed package-identity mismatch are rejected. The tests also advance a persisted high-water mark and prove that replaying an older signed catalog does not modify it.
+The repository intentionally does **not** contain production private signing keys. CI uses ephemeral signing material only.
 
 ## Desktop/System requirement
 
-The native verifier, trust-root loader, signed-catalog enforcement switch, package-identity binding and Runtime structured authorization transport are implemented. The Desktop/System `package signatures and integrity verification` roadmap item remains **not complete** because the repository still deliberately lacks a provisioned production public root and protected production signing pipeline, and the official Store does not yet complete a real signed Desktop artifact install/update/restart/rollback E2E. Those release-chain requirements must be exercised through shipping install/update/restart/rollback E2E before the roadmap checkbox can become `[x]`.
+The native verifier, trust-root loader, signed-catalog enforcement switch, package-identity binding, Runtime structured authorization transport, reviewed `.swirapp` artifact builder and release-bound signed catalog chain are implemented. The Desktop/System `package signatures and integrity verification` roadmap item remains **not complete** until a real production public root is provisioned from the protected secret-backed release environment and an actual published release is exercised through the Store install/update/restart/rollback path. A CI fixture or a technically complete workflow alone does not satisfy that production deliverable.
