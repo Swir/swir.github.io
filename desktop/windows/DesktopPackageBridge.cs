@@ -61,23 +61,33 @@ internal sealed class DesktopPackageBridge
     public object InstallFromCapability(string capabilityToken, string trustInput, string ownerAppId)
     {
         RequireShellOwner(ownerAppId);
-        var trust = ResolveTrust(trustInput);
         var releaseArtifact = string.Equals(capabilityToken, ReleaseArtifactReference, StringComparison.Ordinal);
-        var path = releaseArtifact
-            ? ResolveReleaseArtifactPath(trust)
-            : _capabilities.RequireFilePath(capabilityToken, ownerAppId);
+        if (releaseArtifact)
+        {
+            var releaseTrust = ResolveTrust(trustInput);
+            var releasePath = ResolveReleaseArtifactPath(releaseTrust);
+            return InstallTrustedPath(releasePath, releaseTrust);
+        }
+
+        var capabilityPath = _capabilities.RequireFilePath(capabilityToken, ownerAppId);
         try
         {
-            var plan = _dependencies.EvaluateBundle(path, InstalledPackage);
-            BindAuthorizationToBundle(trust, plan);
-            if (!plan.Ok)
-                throw new DesktopPackageException("PACKAGE_DEPENDENCY_UNSATISFIED", string.Join("; ", plan.Errors));
-            return _installer.Install(path, trust.Sha256);
+            var capabilityTrust = ResolveTrust(trustInput);
+            return InstallTrustedPath(capabilityPath, capabilityTrust);
         }
         finally
         {
-            if (!releaseArtifact) TryRevoke(capabilityToken, ownerAppId);
+            TryRevoke(capabilityToken, ownerAppId);
         }
+    }
+
+    private object InstallTrustedPath(string path, TrustedInstallAuthorization trust)
+    {
+        var plan = _dependencies.EvaluateBundle(path, InstalledPackage);
+        BindAuthorizationToBundle(trust, plan);
+        if (!plan.Ok)
+            throw new DesktopPackageException("PACKAGE_DEPENDENCY_UNSATISFIED", string.Join("; ", plan.Errors));
+        return _installer.Install(path, trust.Sha256);
     }
 
     public object Status(string packageId, string ownerAppId)
