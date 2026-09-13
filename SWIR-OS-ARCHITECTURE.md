@@ -12,20 +12,20 @@ SWIR OS is designed in three editions sharing one application model and platform
 <!-- ROADMAP-PROGRESS:START -->
 <p align="center">
   <a href="https://github.com/Swir/swir.github.io/actions/workflows/system-contracts.yml"><img alt="CI" src="https://github.com/Swir/swir.github.io/actions/workflows/system-contracts.yml/badge.svg"></a>
-  <img alt="Roadmap progress" src="https://img.shields.io/badge/ROADMAP-42.6%25-2ea043?style=for-the-badge">
-  <img alt="Completed" src="https://img.shields.io/badge/DONE-23%2F54-1f6feb?style=for-the-badge">
+  <img alt="Roadmap progress" src="https://img.shields.io/badge/ROADMAP-44.4%25-2ea043?style=for-the-badge">
+  <img alt="Completed" src="https://img.shields.io/badge/DONE-24%2F54-1f6feb?style=for-the-badge">
   <img alt="Status" src="https://img.shields.io/badge/STATUS-IN%20PROGRESS-7c3aed?style=for-the-badge">
 </p>
 
 ## 📊 Overall progress
 
 ```text
-█████████░░░░░░░░░░░ 42.6%
+█████████░░░░░░░░░░░ 44.4%
 ```
 
 | ✅ Completed | ⏳ Remaining | 📦 Total | 🎯 Progress |
 |---:|---:|---:|---:|
-| **23** | **31** | **54** | **42.6%** |
+| **24** | **30** | **54** | **44.4%** |
 
 > **Progress rule:** the explicit `[x]/[ ]` deliverables in **Version roadmap** are the source of truth for the full Web → Desktop → System plan. Update the checklist first, then badges, numbers, percentage and the 20-segment bar. A prototype does not count as complete until the described deliverable is actually implemented and verified.
 <!-- ROADMAP-PROGRESS:END -->
@@ -208,6 +208,10 @@ SwirAppSDK.packages.compareVersions(a, b)
 
 Desktop/System editions can reuse the resolver before native payload download/unpack, signature verification and service/file-association registration.
 
+### Package transaction journal
+
+Package mutations use `swir.package-transaction/1.0`. Install, update and remove operations journal their rollback state before mutation. Package state and permissions are treated as one logical transaction: a partial failure automatically restores the previous package/permission snapshot, while committed operations retain user-approved manual rollback metadata. The Web journal is bounded and edition-neutral so Desktop `.swirapp` and later System providers can reuse the same lifecycle with stronger native snapshots.
+
 ### Signed catalog metadata
 
 The official package-catalog trust prototype uses `swir.catalog-signature/1.0`: a canonical SHA-256 fingerprint of the reviewed catalog is covered by an Ed25519 signature envelope, verified against an explicitly scoped trusted public key. Unknown keys, wrong scope, malformed metadata, catalog tampering and invalid signatures fail closed. The shipping client contains verification logic only; production private signing keys remain outside the repository and client runtime.
@@ -346,7 +350,7 @@ The detailed foundation and machine-readable contract schemas live under `system
 - [ ] widgets as installable packages
 - [ ] application developer template / SDK examples
 - [ ] larger binary/file storage on IndexedDB instead of localStorage mirror
-- [ ] package update transactions / rollback metadata
+- [x] package update transactions / rollback metadata
 - [ ] native-ready notification actions and persistence adapter
 
 ### Desktop Edition 2.x
