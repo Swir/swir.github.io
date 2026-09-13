@@ -11,6 +11,16 @@ internal sealed class DesktopPackageBridge
     private readonly DesktopPackageDependencyResolver _dependencies;
     private readonly DesktopCatalogTrustVerifier? _catalogTrust;
 
+    private sealed record TrustedInstallAuthorization(
+        string Sha256,
+        string? PackageId,
+        string? Version,
+        string Mode,
+        long? CatalogSequence = null,
+        string? CatalogVersion = null,
+        string? KeyId = null,
+        DateTimeOffset? ExpiresAt = null);
+
     public DesktopPackageBridge(CapabilityBroker capabilities, DesktopAppPackageInstaller installer)
         : this(capabilities, installer, DesktopCatalogTrustRootStore.CreateVerifier(DefaultDataRoot()))
     {
@@ -27,7 +37,7 @@ internal sealed class DesktopPackageBridge
 
     public object Describe() => new
     {
-        schema = "swir.desktop-package-bridge/1.1",
+        schema = "swir.desktop-package-bridge/1.2",
         provider = "desktop-native",
         input = "owner-bound-file-capability",
         installer = _installer.Describe(),
@@ -37,6 +47,7 @@ internal sealed class DesktopPackageBridge
         consumesCapabilityAfterInstall = true,
         signedCatalogAuthorization = _catalogTrust is not null,
         catalogAuthorizationSchema = AuthorizationSchema,
+        signedIdentityBinding = true,
         legacySha256Fallback = _catalogTrust is null,
         trustMode = _catalogTrust is null ? "LEGACY_SHA_UNTIL_ROOT_PROVISIONED" : "SIGNED_CATALOG_REQUIRED"
     };
@@ -47,11 +58,12 @@ internal sealed class DesktopPackageBridge
         var path = _capabilities.RequireFilePath(capabilityToken, ownerAppId);
         try
         {
-            var expectedSha256 = ResolveTrustedSha256(trustInput);
+            var trust = ResolveTrust(trustInput);
             var plan = _dependencies.EvaluateBundle(path, InstalledPackage);
+            BindAuthorizationToBundle(trust, plan);
             if (!plan.Ok)
                 throw new DesktopPackageException("PACKAGE_DEPENDENCY_UNSATISFIED", string.Join("; ", plan.Errors));
-            return _installer.Install(path, expectedSha256);
+            return _installer.Install(path, trust.Sha256);
         }
         finally
         {
@@ -71,7 +83,7 @@ internal sealed class DesktopPackageBridge
         return _installer.Rollback(packageId);
     }
 
-    private string ResolveTrustedSha256(string trustInput)
+    private TrustedInstallAuthorization ResolveTrust(string trustInput)
     {
         var input = (trustInput ?? string.Empty).Trim();
         if (input.StartsWith('{'))
@@ -90,7 +102,17 @@ internal sealed class DesktopPackageBridge
                     throw new DesktopPackageException("CATALOG_AUTHORIZATION_INVALID", "Authorization requires a catalog array.");
                 if (!root.TryGetProperty("envelope", out var envelope) || envelope.ValueKind != JsonValueKind.Object)
                     throw new DesktopPackageException("CATALOG_AUTHORIZATION_INVALID", "Authorization requires a signature envelope.");
-                return _catalogTrust.VerifyAndAuthorize(catalog.GetRawText(), envelope.GetRawText(), packageId, version).Sha256;
+
+                var authorization = _catalogTrust.VerifyAndAuthorize(catalog.GetRawText(), envelope.GetRawText(), packageId, version);
+                return new TrustedInstallAuthorization(
+                    authorization.Sha256,
+                    authorization.PackageId,
+                    authorization.Version,
+                    "SIGNED_CATALOG",
+                    authorization.Sequence,
+                    authorization.CatalogVersion,
+                    authorization.KeyId,
+                    authorization.ExpiresAt);
             }
             catch (DesktopPackageException) { throw; }
             catch (JsonException ex) { throw new DesktopPackageException("CATALOG_AUTHORIZATION_INVALID", ex.Message); }
@@ -98,7 +120,19 @@ internal sealed class DesktopPackageBridge
 
         if (_catalogTrust is not null)
             throw new DesktopPackageException("CATALOG_AUTHORIZATION_REQUIRED", "Provisioned catalog trust roots require signed catalog authorization; arbitrary UI/runtime SHA-256 input is disabled.");
-        return input;
+        return new TrustedInstallAuthorization(input, null, null, "LEGACY_SHA");
+    }
+
+    private static void BindAuthorizationToBundle(TrustedInstallAuthorization trust, DesktopPackageDependencyResolver.DependencyResult plan)
+    {
+        if (!string.Equals(trust.Mode, "SIGNED_CATALOG", StringComparison.Ordinal)) return;
+        if (!string.Equals(plan.PackageId, trust.PackageId, StringComparison.Ordinal) ||
+            !string.Equals(plan.Version, trust.Version, StringComparison.Ordinal))
+        {
+            throw new DesktopPackageException(
+                "CATALOG_PACKAGE_IDENTITY_MISMATCH",
+                $"Verified catalog authorization targets {trust.PackageId}@{trust.Version}, but the selected .swirapp declares {plan.PackageId}@{plan.Version}.");
+        }
     }
 
     private DesktopPackageDependencyResolver.InstalledPackageInfo? InstalledPackage(string packageId)
