@@ -78,6 +78,8 @@ internal static class DesktopAppPackageInstallerSelfTests
             ExpectCode("PACKAGE_MANIFEST_INVALID", () => installer.Install(missingRequired, Sha256(missingRequired)));
             AssertNotInstalled(installer, "swir.test.required");
 
+            VerifyCrashRecovery(root);
+
             Console.WriteLine("Desktop .swirapp payload installer self-tests passed.");
             return 0;
         }
@@ -90,6 +92,31 @@ internal static class DesktopAppPackageInstallerSelfTests
         {
             try { Directory.Delete(root, true); } catch { }
         }
+    }
+
+    private static void VerifyCrashRecovery(string root)
+    {
+        var dataRoot = Path.Combine(root, "recovery-data");
+        var installer = new DesktopAppPackageInstaller(dataRoot);
+        var bundle = CreateBundle(root, "recovery.swirapp", "swir.test.recovery", "1.0.0", "known-good");
+        installer.Install(bundle, Sha256(bundle));
+
+        var packageRoot = Path.Combine(dataRoot, "Packages", "Installed", "swir.test.recovery");
+        var current = Path.Combine(packageRoot, "Current");
+        var previous = Path.Combine(packageRoot, "Previous");
+        Directory.Move(current, previous);
+        var incoming = Path.Combine(packageRoot, ".incoming-orphan");
+        Directory.CreateDirectory(incoming);
+        File.WriteAllText(Path.Combine(incoming, "partial.tmp"), "partial");
+        var staging = Path.Combine(dataRoot, "Packages", ".staging", "orphan-stage");
+        Directory.CreateDirectory(staging);
+        File.WriteAllText(Path.Combine(staging, "partial.tmp"), "partial");
+
+        var recovered = new DesktopAppPackageInstaller(dataRoot);
+        AssertStatus(recovered, "swir.test.recovery", true, "1.0.0", false, "payload/index.html");
+        AssertPayload(dataRoot, "swir.test.recovery", "known-good");
+        if (Directory.Exists(incoming)) throw new Exception("Orphan incoming package directory was not cleaned during startup recovery.");
+        if (Directory.Exists(staging)) throw new Exception("Orphan staging directory was not cleaned during startup recovery.");
     }
 
     private static string CreateBundle(string root, string name, string id, string version, string payload)
