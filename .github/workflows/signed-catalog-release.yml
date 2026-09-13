@@ -1,0 +1,111 @@
+name: SWIR Signed Catalog Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      key_id:
+        description: 'Ed25519 public catalog key identifier provisioned for catalog:official'
+        required: true
+        type: string
+      sequence:
+        description: 'Monotonic catalog sequence; must never go backwards for a deployed trust domain'
+        required: true
+        type: string
+      catalog_version:
+        description: 'Human-readable catalog release version'
+        required: true
+        type: string
+      valid_hours:
+        description: 'Signed catalog validity window in hours (1-744)'
+        required: true
+        default: '168'
+        type: string
+      artifact_map_json:
+        description: 'swir.catalog-artifacts/1.0 JSON with real .swirapp SHA-256 values for every catalog package'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: swir-signed-catalog-release-${{ inputs.key_id }}
+  cancel-in-progress: false
+
+jobs:
+  sign-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM: ${{ secrets.SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM }}
+    steps:
+      - name: Checkout exact catalog source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Validate protected signing inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ '${{ inputs.key_id }}' =~ ^[A-Za-z0-9._-]{1,128}$ ]] || { echo 'Invalid key_id' >&2; exit 1; }
+          [[ '${{ inputs.sequence }}' =~ ^[1-9][0-9]*$ ]] || { echo 'sequence must be a positive integer' >&2; exit 1; }
+          [[ '${{ inputs.valid_hours }}' =~ ^[0-9]+$ ]] || { echo 'valid_hours must be numeric' >&2; exit 1; }
+          test -n "$SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM" || { echo 'SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM secret is not configured' >&2; exit 1; }
+          mkdir -p "$RUNNER_TEMP/swir-catalog-release"
+          cat > "$RUNNER_TEMP/swir-catalog-artifacts.json" <<'SWIR_ARTIFACTS_EOF'
+          ${{ inputs.artifact_map_json }}
+          SWIR_ARTIFACTS_EOF
+          node -e "const fs=require('fs'); const p=process.argv[1]; const d=JSON.parse(fs.readFileSync(p,'utf8')); if(d.schema!=='swir.catalog-artifacts/1.0'||!Array.isArray(d.artifacts)||!d.artifacts.length) throw new Error('Invalid or empty artifact map');" "$RUNNER_TEMP/swir-catalog-artifacts.json"
+
+      - name: Build signed catalog and public trust-root bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/build-signed-catalog-release.mjs \
+            --catalog-source swir-packages.js \
+            --artifact-map "$RUNNER_TEMP/swir-catalog-artifacts.json" \
+            --output-dir "$RUNNER_TEMP/swir-catalog-release" \
+            --key-id '${{ inputs.key_id }}' \
+            --sequence '${{ inputs.sequence }}' \
+            --catalog-version '${{ inputs.catalog_version }}' \
+            --valid-hours '${{ inputs.valid_hours }}'
+
+      - name: Verify public output and fail-closed trust policy
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const fs=require('fs'), p=require('path');
+          const root=process.env.RUNNER_TEMP + '/swir-catalog-release';
+          const trust=JSON.parse(fs.readFileSync(p.join(root,'catalog-trust-roots.json'),'utf8'));
+          const release=JSON.parse(fs.readFileSync(p.join(root,'signed-catalog-release.json'),'utf8'));
+          if(trust.schema!=='swir.catalog-trust-roots/1.0'||trust.requireSignedCatalog!==true||trust.roots?.length!==1) throw new Error('Trust-root bundle is not fail-closed');
+          if(release.schema!=='swir.signed-catalog-release/1.0'||release.envelope?.algorithm!=='Ed25519') throw new Error('Signed catalog release metadata invalid');
+          if(!release.catalog.every(x=>/^[a-f0-9]{64}$/.test(x?.artifacts?.desktop?.sha256||''))) throw new Error('Catalog contains package without signed Desktop SHA-256');
+          for(const name of fs.readdirSync(root)) {
+            const text=fs.readFileSync(p.join(root,name),'utf8');
+            if(/PRIVATE KEY/.test(text)) throw new Error(`Private key material leaked into ${name}`);
+          }
+          console.log(`Verified ${release.catalog.length} signed package records at sequence ${release.envelope.sequence}`);
+          NODE
+
+      - name: Upload PUBLIC signed catalog release bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: swir-signed-catalog-${{ inputs.catalog_version }}-seq-${{ inputs.sequence }}
+          path: ${{ runner.temp }}/swir-catalog-release/*
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Remove signing inputs
+        if: always()
+        shell: bash
+        run: |
+          rm -f "$RUNNER_TEMP/swir-catalog-artifacts.json"
+          unset SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM || true
