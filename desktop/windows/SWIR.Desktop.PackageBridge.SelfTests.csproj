@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <StartupObject>Swir.Desktop.Host.DesktopPackageBridgeSelfTests</StartupObject>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="DesktopAppPackageInstaller.cs" />
+    <Compile Include="CapabilityBroker.cs" />
+    <Compile Include="DesktopPackageBridge.cs" />
+    <Compile Include="DesktopPackageBridgeSelfTests.cs" />
+    <Compile Include="DesktopPackageBridgeSelfTestShim.cs" />
+  </ItemGroup>
+</Project>
