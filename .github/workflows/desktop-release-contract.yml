@@ -9,8 +9,10 @@ on:
       - 'swir-*.js'
       - 'swir-*.html'
       - 'sw.js'
+      - 'scripts/build-signed-catalog-release.mjs'
       - 'desktop/windows/app-policy.json'
       - 'desktop/windows/desktop-update-policy.example.json'
+      - 'desktop/windows/build-store-packages.ps1'
       - 'desktop/windows/stage-desktop-runtime.ps1'
       - 'desktop/windows/publish-desktop-host.ps1'
       - 'desktop/windows/DesktopReleaseBundle*.cs'
@@ -30,8 +32,10 @@ on:
       - 'swir-*.js'
       - 'swir-*.html'
       - 'sw.js'
+      - 'scripts/build-signed-catalog-release.mjs'
       - 'desktop/windows/app-policy.json'
       - 'desktop/windows/desktop-update-policy.example.json'
+      - 'desktop/windows/build-store-packages.ps1'
       - 'desktop/windows/stage-desktop-runtime.ps1'
       - 'desktop/windows/publish-desktop-host.ps1'
       - 'desktop/windows/DesktopReleaseBundle*.cs'
@@ -55,7 +59,7 @@ concurrency:
 jobs:
   verify-release-contract:
     runs-on: windows-latest
-    timeout-minutes: 18
+    timeout-minutes: 22
     defaults:
       run:
         working-directory: desktop/windows
@@ -67,6 +71,11 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
 
       - name: Assert pinned .NET SDK line
         shell: pwsh
@@ -90,14 +99,17 @@ jobs:
           dotnet build SWIR.Desktop.ReleaseToCandidate.SelfTests.csproj --configuration Release
           dotnet build SWIR.Desktop.ReleaseActivation.SelfTests.csproj --configuration Release
 
-      - name: Run signed self-contained 0.5.2-preview release through Candidate and real Host health commit
+      - name: Run signed self-contained 0.5.2-preview release through Store trust, Candidate and real Host health commit
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           $publish = Join-Path '${{ runner.temp }}' 'swir-release-contract-publish'
           $bundle = Join-Path '${{ runner.temp }}' 'swir-release-contract-bundle'
+          $store = Join-Path '${{ runner.temp }}' 'swir-release-contract-store'
+          $catalog = Join-Path '${{ runner.temp }}' 'swir-release-contract-catalog'
           $privateKey = Join-Path '${{ runner.temp }}' 'swir-release-contract-private.pem'
           $publicKey = Join-Path '${{ runner.temp }}' 'swir-release-contract-public.pem'
+          $catalogPrivate = Join-Path '${{ runner.temp }}' 'swir-catalog-contract-private.pem'
           $toolDir = Join-Path (Get-Location) 'bin\Release\net8.0'
           $bundleTool = Join-Path $toolDir 'SWIR.Desktop.ReleaseBundleTool.dll'
           $verifyTool = Join-Path $toolDir 'SWIR.Desktop.ReleaseBundleVerifierTool.dll'
@@ -106,16 +118,43 @@ jobs:
           $releaseActivation = Join-Path $toolDir 'SWIR.Desktop.ReleaseActivation.SelfTests.dll'
           $runtimeStage = Join-Path (Get-Location) 'stage-desktop-runtime.ps1'
           $hostPublish = Join-Path (Get-Location) 'publish-desktop-host.ps1'
-          foreach ($required in @($bundleTool, $verifyTool, $worker, $releaseToCandidate, $releaseActivation, $runtimeStage, $hostPublish)) {
+          $storeBuilder = Join-Path (Get-Location) 'build-store-packages.ps1'
+          foreach ($required in @($bundleTool, $verifyTool, $worker, $releaseToCandidate, $releaseActivation, $runtimeStage, $hostPublish, $storeBuilder)) {
             if (-not (Test-Path $required -PathType Leaf)) { throw "Required Desktop release/runtime tool missing: $required" }
           }
+
+          # Build real installable Store artifacts from the reviewed catalog, then sign the exact
+          # produced SHA-256 values with an ephemeral CI-only Ed25519 key.
+          & $storeBuilder -OutputDir $store -SourceRoot '${{ github.workspace }}'
+          $artifactMap = Get-Content (Join-Path $store 'catalog-artifacts.json') -Raw | ConvertFrom-Json
+          if ($artifactMap.schema -ne 'swir.catalog-artifacts/1.0' -or @($artifactMap.artifacts).Count -lt 1) { throw 'CI Store artifact map invalid.' }
+          if ($artifactMap.generatedFrom -ne $env:GITHUB_SHA.ToLowerInvariant()) { throw 'CI Store artifact map source commit mismatch.' }
+
+          node -e "const fs=require('fs'),crypto=require('crypto'); const {privateKey}=crypto.generateKeyPairSync('ed25519'); fs.writeFileSync(process.argv[1], privateKey.export({format:'pem',type:'pkcs8'}));" $catalogPrivate
+          if ($LASTEXITCODE -ne 0) { throw 'Could not generate ephemeral Ed25519 catalog signing key.' }
+          $env:SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM = Get-Content $catalogPrivate -Raw
+          node ..\..\scripts\build-signed-catalog-release.mjs `
+            --catalog-source ..\..\swir-packages.js `
+            --artifact-map (Join-Path $store 'catalog-artifacts.json') `
+            --output-dir $catalog `
+            --key-id ci-release-catalog `
+            --sequence 900001 `
+            --catalog-version ci-release-contract `
+            --valid-hours 24
+          if ($LASTEXITCODE -ne 0) { throw "Signed catalog builder failed with exit code $LASTEXITCODE" }
+          Remove-Item Env:SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM -ErrorAction SilentlyContinue
 
           & $hostPublish `
             -PublishDir $publish `
             -ReleaseVersion '0.5.2' `
             -Channel 'preview' `
             -SourceCommit $env:GITHUB_SHA
-          & $runtimeStage -PublishDir $publish -SourceRoot '${{ github.workspace }}'
+          & $runtimeStage -PublishDir $publish -SourceRoot '${{ github.workspace }}' -CatalogReleaseDir $catalog
+
+          $publishPackages = Join-Path $publish 'packages'
+          New-Item -ItemType Directory -Path $publishPackages -Force | Out-Null
+          Copy-Item -Path (Join-Path $store 'packages\*.swirapp') -Destination $publishPackages -Force
+          Copy-Item -LiteralPath (Join-Path $store 'catalog-artifacts.json') -Destination (Join-Path $publish 'catalog-artifacts.json') -Force
           Copy-Item -LiteralPath $worker -Destination (Join-Path $publish 'SWIR.Desktop.UpdaterWorker.exe') -Force
           Copy-Item -LiteralPath (Join-Path (Get-Location) 'desktop-update-policy.example.json') `
             -Destination (Join-Path $publish 'desktop-update-policy.json') -Force
@@ -126,9 +165,30 @@ jobs:
             (Join-Path $publish 'desktop-runtime.json'),
             (Join-Path $publish 'desktop-host-build.json'),
             (Join-Path $publish 'SWIR.Desktop.UpdaterWorker.exe'),
-            (Join-Path $publish 'desktop-update-policy.json')
+            (Join-Path $publish 'desktop-update-policy.json'),
+            (Join-Path $publish 'swir-signed-catalog-release.js'),
+            (Join-Path $publish 'catalog-trust-roots.json'),
+            (Join-Path $publish 'catalog-envelope.json'),
+            (Join-Path $publish 'catalog.json'),
+            (Join-Path $publish 'catalog-artifacts.json')
           )) {
             if (-not (Test-Path $required -PathType Leaf)) { throw "Self-contained Desktop publish is missing: $required" }
+          }
+
+          $trust = Get-Content (Join-Path $publish 'catalog-trust-roots.json') -Raw | ConvertFrom-Json
+          if ($trust.schema -ne 'swir.catalog-trust-roots/1.0' -or $trust.requireSignedCatalog -ne $true -or @($trust.roots).Count -ne 1) {
+            throw 'Staged Desktop trust policy is not fail-closed.'
+          }
+          $signedCatalog = Get-Content (Join-Path $publish 'catalog.json') -Raw | ConvertFrom-Json
+          foreach ($artifact in @($artifactMap.artifacts)) {
+            $relative = [string]$artifact.desktop.url
+            if ($relative -notmatch '^packages/[A-Za-z0-9._-]+\.swirapp$') { throw "Unsafe CI artifact URL: $relative" }
+            $path = Join-Path $publish $relative
+            if (-not (Test-Path $path -PathType Leaf)) { throw "CI package not staged: $relative" }
+            $actual = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ($actual -ne [string]$artifact.desktop.sha256) { throw "CI package SHA mismatch: $relative" }
+            $record = @($signedCatalog | Where-Object { $_.packageId -eq $artifact.packageId -and $_.version -eq $artifact.version })
+            if ($record.Count -ne 1 -or $record[0].artifacts.desktop.sha256 -ne $actual) { throw "Signed CI catalog mismatch for $relative" }
           }
 
           $hostBuild = Get-Content (Join-Path $publish 'desktop-host-build.json') -Raw | ConvertFrom-Json
@@ -186,5 +246,6 @@ jobs:
             }
           } finally {
             $rsa.Dispose()
-            Remove-Item $privateKey, $publicKey -Force -ErrorAction SilentlyContinue
+            Remove-Item $privateKey, $publicKey, $catalogPrivate -Force -ErrorAction SilentlyContinue
+            Remove-Item Env:SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM -ErrorAction SilentlyContinue
           }
