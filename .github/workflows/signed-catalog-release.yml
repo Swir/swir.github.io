@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       key_id:
-        description: 'Ed25519 public catalog key identifier provisioned for catalog:official'
+        description: 'Ed25519 current catalog key identifier provisioned for catalog:official'
         required: true
         type: string
       sequence:
@@ -24,6 +24,16 @@ on:
         description: 'swir.catalog-artifacts/1.0 JSON with real .swirapp SHA-256 values for every catalog package'
         required: true
         type: string
+      enable_root_rotation:
+        description: 'Publish protected current+next trust roots using pre-provisioned rotation secrets'
+        required: true
+        default: false
+        type: boolean
+      next_key_id:
+        description: 'Next Ed25519 catalog key id; required only when root rotation is enabled'
+        required: false
+        default: ''
+        type: string
 
 permissions:
   contents: read
@@ -39,6 +49,10 @@ jobs:
     env:
       SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM: ${{ secrets.SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM }}
       SWIR_CATALOG_EXPECTED_ROOT_SHA256: ${{ secrets.SWIR_CATALOG_SIGNING_PUBLIC_KEY_SHA256 }}
+      SWIR_CATALOG_NEXT_PUBLIC_KEY_BASE64: ${{ secrets.SWIR_CATALOG_NEXT_PUBLIC_KEY_BASE64 }}
+      SWIR_CATALOG_NEXT_EXPECTED_ROOT_SHA256: ${{ secrets.SWIR_CATALOG_NEXT_SIGNING_PUBLIC_KEY_SHA256 }}
+      SWIR_CATALOG_ROTATION_CUTOVER_SEQUENCE: ${{ secrets.SWIR_CATALOG_ROTATION_CUTOVER_SEQUENCE }}
+      SWIR_CATALOG_CURRENT_RETIRE_AFTER_SEQUENCE: ${{ secrets.SWIR_CATALOG_CURRENT_RETIRE_AFTER_SEQUENCE }}
     steps:
       - name: Checkout exact catalog source
         uses: actions/checkout@v4
@@ -59,6 +73,15 @@ jobs:
           [[ '${{ inputs.valid_hours }}' =~ ^[0-9]+$ ]] || { echo 'valid_hours must be numeric' >&2; exit 1; }
           test -n "$SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM" || { echo 'SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM secret is not configured' >&2; exit 1; }
           [[ "$SWIR_CATALOG_EXPECTED_ROOT_SHA256" =~ ^[A-Fa-f0-9]{64}$ ]] || { echo 'SWIR_CATALOG_SIGNING_PUBLIC_KEY_SHA256 secret must be a 64-hex SHA-256 fingerprint' >&2; exit 1; }
+          if [[ '${{ inputs.enable_root_rotation }}' == 'true' ]]; then
+            [[ '${{ inputs.next_key_id }}' =~ ^[A-Za-z0-9._-]{1,128}$ ]] || { echo 'next_key_id is required and invalid' >&2; exit 1; }
+            [[ '${{ inputs.next_key_id }}' != '${{ inputs.key_id }}' ]] || { echo 'next_key_id must differ from key_id' >&2; exit 1; }
+            test -n "$SWIR_CATALOG_NEXT_PUBLIC_KEY_BASE64" || { echo 'SWIR_CATALOG_NEXT_PUBLIC_KEY_BASE64 secret is not configured' >&2; exit 1; }
+            [[ "$SWIR_CATALOG_NEXT_EXPECTED_ROOT_SHA256" =~ ^[A-Fa-f0-9]{64}$ ]] || { echo 'SWIR_CATALOG_NEXT_SIGNING_PUBLIC_KEY_SHA256 secret must be a 64-hex SHA-256 fingerprint' >&2; exit 1; }
+            [[ "$SWIR_CATALOG_ROTATION_CUTOVER_SEQUENCE" =~ ^[1-9][0-9]*$ ]] || { echo 'SWIR_CATALOG_ROTATION_CUTOVER_SEQUENCE secret must be a positive integer' >&2; exit 1; }
+            [[ "$SWIR_CATALOG_CURRENT_RETIRE_AFTER_SEQUENCE" =~ ^[1-9][0-9]*$ ]] || { echo 'SWIR_CATALOG_CURRENT_RETIRE_AFTER_SEQUENCE secret must be a positive integer' >&2; exit 1; }
+            (( SWIR_CATALOG_CURRENT_RETIRE_AFTER_SEQUENCE >= SWIR_CATALOG_ROTATION_CUTOVER_SEQUENCE )) || { echo 'Current root retirement must not precede next-root cutover' >&2; exit 1; }
+          fi
           mkdir -p "$RUNNER_TEMP/swir-catalog-release"
           cat > "$RUNNER_TEMP/swir-catalog-artifacts.json" <<'SWIR_ARTIFACTS_EOF'
           ${{ inputs.artifact_map_json }}
@@ -78,7 +101,23 @@ jobs:
             --catalog-version '${{ inputs.catalog_version }}' \
             --valid-hours '${{ inputs.valid_hours }}'
 
+      - name: Apply protected current-next root rotation
+        if: ${{ inputs.enable_root_rotation }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/apply-catalog-root-rotation.mjs \
+            "$RUNNER_TEMP/swir-catalog-release/catalog-trust-roots.json" \
+            "$SWIR_CATALOG_EXPECTED_ROOT_SHA256" \
+            '${{ inputs.key_id }}' \
+            "$SWIR_CATALOG_NEXT_PUBLIC_KEY_BASE64" \
+            "$SWIR_CATALOG_NEXT_EXPECTED_ROOT_SHA256" \
+            '${{ inputs.next_key_id }}' \
+            "$SWIR_CATALOG_ROTATION_CUTOVER_SEQUENCE" \
+            "$SWIR_CATALOG_CURRENT_RETIRE_AFTER_SEQUENCE"
+
       - name: Verify pinned catalog public root
+        if: ${{ !inputs.enable_root_rotation }}
         shell: bash
         run: |
           set -euo pipefail
@@ -87,8 +126,24 @@ jobs:
             "$SWIR_CATALOG_EXPECTED_ROOT_SHA256" \
             '${{ inputs.key_id }}'
 
+      - name: Verify pinned current-next root rotation
+        if: ${{ inputs.enable_root_rotation }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/verify-catalog-root-rotation.mjs \
+            "$RUNNER_TEMP/swir-catalog-release/catalog-trust-roots.json" \
+            "$SWIR_CATALOG_EXPECTED_ROOT_SHA256" \
+            '${{ inputs.key_id }}' \
+            "$SWIR_CATALOG_NEXT_EXPECTED_ROOT_SHA256" \
+            '${{ inputs.next_key_id }}' \
+            "$SWIR_CATALOG_ROTATION_CUTOVER_SEQUENCE" \
+            "$SWIR_CATALOG_CURRENT_RETIRE_AFTER_SEQUENCE"
+
       - name: Verify public output and fail-closed trust policy
         shell: bash
+        env:
+          ROTATION_ENABLED: ${{ inputs.enable_root_rotation }}
         run: |
           set -euo pipefail
           node - <<'NODE'
@@ -96,14 +151,15 @@ jobs:
           const root=process.env.RUNNER_TEMP + '/swir-catalog-release';
           const trust=JSON.parse(fs.readFileSync(p.join(root,'catalog-trust-roots.json'),'utf8'));
           const release=JSON.parse(fs.readFileSync(p.join(root,'signed-catalog-release.json'),'utf8'));
-          if(trust.schema!=='swir.catalog-trust-roots/1.0'||trust.requireSignedCatalog!==true||trust.roots?.length!==1) throw new Error('Trust-root bundle is not fail-closed');
+          const expectedRoots=process.env.ROTATION_ENABLED==='true'?2:1;
+          if(trust.schema!=='swir.catalog-trust-roots/1.0'||trust.requireSignedCatalog!==true||trust.roots?.length!==expectedRoots) throw new Error(`Trust-root bundle is not fail-closed or root count != ${expectedRoots}`);
           if(release.schema!=='swir.signed-catalog-release/1.0'||release.envelope?.algorithm!=='Ed25519') throw new Error('Signed catalog release metadata invalid');
           if(!release.catalog.every(x=>/^[a-f0-9]{64}$/.test(x?.artifacts?.desktop?.sha256||''))) throw new Error('Catalog contains package without signed Desktop SHA-256');
           for(const name of fs.readdirSync(root)) {
             const text=fs.readFileSync(p.join(root,name),'utf8');
             if(/PRIVATE KEY/.test(text)) throw new Error(`Private key material leaked into ${name}`);
           }
-          console.log(`Verified ${release.catalog.length} signed package records at sequence ${release.envelope.sequence}`);
+          console.log(`Verified ${release.catalog.length} signed package records at sequence ${release.envelope.sequence}; roots=${expectedRoots}`);
           NODE
 
       - name: Upload PUBLIC signed catalog release bundle
@@ -121,3 +177,7 @@ jobs:
           rm -f "$RUNNER_TEMP/swir-catalog-artifacts.json"
           unset SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM || true
           unset SWIR_CATALOG_EXPECTED_ROOT_SHA256 || true
+          unset SWIR_CATALOG_NEXT_PUBLIC_KEY_BASE64 || true
+          unset SWIR_CATALOG_NEXT_EXPECTED_ROOT_SHA256 || true
+          unset SWIR_CATALOG_ROTATION_CUTOVER_SEQUENCE || true
+          unset SWIR_CATALOG_CURRENT_RETIRE_AFTER_SEQUENCE || true
