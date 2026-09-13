@@ -32,7 +32,7 @@ The lock is stored inside the release trust-root document rather than inferred f
 
 ## Root record
 
-Enabled roots must contain:
+Enabled roots contain:
 
 ```json
 {
@@ -42,11 +42,63 @@ Enabled roots must contain:
   "format": "raw",
   "publicKey": "<base64 32-byte public key>",
   "scope": ["catalog:official"],
-  "enabled": true
+  "enabled": true,
+  "notBeforeSequence": 1,
+  "retireAfterSequence": 5000
 }
 ```
 
-`DesktopCatalogTrustRootStore` rejects malformed schema, duplicate key IDs, unsupported algorithms/formats, invalid base64, non-32-byte Ed25519 raw keys and roots that are not scoped to `catalog:official` (or explicit `*`).
+`notBeforeSequence` defaults to `1`. `retireAfterSequence` is optional. When present it must be greater than or equal to `notBeforeSequence`.
+
+`DesktopCatalogTrustRootStore` rejects malformed schema, duplicate key IDs, unsupported algorithms/formats, invalid base64, non-32-byte Ed25519 raw keys, invalid sequence windows and roots that are not scoped to `catalog:official` (or explicit `*`).
+
+## Sequence-bounded root rotation
+
+Key rotation uses overlap instead of replacing one trusted key with another atomically. A release may provision both current and next public roots while giving each root a monotonic catalog-sequence window.
+
+Example cutover at sequence `5000`:
+
+```json
+{
+  "schema": "swir.catalog-trust-roots/1.0",
+  "requireSignedCatalog": true,
+  "roots": [
+    {
+      "keyId": "swir-catalog-2026-a",
+      "name": "SWIR catalog current root",
+      "algorithm": "Ed25519",
+      "format": "raw",
+      "publicKey": "<base64-current>",
+      "scope": ["catalog:official"],
+      "enabled": true,
+      "notBeforeSequence": 1,
+      "retireAfterSequence": 5000
+    },
+    {
+      "keyId": "swir-catalog-2026-b",
+      "name": "SWIR catalog next root",
+      "algorithm": "Ed25519",
+      "format": "raw",
+      "publicKey": "<base64-next>",
+      "scope": ["catalog:official"],
+      "enabled": true,
+      "notBeforeSequence": 5000
+    }
+  ]
+}
+```
+
+At sequence `5000` either key is valid, which gives the release pipeline one controlled overlap point. Before sequence `5000`, the next key fails with `CATALOG_KEY_NOT_ACTIVE`. After sequence `5000`, the previous key fails with `CATALOG_KEY_RETIRED`. The native catalog high-water mark continues to prevent sequence rollback independently of which allowed key signed the catalog.
+
+A safe production rotation order is:
+
+1. ship a Desktop release containing both public roots and their future overlap sequence;
+2. keep signing with the current private key until the overlap sequence is reached;
+3. sign the cutover catalog with the next key at or after `notBeforeSequence`;
+4. verify deployment telemetry/release health before removing the retired public root in a later Desktop release;
+5. never lower the catalog sequence or widen a retired key window to recover from an operational mistake.
+
+The private next key must remain in the protected signing environment. Only public raw Ed25519 keys and sequence policy belong in the Desktop release.
 
 ## Enforcement transition
 
@@ -74,6 +126,8 @@ production trust lock
         |
         v
 provisioned public root
+        |
+        +--> key-specific sequence activation / retirement window
         |
         v
 Ed25519 catalog envelope
@@ -112,4 +166,4 @@ The roadmap item `package signatures and integrity verification` remains incompl
 6. shipping Desktop E2E proves install/update/restart/rollback with signed authorization;
 7. the legacy SHA fallback is unreachable in production release artifacts.
 
-Do not mark the roadmap deliverable complete merely because the verifier, transition switch, identity binding or release lock exists.
+Do not mark the roadmap deliverable complete merely because the verifier, transition switch, identity binding, release lock or root-rotation window exists.
