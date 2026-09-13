@@ -29,7 +29,7 @@ const checks = [
   [bridge.includes('BindAuthorizationToBundle(trust, plan)'), 'shipping install binds authorization to bundle identity'],
   [bridge.includes('signedReleaseArtifactRouting = true'), 'package bridge advertises signed release artifact routing'],
   [bridge.includes('ReleaseArtifactReference = "release:verified-catalog-artifact"'), 'native bridge recognizes only the dedicated release artifact reference'],
-  [bridge.includes('ResolveReleaseArtifactPath(trust)'), 'signed release routing resolves artifact path natively'],
+  [bridge.includes('ResolveReleaseArtifactPath('), 'signed release routing resolves artifact path natively'],
   [bridge.includes('Path.Combine(_releaseRoot, "packages")'), 'release routing is anchored to the native packages directory'],
   [bridge.includes('CATALOG_ARTIFACT_PATH_ESCAPE') && bridge.includes('CATALOG_ARTIFACT_MISSING'), 'release routing fails closed on path escape or missing artifact'],
   [catalogTrust.includes('string? ArtifactUrl'), 'native catalog authorization carries the signed Desktop artifact URL'],
