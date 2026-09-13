@@ -44,6 +44,13 @@ internal sealed class CapabilityBroker
         return File.ReadAllText(grant.NativePath);
     }
 
+    internal string RequireFilePath(string token, string ownerAppId)
+    {
+        var grant = Resolve(token, ownerAppId, "file");
+        if (!File.Exists(grant.NativePath)) throw new BridgeException("RESOURCE_NOT_FOUND", "Capability file no longer exists.");
+        return grant.NativePath;
+    }
+
     public bool Revoke(string token, string ownerAppId)
     {
         var grant = Resolve(token, ownerAppId);
