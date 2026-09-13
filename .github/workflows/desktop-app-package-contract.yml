@@ -1,0 +1,55 @@
+name: Desktop App Package Contract
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'desktop/windows/DesktopAppPackageInstaller.cs'
+      - 'desktop/windows/DesktopAppPackageInstallerSelfTests.cs'
+      - 'desktop/windows/SWIR.Desktop.AppPackage.SelfTests.csproj'
+      - 'desktop/windows/CapabilityBroker.cs'
+      - 'desktop/windows/SWIR.Desktop.Host.csproj'
+      - '.github/workflows/desktop-app-package-contract.yml'
+  pull_request:
+    paths:
+      - 'desktop/windows/DesktopAppPackageInstaller.cs'
+      - 'desktop/windows/DesktopAppPackageInstallerSelfTests.cs'
+      - 'desktop/windows/SWIR.Desktop.AppPackage.SelfTests.csproj'
+      - 'desktop/windows/CapabilityBroker.cs'
+      - 'desktop/windows/SWIR.Desktop.Host.csproj'
+      - '.github/workflows/desktop-app-package-contract.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-app-package-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract:
+    runs-on: windows-latest
+    timeout-minutes: 8
+    defaults:
+      run:
+        working-directory: desktop/windows
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Assert pinned .NET SDK line
+        shell: pwsh
+        run: |
+          $version = dotnet --version
+          if ($version -notmatch '^8\.0\.4\d\d$') { throw "Expected pinned .NET 8.0.4xx SDK, got $version" }
+
+      - name: Build shipping Desktop Host
+        run: dotnet build SWIR.Desktop.Host.csproj --configuration Release
+
+      - name: Run hardened swirapp payload self-tests
+        run: dotnet run --project SWIR.Desktop.AppPackage.SelfTests.csproj --configuration Release
