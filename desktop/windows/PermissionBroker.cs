@@ -33,6 +33,8 @@ internal sealed class PermissionBroker
                 "process.inspect",
                 "runtime.inspect",
                 "runtime.context.manage",
+                "packages.inspect",
+                "packages.manage",
                 "updates.inspect",
                 "updates.apply"
             });
@@ -202,6 +204,8 @@ internal sealed class PermissionBroker
         ("processes", "kill") => "process.kill",
         ("security", "syncPackageContexts") => "runtime.context.manage",
         ("security", "contextInfo" or "can" or "policyCatalog" or "appUrl" or "isolationInfo" or "packageContexts") => "runtime.inspect",
+        ("packages", "info" or "status") => "packages.inspect",
+        ("packages", "installFromCapability" or "rollback") => "packages.manage",
         ("updates", "readiness" or "check" or "preparationStatus") => "updates.inspect",
         ("updates", "applyAndRestart" or "prepare" or "cancelPrepare" or "resetPreparation") => "updates.apply",
         _ => null
