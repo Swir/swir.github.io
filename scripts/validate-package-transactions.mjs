@@ -10,7 +10,7 @@ const platform = {
     async set(key, value){ state.storage.set(key, structuredClone(value)); return value; }
   },
   packages: {
-    async list(){ return [...state.packages.values()].map(structuredClone); },
+    async list(){ return [...state.packages.values()].map(item => structuredClone(item)); },
     async install(pkg){ state.packages.set(pkg.id, structuredClone(pkg)); return pkg; },
     async remove(id){ state.packages.delete(id); return true; }
   },
