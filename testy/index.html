@@ -1,1 +1,1307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#07080d">
+    <title>WojThom 4.3.1 - AUTO LANGUAGE</title>
+    
+    <link rel="manifest" href="data:application/manifest+json,{&quot;name&quot;:&quot;WojThom 4.3.1 Mobile Smart Time List&quot;,&quot;short_name&quot;:&quot;WojThom431&quot;,&quot;display&quot;:&quot;standalone&quot;,&quot;background_color&quot;:&quot;#07080d&quot;,&quot;theme_color&quot;:&quot;#00f0ff&quot;}">
+    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=Rajdhani:wght@500;600;700&display=swap');
 
+        /* ================== CIEMNY MOTYW (DOMY艢LNY NEON) ================== */
+        :root {
+            --bg-dark: #07080d;
+            --bg-panel: rgba(15, 18, 25, 0.85);
+            --primary: #00f0ff;
+            --secondary: #ff0055;
+            --accent: #b829ea;
+            --text-main: #e0e6ed;
+            --text-muted: #6b7d99;
+            --success: #00ff66;
+            --warning: #ffcc00;
+            --font-header: 'Chakra Petch', sans-serif;
+            --font-body: 'Rajdhani', sans-serif;
+            --shadow-primary: 0 0 15px rgba(0, 240, 255, 0.3);
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: var(--font-body);
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            margin: 0; padding: 0; min-height: 100vh;
+            display: flex; flex-direction: column;
+            background-image: 
+                linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* --- TOOLBAR --- */
+        .toolbar {
+            background: linear-gradient(180deg, #131722, #07080d);
+            border-bottom: 2px solid var(--primary);
+            box-shadow: 0 4px 20px rgba(0, 240, 255, 0.2);
+            padding: 10px 15px; display: flex; justify-content: space-between; align-items: center;
+            position: sticky; top: 0; z-index: 1000; transition: 0.3s;
+        }
+        .toolbar-brand { font-family: var(--font-header); font-weight: 700; font-size: 1.4rem; color: var(--primary); text-shadow: 0 0 8px var(--primary); letter-spacing: 1px; display: flex; align-items: center; gap: 10px; }
+        .menu-items { display: flex; gap: 8px; }
+        .dropdown-container { position: relative; }
+        .toolbar-btn { background: transparent; border: 1px solid transparent; color: var(--text-main); font-family: var(--font-header); font-size: 1rem; padding: 8px 12px; cursor: pointer; border-radius: 6px; transition: 0.2s; font-weight: 600; text-transform: uppercase; }
+        .toolbar-btn:hover { border-color: var(--primary); color: var(--primary); text-shadow: 0 0 5px var(--primary); background: rgba(0, 240, 255, 0.05); }
+
+        .dropdown-menu { display: none; position: absolute; left: 0; top: 110%; background: #0f1219; border: 1px solid var(--primary); border-radius: 8px; min-width: 220px; box-shadow: var(--shadow-primary); z-index: 1001; overflow: hidden; transition: 0.3s; }
+        .dropdown-menu.right { left: auto; right: 0; }
+        .dropdown-menu.show { display: block; animation: dropDownIn 0.2s ease-out; }
+        @keyframes dropDownIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .dropdown-menu button { width: 100%; text-align: left; padding: 12px 15px; border: none; background: transparent; color: var(--text-main); font-family: var(--font-body); font-size: 1.1rem; font-weight: 600; cursor: pointer; transition: 0.2s; border-bottom: 1px solid rgba(0,240,255,0.1); display: flex; align-items: center; gap: 10px; }
+        .dropdown-menu button:hover { background: var(--primary); color: #000; }
+        .separator { height: 1px; background-color: rgba(0,240,255,0.2); margin: 0; }
+
+        /* --- PANELE --- */
+        .main-container { flex: 1; padding: 15px; max-width: 1200px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 20px; }
+        .glass-panel { background: var(--bg-panel); backdrop-filter: blur(10px); border: 1px solid rgba(0, 240, 255, 0.2); border-radius: 12px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5), inset 0 0 15px rgba(0,240,255,0.02); position: relative; transition: 0.3s; }
+        .glass-panel::before { content: ''; position: absolute; top: 0; left: 0; width: 50px; height: 3px; background: var(--primary); box-shadow: 0 0 10px var(--primary); border-radius: 12px 0 0 0; }
+        
+        h3 { font-family: var(--font-header); color: var(--primary); margin-top: 0; font-size: 1.3rem; letter-spacing: 1px; text-transform: uppercase; }
+        label { display: block; font-family: var(--font-header); color: var(--text-muted); margin-bottom: 8px; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 1px; }
+
+        /* --- INPUTY --- */
+        input[type="text"], input[type="number"], select, textarea { width: 100%; background: rgba(0,0,0,0.6); border: 1px solid rgba(0, 240, 255, 0.3); border-radius: 6px; padding: 12px; color: var(--primary); font-family: var(--font-body); font-size: 1.1rem; font-weight: 600; outline: none; transition: 0.3s; box-shadow: inset 0 2px 5px rgba(0,0,0,0.8); }
+        input:focus, select:focus, textarea:focus { border-color: var(--primary); box-shadow: 0 0 10px rgba(0,240,255,0.2), inset 0 2px 5px rgba(0,0,0,0.8); }
+        textarea { height: 120px; resize: none; }
+
+        /* --- EXTREME 3D BUTTONS --- */
+        .btn-container { display: flex; flex-wrap: wrap; gap: 15px; margin-top: 15px; }
+        .btn-3d {
+            background: linear-gradient(180deg, #1f2333 0%, #10121a 100%);
+            border: 2px solid var(--primary); border-radius: 8px;
+            color: var(--primary); font-family: var(--font-header); font-weight: 700; font-size: 1rem;
+            text-transform: uppercase; letter-spacing: 1px;
+            padding: 12px 20px; cursor: pointer;
+            box-shadow: 0 6px 0 #007a80, 0 8px 15px rgba(0,0,0,0.6);
+            transition: all 0.1s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; flex: 1; min-width: 140px;
+        }
+        .btn-3d:hover { filter: brightness(1.2); text-shadow: 0 0 5px var(--primary); }
+        .btn-3d:active { transform: translateY(6px); box-shadow: 0 0 0 #007a80, 0 2px 5px rgba(0,0,0,0.6); }
+        
+        .btn-3d.secondary { border-color: var(--secondary); color: var(--secondary); box-shadow: 0 6px 0 #80002a, 0 8px 15px rgba(0,0,0,0.6); }
+        .btn-3d.secondary:active { box-shadow: 0 0 0 #80002a, 0 2px 5px rgba(0,0,0,0.6); }
+        
+        .btn-3d.warning { border-color: var(--warning); color: var(--warning); box-shadow: 0 6px 0 #806600, 0 8px 15px rgba(0,0,0,0.6); }
+        .btn-3d.warning:active { box-shadow: 0 0 0 #806600, 0 2px 5px rgba(0,0,0,0.6); }
+
+        /* --- TABELA --- */
+        .table-responsive { width: 100%; overflow-x: auto; margin-top: 10px; }
+        table { width: 100%; border-collapse: separate; border-spacing: 0 8px; }
+        th { font-family: var(--font-header); color: var(--primary); text-transform: uppercase; padding: 12px; border-bottom: 2px solid var(--primary); text-align: center; }
+        td { background: rgba(0,0,0,0.4); padding: 15px 10px; text-align: center; font-size: 1.1rem; border-top: 1px solid rgba(0,240,255,0.05); border-bottom: 1px solid rgba(0,240,255,0.05); transition: 0.2s; }
+        td:first-child { border-left: 1px solid rgba(0,240,255,0.05); border-radius: 8px 0 0 8px; }
+        td:last-child { border-right: 1px solid rgba(0,240,255,0.05); border-radius: 0 8px 8px 0; }
+        tr:hover td { background: rgba(0, 240, 255, 0.05); }
+        
+        .summary-label { font-family: var(--font-header); font-size: 1.6rem; color: var(--primary); text-align: right; margin-top: 15px; padding-top: 15px; border-top: 2px dashed rgba(0, 240, 255, 0.3); text-shadow: 0 0 10px rgba(0, 240, 255, 0.5); }
+        .status-bar { text-align: center; padding: 10px; font-family: var(--font-header); color: var(--success); font-weight: bold; background: #07080d; border-top: 1px solid rgba(0,255,102,0.2); text-transform: uppercase; letter-spacing: 1px; transition: 0.3s; }
+
+        /* FORMATOWANIE TEKSTU W TABELI */
+        .text-missing { color: var(--secondary); font-weight: bold; text-shadow: 0 0 5px rgba(255,0,85,0.5); }
+        .text-fraction { color: var(--warning); font-weight: 700; text-shadow: 0 0 5px rgba(255,204,0,0.4); }
+        .row-missing td { background: rgba(255,0,85,0.1); border-color: rgba(255,0,85,0.3); }
+        .row-missing td:first-child { border-left: 3px solid var(--secondary); }
+
+
+        /* --- SMART VALIDATION / AUTO FIX 4.2 --- */
+        .validation-panel { display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; margin:4px 0 14px; padding:12px 14px; border-radius:10px; border:1px solid rgba(0,255,102,.28); background:rgba(0,255,102,.055); }
+        .validation-panel.has-errors { border-color:rgba(255,0,85,.55); background:rgba(255,0,85,.09); box-shadow:0 0 18px rgba(255,0,85,.08); }
+        .validation-panel.has-warnings:not(.has-errors) { border-color:rgba(255,204,0,.5); background:rgba(255,204,0,.07); }
+        .validation-main { display:flex; align-items:center; gap:10px; min-width:230px; flex:1; }
+        .validation-icon { font-size:1.25rem; color:var(--success); }
+        .has-errors .validation-icon { color:var(--secondary); }
+        .has-warnings:not(.has-errors) .validation-icon { color:var(--warning); }
+        .validation-title { font-family:var(--font-header); font-weight:700; color:var(--text-main); text-transform:uppercase; letter-spacing:.5px; }
+        .validation-sub { color:var(--text-muted); font-size:.92rem; margin-top:2px; }
+        .validation-actions { display:flex; gap:8px; flex-wrap:wrap; }
+        .mini-action { border:1px solid var(--primary); background:rgba(0,240,255,.06); color:var(--primary); padding:8px 11px; border-radius:7px; font-family:var(--font-header); font-weight:700; cursor:pointer; text-transform:uppercase; }
+        .mini-action.fix { border-color:var(--success); color:var(--success); }
+        .mini-action.problem { border-color:var(--secondary); color:var(--secondary); }
+        .mini-action:disabled { opacity:.35; cursor:not-allowed; }
+        .row-invalid td { background:rgba(255,0,85,.055); }
+        .cell-error { position:relative; border:1px solid rgba(255,0,85,.72) !important; background:rgba(255,0,85,.13) !important; box-shadow:inset 0 0 0 1px rgba(255,0,85,.10), 0 0 10px rgba(255,0,85,.09); cursor:pointer; }
+        .cell-error::after { content:'!'; position:absolute; top:3px; right:5px; width:16px; height:16px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:var(--secondary); color:#fff; font:bold 11px Arial; }
+        .cell-warning { position:relative; border:1px solid rgba(255,204,0,.55) !important; background:rgba(255,204,0,.08) !important; }
+        .issue-text { display:block; margin-top:4px; color:var(--secondary); font-size:.72rem; font-weight:700; line-height:1.1; text-transform:none; }
+        .quick-fix-btn { padding:6px 8px !important; min-width:auto !important; font-size:.73rem !important; box-shadow:none !important; transform:none !important; margin-left:5px; }
+        .input-invalid { border-color:var(--secondary) !important; box-shadow:0 0 0 2px rgba(255,0,85,.12), inset 0 2px 5px rgba(0,0,0,.45) !important; }
+        .edit-field-error { display:none; color:var(--secondary); font-size:.82rem; font-weight:700; margin-top:5px; line-height:1.15; }
+        .edit-field-error.show { display:block; }
+        .edit-health { border:1px solid rgba(0,240,255,.18); border-radius:8px; padding:10px 12px; color:var(--text-muted); background:rgba(0,0,0,.18); font-size:.92rem; }
+        .edit-health.bad { border-color:rgba(255,0,85,.5); color:var(--secondary); background:rgba(255,0,85,.06); }
+        .edit-health.good { border-color:rgba(0,255,102,.4); color:var(--success); background:rgba(0,255,102,.05); }
+        body.light-theme .validation-panel { background:#f8fafc; }
+        body.light-theme .cell-error { background:#fff1f2 !important; }
+        body.light-theme .cell-warning { background:#fffbeb !important; }
+        body.light-theme .edit-health { background:#fff; }
+
+        /* --- MODALE --- */
+        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); }
+        .modal-content { background: var(--bg-panel); border: 1px solid var(--primary); border-radius: 12px; margin: 5% auto; padding: 25px; width: 95%; max-width: 600px; box-shadow: var(--shadow-primary); animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); max-height: 90vh; overflow-y: auto; transition: 0.3s; }
+        @keyframes popIn { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0,240,255,0.2); padding-bottom: 15px; margin-bottom: 20px; }
+        .modal-title { font-family: var(--font-header); font-size: 1.3rem; color: var(--primary); text-transform: uppercase; text-shadow: 0 0 5px var(--primary); }
+        .close-btn { background: none; border: none; color: var(--secondary); font-size: 2rem; cursor: pointer; line-height: 1; transition: 0.2s; }
+        .close-btn:hover { text-shadow: 0 0 10px var(--secondary); transform: scale(1.1); }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 25px; }
+
+        .tabs { display: flex; border-bottom: 2px solid rgba(0,240,255,0.2); margin-bottom: 20px; }
+        .tab { padding: 10px 15px; cursor: pointer; color: var(--text-muted); font-family: var(--font-header); font-weight: bold; text-transform: uppercase; border-bottom: 3px solid transparent; transition: 0.3s; }
+        .tab.active { color: var(--primary); border-bottom-color: var(--primary); text-shadow: 0 0 8px rgba(0,240,255,0.5); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s; }
+        .chart-container { width: 100%; height: 300px; position: relative; }
+
+        /* --- PDF PRO OPTIONS --- */
+        .pdf-pro-panel { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:16px 0; }
+        .pdf-option-card { background:rgba(0,0,0,.28); border:1px solid rgba(0,240,255,.16); border-radius:10px; padding:12px; }
+        .pdf-option-card.full { grid-column:1 / -1; }
+        .pdf-option-card label { margin-bottom:6px; }
+        .pdf-option-card select { padding:10px; }
+        .pdf-check { display:flex; align-items:center; gap:10px; cursor:pointer; color:var(--text-main); font-weight:600; }
+        .pdf-check input { width:18px; height:18px; accent-color:var(--primary); }
+        .pdf-pro-hint { font-size:.9rem; color:var(--text-muted); line-height:1.35; margin-top:6px; }
+        body.light-theme .pdf-option-card { background:#f8fafc; border-color:#cbd5e1; }
+        @media (max-width:560px) { .pdf-pro-panel { grid-template-columns:1fr; } .pdf-option-card.full { grid-column:auto; } }
+
+        /* ================== SZARY MOTYW GAMINGOWY (STEEL LIGHT THEME) ================== */
+        body.light-theme {
+            --bg-dark: #64748b; 
+            --bg-panel: rgba(241, 245, 249, 0.95); 
+            --primary: #1e3a8a; 
+            --secondary: #b91c1c; 
+            --accent: #6d28d9;
+            --text-main: #0f172a; 
+            --text-muted: #475569;
+            --success: #15803d; 
+            --warning: #b45309; 
+            --shadow-primary: 0 6px 20px rgba(30, 58, 138, 0.25);
+            background-image: 
+                linear-gradient(rgba(30, 58, 138, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(30, 58, 138, 0.05) 1px, transparent 1px);
+        }
+        body.light-theme .toolbar {
+            background: linear-gradient(180deg, #94a3b8, #64748b);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            border-bottom: 2px solid var(--primary);
+        }
+        body.light-theme .dropdown-menu {
+            background: #e2e8f0;
+            border: 1px solid var(--primary);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+        }
+        body.light-theme .dropdown-menu button {
+            color: var(--text-main);
+            border-bottom: 1px solid #cbd5e1;
+        }
+        body.light-theme .dropdown-menu button:hover {
+            background: rgba(30, 58, 138, 0.1);
+            color: var(--primary);
+        }
+        body.light-theme .glass-panel {
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15), inset 0 0 15px rgba(255, 255, 255, 0.5);
+            border: 1px solid #94a3b8;
+        }
+        body.light-theme input[type="text"], 
+        body.light-theme input[type="number"], 
+        body.light-theme select, 
+        body.light-theme textarea {
+            background: #ffffff;
+            color: var(--primary);
+            border: 1px solid #cbd5e1;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+        }
+        body.light-theme input:focus, 
+        body.light-theme select:focus, 
+        body.light-theme textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 8px rgba(30, 58, 138, 0.3), inset 0 2px 4px rgba(0,0,0,0.05);
+        }
+        body.light-theme .btn-3d {
+            background: linear-gradient(180deg, #e2e8f0 0%, #94a3b8 100%);
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            box-shadow: 0 6px 0 #475569, 0 8px 15px rgba(0,0,0,0.2);
+            text-shadow: none;
+        }
+        body.light-theme .btn-3d:hover { background: linear-gradient(180deg, #f1f5f9 0%, #cbd5e1 100%); text-shadow: none; }
+        body.light-theme .btn-3d:active { box-shadow: 0 0 0 #475569, 0 2px 5px rgba(0,0,0,0.2); }
+        
+        body.light-theme .btn-3d.warning { border-color: var(--warning); color: var(--warning); box-shadow: 0 6px 0 #78350f, 0 8px 15px rgba(0,0,0,0.2); }
+        body.light-theme .btn-3d.warning:active { box-shadow: 0 0 0 #78350f, 0 2px 5px rgba(0,0,0,0.2); }
+        
+        body.light-theme .btn-3d.secondary { border-color: var(--secondary); color: var(--secondary); box-shadow: 0 6px 0 #7f1d1d, 0 8px 15px rgba(0,0,0,0.2); }
+        body.light-theme .btn-3d.secondary:active { box-shadow: 0 0 0 #7f1d1d, 0 2px 5px rgba(0,0,0,0.2); }
+
+        body.light-theme td { background: #f8fafc; border-color: #cbd5e1; color: var(--text-main); }
+        body.light-theme td b { color: var(--primary); }
+        body.light-theme tr:hover td { background: #ffffff; }
+        body.light-theme .text-fraction { color: var(--warning); text-shadow: none; }
+        body.light-theme .text-missing { text-shadow: none; }
+        body.light-theme .toolbar-brand { text-shadow: none; color: #ffffff; }
+        
+        body.light-theme .modal-content { background: #f1f5f9; border: 1px solid var(--primary); box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4); }
+        body.light-theme .modal-header { border-bottom-color: #94a3b8; }
+        body.light-theme .modal-title { text-shadow: none; }
+        body.light-theme .status-bar { background: #94a3b8; border-top: 1px solid #475569; color: #ffffff; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
+        body.light-theme .summary-label { text-shadow: none; border-top-color: #94a3b8; }
+
+
+        /* --- MOBILE SMART UI 4.3 --- */
+        .quick-dashboard { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin:0 0 14px; }
+        .quick-chip { border:1px solid rgba(0,240,255,.18); background:rgba(0,0,0,.24); border-radius:12px; padding:10px 12px; min-width:0; }
+        .quick-chip .q-label { color:var(--text-muted); font-size:.72rem; text-transform:uppercase; letter-spacing:.8px; font-family:var(--font-header); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .quick-chip .q-value { color:var(--text-main); font-family:var(--font-header); font-weight:700; font-size:1.22rem; margin-top:3px; }
+        .quick-chip.good .q-value { color:var(--success); }
+        .quick-chip.bad .q-value { color:var(--secondary); }
+        .quick-chip.warn .q-value { color:var(--warning); }
+        .section-kicker { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:12px; }
+        .section-kicker h3 { margin:0; }
+        .section-note { color:var(--text-muted); font-size:.85rem; }
+        .mobile-dock { display:none; }
+        .pdf-toggle-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin-top:8px; }
+        .pdf-toggle { display:flex; align-items:center; gap:9px; min-height:42px; padding:9px 10px; border-radius:9px; border:1px solid rgba(0,240,255,.14); background:rgba(0,0,0,.18); cursor:pointer; color:var(--text-main); font-weight:600; }
+        .pdf-toggle input { width:18px; height:18px; flex:0 0 auto; accent-color:var(--primary); }
+        .pdf-option-title { font-family:var(--font-header); color:var(--primary); font-weight:700; font-size:.86rem; text-transform:uppercase; letter-spacing:.7px; margin-bottom:7px; }
+        body.light-theme .quick-chip, body.light-theme .pdf-toggle { background:#fff; border-color:#cbd5e1; }
+
+        @media (max-width: 900px) {
+            .main-container { max-width:760px; padding:12px; gap:12px; }
+            .glass-panel { padding:16px; border-radius:14px; }
+            .quick-dashboard { grid-template-columns:repeat(2,1fr); }
+        }
+
+        @media (max-width: 768px) {
+            body { padding-bottom:82px; background-size:22px 22px; }
+            .toolbar { padding:8px 10px; min-height:54px; border-bottom-width:1px; }
+            .toolbar-brand { font-size:1.05rem; gap:7px; }
+            .toolbar-brand span { display:inline !important; font-size:.92rem; }
+            .toolbar-btn { padding:8px 10px; font-size:.9rem; }
+            .toolbar-btn span { display:none; }
+            .dropdown-menu { position:fixed; left:10px !important; right:10px !important; top:58px; min-width:0; border-radius:14px; }
+            .main-container { padding:9px; gap:10px; }
+            .glass-panel { padding:13px; border-radius:14px; box-shadow:0 8px 22px rgba(0,0,0,.35); }
+            .glass-panel::before { width:38px; }
+            textarea { height:130px; min-height:130px; resize:vertical; }
+            input[type="text"], input[type="number"], select, textarea { min-height:46px; padding:11px 12px; font-size:1rem; border-radius:10px; }
+            .btn-container { gap:9px; margin-top:11px; }
+            .btn-3d { min-width:0; min-height:46px; padding:10px 12px; font-size:.86rem; border-width:1px; border-radius:10px; box-shadow:0 3px 0 #007a80, 0 6px 12px rgba(0,0,0,.34); }
+            .btn-3d:active { transform:translateY(3px); }
+            .validation-panel { padding:10px; margin-bottom:10px; align-items:stretch; }
+            .validation-actions { width:100%; }
+            .validation-actions .mini-action { flex:1; min-height:40px; }
+            .quick-dashboard { grid-template-columns:repeat(2,1fr); gap:8px; margin-bottom:10px; }
+            .quick-chip { padding:9px 10px; border-radius:10px; }
+            .quick-chip .q-value { font-size:1.1rem; }
+            .section-note { display:none; }
+            .summary-label { font-size:1.2rem; margin-top:9px; padding-top:10px; text-align:center; }
+            .status-bar { position:fixed; left:0; right:0; bottom:63px; z-index:1200; padding:5px 8px; font-size:.68rem; opacity:.96; }
+
+            /* Mobile card list: no broken pseudo-icons, labels come from current language. */
+            #resultTable thead { display:none; }
+            #resultTable, #resultTable tbody { display:block; width:100%; }
+            #resultTable tr { display:grid; grid-template-columns:1fr 1fr; gap:0 8px; margin-bottom:10px; padding:10px; background:rgba(0,0,0,.46); border:1px solid rgba(0,240,255,.18); border-radius:14px; box-shadow:0 5px 14px rgba(0,0,0,.30); }
+            #resultTable td { display:flex; flex-direction:column; align-items:flex-start; justify-content:center; width:100%; min-height:54px; text-align:left !important; padding:8px 7px; border:none !important; border-bottom:1px solid rgba(0,240,255,.06) !important; border-radius:8px !important; background:transparent; overflow-wrap:anywhere; }
+            #resultTable td::before { content:attr(data-label); display:block; color:var(--text-muted); font-family:var(--font-header); font-size:.66rem; font-weight:700; letter-spacing:.7px; text-transform:uppercase; margin-bottom:4px; }
+            #resultTable td:nth-child(2) { grid-column:1 / -1; order:-3; min-height:58px; font-size:1.08rem; border-bottom:1px solid rgba(0,240,255,.16) !important; }
+            #resultTable td:nth-child(1) { order:-2; }
+            #resultTable td:nth-child(5) { font-weight:700; color:var(--primary); }
+            #resultTable td:nth-child(6) { grid-column:1 / -1; flex-direction:row; align-items:center; gap:8px; min-height:48px; border-bottom:none !important; padding-top:10px; }
+            #resultTable td:nth-child(6)::before { display:none; }
+            #resultTable td:nth-child(6) .quick-fix-btn { flex:1; min-height:39px; margin:0; }
+            #resultTable .issue-text { font-size:.72rem; }
+            body.light-theme #resultTable tr { background:#fff; border-color:#cbd5e1; }
+            body.light-theme #resultTable td { border-bottom-color:#e2e8f0 !important; }
+
+            .modal { align-items:flex-end; }
+            .modal-content { position:absolute; left:0; right:0; bottom:0; margin:0; width:100%; max-width:none !important; max-height:92vh; padding:16px 14px 18px; border-radius:20px 20px 0 0; border-left:none; border-right:none; border-bottom:none; }
+            .modal-header { margin-bottom:13px; padding-bottom:10px; }
+            .modal-title { font-size:1.05rem; }
+            .modal-footer { position:sticky; bottom:-18px; background:var(--bg-panel); padding:10px 0 4px; margin-top:14px; gap:8px; }
+            .modal-footer .btn-3d { flex:1; }
+            .pdf-pro-panel { grid-template-columns:1fr; gap:9px; margin:10px 0; }
+            .pdf-option-card, .pdf-option-card.full { grid-column:auto; padding:10px; border-radius:11px; }
+            .pdf-toggle-grid { grid-template-columns:1fr 1fr; gap:7px; }
+            .pdf-toggle { min-height:44px; padding:8px; font-size:.9rem; }
+
+            .mobile-dock { position:fixed; left:0; right:0; bottom:0; z-index:1300; display:grid; grid-template-columns:repeat(3,1fr); gap:7px; padding:8px max(9px, env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) max(9px, env(safe-area-inset-left)); background:rgba(7,8,13,.96); border-top:1px solid rgba(0,240,255,.25); backdrop-filter:blur(14px); box-shadow:0 -8px 24px rgba(0,0,0,.35); }
+            .mobile-dock button { min-height:47px; border-radius:12px; border:1px solid rgba(0,240,255,.28); background:rgba(0,240,255,.07); color:var(--text-main); font-family:var(--font-header); font-weight:700; font-size:.76rem; letter-spacing:.3px; }
+            .mobile-dock button i { display:block; color:var(--primary); font-size:1rem; margin-bottom:4px; }
+            .mobile-dock button.fix i { color:var(--success); }
+            .mobile-dock button.pdf i { color:var(--secondary); }
+            body.light-theme .mobile-dock { background:rgba(241,245,249,.97); border-top-color:#94a3b8; }
+        }
+
+        @media (max-width:420px) {
+            .toolbar-brand span { font-size:.82rem; }
+            .quick-dashboard { grid-template-columns:repeat(2,1fr); }
+            .pdf-toggle-grid { grid-template-columns:1fr; }
+            #resultTable tr { grid-template-columns:1fr 1fr; padding:8px; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="toolbar">
+        <div class="toolbar-brand"><i class="fas fa-gamepad"></i> <span>WOJTHOM 4.3.1</span></div>
+        <div class="menu-items">
+            <div class="dropdown-container">
+                <button class="toolbar-btn" onclick="toggleMenu('menuSystem')">
+                    <i class="fas fa-database"></i> <span data-i18n="menu_system">SYSTEM</span>
+                </button>
+                <div class="dropdown-menu" id="menuSystem">
+                    <button onclick="openModal('pdfLangModal')"><i class="fas fa-file-pdf" style="color:var(--secondary); width:20px;"></i> <span data-i18n="export_pdf">EXPORT PDF</span></button>
+                    <div class="separator"></div>
+                    <button onclick="openModal('statsModal')"><i class="fas fa-chart-pie" style="color:var(--primary); width:20px;"></i> <span data-i18n="stats">STATISTICS</span></button>
+                    <button onclick="openModal('filterModal')"><i class="fas fa-filter" style="color:var(--warning); width:20px;"></i> <span data-i18n="filters">FILTERS</span></button>
+                    <div class="separator"></div>
+                    <button onclick="toggleTheme()" id="toggleThemeBtn"><i class="fas fa-sun" style="color:var(--warning); width:20px;"></i> <span data-i18n="theme_light">LIGHT THEME</span></button>
+                    <div class="separator"></div>
+                    <button onclick="openModal('aboutModal')"><i class="fas fa-info-circle" style="color:var(--accent); width:20px;"></i> <span data-i18n="about">ABOUT</span></button>
+                </div>
+            </div>
+            
+            <div class="dropdown-container">
+                <button class="toolbar-btn" onclick="toggleMenu('menuLang')">
+                    <i class="fas fa-globe"></i> <span data-i18n="language">LANGUAGE</span>
+                </button>
+                <div class="dropdown-menu right" id="menuLang">
+                    <button onclick="setLang('en')"><i class="fas fa-check" id="check-en" style="opacity:0; width:20px; color:var(--success);"></i> ENGLISH (EN)</button>
+                    <button onclick="setLang('pl')"><i class="fas fa-check" id="check-pl" style="opacity:0; width:20px; color:var(--success);"></i> POLISH (PL)</button>
+                    <button onclick="setLang('no')"><i class="fas fa-check" id="check-no" style="opacity:0; width:20px; color:var(--success);"></i> NORWEGIAN (NO)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="glass-panel">
+            <div style="margin-bottom:15px;">
+                <label data-i18n="header_label">HEADER:</label>
+                <input type="text" id="headerInput" value="Time List">
+            </div>
+            <div>
+                <label data-i18n="input_label">PASTE RAW DATA (Logs):</label>
+                <textarea id="rawInput" placeholder="DD.MM Client HH:MM-HH:MM&#10;Ex. 15.04 Project 08:00-16:00&#10;Ex. 16.04 Base 1:30&#10;Ex. 17.04 Base 0.75"></textarea>
+            </div>
+            <div class="btn-container">
+                <button class="btn-3d" id="generateBtn"><i class="fas fa-bolt"></i> <span data-i18n="btn_generate">GENERATE LIST</span></button>
+                <button class="btn-3d warning" id="clearBtn"><i class="fas fa-eraser"></i> <span data-i18n="btn_clear">CLEAR</span></button>
+                <button class="btn-3d secondary" onclick="openModal('pdfLangModal')"><i class="fas fa-file-pdf"></i> <span data-i18n="export_pdf">EXPORT PDF</span></button>
+            </div>
+        </div>
+
+        <div class="glass-panel">
+            <h3 data-i18n="list_title">DATABASE - TIME WORKED:</h3>
+            <div id="validationPanel" class="validation-panel">
+                <div class="validation-main">
+                    <i id="validationIcon" class="fas fa-shield-check validation-icon"></i>
+                    <div>
+                        <div id="validationTitle" class="validation-title">DATA CHECK: OK</div>
+                        <div id="validationSub" class="validation-sub">No errors detected.</div>
+                    </div>
+                </div>
+                <div class="validation-actions">
+                    <button id="fixAllBtn" class="mini-action fix" onclick="autoFixAll()"><i class="fas fa-wand-magic-sparkles"></i> AUTO FIX ALL</button>
+                    <button id="nextIssueBtn" class="mini-action problem" onclick="focusNextIssue()"><i class="fas fa-location-crosshairs"></i> NEXT ERROR</button>
+                </div>
+            </div>
+            <div id="quickDashboard" class="quick-dashboard" aria-live="polite">
+                <div class="quick-chip"><div class="q-label" id="dashLabelEntries">Entries</div><div class="q-value" id="dashEntries">0</div></div>
+                <div class="quick-chip"><div class="q-label" id="dashLabelHours">Hours</div><div class="q-value" id="dashHours">0:00</div></div>
+                <div class="quick-chip" id="dashIssuesChip"><div class="q-label" id="dashLabelIssues">Issues</div><div class="q-value" id="dashIssues">0</div></div>
+                <div class="quick-chip good" id="dashScoreChip"><div class="q-label" id="dashLabelScore">Quality</div><div class="q-value" id="dashScore">100%</div></div>
+            </div>
+            <div class="table-responsive">
+                <table id="resultTable">
+                    <thead>
+                        <tr>
+                            <th data-i18n="col_date">DATE</th>
+                            <th data-i18n="col_client">CLIENT/LOCATION</th>
+                            <th data-i18n="col_start">START</th>
+                            <th data-i18n="col_end">END</th>
+                            <th data-i18n="col_work">WORK TIME</th>
+                            <th data-i18n="col_action">ACTION</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultBody"></tbody>
+                </table>
+            </div>
+            <div class="summary-label" id="summaryLabel"><span data-i18n="sum_total">TOTAL SUM:</span> 0:00</div>
+        </div>
+    </div>
+    
+    <div class="mobile-dock" aria-label="Quick actions">
+        <button onclick="document.getElementById('generateBtn').click()"><i class="fas fa-bolt"></i><span id="dockGenerate">GENERUJ</span></button>
+        <button class="fix" onclick="autoFixAll()"><i class="fas fa-wand-magic-sparkles"></i><span id="dockFix">AUTO FIX</span></button>
+        <button class="pdf" onclick="openModal('pdfLangModal')"><i class="fas fa-file-pdf"></i><span>PDF</span></button>
+    </div>
+
+    <div class="status-bar" id="statusBar" data-i18n="status_ready">SYSTEM READY</div>
+
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" data-i18n="edit_title">EDIT ENTRY</div>
+                <button class="close-btn" onclick="closeModal('editModal')">&times;</button>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:15px;">
+                <div><label data-i18n="col_date">DATE</label><input type="text" id="editDate" autocomplete="off"><div class="edit-field-error" id="editDateError"></div></div>
+                <div><label data-i18n="col_client">CLIENT/LOCATION</label><input type="text" id="editClient" autocomplete="off"><div class="edit-field-error" id="editClientError"></div></div>
+                <div style="display:flex; gap:10px;">
+                    <div style="flex:1;"><label data-i18n="col_start">START</label><input type="text" id="editStart" autocomplete="off"><div class="edit-field-error" id="editStartError"></div></div>
+                    <div style="flex:1;"><label data-i18n="col_end">END</label><input type="text" id="editEnd" autocomplete="off"><div class="edit-field-error" id="editEndError"></div></div>
+                </div>
+                <div><label data-i18n="col_work">WORK TIME (e.g. 1:30, 0.75, 8h)</label><input type="text" id="editWork" autocomplete="off"><div class="edit-field-error" id="editWorkError"></div></div>
+                <div id="editHealth" class="edit-health"><i class="fas fa-stethoscope"></i> Smart validation active.</div>
+            </div>
+            <div class="modal-footer" style="flex-wrap:wrap;">
+                <button class="btn-3d secondary" id="smartFixEditBtn"><i class="fas fa-wand-magic-sparkles"></i> SMART FIX</button>
+                <button class="btn-3d warning" onclick="closeModal('editModal')" data-i18n="btn_cancel">CANCEL</button>
+                <button class="btn-3d" id="saveEditBtn" data-i18n="btn_save">SAVE DATA</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="pdfLangModal" class="modal">
+        <div class="modal-content" style="max-width: 620px;">
+            <div class="modal-header">
+                <div class="modal-title"><i class="fas fa-file-pdf" style="color:var(--secondary);"></i> <span data-i18n="pdf_title">PDF EXPORT</span></div>
+                <button class="close-btn" onclick="closeModal('pdfLangModal')">&times;</button>
+            </div>
+            <p style="text-align:center; font-size:1.08rem; font-weight:bold; margin:0 0 12px; color:var(--primary);" data-i18n="pdf_desc">Configure a professional PDF report:</p>
+
+            <div class="pdf-pro-panel">
+                <div class="pdf-option-card">
+                    <label>PDF LANGUAGE / JĘZYK</label>
+                    <select id="pdfLanguage">
+                        <option value="en">English (EN)</option>
+                        <option value="pl">Polski (PL)</option>
+                        <option value="no">Norsk (NO)</option>
+                    </select>
+                </div>
+                <div class="pdf-option-card">
+                    <label>STYLE / STYL</label>
+                    <select id="pdfStyle">
+                        <option value="business">Business Navy</option>
+                        <option value="minimal">Clean Minimal</option>
+                        <option value="neon">WojThom Neon</option>
+                    </select>
+                </div>
+                <div class="pdf-option-card">
+                    <label>ORIENTATION / UKŁAD</label>
+                    <select id="pdfOrientation">
+                        <option value="portrait">A4 Portrait</option>
+                        <option value="landscape">A4 Landscape</option>
+                    </select>
+                </div>
+                <div class="pdf-option-card">
+                    <div class="pdf-option-title">GÓRA I PODSUMOWANIE</div>
+                    <div class="pdf-toggle-grid">
+                        <label class="pdf-toggle"><input type="checkbox" id="pdfShowHeader" checked> Tytuł raportu</label>
+                        <label class="pdf-toggle"><input type="checkbox" id="pdfShowGenerated" checked> Data wygenerowania</label>
+                        <label class="pdf-toggle"><input type="checkbox" id="pdfShowStats" checked> Kafelki statystyk</label>
+                        <label class="pdf-toggle"><input type="checkbox" id="pdfShowPeriod" checked> Zakres dat</label>
+                        <label class="pdf-toggle"><input type="checkbox" id="pdfShowTotal" checked> Końcowa suma</label>
+                        <label class="pdf-toggle"><input type="checkbox" id="pdfShowFooter" checked> Stopka + strony</label>
+                        <label class="pdf-toggle"><input type="checkbox" id="pdfShowSignature"> Podpisy</label>
+                    </div>
+                </div>
+                <div class="pdf-option-card full">
+                    <div class="pdf-option-title">KOLUMNY TABELI - WŁĄCZ / WYŁĄCZ</div>
+                    <div class="pdf-toggle-grid">
+                        <label class="pdf-toggle"><input type="checkbox" id="pdfColNumber" checked> Numer #</label>
+                        <label class="pdf-toggle"><input type="checkbox" id="pdfColDate" checked> Data</label>
+                        <label class="pdf-toggle"><input type="checkbox" id="pdfColClient" checked> Klient / lokalizacja</label>
+                        <label class="pdf-toggle"><input type="checkbox" id="pdfColStart" checked> Start</label>
+                        <label class="pdf-toggle"><input type="checkbox" id="pdfColEnd" checked> Koniec</label>
+                        <label class="pdf-toggle"><input type="checkbox" id="pdfColWork" checked> Czas pracy</label>
+                    </div>
+                    <div class="pdf-pro-hint">Ustawienia są zapamiętywane. PDF używa aktualnie widocznej listy i aktywnych filtrów.</div>
+                </div>
+            </div>
+
+            <div class="modal-footer" style="justify-content:space-between;">
+                <button class="btn-3d warning" onclick="closeModal('pdfLangModal')"><i class="fas fa-times"></i> <span data-i18n="btn_cancel">CANCEL</span></button>
+                <button class="btn-3d" onclick="generatePDF(document.getElementById('pdfLanguage').value)"><i class="fas fa-file-export"></i> GENERATE PDF PRO</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="statsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" data-i18n="stats_title">SYSTEM STATISTICS</div>
+                <button class="close-btn" onclick="closeModal('statsModal')">&times;</button>
+            </div>
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('timeTab', this)"><span data-i18n="tab_days">BY DATE</span></div>
+                <div class="tab" onclick="switchTab('clientTab', this)"><span data-i18n="tab_clients">BY CLIENT</span></div>
+            </div>
+            <div id="timeTab" class="tab-content active"><div class="chart-container"><canvas id="timeChartCanvas"></canvas></div></div>
+            <div id="clientTab" class="tab-content"><div class="chart-container"><canvas id="clientChartCanvas"></canvas></div></div>
+            <div class="modal-footer"><button class="btn-3d warning" onclick="closeModal('statsModal')" data-i18n="btn_close">CLOSE</button></div>
+        </div>
+    </div>
+
+    <div id="filterModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" data-i18n="filter_title">DATABASE FILTER</div>
+                <button class="close-btn" onclick="closeModal('filterModal')">&times;</button>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:15px;">
+                <div><label data-i18n="filter_client">SELECT CLIENT:</label><select id="filterClient"><option value="">Wszyscy / All</option></select></div>
+                <div><label data-i18n="filter_hours">MINIMUM TIME (HOURS):</label><input type="number" id="filterMinHours" min="0" step="0.5" value="0"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-3d warning" id="resetFilterBtn" data-i18n="btn_reset">RESET</button>
+                <button class="btn-3d" id="applyFilterBtn" data-i18n="btn_apply">APPLY</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="aboutModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" data-i18n="about">ABOUT</div>
+                <button class="close-btn" onclick="closeModal('aboutModal')">&times;</button>
+            </div>
+            <p style="font-size: 1.4rem; color: var(--primary); font-family: var(--font-header);">WojThom 4.2</p>
+            <p style="color:var(--warning); font-weight:bold; letter-spacing:1px;">MOBILE SMART PDF EDITION</p>
+            <p data-i18n="about_text">Designed by Wojciech K. and Thomas O.<br>Engine completely rewritten for bulletproof precision.</p>
+            
+            <div style="margin-top: 20px; text-align: left; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; border-left: 3px solid var(--primary);">
+                <p style="color: var(--primary); font-family: var(--font-header); margin-top: 0; margin-bottom: 10px; font-weight: bold; text-transform: uppercase;" data-i18n="about_changelog_title">G艂贸wne nowo艣ci:</p>
+                <div data-i18n="about_updates" style="font-size: 0.95rem; line-height: 1.6; color: var(--text-main);">
+                    </div>
+            </div>
+
+            <div class="modal-footer"><button class="btn-3d warning" onclick="closeModal('aboutModal')" data-i18n="btn_close">CLOSE</button></div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. S艁OWNIKI W UNICODE (W PE艁NI ODPORNE NA B艁臉DY NOTATNIKA) ---
+        // DODANO: T艂umaczenia dla Changelogu
+        const i18n = {
+            "en": {
+                "menu_system": "SYSTEM", "language": "LANGUAGE", "export_pdf": "EXPORT PDF", "stats": "STATISTICS", "filters": "FILTERS", "about": "ABOUT",
+                "theme_light": "STEEL THEME", "theme_dark": "DARK THEME",
+                "pdf_title": "PDF PRO EXPORT", "pdf_desc": "Configure a professional work-time report:",
+                "header_label": "HEADER:", "input_label": "PASTE RAW DATA (Logs):", "btn_generate": "GENERATE LIST", "btn_clear": "CLEAR",
+                "list_title": "DATABASE - TIME WORKED:", "sum_total": "TOTAL SUM:", "status_ready": "SYSTEM READY", "status_generated": "GENERATED ENTRIES: ",
+                "col_date": "DATE", "col_client": "CLIENT/LOCATION", "col_start": "START", "col_end": "END", "col_work": "WORK TIME", "col_action": "ACTION",
+                "edit_title": "EDIT ENTRY", "btn_cancel": "CANCEL", "btn_save": "SAVE DATA", "btn_close": "CLOSE", "btn_reset": "RESET", "btn_apply": "APPLY",
+                "stats_title": "SYSTEM STATISTICS", "tab_days": "BY DATE", "tab_clients": "BY CLIENT",
+                "filter_title": "DATABASE FILTER", "filter_client": "SELECT CLIENT:", "filter_hours": "MINIMUM TIME (HOURS):",
+                "about_text": "Designed by Wojciech K. and Thomas O.<br>Engine completely rewritten for bulletproof precision.", "missing": "MISSING", "btn_edit": "EDIT",
+                "page": "Page",
+                "about_changelog_title": "Main Updates (Changelog):",
+                "about_updates": "<ul style='margin:0; padding-left:20px;'><li>Full UTF-8 support (fixes PL/NO characters)</li><li>Automatic PDF naming (e.g. DD.MM.YYYY_timeliste.pdf)</li><li>Smart PDF pagination with no page limits</li><li>Elegant, compact total sum badge & centered headers</li><li>Bulletproof engine for raw log parsing</li></ul>"
+            },
+            "pl": {
+                "menu_system": "SYSTEM", "language": "J\u0118ZYK", "export_pdf": "EKSPORT PDF", "stats": "STATYSTYKI", "filters": "FILTRY", "about": "O PROGRAMIE",
+                "theme_light": "SZARY MOTYW", "theme_dark": "CIEMNY MOTYW",
+                "pdf_title": "EKSPORT PDF PRO", "pdf_desc": "Skonfiguruj profesjonalny raport czasu pracy:",
+                "header_label": "NAG\u0141\u00D3WEK:", "input_label": "WKLEJ LOGI SYSTEMOWE (Surowe dane):", "btn_generate": "GENERUJ LIST\u0118", "btn_clear": "WYCZY\u015A\u0106",
+                "list_title": "BAZA DANYCH - CZAS PRACY:", "sum_total": "SUMA CA\u0141KOWITA:", "status_ready": "SYSTEM GOTOWY", "status_generated": "WYGENEROWANO WPIS\u00D3W: ",
+                "col_date": "DATA", "col_client": "KLIENT/LOKALIZACJA", "col_start": "START", "col_end": "KONIEC", "col_work": "CZAS PRACY", "col_action": "AKCJA",
+                "edit_title": "MODYFIKACJA WPISU", "btn_cancel": "ANULUJ", "btn_save": "ZAPISZ DANE", "btn_close": "ZAMKNIJ", "btn_reset": "RESETUJ", "btn_apply": "ZASTOSUJ",
+                "stats_title": "STATYSTYKI SYSTEMOWE", "tab_days": "ROZK\u0141AD NA DNI", "tab_clients": "ROZK\u0141AD NA KLIENT\u00D3W",
+                "filter_title": "FILTROWANIE BAZY", "filter_client": "WYBIERZ KLIENTA:", "filter_hours": "MINIMALNY CZAS (GODZINY):",
+                "about_text": "Zaprojektowany przez Wojciech K. oraz Thomas O.<br>Silnik ca\u0142kowicie przepisany na nowo dla pe\u0142nej niezawodno\u015Bci.", "missing": "BRAK DANYCH", "btn_edit": "EDYTUJ",
+                "page": "Strona",
+                "about_changelog_title": "Najwa\u017Cniejsze nowo\u015Bci:",
+                "about_updates": "<ul style='margin:0; padding-left:20px;'><li>Pe\u0142ne wsparcie znak\u00F3w PL i NO (naprawa kodowania UTF-8)</li><li>Automatyczne nazywanie plik\u00F3w PDF (np. DD.MM.YYYY_timeliste.pdf)</li><li>Inteligentny PDF: brak limitu stron i automatyczna numeracja</li><li>Elegancka, profesjonalna ramka z sum\u0105 i \u015Brodkowanie tekstu</li><li>Pancerny algorytm odczytuj\u0105cy nawet najbardziej zepsute logi</li></ul>"
+            },
+            "no": {
+                "menu_system": "SYSTEM", "language": "SPR\u00C5K", "export_pdf": "EKSPORTER PDF", "stats": "STATISTIKK", "filters": "FILTER", "about": "OM PROGRAMMET",
+                "theme_light": "ST\u00C5L TEMA", "theme_dark": "M\u00D8RKT TEMA",
+                "pdf_title": "PDF PRO EKSPORT", "pdf_desc": "Konfigurer en profesjonell arbeidstidsrapport:",
+                "header_label": "OVERSKRIFT:", "input_label": "LIM INN R\u00C5DATA (Logger):", "btn_generate": "GENERER LISTE", "btn_clear": "T\u00D8M",
+                "list_title": "DATABAS - ARBEIDSTID:", "sum_total": "SUM TOTALT:", "status_ready": "SYSTEM KLAR", "status_generated": "GENERERTE RADER: ",
+                "col_date": "DATO", "col_client": "KUNDE/LOKASJON", "col_start": "START", "col_end": "SLUTT", "col_work": "ARBEIDSTID", "col_action": "HANDLING",
+                "edit_title": "REDIGER OPPF\u00D8RING", "btn_cancel": "AVBRYT", "btn_save": "LAGRE DATA", "btn_close": "LUKK", "btn_reset": "NULLSTILL", "btn_apply": "BRUK",
+                "stats_title": "SYSTEMSTATISTIKK", "tab_days": "ETTER DATO", "tab_clients": "ETTER KUNDE",
+                "filter_title": "DATAFILTRERING", "filter_client": "VELG KUNDE:", "filter_hours": "MINIMUM TID (TIMER):",
+                "about_text": "Designet av Wojciech K. og Thomas O.<br>Motoren er fullstendig omskrevet for presisjon og stabilitet.", "missing": "MANGLER", "btn_edit": "REDIGER",
+                "page": "Side",
+                "about_changelog_title": "Viktigste oppdateringer:",
+                "about_updates": "<ul style='margin:0; padding-left:20px;'><li>Full st酶tte for polske og norske tegn (UTF-8)</li><li>Automatisk PDF-navngivning (f.eks. DD.MM.YYYY_timeliste.pdf)</li><li>Ubegrenset antall sider i PDF med sidetall</li><li>Elegant, kompakt totaltidsramme og midtstilte overskrifter</li><li>Skuddsikker motor for feilfri parsing av r氓 loggdata</li></ul>"
+            }
+        };
+
+        // --- 2. ZMIENNE GLOBALNE I INICJALIZACJA ---
+        // Jeżeli użytkownik nie wybrał języka ręcznie, aplikacja podąża za językiem telefonu/systemu.
+        // Obsługiwane: PL, NO (nb/nn/no), EN. Każdy inny język => EN.
+        function detectSystemLanguage() {
+            const rawLanguages = Array.isArray(navigator.languages) && navigator.languages.length
+                ? navigator.languages
+                : [navigator.language || navigator.userLanguage || 'en'];
+
+            for (const raw of rawLanguages) {
+                const code = String(raw || '').toLowerCase().replace('_', '-').split('-')[0];
+                if (code === 'pl') return 'pl';
+                if (code === 'no' || code === 'nb' || code === 'nn') return 'no';
+                if (code === 'en') return 'en';
+            }
+            return 'en';
+        }
+
+        const savedLang = localStorage.getItem('wojthom-lang');
+        const hasManualLang = localStorage.getItem('wojthom-lang-manual') === '1';
+        let currentLang = hasManualLang && ['en','pl','no'].includes(savedLang)
+            ? savedLang
+            : detectSystemLanguage();
+        let isLightMode = localStorage.getItem('wojthom-theme') === 'light';
+        let entries = [];
+        let originalEntries = [];
+        let editIndex = -1;
+        let tChart = null, cChart = null;
+
+        function initApp() {
+            setLang(currentLang, false);
+            applyTheme();
+            const pdfLanguage = document.getElementById('pdfLanguage');
+            if (pdfLanguage) pdfLanguage.value = ['en','pl','no'].includes(currentLang) ? currentLang : 'en';
+            restoreDraft();
+            restorePDFSettings();
+            bindLiveValidation();
+            updateQuickDashboard();
+        }
+
+        function setLang(lang, manual = true) {
+            if (!['en','pl','no'].includes(lang)) lang = 'en';
+            currentLang = lang;
+            localStorage.setItem('wojthom-lang', lang);
+            if (manual) localStorage.setItem('wojthom-lang-manual', '1');
+            
+            document.querySelectorAll('[data-i18n]').forEach(el => { 
+                if (i18n[lang][el.getAttribute('data-i18n')]) {
+                    el.innerHTML = i18n[lang][el.getAttribute('data-i18n')]; 
+                }
+            });
+            
+            ['no','pl','en'].forEach(k => document.getElementById('check-'+k).style.opacity = '0');
+            document.getElementById('check-'+lang).style.opacity = '1';
+            document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('show'));
+            
+            const defHeaders = {"no": "Tidsliste", "pl": "Lista Czasu Pracy", "en": "Time List"};
+            let hInput = document.getElementById('headerInput');
+            if(hInput.value === "Lista Czasu Pracy" || hInput.value === "Tidsliste" || hInput.value === "Time List") {
+                hInput.value = defHeaders[lang];
+            }
+            
+            applyTheme(); 
+            if(entries.length > 0) refreshTable();
+            else updateQuickDashboard();
+        }
+
+        function applyTheme() {
+            const btn = document.getElementById('toggleThemeBtn');
+            if (isLightMode) {
+                document.body.classList.add('light-theme');
+                btn.innerHTML = `<i class="fas fa-moon" style="color:var(--primary); width:20px;"></i> <span data-i18n="theme_dark">${i18n[currentLang].theme_dark}</span>`;
+            } else {
+                document.body.classList.remove('light-theme');
+                btn.innerHTML = `<i class="fas fa-sun" style="color:var(--warning); width:20px;"></i> <span data-i18n="theme_light">${i18n[currentLang].theme_light}</span>`;
+            }
+        }
+
+        function toggleTheme() {
+            isLightMode = !isLightMode;
+            localStorage.setItem('wojthom-theme', isLightMode ? 'light' : 'dark'); 
+            applyTheme();
+            if (document.getElementById('statsModal').style.display === 'block') drawCharts();
+        }
+
+        function toggleMenu(id) {
+            document.querySelectorAll('.dropdown-menu').forEach(m => { if(m.id !== id) m.classList.remove('show'); });
+            document.getElementById(id).classList.toggle('show');
+        }
+        window.onclick = e => { if(!e.target.closest('.dropdown-container')) document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('show')); };
+        
+        function openModal(id) { 
+            if(id === 'pdfLangModal' && entries.length === 0) return alert(i18n[currentLang].missing + "!");
+            
+            document.getElementById(id).style.display = 'block'; 
+            document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('show'));
+            if(id === 'statsModal') drawCharts();
+            if(id === 'filterModal') populateFilter();
+        }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        
+        function switchTab(tabId, element) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            element.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        // --- 5. SMART PARSER + WALIDACJA + AUTO FIX 4.2 ---
+        function formatMinutes(mins) {
+            mins = Number.isFinite(Number(mins)) ? Math.max(0, Math.round(Number(mins))) : 0;
+            let h = Math.floor(mins / 60);
+            let m = mins % 60;
+            return `${h}:${m.toString().padStart(2, '0')}`;
+        }
+
+        function escapeHTML(value) {
+            return String(value ?? '').replace(/[&<>'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
+        }
+        function escapeAttr(value) { return escapeHTML(value).replace(/`/g, '&#96;'); }
+        function stripTags(value) { return String(value ?? '').replace(/<[^>]*>/g, '').trim(); }
+        function cleanClientName(value) {
+            return String(value ?? '')
+                .replace(/^[\s.,;:|•·]+/, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+
+        const validationText = {
+            en: { ok:'DATA CHECK: OK', okSub:'No errors detected. Ready for a clean PDF.', errors:'DATA CHECK: ERRORS', warnings:'DATA CHECK: WARNING', errCount:n=>`${n} problem${n===1?'':'s'} require attention.`, warnCount:n=>`${n} suspicious value${n===1?'':'s'} detected.`, fixed:n=>`Auto Fix corrected ${n} value${n===1?'':'s'}.`, unresolved:n=>`${n} problem${n===1?' remains':'s remain'} for manual editing.`, dateMissing:'Date is missing', dateInvalid:'Invalid date', clientMissing:'Client / location is missing', startInvalid:'Invalid start time', endInvalid:'Invalid end time', pairMissing:'Start and end must both be filled', workMissing:'Work time is missing', workInvalid:'Invalid work time', mismatch:'Work time does not match start/end', zero:'Work time must be greater than 0', long:'Very long shift — verify it', repaired:'Entry repaired', pdfBlocked:'The list contains errors. Auto Fix will run first.', pdfStillBad:'Some data still require manual correction before PDF export.', restored:'Recovered last autosaved list' },
+            pl: { ok:'KONTROLA DANYCH: OK', okSub:'Brak błędów. Lista jest gotowa do czystego PDF.', errors:'KONTROLA DANYCH: BŁĘDY', warnings:'KONTROLA DANYCH: UWAGA', errCount:n=>`${n} ${n===1?'problem wymaga':'problemy wymagają'} poprawy.`, warnCount:n=>`Wykryto ${n} podejrzan${n===1?'ą wartość':'e wartości'}.`, fixed:n=>`Auto Napraw poprawił ${n} ${n===1?'wartość':'wartości'}.`, unresolved:n=>`${n} ${n===1?'problem pozostał':'problemy pozostały'} do ręcznej edycji.`, dateMissing:'Brak daty', dateInvalid:'Nieprawidłowy dzień lub miesiąc', clientMissing:'Brak klienta / lokalizacji', startInvalid:'Nieprawidłowa godzina startu', endInvalid:'Nieprawidłowa godzina końca', pairMissing:'Start i koniec muszą być uzupełnione razem', workMissing:'Brak czasu pracy', workInvalid:'Nieprawidłowy czas pracy', mismatch:'Czas pracy nie zgadza się ze startem i końcem', zero:'Czas pracy musi być większy niż 0', long:'Bardzo długa zmiana — sprawdź ją', repaired:'Wpis naprawiony', pdfBlocked:'Lista zawiera błędy. Najpierw uruchamiam Auto Napraw.', pdfStillBad:'Część danych nadal wymaga ręcznej poprawy przed eksportem PDF.', restored:'Odzyskano ostatnią automatycznie zapisaną listę' },
+            no: { ok:'DATAKONTROLL: OK', okSub:'Ingen feil funnet. Listen er klar for PDF.', errors:'DATAKONTROLL: FEIL', warnings:'DATAKONTROLL: ADVARSEL', errCount:n=>`${n} problem${n===1?'':'er'} må rettes.`, warnCount:n=>`${n} mistenkelig${n===1?' verdi':'e verdier'} funnet.`, fixed:n=>`Auto Fix rettet ${n} verdi${n===1?'':'er'}.`, unresolved:n=>`${n} problem${n===1?' gjenstår':'er gjenstår'} for manuell redigering.`, dateMissing:'Dato mangler', dateInvalid:'Ugyldig dato', clientMissing:'Kunde / lokasjon mangler', startInvalid:'Ugyldig starttid', endInvalid:'Ugyldig sluttid', pairMissing:'Start og slutt må fylles ut sammen', workMissing:'Arbeidstid mangler', workInvalid:'Ugyldig arbeidstid', mismatch:'Arbeidstid stemmer ikke med start/slutt', zero:'Arbeidstiden må være større enn 0', long:'Svært lang vakt — kontroller den', repaired:'Oppføring reparert', pdfBlocked:'Listen inneholder feil. Auto Fix kjøres først.', pdfStillBad:'Noen data må fortsatt rettes manuelt før PDF-eksport.', restored:'Siste autolagrede liste ble gjenopprettet' }
+        };
+        function vt() { return validationText[currentLang] || validationText.en; }
+
+        function normalizeDate(raw) {
+            const s = String(raw ?? '').trim().replace(/[,]/g,'.').replace(/[\/\-\s]+/g,'.').replace(/\.+/g,'.');
+            const m = s.match(/^(\d{1,2})\.(\d{1,2})(?:\.(\d{2}|\d{4}))?$/);
+            if (!m) return null;
+            let d=+m[1], mo=+m[2], y=m[3] ? +m[3] : null;
+            if (y !== null && y < 100) y += 2000;
+            if (mo < 1 || mo > 12 || d < 1) return null;
+            const checkYear = y || 2024; // leap-friendly when year is omitted
+            const maxD = new Date(checkYear, mo, 0).getDate();
+            if (d > maxD) return null;
+            return `${String(d).padStart(2,'0')}.${String(mo).padStart(2,'0')}${y ? '.'+String(y).padStart(4,'0') : ''}`;
+        }
+
+        function normalizeClock(raw) {
+            let s = String(raw ?? '').trim().toLowerCase().replace(/\s/g,'').replace(',',':').replace('.',':');
+            if (!s) return null;
+            let h, m;
+            let x = s.match(/^(\d{1,2}):(\d{1,2})$/);
+            if (x) { h=+x[1]; m=+x[2]; }
+            else if (/^\d{3,4}$/.test(s)) { h=+s.slice(0,-2); m=+s.slice(-2); }
+            else if (/^\d{1,2}$/.test(s)) { h=+s; m=0; }
+            else return null;
+            if (h<0 || h>23 || m<0 || m>59) return null;
+            return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+        }
+
+        function clockToMinutes(raw) {
+            const n = normalizeClock(raw); if (!n) return null;
+            const [h,m] = n.split(':').map(Number); return h*60+m;
+        }
+
+        function parseWorkMinutes(raw) {
+            let s = stripTags(raw).trim();
+            if (!s) return null;
+            if (s.includes('/')) s = s.split('/').pop().trim();
+            s = s.replace(/\s/g,'').replace(/(?:hours?|hrs?|h|timer|t)$/i,'');
+            if (/^\d{1,3}[:.]\d{1,2}$/.test(s) && s.includes(':')) {
+                const [h,m]=s.split(':').map(Number); if (m>59) return null; return h*60+m;
+            }
+            if (/^\d{1,3}:\d{1,2}$/.test(s)) {
+                const [h,m]=s.split(':').map(Number); if (m>59) return null; return h*60+m;
+            }
+            if (/^\d+(?:[.,]\d+)?$/.test(s)) {
+                const n=parseFloat(s.replace(',','.')); return Number.isFinite(n) ? Math.round(n*60) : null;
+            }
+            return null;
+        }
+
+        function calcRangeMinutes(start, end) {
+            let sm=clockToMinutes(start), em=clockToMinutes(end);
+            if (sm===null || em===null) return null;
+            if (em < sm) em += 1440;
+            return em-sm;
+        }
+
+        function validateEntry(e) {
+            const errors={}, warnings={};
+            const date=String(e.date||'').trim(), client=String(e.client||'').trim();
+            const start=String(e.start||'').trim(), end=String(e.end||'').trim();
+            const work=stripTags(e.work||'').trim();
+            if (!date) errors.date=vt().dateMissing; else if (!normalizeDate(date)) errors.date=vt().dateInvalid;
+            if (!client) errors.client=vt().clientMissing;
+            if (!!start !== !!end) {
+                if (!start) errors.start=vt().pairMissing;
+                if (!end) errors.end=vt().pairMissing;
+            }
+            if (start && !normalizeClock(start)) errors.start=vt().startInvalid;
+            if (end && !normalizeClock(end)) errors.end=vt().endInvalid;
+            const workMin = parseWorkMinutes(work);
+            if (!work) errors.work=vt().workMissing;
+            else if (workMin===null || workMin<0 || workMin>1440) errors.work=vt().workInvalid;
+            else if (workMin===0) errors.work=vt().zero;
+            if (!errors.start && !errors.end && start && end) {
+                const range=calcRangeMinutes(start,end);
+                if (range===0) errors.work=vt().zero;
+                else if (range!==null && workMin!==null && Math.abs(range-workMin)>1) errors.work=vt().mismatch;
+                if (range!==null && range>16*60) warnings.work=vt().long;
+            } else if (workMin!==null && workMin>16*60) warnings.work=vt().long;
+            return { errors, warnings, errorCount:Object.keys(errors).length, warningCount:Object.keys(warnings).length };
+        }
+
+        function autoFixEntryData(e) {
+            let changed=0;
+            const set=(k,v)=>{ if(v!==null && v!==undefined && String(e[k]??'')!==String(v)){ e[k]=v; changed++; } };
+            const nd=normalizeDate(e.date); if (nd) set('date',nd);
+            const ns=normalizeClock(e.start); if (e.start && ns) set('start',ns);
+            const ne=normalizeClock(e.end); if (e.end && ne) set('end',ne);
+            e.client=cleanClientName(e.client);
+            if (e.start && e.end && normalizeClock(e.start) && normalizeClock(e.end)) {
+                const mins=calcRangeMinutes(e.start,e.end);
+                if (mins!==null && mins>0 && mins<=1440) { set('minutes',mins); set('work',formatMinutes(mins)); }
+            } else {
+                const mins=parseWorkMinutes(e.work);
+                if (mins!==null && mins>0 && mins<=1440) { set('minutes',mins); set('work',formatMinutes(mins)); }
+            }
+            return changed;
+        }
+
+        function getAllValidation() {
+            let errorCount=0, warningCount=0, badRows=[];
+            entries.forEach((e,i)=>{ const v=validateEntry(e); errorCount+=v.errorCount; warningCount+=v.warningCount; if(v.errorCount) badRows.push(i); });
+            return {errorCount,warningCount,badRows};
+        }
+
+        function updateValidationPanel() {
+            const panel=document.getElementById('validationPanel'); if(!panel) return;
+            const title=document.getElementById('validationTitle'), sub=document.getElementById('validationSub'), icon=document.getElementById('validationIcon');
+            const fix=document.getElementById('fixAllBtn'), next=document.getElementById('nextIssueBtn');
+            const v=getAllValidation();
+            panel.classList.toggle('has-errors',v.errorCount>0); panel.classList.toggle('has-warnings',v.warningCount>0);
+            if(v.errorCount){ title.textContent=vt().errors; sub.textContent=vt().errCount(v.errorCount); icon.className='fas fa-triangle-exclamation validation-icon'; }
+            else if(v.warningCount){ title.textContent=vt().warnings; sub.textContent=vt().warnCount(v.warningCount); icon.className='fas fa-circle-exclamation validation-icon'; }
+            else { title.textContent=vt().ok; sub.textContent=vt().okSub; icon.className='fas fa-circle-check validation-icon'; }
+            fix.innerHTML='<i class="fas fa-wand-magic-sparkles"></i> '+(currentLang==='pl'?'AUTO NAPRAW WSZYSTKO':currentLang==='no'?'AUTO FIX ALT':'AUTO FIX ALL');
+            next.innerHTML='<i class="fas fa-location-crosshairs"></i> '+(currentLang==='pl'?'NASTĘPNY BŁĄD':currentLang==='no'?'NESTE FEIL':'NEXT ERROR');
+            fix.disabled=entries.length===0 || (v.errorCount===0 && v.warningCount===0); next.disabled=v.errorCount===0;
+        }
+
+        function persistDraft() {
+            try { localStorage.setItem('wojthom-draft-v43', JSON.stringify({ header:document.getElementById('headerInput').value, raw:document.getElementById('rawInput').value, entries:originalEntries })); } catch(e) { console.warn('Autosave:',e); }
+        }
+        function restoreDraft() {
+            try {
+                const raw=localStorage.getItem('wojthom-draft-v43'); if(!raw) { updateValidationPanel(); return; }
+                const d=JSON.parse(raw); if(!Array.isArray(d.entries) || !d.entries.length) { updateValidationPanel(); return; }
+                originalEntries=d.entries; originalEntries.forEach(e=>autoFixEntryData(e)); entries=[...originalEntries];
+                if(typeof d.header==='string' && d.header) document.getElementById('headerInput').value=d.header;
+                if(typeof d.raw==='string') document.getElementById('rawInput').value=d.raw;
+                refreshTable(); document.getElementById('statusBar').innerText=vt().restored;
+            } catch(e) { console.warn('Restore:',e); updateValidationPanel(); }
+        }
+
+        document.getElementById('generateBtn').addEventListener('click', () => {
+            const rawData = document.getElementById('rawInput').value;
+            if(!rawData.trim()) return;
+            entries = [];
+            rawData.split('\n').forEach(rawLine => {
+                let line=rawLine.trim(); if(!line) return;
+                line=line.replace(/\b(\d+)\s+(\d{1,2})\b(?=\s*$|\s*[hHtT]\b)/g,'$1.$2');
+                let date='',client='',start='',end='',work='',minutes=0;
+                const dateMatch=line.match(/^(\d{1,2})[.\-\/\s]+(\d{1,2})(?:[.\-\/\s]+(\d{2,4}))?\b/);
+                if(dateMatch){ date=`${dateMatch[1]}.${dateMatch[2]}${dateMatch[3]?'.'+dateMatch[3]:''}`; line=line.substring(dateMatch[0].length).replace(/^[\s.,;:|•·]+/,'').trim(); }
+                const rangeMatch=line.match(/\b(\d{1,2})[:.](\d{1,2})\s*[-–—]\s*(\d{1,2})[:.](\d{1,2})\b/);
+                if(rangeMatch){
+                    start=`${rangeMatch[1]}:${rangeMatch[2]}`; end=`${rangeMatch[3]}:${rangeMatch[4]}`;
+                    const ns=normalizeClock(start), ne=normalizeClock(end);
+                    if(ns) start=ns; if(ne) end=ne;
+                    const rm=calcRangeMinutes(start,end); if(rm!==null){ minutes=rm; work=formatMinutes(minutes); }
+                    line=line.replace(rangeMatch[0],'').trim();
+                } else {
+                    const durColon=line.match(/(?:\s|^)(\d{1,3}:[0-5]?\d)\s*$/);
+                    const durH=line.match(/(?:\s|^)(\d+(?:[.,]\d+)?)\s*[hHtT]\s*$/i);
+                    const durDec=line.match(/(?:\s|^)(\d+(?:[.,]\d+)?)\s*$/);
+                    const dm=durColon||durH||durDec;
+                    if(dm){ const val=dm[1]; const parsed=durColon ? parseWorkMinutes(val) : Math.round(parseFloat(val.replace(',','.'))*60); if(Number.isFinite(parsed)){minutes=parsed; work=formatMinutes(parsed);} line=line.replace(dm[0],'').trim(); }
+                }
+                client=cleanClientName(line);
+                const e={date,client,start,end,work,minutes}; autoFixEntryData(e); entries.push(e);
+            });
+            originalEntries=[...entries]; refreshTable(); persistDraft();
+            document.getElementById('statusBar').innerText=i18n[currentLang].status_generated+entries.length;
+        });
+
+        // --- 6. RENDEROWANIE, DIAGNOSTYKA I EDYCJA ---
+        function issueCell(field, value, fallback, idx, validation, extraStyle='', label='') {
+            const err=validation.errors[field], warn=validation.warnings[field];
+            const safe=value ? escapeHTML(value) : fallback;
+            const cls=err?'cell-error':warn?'cell-warning':'';
+            const issue=err?`<span class="issue-text">${escapeHTML(err)}</span>`:'';
+            const action=err?` onclick="openEdit(${idx}, '${field}')" title="${escapeAttr(err)}"`:'';
+            return `<td data-label="${escapeAttr(label)}" class="${cls}" style="${extraStyle}"${action}>${safe}${issue}</td>`;
+        }
+
+        function updateQuickDashboard() {
+            const totalMin=entries.reduce((sum,e)=>sum+(Number(e.minutes)||0),0);
+            const v=getAllValidation();
+            const score=Math.max(0,100-Math.min(100,v.errorCount*12+v.warningCount*4));
+            const labels={
+                pl:['Wpisy','Łączny czas','Problemy','Jakość'],
+                no:['Rader','Total tid','Problemer','Kvalitet'],
+                en:['Entries','Total time','Issues','Quality']
+            }[currentLang] || ['Entries','Total time','Issues','Quality'];
+            const ids=['dashLabelEntries','dashLabelHours','dashLabelIssues','dashLabelScore'];
+            ids.forEach((id,i)=>{ const el=document.getElementById(id); if(el) el.textContent=labels[i]; });
+            const de=document.getElementById('dashEntries'), dh=document.getElementById('dashHours'), di=document.getElementById('dashIssues'), ds=document.getElementById('dashScore');
+            if(de) de.textContent=String(entries.length); if(dh) dh.textContent=formatMinutes(totalMin); if(di) di.textContent=String(v.errorCount+v.warningCount); if(ds) ds.textContent=`${score}%`;
+            const ic=document.getElementById('dashIssuesChip'), sc=document.getElementById('dashScoreChip');
+            if(ic) ic.className='quick-chip '+(v.errorCount?'bad':v.warningCount?'warn':'good');
+            if(sc) sc.className='quick-chip '+(score>=95?'good':score>=75?'warn':'bad');
+            const dockG=document.getElementById('dockGenerate'), dockF=document.getElementById('dockFix');
+            if(dockG) dockG.textContent=currentLang==='pl'?'GENERUJ':currentLang==='no'?'GENERER':'GENERATE';
+            if(dockF) dockF.textContent=currentLang==='pl'?'NAPRAW':currentLang==='no'?'RETT':'AUTO FIX';
+        }
+
+        function refreshTable() {
+            const tbody=document.getElementById('resultBody'); tbody.innerHTML=''; let totalMin=0;
+            const misText=`<span class="text-missing"><i class="fas fa-exclamation-triangle"></i> ${i18n[currentLang].missing}</span>`;
+            entries.forEach((e,i)=>{
+                totalMin+=(Number(e.minutes)||0); const v=validateEntry(e); const tr=document.createElement('tr');
+                if(v.errorCount) tr.className='row-invalid';
+                const workText=stripTags(e.work)||'';
+                tr.innerHTML=`
+                    ${issueCell('date',e.date,misText,i,v,'',i18n[currentLang].col_date)}
+                    ${issueCell('client',e.client,misText,i,v,'text-align:left;',i18n[currentLang].col_client)}
+                    ${issueCell('start',e.start,'-',i,v,'',i18n[currentLang].col_start)}
+                    ${issueCell('end',e.end,'-',i,v,'',i18n[currentLang].col_end)}
+                    ${issueCell('work',workText,misText,i,v,'',i18n[currentLang].col_work)}
+                    <td data-label="${escapeAttr(i18n[currentLang].col_action)}">
+                        <button class="btn-3d warning quick-fix-btn" onclick="openEdit(${i})"><i class="fas fa-wrench"></i> ${i18n[currentLang].btn_edit}</button>
+                        ${v.errorCount||v.warningCount ? `<button class="btn-3d quick-fix-btn" onclick="autoFixOne(${i})"><i class="fas fa-wand-magic-sparkles"></i> FIX</button>` : ''}
+                    </td>`;
+                tbody.appendChild(tr);
+            });
+            document.getElementById('summaryLabel').innerHTML=`<span data-i18n="sum_total">${i18n[currentLang].sum_total}</span> ${formatMinutes(totalMin)}`;
+            updateValidationPanel();
+            updateQuickDashboard();
+        }
+
+        window.openEdit=function(idx,field=null){
+            editIndex=idx; const e=entries[idx];
+            document.getElementById('editDate').value=e.date||''; document.getElementById('editClient').value=e.client||'';
+            document.getElementById('editStart').value=e.start||''; document.getElementById('editEnd').value=e.end||''; document.getElementById('editWork').value=stripTags(e.work||'');
+            openModal('editModal'); validateEditFields();
+            if(field){ const map={date:'editDate',client:'editClient',start:'editStart',end:'editEnd',work:'editWork'}; setTimeout(()=>{const el=document.getElementById(map[field]); if(el){el.focus();el.select();}},60); }
+        };
+
+        function tempEntryFromEditor(){
+            const wk=document.getElementById('editWork').value.trim();
+            return { date:document.getElementById('editDate').value.trim(), client:document.getElementById('editClient').value.trim(), start:document.getElementById('editStart').value.trim(), end:document.getElementById('editEnd').value.trim(), work:wk, minutes:parseWorkMinutes(wk)||0 };
+        }
+
+        function validateEditFields(){
+            if(editIndex<0) return true; const v=validateEntry(tempEntryFromEditor());
+            const map={date:'editDate',client:'editClient',start:'editStart',end:'editEnd',work:'editWork'};
+            Object.entries(map).forEach(([field,id])=>{ const input=document.getElementById(id), box=document.getElementById(id+'Error'), msg=v.errors[field]||''; input.classList.toggle('input-invalid',!!msg); box.textContent=msg; box.classList.toggle('show',!!msg); });
+            const health=document.getElementById('editHealth');
+            if(v.errorCount){health.className='edit-health bad';health.innerHTML=`<i class="fas fa-triangle-exclamation"></i> ${vt().errCount(v.errorCount)}`;}
+            else {health.className='edit-health good';health.innerHTML=`<i class="fas fa-circle-check"></i> ${vt().okSub}`;}
+            return v.errorCount===0;
+        }
+
+        function bindLiveValidation(){
+            ['editDate','editClient','editStart','editEnd','editWork'].forEach(id=>document.getElementById(id)?.addEventListener('input',validateEditFields));
+            document.getElementById('headerInput')?.addEventListener('input',persistDraft);
+            document.getElementById('rawInput')?.addEventListener('change',persistDraft);
+            document.querySelectorAll('#pdfLangModal input, #pdfLangModal select').forEach(el=>el.addEventListener('change',persistPDFSettings));
+        }
+
+        function persistPDFSettings(){
+            const ids=['pdfLanguage','pdfStyle','pdfOrientation','pdfShowHeader','pdfShowGenerated','pdfShowStats','pdfShowPeriod','pdfShowTotal','pdfShowFooter','pdfShowSignature','pdfColNumber','pdfColDate','pdfColClient','pdfColStart','pdfColEnd','pdfColWork'];
+            const data={}; ids.forEach(id=>{const el=document.getElementById(id); if(el) data[id]=el.type==='checkbox'?el.checked:el.value;});
+            try{localStorage.setItem('wojthom-pdf-options-v43',JSON.stringify(data));}catch(e){console.warn('PDF settings:',e);}
+        }
+        function restorePDFSettings(){
+            try{
+                const raw=localStorage.getItem('wojthom-pdf-options-v43'); if(!raw) return;
+                const data=JSON.parse(raw); Object.entries(data).forEach(([id,val])=>{const el=document.getElementById(id); if(!el) return; if(el.type==='checkbox') el.checked=!!val; else el.value=val;});
+            }catch(e){console.warn('PDF settings restore:',e);}
+        }
+
+        document.getElementById('smartFixEditBtn').addEventListener('click',()=>{
+            let e=tempEntryFromEditor(); autoFixEntryData(e);
+            document.getElementById('editDate').value=e.date||''; document.getElementById('editClient').value=e.client||''; document.getElementById('editStart').value=e.start||''; document.getElementById('editEnd').value=e.end||''; document.getElementById('editWork').value=stripTags(e.work||''); validateEditFields();
+        });
+
+        document.getElementById('saveEditBtn').addEventListener('click',()=>{
+            if(editIndex===-1) return; const e=entries[editIndex], temp=tempEntryFromEditor(); autoFixEntryData(temp);
+            Object.assign(e,temp); const mins=e.start&&e.end?calcRangeMinutes(e.start,e.end):parseWorkMinutes(e.work); e.minutes=mins||0; if(mins) e.work=formatMinutes(mins);
+            // Keep source database in sync even while a filter is active.
+            if(!originalEntries.includes(e)){ const old=originalEntries.find(x=>x===entries[editIndex]); if(old) Object.assign(old,e); }
+            closeModal('editModal'); editIndex=-1; refreshTable(); persistDraft();
+        });
+
+        window.autoFixOne=function(idx){ const before=JSON.stringify(entries[idx]); const changed=autoFixEntryData(entries[idx]); refreshTable(); persistDraft(); const after=JSON.stringify(entries[idx]); document.getElementById('statusBar').innerText=(before!==after||changed)?vt().repaired:vt().errCount(validateEntry(entries[idx]).errorCount); };
+
+        window.autoFixAll=function(silent=false){
+            let changed=0; entries.forEach(e=>changed+=autoFixEntryData(e)); originalEntries.forEach(e=>{ if(!entries.includes(e)) changed+=autoFixEntryData(e); });
+            refreshTable(); persistDraft(); const v=getAllValidation();
+            if(!silent) document.getElementById('statusBar').innerText=`${vt().fixed(changed)} ${v.errorCount?vt().unresolved(v.errorCount):vt().okSub}`;
+            return v;
+        };
+
+        let issueCursor=-1;
+        window.focusNextIssue=function(){
+            const bad=getAllValidation().badRows; if(!bad.length) return; issueCursor=(issueCursor+1)%bad.length; const idx=bad[issueCursor];
+            const v=validateEntry(entries[idx]); const field=Object.keys(v.errors)[0]||'date'; const rows=document.querySelectorAll('#resultBody tr'); rows[idx]?.scrollIntoView({behavior:'smooth',block:'center'}); setTimeout(()=>openEdit(idx,field),220);
+        };
+
+        // --- 7. CZYSZCZENIE I FILTRY ---
+        document.getElementById('clearBtn').addEventListener('click', () => { document.getElementById('rawInput').value = ''; entries = []; originalEntries = []; localStorage.removeItem('wojthom-draft-v43'); refreshTable(); document.getElementById('statusBar').innerText = i18n[currentLang].status_ready; });
+        
+        function populateFilter() {
+            const sel = document.getElementById('filterClient');
+            sel.innerHTML = '<option value="">Wszyscy / All</option>';
+            const clients = [...new Set(originalEntries.map(e => e.client).filter(Boolean))];
+            clients.forEach(c => { sel.innerHTML += `<option value="${c}">${c}</option>`; });
+        }
+        
+        document.getElementById('applyFilterBtn').addEventListener('click', () => {
+            const cFilter = document.getElementById('filterClient').value;
+            const minH = parseFloat(document.getElementById('filterMinHours').value) || 0;
+            entries = originalEntries.filter(e => {
+                let matchClient = cFilter === "" || e.client === cFilter;
+                let matchHours = (e.minutes / 60) >= minH;
+                return matchClient && matchHours;
+            });
+            closeModal('filterModal');
+            refreshTable();
+        });
+        
+        document.getElementById('resetFilterBtn').addEventListener('click', () => {
+            entries = [...originalEntries];
+            document.getElementById('filterClient').value = "";
+            document.getElementById('filterMinHours').value = "0";
+            closeModal('filterModal');
+            refreshTable();
+        });
+
+        // --- 8. STATYSTYKI CHART.JS ---
+        function drawCharts() {
+            let dateMap = {}, clientMap = {};
+            entries.forEach(e => { 
+                if(e.date && e.minutes) dateMap[e.date] = (dateMap[e.date]||0) + e.minutes/60; 
+                if(e.client && e.minutes) clientMap[e.client] = (clientMap[e.client]||0) + e.minutes/60; 
+            });
+            
+            Chart.defaults.color = isLightMode ? '#475569' : '#e0e6ed';
+            Chart.defaults.font.family = 'Rajdhani';
+
+            if(tChart) tChart.destroy();
+            tChart = new Chart(document.getElementById('timeChartCanvas').getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(dateMap),
+                    datasets: [{ label: 'H (Godziny)', data: Object.values(dateMap), backgroundColor: isLightMode ? '#1e3a8a' : '#00f0ff', borderRadius: 4 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: isLightMode ? 'rgba(30, 58, 138, 0.15)' : 'rgba(0,240,255,0.1)' } } } }
+            });
+
+            if(cChart) cChart.destroy();
+            cChart = new Chart(document.getElementById('clientChartCanvas').getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(clientMap),
+                    datasets: [{ label: 'H', data: Object.values(clientMap), backgroundColor: ['#1e3a8a', '#b91c1c', '#6d28d9', '#b45309', '#15803d'], borderWidth: 0 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+
+        // --- 9. PROFESJONALNY EKSPORT PDF ---
+        function generatePDF(pdfLang) {
+            closeModal('pdfLangModal');
+            if (!entries.length) return alert(i18n[currentLang].missing + "!");
+            let quality = getAllValidation();
+            if (quality.errorCount) {
+                document.getElementById('statusBar').innerText = vt().pdfBlocked;
+                quality = autoFixAll(true);
+                if (quality.errorCount) {
+                    alert(vt().pdfStillBad);
+                    focusNextIssue();
+                    return;
+                }
+            }
+            persistPDFSettings();
+
+            const { jsPDF } = window.jspdf;
+            const orientation = document.getElementById('pdfOrientation')?.value || 'portrait';
+            const styleName = document.getElementById('pdfStyle')?.value || 'business';
+            const opt = id => document.getElementById(id)?.checked === true;
+            const showHeader=opt('pdfShowHeader'), showGenerated=opt('pdfShowGenerated'), showStats=opt('pdfShowStats'), showPeriod=opt('pdfShowPeriod');
+            const showTotal=opt('pdfShowTotal'), showFooter=opt('pdfShowFooter'), showSignature=opt('pdfShowSignature');
+            const doc = new jsPDF({ orientation, unit:'mm', format:'a4', compress:true });
+            const pageWidth=doc.internal.pageSize.getWidth(), pageHeight=doc.internal.pageSize.getHeight();
+            const left=14, right=14, contentWidth=pageWidth-left-right;
+            const totalPagesExp='{total_pages_count_string}';
+
+            let pdfFont='helvetica';
+            try {
+                if(window.pdfMake && window.pdfMake.vfs){
+                    const vfs=window.pdfMake.vfs;
+                    if(vfs['Roboto-Regular.ttf']){doc.addFileToVFS('Roboto-Regular.ttf',vfs['Roboto-Regular.ttf']);doc.addFont('Roboto-Regular.ttf','Roboto','normal');}
+                    if(vfs['Roboto-Medium.ttf']){doc.addFileToVFS('Roboto-Medium.ttf',vfs['Roboto-Medium.ttf']);doc.addFont('Roboto-Medium.ttf','Roboto','bold');}
+                    if(vfs['Roboto-Regular.ttf']&&vfs['Roboto-Medium.ttf']) pdfFont='Roboto';
+                }
+            } catch(fontErr){ console.warn('PDF font fallback:',fontErr); }
+
+            const t=i18n[pdfLang]||i18n.en;
+            const tx={
+                en:{report:'WORK TIME REPORT',generated:'Generated',entries:'Entries',clients:'Clients',average:'Avg. / entry',period:'Period',total:'Total time',signature:'Employee signature',approval:'Approved by',page:'Page',of:'of',noData:'Missing data'},
+                pl:{report:'RAPORT CZASU PRACY',generated:'Wygenerowano',entries:'Wpisy',clients:'Klienci',average:'Śr. / wpis',period:'Okres',total:'Łączny czas',signature:'Podpis pracownika',approval:'Zatwierdził',page:'Strona',of:'z',noData:'Brak danych'},
+                no:{report:'ARBEIDSTIDSRAPPORT',generated:'Generert',entries:'Oppføringer',clients:'Kunder',average:'Snitt / rad',period:'Periode',total:'Total tid',signature:'Ansattes signatur',approval:'Godkjent av',page:'Side',of:'av',noData:'Mangler data'}
+            }[pdfLang] || null;
+            const themes={
+                business:{primary:[30,58,138],dark:[15,23,42],accent:[37,99,235],pale:[239,246,255],row:[248,250,252],line:[203,213,225],white:[255,255,255],muted:[100,116,139]},
+                minimal:{primary:[45,55,72],dark:[17,24,39],accent:[75,85,99],pale:[247,248,250],row:[250,250,250],line:[218,221,226],white:[255,255,255],muted:[110,110,115]},
+                neon:{primary:[0,119,140],dark:[7,18,29],accent:[0,174,204],pale:[232,250,252],row:[246,252,253],line:[187,224,229],white:[255,255,255],muted:[82,112,120]}
+            };
+            const C=themes[styleName]||themes.business;
+            const stripHTML=str=>(str??'').toString().replace(/<[^>]*>?/gm,'').replace(/\s*\/\s*/g,' / ').trim();
+            const safe=(str,fallback='-')=>stripHTML(str)||fallback;
+            const totalMin=entries.reduce((sum,e)=>sum+(Number(e.minutes)||0),0), totalStr=formatMinutes(totalMin);
+            const avgStr=formatMinutes(entries.length?Math.round(totalMin/entries.length):0);
+            const clientCount=new Set(entries.map(e=>stripHTML(e.client)).filter(Boolean)).size;
+            const firstDate=entries.map(e=>stripHTML(e.date)).find(Boolean)||'-';
+            const lastDate=[...entries].reverse().map(e=>stripHTML(e.date)).find(Boolean)||'-';
+            const periodStr=firstDate===lastDate?firstDate:`${firstDate} - ${lastDate}`;
+            const now=new Date(), locale=pdfLang==='pl'?'pl-PL':(pdfLang==='no'?'nb-NO':'en-GB');
+            const generatedText=`${tx.generated}: ${now.toLocaleDateString(locale)} ${now.toLocaleTimeString(locale,{hour:'2-digit',minute:'2-digit'})}`;
+            const reportTitle=(document.getElementById('headerInput').value||'').trim()||tx.report;
+            const setFont=(style='normal')=>doc.setFont(pdfFont,style), setText=c=>doc.setTextColor(...c), setFill=c=>doc.setFillColor(...c), setDraw=c=>doc.setDrawColor(...c);
+
+            const columnDefs=[
+                {id:'pdfColNumber',key:'number',header:'#',value:(e,i)=>String(i+1),halign:'center',width:9},
+                {id:'pdfColDate',key:'date',header:t.col_date,value:e=>safe(e.date),halign:'center',width:24},
+                {id:'pdfColClient',key:'client',header:t.col_client,value:e=>safe(e.client,tx.noData),halign:'left',flex:true},
+                {id:'pdfColStart',key:'start',header:t.col_start,value:e=>safe(e.start),halign:'center',width:22},
+                {id:'pdfColEnd',key:'end',header:t.col_end,value:e=>safe(e.end),halign:'center',width:22},
+                {id:'pdfColWork',key:'work',header:t.col_work,value:e=>safe(e.work,tx.noData),halign:'center',width:27,emph:true}
+            ].filter(c=>opt(c.id));
+            if(!columnDefs.length){ alert(pdfLang==='pl'?'Włącz przynajmniej jedną kolumnę tabeli.':pdfLang==='no'?'Velg minst én tabellkolonne.':'Enable at least one table column.'); openModal('pdfLangModal'); return; }
+
+            function drawTopHeader(isFirstPage){
+                let y=10;
+                if(showHeader){
+                    setFill(C.primary); doc.rect(0,0,pageWidth,5,'F');
+                    setFont('bold'); setText(C.dark); doc.setFontSize(isFirstPage?19:10.5); doc.text(reportTitle,left,isFirstPage?18:14);
+                    if(isFirstPage){ setFont('normal');setText(C.muted);doc.setFontSize(9);doc.text(`${tx.report}  •  WOJTHOM 4.3.1 MOBILE SMART PDF`,left,24); }
+                    else { setFont('normal');setText(C.muted);doc.setFontSize(8.5);doc.text(tx.report,pageWidth-right,14,{align:'right'}); }
+                    y=isFirstPage?29:18;
+                }
+                if(isFirstPage && showGenerated){
+                    setFont('normal');setText(C.muted);doc.setFontSize(8.5);
+                    doc.text(generatedText,pageWidth-right,showHeader?18:13,{align:'right'});
+                    y=Math.max(y,showHeader?29:18);
+                }
+                if(isFirstPage && (showHeader||showGenerated)){ setDraw(C.line);doc.setLineWidth(.25);doc.line(left,y,pageWidth-right,y); }
+                return y;
+            }
+
+            function drawStatsCards(startY){
+                if(!showStats) return startY;
+                const gap=3, cardW=(contentWidth-gap*3)/4, y=startY+5;
+                const cards=[[tx.total,totalStr],[tx.entries,String(entries.length)],[tx.clients,String(clientCount)],[tx.average,avgStr]];
+                cards.forEach((card,i)=>{ const x=left+i*(cardW+gap);setFill(i===0?C.pale:C.row);setDraw(C.line);doc.setLineWidth(.2);doc.roundedRect(x,y,cardW,18,2,2,'FD');setFont('normal');setText(C.muted);doc.setFontSize(7.5);doc.text(card[0].toUpperCase(),x+3,y+5.3);setFont('bold');setText(i===0?C.primary:C.dark);doc.setFontSize(i===0?12.5:11.5);doc.text(card[1],x+3,y+13.1); });
+                return y+22;
+            }
+
+            function drawPeriod(startY){
+                if(!showPeriod) return startY;
+                setFont('normal');setText(C.muted);doc.setFontSize(8);doc.text(`${tx.period}: ${periodStr}`,left,startY+3);
+                return startY+8;
+            }
+
+            function drawFooter(pageNo){
+                if(!showFooter) return;
+                const y=pageHeight-9;setDraw(C.line);doc.setLineWidth(.2);doc.line(left,y-5,pageWidth-right,y-5);setFont('normal');setText(C.muted);doc.setFontSize(7.8);doc.text('WojThom 4.3.1 • MOBILE SMART PDF',left,y);doc.text(`${tx.page} ${pageNo} ${tx.of} ${totalPagesExp}`,pageWidth-right,y,{align:'right'});
+            }
+
+            let contentY=drawTopHeader(true);
+            contentY=drawStatsCards(Math.max(contentY,9));
+            contentY=drawPeriod(contentY);
+            contentY=Math.max(contentY+2,14);
+
+            const head=[columnDefs.map(c=>c.header)];
+            const tableData=entries.map((e,i)=>columnDefs.map(c=>c.value(e,i)));
+            const colStyles={}; columnDefs.forEach((c,i)=>{ colStyles[i]={halign:c.halign,fontStyle:c.emph?'bold':'normal'}; if(c.width) colStyles[i].cellWidth=c.width; if(c.emph) colStyles[i].textColor=C.primary; });
+            const compactLandscape=orientation==='landscape';
+            doc.autoTable({
+                startY:contentY,
+                margin:{top:showHeader?23:14,bottom:showFooter?22:14,left,right},
+                head,body:tableData,theme:'grid',showHead:'everyPage',
+                styles:{font:pdfFont,fontSize:compactLandscape?8.8:8.4,cellPadding:{top:3.2,right:2.7,bottom:3.2,left:2.7},textColor:C.dark,lineColor:C.line,lineWidth:.15,overflow:'linebreak',valign:'middle'},
+                headStyles:{fillColor:C.primary,textColor:C.white,fontStyle:'bold',fontSize:compactLandscape?9.2:8.7,halign:'center',lineColor:C.primary,minCellHeight:10},
+                alternateRowStyles:{fillColor:C.row},columnStyles:colStyles,
+                didParseCell:function(data){
+                    if(data.section!=='body') return; const row=entries[data.row.index], col=columnDefs[data.column.index];
+                    const validation=validateEntry(row); if(validation.errors[col?.key] || (col?.key==='client'&&!row?.client)){ data.cell.styles.fillColor=[255,241,242];data.cell.styles.textColor=[185,28,28]; }
+                },
+                didDrawPage:function(){ const p=doc.internal.getCurrentPageInfo().pageNumber; if(p>1) drawTopHeader(false); drawFooter(p); }
+            });
+
+            let finalY=doc.lastAutoTable.finalY+7;
+            const summaryHeight=(showTotal?24:0)+(showSignature?18:0);
+            const safeBottom=pageHeight-(showFooter?24:14);
+            if(summaryHeight && finalY+summaryHeight>safeBottom){doc.addPage();drawTopHeader(false);finalY=showHeader?27:16;drawFooter(doc.internal.getCurrentPageInfo().pageNumber);}
+
+            if(showTotal){
+                setFill(C.pale);setDraw(C.primary);doc.setLineWidth(.35);doc.roundedRect(left,finalY,contentWidth,20,2,2,'FD');setFont('normal');setText(C.muted);doc.setFontSize(8);doc.text(tx.total.toUpperCase(),left+5,finalY+6);setFont('bold');setText(C.primary);doc.setFontSize(17);doc.text(totalStr,left+5,finalY+15);setFont('normal');setText(C.muted);doc.setFontSize(8);doc.text(`${tx.entries}: ${entries.length}   •   ${tx.clients}: ${clientCount}   •   ${tx.average}: ${avgStr}`,pageWidth-right-5,finalY+12,{align:'right'});finalY+=24;
+            }
+            if(showSignature){
+                const sy=finalY+8;setDraw(C.line);doc.setLineWidth(.25);const lineW=Math.min(65,contentWidth*.34);doc.line(left+3,sy,left+3+lineW,sy);doc.line(pageWidth-right-3-lineW,sy,pageWidth-right-3,sy);setFont('normal');setText(C.muted);doc.setFontSize(7.5);doc.text(tx.signature,left+3,sy+4);doc.text(tx.approval,pageWidth-right-3,sy+4,{align:'right'});
+            }
+            if(typeof doc.putTotalPages==='function'&&showFooter) doc.putTotalPages(totalPagesExp);
+
+            const dd=String(now.getDate()).padStart(2,'0'), mm=String(now.getMonth()+1).padStart(2,'0'), yyyy=now.getFullYear();
+            const safeTitle=reportTitle.normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[<>:"/\\|?*\x00-\x1F]/g,'').trim().replace(/\s+/g,'_').slice(0,45)||'timeliste';
+            doc.save(`${dd}.${mm}.${yyyy}_${safeTitle}.pdf`);
+        }
+
+        // Uruchomienie programu 
+        initApp();
+    </script>
+    
+    <script>
+        const swCode = `
+        const CACHE_NAME = 'wojthom-v4-3-1-auto-language';
+        self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(['./']))); });
+        self.addEventListener('fetch', e => { e.respondWith(caches.match(e.request).then(res => res || fetch(e.request))); });
+        `;
+        const blob = new Blob([swCode], {type: 'application/javascript'});
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register(URL.createObjectURL(blob));
+        }
+    </script>
+</body>
+</html>
