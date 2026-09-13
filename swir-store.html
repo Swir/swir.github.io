@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SWIR Store 2.3</title>
+<title>SWIR Store 2.4</title>
 <style>
 :root{color-scheme:dark;--a:#35e6ff;--ok:#50e3a4;--warn:#ffca72;--bad:#ff718c;--line:rgba(83,199,255,.2);--muted:#7899ad}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 82% 0,#102c46,transparent 32%),#030914;color:#eefaff;font-family:Inter,Segoe UI,Arial}button,input{font:inherit}.wrap{max-width:1180px;margin:auto;padding:20px}.hero{display:flex;justify-content:space-between;gap:18px;align-items:end}.k{color:var(--a);font:900 9px ui-monospace,Consolas,monospace;letter-spacing:.16em}h1{margin:5px 0;font-size:clamp(34px,7vw,68px);letter-spacing:-.05em}.lead{max-width:780px;color:#8daabc;font-size:12px;line-height:1.6}.summary{min-width:265px;border:1px solid var(--line);border-radius:15px;padding:12px;background:#ffffff05;color:#87a5b8;font:9px/1.7 ui-monospace,Consolas,monospace}.summary strong{display:block;font-size:20px;color:var(--a)}.tools{display:flex;flex-wrap:wrap;gap:8px;margin-top:17px}.search{flex:1;min-width:220px;border:1px solid var(--line);border-radius:10px;padding:10px;background:#03101d;color:white}.btn{border:1px solid var(--line);border-radius:9px;padding:9px 11px;background:#ffffff07;color:white;cursor:pointer;font:900 8px ui-monospace,Consolas,monospace}.btn:hover{border-color:#35e6ff88}.btn.primary{background:#00a6ff1a}.btn.bad{color:#ff9aac;border-color:#ff718c55}.btn:disabled{opacity:.4;cursor:not-allowed}.apply{display:none;margin-top:10px;border:1px solid #ffca7244;border-radius:10px;padding:10px;color:#ffe0a6;font:9px ui-monospace,Consolas,monospace}.apply.show{display:flex;justify-content:space-between;align-items:center;gap:10px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:11px;margin-top:17px}.card{display:flex;flex-direction:column;min-height:315px;border:1px solid var(--line);border-radius:17px;padding:15px;background:linear-gradient(145deg,#0c1f34d9,#05111fc8)}.card.blocked{border-color:#ff718c44}.top{display:flex;gap:10px}.icon{width:46px;height:46px;display:grid;place-items:center;border:1px solid var(--line);border-radius:13px;color:var(--a);font:900 10px ui-monospace,Consolas,monospace}.info{flex:1;min-width:0}.info strong{display:block;font-size:13px}.meta,.state{margin-top:4px;color:#6f8da0;font:8px ui-monospace,Consolas,monospace}.state.on{color:var(--ok)}.desc{margin:11px 0;color:#8aa6b8;font-size:11px;line-height:1.55}.tags{display:flex;gap:5px;flex-wrap:wrap}.tag{border:1px solid #ffffff12;border-radius:999px;padding:4px 6px;color:#7898ac;font:7px ui-monospace,Consolas,monospace}.compat{margin-top:10px;border:1px solid #ffffff10;border-radius:10px;padding:8px;color:#7796a9;font:8px/1.5 ui-monospace,Consolas,monospace}.compat.ok{color:var(--ok);border-color:#50e3a42b}.compat.bad{color:#ff9aac;border-color:#ff718c38}.trust{margin-top:7px;color:#7295aa;font:8px ui-monospace,Consolas,monospace}.actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:auto;padding-top:13px}.status{margin-top:11px;min-height:18px;color:#7594a8;font:9px/1.5 ui-monospace,Consolas,monospace}.status.ok{color:var(--ok)}.status.bad{color:var(--bad)}.modal{position:fixed;inset:0;background:#000c;display:none;place-items:center;padding:14px;z-index:50}.modal.open{display:grid}.dialog{width:min(760px,100%);max-height:92vh;overflow:auto;border:1px solid #35e6ff66;border-radius:18px;padding:17px;background:#071522}.dialog h2{margin:5px 0}.section{margin-top:14px}.rows{display:grid;gap:6px;margin-top:7px}.row{border:1px solid var(--line);border-radius:9px;padding:9px;background:#ffffff04}.row strong{display:block;font:900 9px ui-monospace,Consolas,monospace}.row span{display:block;margin-top:3px;color:#7796a9;font-size:9px;line-height:1.45}.row.ok{border-color:#50e3a433}.row.warn{border-color:#ffca7244}.row.bad{border-color:#ff718c44}.pipeline{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:8px}.stage{padding:9px 6px;border:1px solid var(--line);border-radius:10px;text-align:center;background:#ffffff03}.stage strong{display:block;font:900 8px ui-monospace,Consolas,monospace}.stage span{display:block;margin-top:4px;color:#7694a7;font:7px ui-monospace,Consolas,monospace;word-break:break-word}.stage.ok{border-color:#50e3a444}.stage.warn{border-color:#ffca7244}.stage.bad{border-color:#ff718c55}.perm-review label{display:flex;gap:8px;align-items:flex-start}.perm-review input{margin-top:2px;accent-color:#35e6ff}.dialog-actions{display:flex;justify-content:flex-end;gap:7px;flex-wrap:wrap;margin-top:15px}.foot{margin-top:18px;border-top:1px solid var(--line);padding-top:12px;color:#587a8d;font:8px/1.6 ui-monospace,Consolas,monospace}@media(max-width:720px){.wrap{padding:11px}.hero{flex-direction:column;align-items:flex-start}.summary{width:100%}.grid{grid-template-columns:1fr}.pipeline{grid-template-columns:1fr}.apply.show{align-items:flex-start;flex-direction:column}}
 </style>
@@ -13,8 +13,8 @@
   <div class="hero">
     <div>
       <div class="k">SWIR OS 1.7 // APP SDK 1.6 // SECURE INSTALL PIPELINE</div>
-      <h1>SWIR Store 2.3</h1>
-      <div class="lead">Every installation now passes the shared SWIR security pipeline before user approval: package integrity, publisher/catalog trust, dependency resolution and permission review. The same contract is designed to move into Desktop Edition.</div>
+      <h1>SWIR Store 2.4</h1>
+      <div class="lead">Web installs use the shared security pipeline. Desktop installs additionally bind the approved catalog package to an owner-bound file capability and the native Package Bridge, using signed catalog authorization whenever a production trust root is provisioned.</div>
     </div>
     <aside class="summary"><strong id="count">0 / 0</strong><span id="runtime">CHECKING RUNTIME...</span><br><span id="pipelineInfo">PIPELINE: CHECKING...</span><br>PACKAGE: swir.app/1.0</aside>
   </div>
@@ -29,7 +29,7 @@
   <div id="apply" class="apply"><span>PACKAGE STATE CHANGED — reload shell to rebuild app registry and file handlers.</span><button id="applyNow" class="btn primary">APPLY</button></div>
   <section id="grid" class="grid"></section>
   <div id="status" class="status">SECURE STORE INITIALIZING...</div>
-  <div class="foot">Security rule: unsigned packages are accepted only when their security-relevant manifest exactly matches the active SWIR catalog. Signed packages must pass the trusted-key verification path. No installation is committed without explicit user approval.</div>
+  <div class="foot">Security rule: signed Desktop mode fails closed without a published signed catalog + envelope. Preview raw-SHA installation is used only when the native Host explicitly advertises the temporary legacy fallback.</div>
 </main>
 <div id="modal" class="modal">
   <section class="dialog">
@@ -45,6 +45,7 @@
     <div class="dialog-actions"><button id="download" class="btn">DOWNLOAD .SWIRAPP</button><button id="cancel" class="btn">CANCEL</button><button id="confirm" class="btn primary">APPROVE & INSTALL</button></div>
   </section>
 </div>
+<script src="./swir-store-desktop.js"></script>
 <script>
 (() => {
   'use strict';
@@ -52,11 +53,12 @@
   const catalog = Array.isArray(parent.SWIR_PACKAGE_CATALOG) ? parent.SWIR_PACKAGE_CATALOG : [];
   const resolver = parent.SwirPackageResolver;
   const pipeline = parent.SwirInstallPipeline;
+  const desktopStore = window.SwirStoreDesktop;
   const permInfo = parent.SWIR_PERMISSION_INFO || {};
   let current = null;
 
   const api = () => { try { return parent.SwirPlatform; } catch { return null; } };
-  const esc = (v='') => String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const esc = (v='') => String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
   const status = (t,c='') => { $('#status').textContent=t; $('#status').className='status '+c; };
   const row = (title, detail='', cls='') => `<div class="row ${cls}"><strong>${esc(title)}</strong>${detail?`<span>${esc(detail)}</span>`:''}</div>`;
 
@@ -80,14 +82,15 @@
     }
     const list=await installed(), ids=new Set(list.map(x=>x.id)), q=$('#search').value.trim().toLowerCase();
     const pi=pipeline.info();
+    const di=desktopStore ? await desktopStore.info().catch(()=>null) : null;
     $('#count').textContent=`${catalog.filter(p=>ids.has(p.id)).length} / ${catalog.length}`;
     $('#runtime').textContent=runtimeText();
-    $('#pipelineInfo').textContent=`PIPELINE ${pi.version} • ${pi.strictCatalogMatching?'STRICT CATALOG':'LEGACY CATALOG'}`;
+    $('#pipelineInfo').textContent=`PIPELINE ${pi.version} • ${pi.strictCatalogMatching?'STRICT CATALOG':'LEGACY CATALOG'}${di?.native?` • DESKTOP ${di.mode}`:''}`;
     const matches=catalog.filter(p=>!q||`${p.name} ${p.description||''} ${(p.tags||[]).join(' ')} ${(p.associations||[]).join(' ')} ${(p.dependencies||[]).map(d=>d.packageId||d.id).join(' ')}`.toLowerCase().includes(q));
     const out=[];
     for (const p of matches) {
       const compat=await resolver.checkCompatibility(p), on=ids.has(p.id), signed=!!p.signature;
-      const trust=signed?'SIGNED — TRUST VERIFIED AT INSTALL':'UNSIGNED CATALOG — EXACT MATCH REQUIRED';
+      const trust=di?.native&&di.mode==='SIGNED_CATALOG_REQUIRED'?'DESKTOP — SIGNED CATALOG REQUIRED':(signed?'SIGNED — TRUST VERIFIED AT INSTALL':'UNSIGNED CATALOG — EXACT MATCH REQUIRED');
       out.push(`<article class="card ${compat.ok?'':'blocked'}"><div class="top"><div class="icon" style="color:${p.accent||'#35e6ff'}">${esc(p.icon||'APP')}</div><div class="info"><strong>${esc(p.name)}</strong><div class="meta">${esc(p.packageId)} • v${esc(p.version)}</div><div class="state ${on?'on':''}">${on?'● INSTALLED':'○ AVAILABLE'}</div></div></div><div class="desc">${esc(p.description||'')}</div><div class="tags">${(p.permissions||[]).slice(0,4).map(x=>`<span class="tag">${esc(x)}</span>`).join('')}${(p.associations||[]).slice(0,5).map(x=>`<span class="tag">${esc(x)}</span>`).join('')}</div><div class="compat ${compat.ok?'ok':'bad'}">${compat.ok?'✓ RUNTIME COMPATIBLE':'✕ '+esc((compat.errors||[]).join(' • '))}</div><div class="trust">${esc(trust)}</div><div class="actions"><button class="btn" data-details="${esc(p.id)}">DETAILS</button>${on?`<button class="btn bad" data-remove="${esc(p.id)}">REMOVE</button><button class="btn" data-open="${esc(p.id)}">OPEN</button>`:`<button class="btn primary" data-install="${esc(p.id)}" ${compat.ok?'':'disabled'}>SECURE INSTALL</button><button class="btn" disabled>OPEN</button>`}</div></article>`);
     }
     $('#grid').innerHTML=out.join('')||'<article class="card">No packages found.</article>';
@@ -133,7 +136,23 @@
   async function installCurrent(){
     if(!current?.p) return;
     const permissions=approvedPermissions();
-    const result=await pipeline.install(current.p,{approved:true,approvedPermissions:permissions,allowUnsignedCatalog:true});
+    const webCommit=()=>pipeline.install(current.p,{approved:true,approvedPermissions:permissions,allowUnsignedCatalog:true});
+    let result;
+    if(desktopStore){
+      const dplan=await desktopStore.plan(current.p);
+      if(dplan?.state?.native){
+        if(!dplan.ok) throw Object.assign(new Error(`DESKTOP INSTALL BLOCKED — ${dplan.reason}`),{code:dplan.reason});
+        result=await desktopStore.installTransactional(current.p,{
+          webCommit,
+          webRollback:(transactionId,reason)=>pipeline.rollback(transactionId,{approved:true,reason})
+        });
+        $('#apply').classList.add('show');
+        status(`${current.p.name||current.p.packageId} INSTALLED — WEB TRANSACTION + ${result.mode} NATIVE DEPLOYMENT VERIFIED`,'ok');
+        await render();
+        return;
+      }
+    }
+    result=await webCommit();
     $('#apply').classList.add('show');
     status(`${current.p.name||current.p.packageId} INSTALLED — ${result.stages.map(s=>`${s.name}:${s.state}`).join(' • ')}`,'ok');
     await render();
@@ -181,7 +200,7 @@
   $('#audit').onclick=()=>audit().catch(err=>status(err.message,'bad'));
   $('#cancel').onclick=close;
   $('#modal').onclick=e=>{if(e.target.id==='modal')close()};
-  $('#confirm').onclick=async()=>{if(!current?.p)return;$('#confirm').disabled=true;try{await installCurrent();close()}catch(err){status(err.message,'bad')}finally{$('#confirm').disabled=false}};
+  $('#confirm').onclick=async()=>{if(!current?.p)return;$('#confirm').disabled=true;try{await installCurrent();close()}catch(err){status(`${err.code?err.code+': ':''}${err.message}`,'bad')}finally{$('#confirm').disabled=false}};
   $('#download').onclick=()=>current&&download(current.p);
   $('#importBtn').onclick=()=>$('#packageFile').click();
   $('#packageFile').onchange=async e=>{const f=e.target.files[0];if(f)try{await importFile(f)}catch(err){status(err.message,'bad')}e.target.value=''};

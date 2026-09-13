@@ -26,8 +26,11 @@ on:
       - 'contracts/swir-dependency-vectors.json'
       - 'swir-package-resolver.js'
       - 'swir-runtime.js'
+      - 'swir-store-desktop.js'
+      - 'swir-store.html'
       - 'scripts/validate-desktop-package-runtime.mjs'
       - 'scripts/validate-desktop-package-authorization.mjs'
+      - 'scripts/validate-store-desktop-coordinator.mjs'
       - 'scripts/validate-shared-dependency-contract.mjs'
       - '.github/workflows/desktop-app-package-contract.yml'
   pull_request:
@@ -54,8 +57,11 @@ on:
       - 'contracts/swir-dependency-vectors.json'
       - 'swir-package-resolver.js'
       - 'swir-runtime.js'
+      - 'swir-store-desktop.js'
+      - 'swir-store.html'
       - 'scripts/validate-desktop-package-runtime.mjs'
       - 'scripts/validate-desktop-package-authorization.mjs'
+      - 'scripts/validate-store-desktop-coordinator.mjs'
       - 'scripts/validate-shared-dependency-contract.mjs'
       - '.github/workflows/desktop-app-package-contract.yml'
 
@@ -92,6 +98,10 @@ jobs:
         working-directory: .
         run: node --check swir-runtime.js
 
+      - name: Check SWIR Store Desktop coordinator syntax
+        working-directory: .
+        run: node --check swir-store-desktop.js
+
       - name: Validate shipping package runtime wiring
         working-directory: .
         run: node scripts/validate-desktop-package-runtime.mjs
@@ -99,6 +109,10 @@ jobs:
       - name: Validate structured Desktop catalog authorization transport
         working-directory: .
         run: node scripts/validate-desktop-package-authorization.mjs
+
+      - name: Validate SWIR Store Desktop coordinator
+        working-directory: .
+        run: node scripts/validate-store-desktop-coordinator.mjs
 
       - name: Validate Web dependency resolver shared vectors
         working-directory: .
