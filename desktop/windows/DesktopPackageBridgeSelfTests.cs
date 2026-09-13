@@ -9,6 +9,7 @@ namespace Swir.Desktop.Host;
 internal static class DesktopPackageBridgeSelfTests
 {
     private const string Shell = "swir.system.shell";
+    private const string ReleaseArtifactReference = "release:verified-catalog-artifact";
 
     public static int Main()
     {
@@ -65,6 +66,7 @@ internal static class DesktopPackageBridgeSelfTests
 
             VerifyProvisionedRootDisablesArbitrarySha(root, bundle, hash);
             VerifySignedCatalogInstallAndIdentityBinding(root);
+            VerifySignedReleaseArtifactRouting(root);
             VerifyReleaseTrustLock(root);
 
             Console.WriteLine("Desktop package bridge self-tests passed.");
@@ -140,6 +142,52 @@ internal static class DesktopPackageBridgeSelfTests
         Require(JsonSerializer.Serialize(bridge.Status("swir.actual", Shell)).Contains("\"installed\":false", StringComparison.OrdinalIgnoreCase), "identity mismatch must be rejected before package mutation");
     }
 
+    private static void VerifySignedReleaseArtifactRouting(string root)
+    {
+        var algorithm = SignatureAlgorithm.Ed25519;
+        using var key = Key.Create(algorithm, new KeyCreationParameters { ExportPolicy = KeyExportPolicies.AllowPlaintextExport });
+        var trustRoot = new DesktopCatalogTrustVerifier.TrustRoot(
+            "release-routing-root",
+            "Release routing root",
+            key.PublicKey.Export(KeyBlobFormat.RawPublicKey),
+            new[] { "catalog:official" });
+        var verifier = new DesktopCatalogTrustVerifier(Path.Combine(root, "release-routing-trust"), new[] { trustRoot });
+        var releaseRoot = Path.Combine(root, "release-runtime");
+        var packagesRoot = Path.Combine(releaseRoot, "packages");
+        Directory.CreateDirectory(packagesRoot);
+        var bundle = Path.Combine(packagesRoot, "swir.release-5.0.0.swirapp");
+        CreateBundle(bundle, "swir.release", "5.0.0");
+        var authorization = CreateSignedAuthorization(
+            key,
+            "release-routing-root",
+            "swir.release",
+            "5.0.0",
+            Sha256(bundle),
+            201,
+            "packages/swir.release-5.0.0.swirapp");
+        var bridge = new DesktopPackageBridge(
+            new CapabilityBroker(),
+            new DesktopAppPackageInstaller(Path.Combine(root, "release-routing-data")),
+            verifier,
+            releaseRoot);
+
+        var installed = JsonSerializer.Serialize(bridge.InstallFromCapability(ReleaseArtifactReference, authorization, Shell));
+        Require(installed.Contains("swir.release", StringComparison.Ordinal), "signed release reference should install the catalog-selected bundle without a picker capability");
+        Require(JsonSerializer.Serialize(bridge.Status("swir.release", Shell)).Contains("5.0.0", StringComparison.Ordinal), "pickerless release install should persist the signed version");
+
+        var unsafeAuthorization = CreateSignedAuthorization(
+            key,
+            "release-routing-root",
+            "swir.escape",
+            "1.0.0",
+            new string('a', 64),
+            202,
+            "../escape.swirapp");
+        ExpectPackageCode(
+            () => bridge.InstallFromCapability(ReleaseArtifactReference, unsafeAuthorization, Shell),
+            "CATALOG_ARTIFACT_URL_INVALID");
+    }
+
     private static void VerifyReleaseTrustLock(string root)
     {
         var lockedRootsPath = Path.Combine(root, "locked-empty-catalog-trust-roots.json");
@@ -155,17 +203,19 @@ internal static class DesktopPackageBridgeSelfTests
             "CATALOG_TRUST_ROOT_REQUIRED");
     }
 
-    private static string CreateSignedAuthorization(Key key, string keyId, string packageId, string version, string sha256, long sequence)
+    private static string CreateSignedAuthorization(Key key, string keyId, string packageId, string version, string sha256, long sequence, string? artifactUrl = null)
     {
         var now = DateTimeOffset.UtcNow;
         var generatedAt = now.AddMinutes(-1).ToString("yyyy-MM-dd'T'HH:mm:ss'Z'");
         var expiresAt = now.AddHours(1).ToString("yyyy-MM-dd'T'HH:mm:ss'Z'");
         var catalogVersion = $"test-{sequence}";
+        var desktopArtifact = new SortedDictionary<string, object?>(StringComparer.Ordinal) { ["sha256"] = sha256 };
+        if (!string.IsNullOrWhiteSpace(artifactUrl)) desktopArtifact["url"] = artifactUrl;
         var package = new SortedDictionary<string, object?>(StringComparer.Ordinal)
         {
             ["artifacts"] = new SortedDictionary<string, object?>(StringComparer.Ordinal)
             {
-                ["desktop"] = new SortedDictionary<string, object?>(StringComparer.Ordinal) { ["sha256"] = sha256 }
+                ["desktop"] = desktopArtifact
             },
             ["packageId"] = packageId,
             ["version"] = version
