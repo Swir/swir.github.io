@@ -5,36 +5,49 @@ namespace Swir.Desktop.Host;
 internal sealed class DesktopPackageBridge
 {
     private const string ShellOwner = "swir.system.shell";
+    private const string AuthorizationSchema = "swir.desktop-catalog-authorization/1.0";
     private readonly CapabilityBroker _capabilities;
     private readonly DesktopAppPackageInstaller _installer;
     private readonly DesktopPackageDependencyResolver _dependencies;
+    private readonly DesktopCatalogTrustVerifier? _catalogTrust;
 
     public DesktopPackageBridge(CapabilityBroker capabilities, DesktopAppPackageInstaller installer)
+        : this(capabilities, installer, DesktopCatalogTrustRootStore.CreateVerifier(DefaultDataRoot()))
+    {
+    }
+
+    internal DesktopPackageBridge(CapabilityBroker capabilities, DesktopAppPackageInstaller installer, DesktopCatalogTrustVerifier? catalogTrust)
     {
         _capabilities = capabilities ?? throw new ArgumentNullException(nameof(capabilities));
         _installer = installer ?? throw new ArgumentNullException(nameof(installer));
+        _catalogTrust = catalogTrust;
         _dependencies = new DesktopPackageDependencyResolver(
             new DesktopPackageDependencyResolver.RuntimeInfo("1.7.13", "1.3.0", 2, "DESKTOP"));
     }
 
     public object Describe() => new
     {
-        schema = "swir.desktop-package-bridge/1.0",
+        schema = "swir.desktop-package-bridge/1.1",
         provider = "desktop-native",
         input = "owner-bound-file-capability",
         installer = _installer.Describe(),
         dependencySchema = DesktopPackageDependencyResolver.Contract,
         dependencyPreflight = true,
         trustedOwner = ShellOwner,
-        consumesCapabilityAfterInstall = true
+        consumesCapabilityAfterInstall = true,
+        signedCatalogAuthorization = _catalogTrust is not null,
+        catalogAuthorizationSchema = AuthorizationSchema,
+        legacySha256Fallback = _catalogTrust is null,
+        trustMode = _catalogTrust is null ? "LEGACY_SHA_UNTIL_ROOT_PROVISIONED" : "SIGNED_CATALOG_REQUIRED"
     };
 
-    public object InstallFromCapability(string capabilityToken, string expectedSha256, string ownerAppId)
+    public object InstallFromCapability(string capabilityToken, string trustInput, string ownerAppId)
     {
         RequireShellOwner(ownerAppId);
         var path = _capabilities.RequireFilePath(capabilityToken, ownerAppId);
         try
         {
+            var expectedSha256 = ResolveTrustedSha256(trustInput);
             var plan = _dependencies.EvaluateBundle(path, InstalledPackage);
             if (!plan.Ok)
                 throw new DesktopPackageException("PACKAGE_DEPENDENCY_UNSATISFIED", string.Join("; ", plan.Errors));
@@ -58,6 +71,36 @@ internal sealed class DesktopPackageBridge
         return _installer.Rollback(packageId);
     }
 
+    private string ResolveTrustedSha256(string trustInput)
+    {
+        var input = (trustInput ?? string.Empty).Trim();
+        if (input.StartsWith('{'))
+        {
+            if (_catalogTrust is null)
+                throw new DesktopPackageException("CATALOG_TRUST_ROOT_UNAVAILABLE", "Signed catalog authorization cannot be used until a native catalog public root is provisioned.");
+            try
+            {
+                using var doc = JsonDocument.Parse(input);
+                var root = doc.RootElement;
+                if (!string.Equals(String(root, "schema"), AuthorizationSchema, StringComparison.Ordinal))
+                    throw new DesktopPackageException("CATALOG_AUTHORIZATION_INVALID", $"Authorization schema must be {AuthorizationSchema}.");
+                var packageId = RequiredString(root, "packageId");
+                var version = RequiredString(root, "version");
+                if (!root.TryGetProperty("catalog", out var catalog) || catalog.ValueKind != JsonValueKind.Array)
+                    throw new DesktopPackageException("CATALOG_AUTHORIZATION_INVALID", "Authorization requires a catalog array.");
+                if (!root.TryGetProperty("envelope", out var envelope) || envelope.ValueKind != JsonValueKind.Object)
+                    throw new DesktopPackageException("CATALOG_AUTHORIZATION_INVALID", "Authorization requires a signature envelope.");
+                return _catalogTrust.VerifyAndAuthorize(catalog.GetRawText(), envelope.GetRawText(), packageId, version).Sha256;
+            }
+            catch (DesktopPackageException) { throw; }
+            catch (JsonException ex) { throw new DesktopPackageException("CATALOG_AUTHORIZATION_INVALID", ex.Message); }
+        }
+
+        if (_catalogTrust is not null)
+            throw new DesktopPackageException("CATALOG_AUTHORIZATION_REQUIRED", "Provisioned catalog trust roots require signed catalog authorization; arbitrary UI/runtime SHA-256 input is disabled.");
+        return input;
+    }
+
     private DesktopPackageDependencyResolver.InstalledPackageInfo? InstalledPackage(string packageId)
     {
         var status = _installer.Status(packageId);
@@ -69,6 +112,10 @@ internal sealed class DesktopPackageBridge
         if (string.IsNullOrWhiteSpace(version)) return null;
         return new DesktopPackageDependencyResolver.InstalledPackageInfo(packageId, packageId, version, true);
     }
+
+    private static string DefaultDataRoot() => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SWIR", "DesktopHost", "Data");
+    private static string? String(JsonElement node, string name) => node.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
+    private static string RequiredString(JsonElement node, string name) => String(node, name) is { Length: > 0 } value ? value : throw new DesktopPackageException("CATALOG_AUTHORIZATION_INVALID", $"{name} is required.");
 
     private static void RequireShellOwner(string ownerAppId)
     {
