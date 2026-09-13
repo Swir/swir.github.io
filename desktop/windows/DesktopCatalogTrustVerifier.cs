@@ -49,8 +49,7 @@ internal sealed class DesktopCatalogTrustVerifier
         var catalogVersion = GetRequiredString(envelope, "catalogVersion", "CATALOG_SIGNATURE_INVALID");
         var expectedDigest = NormalizeDigest(GetRequiredString(envelope, "catalogSha256", "CATALOG_SIGNATURE_INVALID"));
         if (expectedDigest.Length != 64) Fail("CATALOG_SIGNATURE_INVALID", "catalogSha256 must be SHA-256 hex.");
-        if (!envelope.TryGetProperty("sequence", out var sequenceNode) || !sequenceNode.TryGetInt64(out var sequence) || sequence < 1)
-            Fail("CATALOG_SIGNATURE_INVALID", "Positive integer sequence required.");
+        var sequence = GetPositiveSequence(envelope);
         var generatedAt = ParseInstant(GetRequiredString(envelope, "generatedAt", "CATALOG_SIGNATURE_INVALID"));
         var expiresAt = ParseInstant(GetRequiredString(envelope, "expiresAt", "CATALOG_SIGNATURE_INVALID"));
         if (expiresAt <= generatedAt) Fail("CATALOG_SIGNATURE_INVALID", "expiresAt must be after generatedAt.");
@@ -147,6 +146,12 @@ internal sealed class DesktopCatalogTrustVerifier
     }
     private static string? OptionalString(JsonElement node, string name) => node.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
     private static string GetRequiredString(JsonElement node, string name, string code) => OptionalString(node, name) is { Length: > 0 } value ? value : throw new DesktopPackageException(code, $"{name} required.");
+    private static long GetPositiveSequence(JsonElement node)
+    {
+        if (!node.TryGetProperty("sequence", out var value) || !value.TryGetInt64(out var sequence) || sequence < 1)
+            throw new DesktopPackageException("CATALOG_SIGNATURE_INVALID", "Positive integer sequence required.");
+        return sequence;
+    }
     private static void RequireString(JsonElement node, string name, string expected, string code) { if (!string.Equals(OptionalString(node, name), expected, StringComparison.Ordinal)) Fail(code, $"{name} must be {expected}."); }
     private static string NormalizeDigest(string value) => value.Trim().ToLowerInvariant().Replace("sha256-", "").Replace("sha256:", "");
     private static DateTimeOffset ParseInstant(string value) { if (!DateTimeOffset.TryParse(value, out var parsed) || !value.EndsWith('Z')) Fail("CATALOG_SIGNATURE_INVALID", "Catalog timestamps must be ISO UTC instants."); return parsed.ToUniversalTime(); }
