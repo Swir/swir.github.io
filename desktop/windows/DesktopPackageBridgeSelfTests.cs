@@ -34,6 +34,25 @@ internal static class DesktopPackageBridgeSelfTests
             Require(status.Contains("1.0.0", StringComparison.Ordinal), "status should expose installed version");
             Require(status.Contains("app/index.html", StringComparison.Ordinal), "status should expose verified package entry");
 
+            var blockedBundle = Path.Combine(root, "blocked.swirapp");
+            CreateBundle(blockedBundle, "swir.blocked", "1.0.0", "swir.missing-runtime", "2.0.0");
+            var blockedToken = TokenOf(capabilities.RegisterFile(blockedBundle, Shell));
+            ExpectPackageCode(() => bridge.InstallFromCapability(blockedToken, Sha256(blockedBundle), Shell), "PACKAGE_DEPENDENCY_UNSATISFIED");
+            ExpectBridgeCode(() => capabilities.Describe(blockedToken, Shell), "CAPABILITY_INVALID");
+            var blockedStatus = JsonSerializer.Serialize(bridge.Status("swir.blocked", Shell));
+            Require(blockedStatus.Contains("\"installed\":false", StringComparison.OrdinalIgnoreCase), "unsatisfied dependency must not install payload");
+
+            var runtimeBundle = Path.Combine(root, "runtime.swirapp");
+            CreateBundle(runtimeBundle, "swir.runtime", "2.1.0");
+            var runtimeToken = TokenOf(capabilities.RegisterFile(runtimeBundle, Shell));
+            bridge.InstallFromCapability(runtimeToken, Sha256(runtimeBundle), Shell);
+
+            var consumerBundle = Path.Combine(root, "consumer.swirapp");
+            CreateBundle(consumerBundle, "swir.consumer", "1.0.0", "swir.runtime", "2.0.0");
+            var consumerToken = TokenOf(capabilities.RegisterFile(consumerBundle, Shell));
+            var consumer = JsonSerializer.Serialize(bridge.InstallFromCapability(consumerToken, Sha256(consumerBundle), Shell));
+            Require(consumer.Contains("swir.consumer", StringComparison.Ordinal), "satisfied dependency should allow payload install");
+
             var badToken = TokenOf(capabilities.RegisterFile(bundle, Shell));
             ExpectPackageCode(() => bridge.InstallFromCapability(badToken, new string('0', 64), Shell), "PACKAGE_HASH_MISMATCH");
             ExpectBridgeCode(() => capabilities.Describe(badToken, Shell), "CAPABILITY_INVALID");
@@ -57,7 +76,7 @@ internal static class DesktopPackageBridgeSelfTests
         return doc.RootElement.GetProperty("token").GetString() ?? throw new InvalidOperationException("Capability token missing.");
     }
 
-    private static void CreateBundle(string path, string packageId, string version)
+    private static void CreateBundle(string path, string packageId, string version, string? dependencyId = null, string? minVersion = null)
     {
         using var archive = ZipFile.Open(path, ZipArchiveMode.Create);
         var manifest = archive.CreateEntry("swir-package.json");
@@ -71,7 +90,10 @@ internal static class DesktopPackageBridgeSelfTests
                 version,
                 author = "SWIR",
                 type = "iframe",
-                entry = "app/index.html"
+                entry = "app/index.html",
+                compatibility = new { minOS = "1.7.0", minSDK = "1.3.0", platformApi = 2, editions = new[] { "DESKTOP" } },
+                dependencies = dependencyId is null ? Array.Empty<object>() : new object[] { new { packageId = dependencyId, minVersion } },
+                optionalDependencies = Array.Empty<object>()
             }));
         var payload = archive.CreateEntry("app/index.html");
         using var payloadWriter = new StreamWriter(payload.Open(), new UTF8Encoding(false));
