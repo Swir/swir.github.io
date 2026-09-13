@@ -6,6 +6,7 @@ on:
     paths:
       - 'swir-packages.js'
       - 'swir-catalog-integrity.js'
+      - 'swir-catalog-trust-state.js'
       - 'swir-trusted-keys.js'
       - 'swir-v17.js'
       - 'sw.js'
@@ -16,6 +17,7 @@ on:
     paths:
       - 'swir-packages.js'
       - 'swir-catalog-integrity.js'
+      - 'swir-catalog-trust-state.js'
       - 'swir-trusted-keys.js'
       - 'swir-v17.js'
       - 'sw.js'
@@ -39,7 +41,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Syntax check catalog verifier
-        run: node --check swir-catalog-integrity.js
-      - name: Verify signed catalog cryptographic contract
+      - name: Syntax check catalog security core
+        run: |
+          node --check swir-catalog-integrity.js
+          node --check swir-catalog-trust-state.js
+          node --check swir-v17.js
+          node --check sw.js
+      - name: Verify signed catalog freshness, cryptography and anti-rollback
         run: node scripts/validate-signed-catalog.mjs
