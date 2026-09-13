@@ -232,4 +232,10 @@
   }
 
   window.SwirStoreDesktop = Object.freeze({ meta:META, info, plan, pickBundle, installNative, installTransactional, status, rollback, reconcile });
+
+  // Store startup is itself the recovery boundary. Never mutate arbitrary historical Web transactions:
+  // reconcile() only acts on coordinator-owned durable intents written before the Web commit.
+  if (root().SwirInstallPipeline && platform()?.storage?.get && platform()?.storage?.set) {
+    window.SWIR_STORE_DESKTOP_RECONCILIATION = Promise.resolve().then(() => reconcile()).catch(error => ({ ok:false, state:'ATTENTION', reason:error?.code || 'RECONCILIATION_FAILED', error:String(error?.message || error) }));
+  }
 })();
