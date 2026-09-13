@@ -3,6 +3,8 @@ import fs from 'node:fs';
 const read = path => fs.readFileSync(path, 'utf8');
 const program = read('desktop/windows/Program.cs');
 const permissions = read('desktop/windows/PermissionBroker.cs');
+const bridge = read('desktop/windows/DesktopPackageBridge.cs');
+const resolver = read('desktop/windows/DesktopPackageDependencyResolver.cs');
 const runtime = read('swir-runtime.js');
 
 const checks = [
@@ -19,6 +21,13 @@ const checks = [
   [permissions.includes('"packages.manage"'), 'shell has packages.manage'],
   [permissions.includes('(\"packages\", \"info\" or \"status\") => \"packages.inspect\"'), 'permission broker maps package inspection'],
   [permissions.includes('(\"packages\", \"installFromCapability\" or \"rollback\") => \"packages.manage\"'), 'permission broker maps package mutation'],
+  [bridge.includes('DesktopPackageDependencyResolver _dependencies'), 'shipping package bridge owns Desktop dependency resolver'],
+  [bridge.includes('EvaluateBundle(path, InstalledPackage)'), 'shipping install performs dependency preflight before payload mutation'],
+  [bridge.includes('PACKAGE_DEPENDENCY_UNSATISFIED'), 'unsatisfied dependencies fail closed with stable package code'],
+  [bridge.includes('dependencyPreflight = true'), 'package bridge advertises dependency preflight'],
+  [resolver.includes('public const string Contract = "swir.dependencies/1.0"'), 'Desktop resolver implements shared dependency schema'],
+  [resolver.includes('compatibility.MinOS') && resolver.includes('compatibility.MinSDK') && resolver.includes('compatibility.PlatformApi'), 'Desktop resolver enforces runtime compatibility requirements'],
+  [resolver.includes('package.Dependencies') && resolver.includes('package.OptionalDependencies'), 'Desktop resolver handles required and optional package dependencies'],
   [runtime.includes("version: '1.5.0'"), 'runtime contract version is 1.5.0'],
   [runtime.includes('const packages = Object.freeze({'), 'runtime exports package adapter'],
   [runtime.includes("call('packages', 'installFromCapability'"), 'runtime install goes through native packages surface'],
