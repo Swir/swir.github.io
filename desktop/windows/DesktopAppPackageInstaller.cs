@@ -10,15 +10,14 @@ internal sealed class DesktopAppPackageInstaller
     private const int MaxEntries = 2048;
     private const long MaxEntryBytes = 64L * 1024 * 1024;
     private const long MaxExpandedBytes = 256L * 1024 * 1024;
-    private readonly string _root;
     private readonly string _packagesRoot;
     private readonly string _stagingRoot;
 
     public DesktopAppPackageInstaller(string dataRoot)
     {
-        _root = Path.Combine(dataRoot, "Packages");
-        _packagesRoot = Path.Combine(_root, "Installed");
-        _stagingRoot = Path.Combine(_root, ".staging");
+        var root = Path.Combine(dataRoot, "Packages");
+        _packagesRoot = Path.Combine(root, "Installed");
+        _stagingRoot = Path.Combine(root, ".staging");
         Directory.CreateDirectory(_packagesRoot);
         Directory.CreateDirectory(_stagingRoot);
     }
@@ -43,7 +42,7 @@ internal sealed class DesktopAppPackageInstaller
             throw new DesktopPackageException("PACKAGE_FORMAT_INVALID", "Desktop payload installer accepts only .swirapp bundles.");
 
         var expected = NormalizeHash(expectedSha256);
-        var actual = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(bundlePath))).ToLowerInvariant();
+        var actual = ComputeSha256(bundlePath);
         if (!CryptographicOperations.FixedTimeEquals(Convert.FromHexString(expected), Convert.FromHexString(actual)))
             throw new DesktopPackageException("PACKAGE_HASH_MISMATCH", "SWIR package SHA-256 does not match trusted metadata.");
 
@@ -186,6 +185,8 @@ internal sealed class DesktopAppPackageInstaller
     private static void ExtractArchive(ZipArchive archive, string destination)
     {
         var root = Path.GetFullPath(destination) + Path.DirectorySeparatorChar;
+        long expanded = 0;
+        var buffer = new byte[128 * 1024];
         foreach (var entry in archive.Entries)
         {
             var relative = entry.FullName.Replace('/', Path.DirectorySeparatorChar).Replace('\\', Path.DirectorySeparatorChar);
@@ -196,9 +197,28 @@ internal sealed class DesktopAppPackageInstaller
             Directory.CreateDirectory(Path.GetDirectoryName(target)!);
             using var source = entry.Open();
             using var output = new FileStream(target, FileMode.CreateNew, FileAccess.Write, FileShare.None);
-            source.CopyTo(output);
+            long entryBytes = 0;
+            while (true)
+            {
+                var read = source.Read(buffer, 0, buffer.Length);
+                if (read <= 0) break;
+                entryBytes = checked(entryBytes + read);
+                expanded = checked(expanded + read);
+                if (entryBytes > MaxEntryBytes)
+                    throw new DesktopPackageException("PACKAGE_ENTRY_TOO_LARGE", $"Package entry exceeds extraction limit: {entry.FullName}");
+                if (expanded > MaxExpandedBytes)
+                    throw new DesktopPackageException("PACKAGE_EXPANDED_TOO_LARGE", "Expanded package exceeds extraction limit.");
+                output.Write(buffer, 0, read);
+            }
             output.Flush(true);
         }
+    }
+
+    private static string ComputeSha256(string path)
+    {
+        using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 128 * 1024, FileOptions.SequentialScan);
+        using var sha = SHA256.Create();
+        return Convert.ToHexString(sha.ComputeHash(stream)).ToLowerInvariant();
     }
 
     private static PackageManifest ReadManifest(string root)
