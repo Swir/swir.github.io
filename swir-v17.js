@@ -7,7 +7,7 @@
   let coreLoading=false;
 
   function loadRuntimeCore(){
-    if((window.SwirRuntime&&window.SwirTrustedKeys&&window.SwirPackageIntegrity&&window.SwirCatalogIntegrity&&window.SwirInstallPipeline)||coreLoading)return;
+    if((window.SwirRuntime&&window.SwirTrustedKeys&&window.SwirPackageIntegrity&&window.SwirCatalogIntegrity&&window.SwirCatalogTrustState&&window.SwirInstallPipeline)||coreLoading)return;
     coreLoading=true;
     const load=(src)=>new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.async=false;s.onload=resolve;s.onerror=reject;document.head.appendChild(s)});
     (async()=>{
@@ -16,6 +16,7 @@
         if(!window.SwirTrustedKeys)await load('./swir-trusted-keys.js');
         if(!window.SwirPackageIntegrity)await load('./swir-package-integrity.js');
         if(!window.SwirCatalogIntegrity)await load('./swir-catalog-integrity.js');
+        if(!window.SwirCatalogTrustState)await load('./swir-catalog-trust-state.js');
         if(!window.SwirInstallPipeline)await load('./swir-install-pipeline.js');
       }catch(error){console.error('SWIR Runtime/Security Core failed to load',error)}finally{coreLoading=false}
     })();
@@ -59,7 +60,13 @@
         const meta=window.SwirPackageIntegrity?.meta;line(meta?`${meta.name} ${meta.version} • ${meta.schema} • SHA-256 + Ed25519`:'Package Integrity service unavailable.',meta?'term-accent':'term-error');return;
       }
       if(cmd==='catalog'){
-        try{const info=await window.SwirCatalogIntegrity?.describe?.();line(info?`CATALOG ${info.catalogId} • ${info.packages} packages • SHA256 ${info.catalogSha256.slice(0,16)}… • ${info.algorithm}`:'Catalog Integrity service unavailable.',info?'term-accent':'term-error')}catch(err){line(err?.message||'Catalog integrity check failed.','term-error')}return;
+        try{
+          const info=await window.SwirCatalogIntegrity?.describe?.();
+          const trustState=await window.SwirCatalogTrustState?.state?.();
+          if(!info){line('Catalog Integrity service unavailable.','term-error');return}
+          line(`CATALOG ${info.catalogId} • ${info.packages} packages • SHA256 ${info.catalogSha256.slice(0,16)}… • ${info.algorithm} • anti-rollback ON`,'term-accent');
+          line(trustState?`TRUST HIGH-WATER • seq ${trustState.sequence} • ${trustState.catalogVersion} • expires ${trustState.expiresAt}`:'TRUST HIGH-WATER • no signed catalog admitted yet','term-muted');
+        }catch(err){line(err?.message||'Catalog integrity check failed.','term-error')}return;
       }
       if(cmd==='trust'){
         const info=window.SwirTrustedKeys?.info?.();line(info?`TRUSTED KEY STORE • ${info.total} keys (${info.systemKeys} system / ${info.userKeys} user)`:'Trusted Key Store unavailable.',info?'term-accent':'term-error');return;
@@ -94,9 +101,9 @@
 
   function init(){
     loadRuntimeCore();
-    if(!window.SwirOS||!window.SwirAssociations||!window.SwirNotifications||!window.SwirAppSDK||!window.SwirPackageResolver||!window.SwirRuntime||!window.SwirTrustedKeys||!window.SwirPackageIntegrity||!window.SwirCatalogIntegrity||!window.SwirInstallPipeline){setTimeout(init,60);return}
+    if(!window.SwirOS||!window.SwirAssociations||!window.SwirNotifications||!window.SwirAppSDK||!window.SwirPackageResolver||!window.SwirRuntime||!window.SwirTrustedKeys||!window.SwirPackageIntegrity||!window.SwirCatalogIntegrity||!window.SwirCatalogTrustState||!window.SwirInstallPipeline){setTimeout(init,60);return}
     updateLabels();addQuickTile();wireTerminal();showStatus();
-    setTimeout(()=>toast('SWIR OS 1.7','Runtime Adapter Contract, signed catalog verification, secure install pipeline, publisher trust and portable services are online.'),1300);
+    setTimeout(()=>toast('SWIR OS 1.7','Runtime Adapter Contract, signed catalog freshness/anti-rollback, secure install pipeline, publisher trust and portable services are online.'),1300);
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
