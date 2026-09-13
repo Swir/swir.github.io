@@ -12,20 +12,20 @@ SWIR OS is designed in three editions sharing one application model and platform
 <!-- ROADMAP-PROGRESS:START -->
 <p align="center">
   <a href="https://github.com/Swir/swir.github.io/actions/workflows/system-contracts.yml"><img alt="CI" src="https://github.com/Swir/swir.github.io/actions/workflows/system-contracts.yml/badge.svg"></a>
-  <img alt="Roadmap progress" src="https://img.shields.io/badge/ROADMAP-40.7%25-2ea043?style=for-the-badge">
-  <img alt="Completed" src="https://img.shields.io/badge/DONE-22%2F54-1f6feb?style=for-the-badge">
+  <img alt="Roadmap progress" src="https://img.shields.io/badge/ROADMAP-42.6%25-2ea043?style=for-the-badge">
+  <img alt="Completed" src="https://img.shields.io/badge/DONE-23%2F54-1f6feb?style=for-the-badge">
   <img alt="Status" src="https://img.shields.io/badge/STATUS-IN%20PROGRESS-7c3aed?style=for-the-badge">
 </p>
 
 ## 📊 Overall progress
 
 ```text
-████████░░░░░░░░░░░░ 40.7%
+█████████░░░░░░░░░░░ 42.6%
 ```
 
 | ✅ Completed | ⏳ Remaining | 📦 Total | 🎯 Progress |
 |---:|---:|---:|---:|
-| **22** | **32** | **54** | **40.7%** |
+| **23** | **31** | **54** | **42.6%** |
 
 > **Progress rule:** the explicit `[x]/[ ]` deliverables in **Version roadmap** are the source of truth for the full Web → Desktop → System plan. Update the checklist first, then badges, numbers, percentage and the 20-segment bar. A prototype does not count as complete until the described deliverable is actually implemented and verified.
 <!-- ROADMAP-PROGRESS:END -->
@@ -208,6 +208,10 @@ SwirAppSDK.packages.compareVersions(a, b)
 
 Desktop/System editions can reuse the resolver before native payload download/unpack, signature verification and service/file-association registration.
 
+### Signed catalog metadata
+
+The official package-catalog trust prototype uses `swir.catalog-signature/1.0`: a canonical SHA-256 fingerprint of the reviewed catalog is covered by an Ed25519 signature envelope, verified against an explicitly scoped trusted public key. Unknown keys, wrong scope, malformed metadata, catalog tampering and invalid signatures fail closed. The shipping client contains verification logic only; production private signing keys remain outside the repository and client runtime.
+
 ### SDK additions available in 1.7
 
 ```text
@@ -338,7 +342,7 @@ The detailed foundation and machine-readable contract schemas live under `system
 
 ### Next Web Edition work
 
-- [ ] signed catalog metadata prototype
+- [x] signed catalog metadata prototype
 - [ ] widgets as installable packages
 - [ ] application developer template / SDK examples
 - [ ] larger binary/file storage on IndexedDB instead of localStorage mirror
