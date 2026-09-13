@@ -1,0 +1,54 @@
+name: Desktop Catalog Cutover Contract
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/test-catalog-root-cutover-e2e.mjs'
+      - 'scripts/apply-catalog-root-rotation.mjs'
+      - 'scripts/verify-catalog-root-rotation.mjs'
+      - 'scripts/build-signed-catalog-release.mjs'
+      - 'desktop/windows/DesktopCatalogTrustRootStore.cs'
+      - 'desktop/windows/DesktopCatalogTrustVerifier.cs'
+      - '.github/workflows/desktop-release.yml'
+      - '.github/workflows/desktop-catalog-cutover-contract.yml'
+  pull_request:
+    paths:
+      - 'scripts/test-catalog-root-cutover-e2e.mjs'
+      - 'scripts/apply-catalog-root-rotation.mjs'
+      - 'scripts/verify-catalog-root-rotation.mjs'
+      - 'scripts/build-signed-catalog-release.mjs'
+      - 'desktop/windows/DesktopCatalogTrustRootStore.cs'
+      - 'desktop/windows/DesktopCatalogTrustVerifier.cs'
+      - '.github/workflows/desktop-release.yml'
+      - '.github/workflows/desktop-catalog-cutover-contract.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-catalog-cutover-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-cutover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax check root rotation tools
+        run: |
+          node --check scripts/apply-catalog-root-rotation.mjs
+          node --check scripts/verify-catalog-root-rotation.mjs
+          node --check scripts/test-catalog-root-cutover-e2e.mjs
+      - name: Verify protected overlap bundle construction
+        run: node scripts/apply-catalog-root-rotation.mjs --self-test
+      - name: Verify sequence-bounded rotation policy
+        run: node scripts/verify-catalog-root-rotation.mjs --self-test
+      - name: Verify restart-safe current-to-next cutover
+        run: node scripts/test-catalog-root-cutover-e2e.mjs
