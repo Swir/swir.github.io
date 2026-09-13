@@ -71,7 +71,7 @@ foreach ($pkg in ($catalog | Sort-Object packageId, version)) {
     $packageId = [string]$pkg.packageId
     $version = [string]$pkg.version
     $entryRaw = [string]$pkg.entry
-    if ($pkg.schema -ne 'swir.app/1.0') { throw "Unsupported package schema for $packageId: $($pkg.schema)" }
+    if ($pkg.schema -ne 'swir.app/1.0') { throw "Unsupported package schema for ${packageId}: $($pkg.schema)" }
     if ($packageId -notmatch '^swir\.[a-z0-9][a-z0-9._-]{1,126}$') { throw "Invalid packageId: $packageId" }
     if ($version -notmatch '^[0-9]+\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$') { throw "Invalid package version for ${packageId}: $version" }
     if ([string]::IsNullOrWhiteSpace([string]$pkg.name) -or [string]::IsNullOrWhiteSpace([string]$pkg.author) -or [string]::IsNullOrWhiteSpace([string]$pkg.type)) {
