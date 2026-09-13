@@ -16,8 +16,25 @@ on:
           - preview
           - stable
       key_id:
-        description: 'Public signing key identifier configured in Desktop update policy'
+        description: 'RSA Desktop update/release signing key identifier'
         required: true
+        type: string
+      catalog_key_id:
+        description: 'Ed25519 public catalog key identifier provisioned for catalog:official'
+        required: true
+        type: string
+      catalog_sequence:
+        description: 'Strictly monotonic signed catalog sequence'
+        required: true
+        type: string
+      catalog_version:
+        description: 'Human-readable signed catalog version'
+        required: true
+        type: string
+      catalog_valid_hours:
+        description: 'Signed catalog validity window in hours (1-744)'
+        required: true
+        default: '168'
         type: string
       publish_release:
         description: 'Publish verified bundle as a GitHub Release (main branch only)'
@@ -35,7 +52,7 @@ concurrency:
 jobs:
   build-and-verify:
     runs-on: windows-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     defaults:
       run:
         working-directory: desktop/windows
@@ -44,6 +61,11 @@ jobs:
       SWIR_RELEASE_CHANNEL: ${{ inputs.channel }}
       SWIR_RELEASE_KEY_ID: ${{ inputs.key_id }}
       SWIR_RELEASE_PRIVATE_KEY_PEM: ${{ secrets.SWIR_DESKTOP_RELEASE_PRIVATE_KEY_PEM }}
+      SWIR_CATALOG_KEY_ID: ${{ inputs.catalog_key_id }}
+      SWIR_CATALOG_SEQUENCE: ${{ inputs.catalog_sequence }}
+      SWIR_CATALOG_VERSION: ${{ inputs.catalog_version }}
+      SWIR_CATALOG_VALID_HOURS: ${{ inputs.catalog_valid_hours }}
+      SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM: ${{ secrets.SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM }}
 
     steps:
       - name: Checkout exact release commit
@@ -56,6 +78,11 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
       - name: Assert pinned .NET SDK line
         shell: pwsh
         run: |
@@ -63,7 +90,7 @@ jobs:
           $sdk = dotnet --version
           if ($sdk -notmatch '^8\.0\.4\d{2}$') { throw "Expected .NET SDK 8.0.4xx, got $sdk" }
 
-      - name: Validate release inputs
+      - name: Validate release and catalog signing inputs
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
@@ -71,7 +98,14 @@ jobs:
           if ($version.Build -lt 0 -or $version -le [Version]'0.0.0') { throw 'Release version must be a positive three-part numeric version.' }
           if ($env:SWIR_RELEASE_CHANNEL -notin @('preview', 'stable')) { throw 'Unsupported release channel.' }
           if ($env:SWIR_RELEASE_KEY_ID -notmatch '^[A-Za-z0-9._-]{1,128}$') { throw 'Invalid release key id.' }
+          if ($env:SWIR_CATALOG_KEY_ID -notmatch '^[A-Za-z0-9._-]{1,128}$') { throw 'Invalid catalog key id.' }
+          if ($env:SWIR_CATALOG_SEQUENCE -notmatch '^[1-9][0-9]*$') { throw 'Catalog sequence must be a positive integer.' }
+          if ($env:SWIR_CATALOG_VALID_HOURS -notmatch '^[0-9]+$') { throw 'Catalog validity must be numeric.' }
+          $hours = [int]$env:SWIR_CATALOG_VALID_HOURS
+          if ($hours -lt 1 -or $hours -gt 744) { throw 'Catalog validity must be between 1 and 744 hours.' }
+          if ([string]::IsNullOrWhiteSpace($env:SWIR_CATALOG_VERSION)) { throw 'Catalog version is required.' }
           if ([string]::IsNullOrWhiteSpace($env:SWIR_RELEASE_PRIVATE_KEY_PEM)) { throw 'SWIR_DESKTOP_RELEASE_PRIVATE_KEY_PEM secret is not configured.' }
+          if ([string]::IsNullOrWhiteSpace($env:SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM)) { throw 'SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM secret is not configured.' }
 
       - name: Build release, verification and updater tools
         run: |
@@ -79,11 +113,45 @@ jobs:
           dotnet build SWIR.Desktop.ReleaseBundleVerifierTool.csproj --configuration Release
           dotnet build SWIR.Desktop.UpdaterWorker.csproj --configuration Release
 
+      - name: Build reviewed Desktop Store swirapp artifacts
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $store = Join-Path '${{ runner.temp }}' 'swir-store-artifacts'
+          & (Join-Path (Get-Location) 'build-store-packages.ps1') -OutputDir $store -SourceRoot '${{ github.workspace }}'
+          $map = Get-Content (Join-Path $store 'catalog-artifacts.json') -Raw | ConvertFrom-Json
+          if ($map.schema -ne 'swir.catalog-artifacts/1.0') { throw 'Unexpected Store artifact map schema.' }
+          if ($map.generatedFrom -ne $env:GITHUB_SHA.ToLowerInvariant()) { throw 'Store artifact map source commit mismatch.' }
+          if (@($map.artifacts).Count -lt 1) { throw 'Store artifact map is empty.' }
+
+      - name: Build signed catalog from real swirapp digests
+        shell: pwsh
+        working-directory: .
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $store = Join-Path '${{ runner.temp }}' 'swir-store-artifacts'
+          $catalog = Join-Path '${{ runner.temp }}' 'swir-catalog-release'
+          node scripts/build-signed-catalog-release.mjs `
+            --catalog-source swir-packages.js `
+            --artifact-map (Join-Path $store 'catalog-artifacts.json') `
+            --output-dir $catalog `
+            --key-id $env:SWIR_CATALOG_KEY_ID `
+            --sequence $env:SWIR_CATALOG_SEQUENCE `
+            --catalog-version $env:SWIR_CATALOG_VERSION `
+            --valid-hours $env:SWIR_CATALOG_VALID_HOURS
+          if ($LASTEXITCODE -ne 0) { throw "Signed catalog builder failed with exit code $LASTEXITCODE" }
+          $trust = Get-Content (Join-Path $catalog 'catalog-trust-roots.json') -Raw | ConvertFrom-Json
+          if ($trust.schema -ne 'swir.catalog-trust-roots/1.0' -or $trust.requireSignedCatalog -ne $true -or @($trust.roots).Count -ne 1) {
+            throw 'Desktop release catalog trust bundle is not fail-closed.'
+          }
+
       - name: Publish version-bound self-contained Desktop Host runtime
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           $publish = Join-Path '${{ runner.temp }}' 'swir-release-publish'
+          $catalog = Join-Path '${{ runner.temp }}' 'swir-catalog-release'
+          $store = Join-Path '${{ runner.temp }}' 'swir-store-artifacts'
           $hostPublish = Join-Path (Get-Location) 'publish-desktop-host.ps1'
           if (-not (Test-Path $hostPublish -PathType Leaf)) { throw "Desktop Host publish helper is missing: $hostPublish" }
           & $hostPublish `
@@ -94,7 +162,14 @@ jobs:
 
           $runtimeStage = Join-Path (Get-Location) 'stage-desktop-runtime.ps1'
           if (-not (Test-Path $runtimeStage -PathType Leaf)) { throw "Desktop runtime staging tool is missing: $runtimeStage" }
-          & $runtimeStage -PublishDir $publish -SourceRoot '${{ github.workspace }}'
+          & $runtimeStage -PublishDir $publish -SourceRoot '${{ github.workspace }}' -CatalogReleaseDir $catalog
+
+          # Package artifacts are independently authorized by the signed catalog SHA-256 values.
+          # Keep them beside the Store at the exact relative URLs emitted into catalog-artifacts.json.
+          $publishPackages = Join-Path $publish 'packages'
+          New-Item -ItemType Directory -Path $publishPackages -Force | Out-Null
+          Copy-Item -LiteralPath (Join-Path $store 'packages\*') -Destination $publishPackages -Force
+          Copy-Item -LiteralPath (Join-Path $store 'catalog-artifacts.json') -Destination (Join-Path $publish 'catalog-artifacts.json') -Force
 
           $worker = Join-Path (Get-Location) 'bin\Release\net8.0\SWIR.Desktop.UpdaterWorker.exe'
           if (-not (Test-Path $worker -PathType Leaf)) { throw "Updater worker is missing: $worker" }
@@ -111,6 +186,11 @@ jobs:
             (Join-Path $publish 'swir-runtime.js'),
             (Join-Path $publish 'swir-apps.js'),
             (Join-Path $publish 'swir-updates.html'),
+            (Join-Path $publish 'swir-signed-catalog-release.js'),
+            (Join-Path $publish 'catalog-trust-roots.json'),
+            (Join-Path $publish 'catalog-envelope.json'),
+            (Join-Path $publish 'catalog.json'),
+            (Join-Path $publish 'catalog-artifacts.json'),
             (Join-Path $publish 'desktop\windows\app-policy.json'),
             (Join-Path $publish 'desktop-runtime.json'),
             (Join-Path $publish 'desktop-host-build.json'),
@@ -119,6 +199,7 @@ jobs:
           )) {
             if (-not (Test-Path $required -PathType Leaf)) { throw "Desktop runtime asset is missing: $required" }
           }
+          if (@(Get-ChildItem -LiteralPath $publishPackages -Filter '*.swirapp' -File).Count -lt 1) { throw 'Desktop release contains no installable Store packages.' }
 
           $hostBuild = Get-Content (Join-Path $publish 'desktop-host-build.json') -Raw | ConvertFrom-Json
           $expectedHostVersion = "$env:SWIR_RELEASE_VERSION-$env:SWIR_RELEASE_CHANNEL"
@@ -136,7 +217,26 @@ jobs:
             throw 'Default packaged update policy must remain valid and fail-closed until a signed channel is configured.'
           }
 
-      - name: Materialize ephemeral signing key and public verifier key
+      - name: Verify staged Store artifacts against signed catalog
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $publish = Join-Path '${{ runner.temp }}' 'swir-release-publish'
+          $map = Get-Content (Join-Path $publish 'catalog-artifacts.json') -Raw | ConvertFrom-Json
+          $signedCatalog = Get-Content (Join-Path $publish 'catalog.json') -Raw | ConvertFrom-Json
+          foreach ($artifact in @($map.artifacts)) {
+            $record = @($signedCatalog | Where-Object { $_.packageId -eq $artifact.packageId -and $_.version -eq $artifact.version })
+            if ($record.Count -ne 1) { throw "Signed catalog identity missing/duplicated: $($artifact.packageId)@$($artifact.version)" }
+            $relative = [string]$artifact.desktop.url
+            if ($relative -notmatch '^packages/[A-Za-z0-9._-]+\.swirapp$') { throw "Unsafe package URL in artifact map: $relative" }
+            $path = Join-Path $publish $relative
+            if (-not (Test-Path $path -PathType Leaf)) { throw "Staged package missing: $relative" }
+            $actual = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ($actual -ne [string]$artifact.desktop.sha256) { throw "Artifact-map SHA mismatch for $relative" }
+            if ($record[0].artifacts.desktop.sha256 -ne $actual) { throw "Signed-catalog SHA mismatch for $relative" }
+          }
+
+      - name: Materialize ephemeral Desktop update signing key and public verifier key
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
@@ -177,6 +277,13 @@ jobs:
             --private-key $privateKey
           if ($LASTEXITCODE -ne 0) { throw "Release bundle tool failed with exit code $LASTEXITCODE" }
 
+          # Publish the individually signed-catalog-bound app artifacts beside the Host bundle too.
+          Copy-Item -Path (Join-Path '${{ runner.temp }}' 'swir-store-artifacts\packages\*.swirapp') -Destination $bundle -Force
+          Copy-Item -LiteralPath (Join-Path '${{ runner.temp }}' 'swir-store-artifacts\catalog-artifacts.json') -Destination (Join-Path $bundle 'catalog-artifacts.json') -Force
+          Copy-Item -LiteralPath (Join-Path '${{ runner.temp }}' 'swir-catalog-release\catalog.json') -Destination (Join-Path $bundle 'catalog.json') -Force
+          Copy-Item -LiteralPath (Join-Path '${{ runner.temp }}' 'swir-catalog-release\catalog-envelope.json') -Destination (Join-Path $bundle 'catalog-envelope.json') -Force
+          Copy-Item -LiteralPath (Join-Path '${{ runner.temp }}' 'swir-catalog-release\catalog-trust-roots.json') -Destination (Join-Path $bundle 'catalog-trust-roots.json') -Force
+
       - name: Independently verify signed release bundle
         shell: pwsh
         run: |
@@ -201,9 +308,17 @@ jobs:
           $package = Join-Path $bundle "SWIR-Desktop-$env:SWIR_RELEASE_VERSION-$env:SWIR_RELEASE_CHANNEL.zip"
           $manifest = Join-Path $bundle "desktop-update-$env:SWIR_RELEASE_CHANNEL.json"
           $metadata = Join-Path $bundle 'release-bundle.json'
-          foreach ($file in @($package, $manifest, $metadata)) {
+          foreach ($file in @($package, $manifest, $metadata, (Join-Path $bundle 'catalog.json'), (Join-Path $bundle 'catalog-envelope.json'), (Join-Path $bundle 'catalog-trust-roots.json'), (Join-Path $bundle 'catalog-artifacts.json'))) {
             if (-not (Test-Path $file -PathType Leaf)) { throw "Missing release artifact: $file" }
             if ((Get-Item $file).Length -le 0) { throw "Release artifact is empty: $file" }
+          }
+          $map = Get-Content (Join-Path $bundle 'catalog-artifacts.json') -Raw | ConvertFrom-Json
+          foreach ($artifact in @($map.artifacts)) {
+            $fileName = [System.IO.Path]::GetFileName([string]$artifact.desktop.url)
+            $path = Join-Path $bundle $fileName
+            if (-not (Test-Path $path -PathType Leaf)) { throw "Release bundle is missing Store artifact: $fileName" }
+            $actual = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ($actual -ne [string]$artifact.desktop.sha256) { throw "Final release Store SHA mismatch: $fileName" }
           }
 
       - name: Upload verified release bundle
@@ -220,6 +335,8 @@ jobs:
         run: |
           Remove-Item (Join-Path '${{ runner.temp }}' 'swir-release-private.pem') -Force -ErrorAction SilentlyContinue
           Remove-Item (Join-Path '${{ runner.temp }}' 'swir-release-public.pem') -Force -ErrorAction SilentlyContinue
+          Remove-Item Env:SWIR_RELEASE_PRIVATE_KEY_PEM -ErrorAction SilentlyContinue
+          Remove-Item Env:SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM -ErrorAction SilentlyContinue
 
   publish-github-release:
     if: ${{ inputs.publish_release && github.ref == 'refs/heads/main' }}
