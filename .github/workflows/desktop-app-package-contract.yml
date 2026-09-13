@@ -12,7 +12,11 @@ on:
       - 'desktop/windows/SWIR.Desktop.AppPackage.SelfTests.csproj'
       - 'desktop/windows/SWIR.Desktop.PackageBridge.SelfTests.csproj'
       - 'desktop/windows/CapabilityBroker.cs'
+      - 'desktop/windows/PermissionBroker.cs'
+      - 'desktop/windows/Program.cs'
       - 'desktop/windows/SWIR.Desktop.Host.csproj'
+      - 'swir-runtime.js'
+      - 'scripts/validate-desktop-package-runtime.mjs'
       - '.github/workflows/desktop-app-package-contract.yml'
   pull_request:
     paths:
@@ -24,7 +28,11 @@ on:
       - 'desktop/windows/SWIR.Desktop.AppPackage.SelfTests.csproj'
       - 'desktop/windows/SWIR.Desktop.PackageBridge.SelfTests.csproj'
       - 'desktop/windows/CapabilityBroker.cs'
+      - 'desktop/windows/PermissionBroker.cs'
+      - 'desktop/windows/Program.cs'
       - 'desktop/windows/SWIR.Desktop.Host.csproj'
+      - 'swir-runtime.js'
+      - 'scripts/validate-desktop-package-runtime.mjs'
       - '.github/workflows/desktop-app-package-contract.yml'
 
 permissions:
@@ -55,6 +63,14 @@ jobs:
         run: |
           $version = dotnet --version
           if ($version -notmatch '^8\.0\.4\d\d$') { throw "Expected pinned .NET 8.0.4xx SDK, got $version" }
+
+      - name: Check SWIR Runtime syntax
+        working-directory: .
+        run: node --check swir-runtime.js
+
+      - name: Validate shipping package runtime wiring
+        working-directory: .
+        run: node scripts/validate-desktop-package-runtime.mjs
 
       - name: Build shipping Desktop Host
         run: dotnet build SWIR.Desktop.Host.csproj --configuration Release
