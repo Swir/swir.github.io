@@ -14,7 +14,12 @@ if (-not (Test-Path $source -PathType Container)) { throw "SWIR source root does
 if (-not (Test-Path (Join-Path $source 'swir-packages.js') -PathType Leaf)) { throw 'swir-packages.js is missing.' }
 if (-not (Get-Command node -ErrorAction SilentlyContinue)) { throw 'Node.js is required to export the reviewed package catalog.' }
 
-New-Item -ItemType Directory -Path $output -Force | Out-Null
+if (Test-Path $output -PathType Container) {
+    $existing = @(Get-ChildItem -LiteralPath $output -Force)
+    if ($existing.Count -gt 0) { throw "Desktop Store package output must be empty: $output" }
+} else {
+    New-Item -ItemType Directory -Path $output -Force | Out-Null
+}
 $packagesDir = Join-Path $output 'packages'
 New-Item -ItemType Directory -Path $packagesDir -Force | Out-Null
 
@@ -36,6 +41,8 @@ if ($catalog.Count -eq 0) { throw 'Exported package catalog is empty.' }
 $artifactRecords = [System.Collections.Generic.List[object]]::new()
 $seenIdentity = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
 $seenOutput = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+$sourcePrefix = $source.TrimEnd([System.IO.Path]::DirectorySeparatorChar) + [System.IO.Path]::DirectorySeparatorChar
+Add-Type -AssemblyName System.IO.Compression.FileSystem
 
 function Assert-SafeRelativePath([string]$RelativePath, [string]$Context) {
     $normalized = $RelativePath.Replace('\\','/').Trim()
@@ -50,7 +57,6 @@ function Copy-PackageAsset([string]$RelativePath, [string]$StageRoot, [System.Co
     $safe = Assert-SafeRelativePath $RelativePath 'package asset'
     if (-not $Copied.Add($safe)) { return }
     $src = [System.IO.Path]::GetFullPath((Join-Path $source $safe))
-    $sourcePrefix = $source.TrimEnd([System.IO.Path]::DirectorySeparatorChar) + [System.IO.Path]::DirectorySeparatorChar
     if (-not $src.StartsWith($sourcePrefix, [System.StringComparison]::OrdinalIgnoreCase)) { throw "Package asset escaped source root: $safe" }
     if (-not (Test-Path $src -PathType Leaf)) { throw "Package asset is missing: $safe" }
     $item = Get-Item -LiteralPath $src -Force
@@ -81,8 +87,8 @@ foreach ($pkg in ($catalog | Sort-Object packageId, version)) {
         $copied = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
         Copy-PackageAsset $entry $stage $copied
 
-        # Include reviewed local script/style/image dependencies referenced by the entry document.
-        # Remote URLs, data URLs, fragments and absolute paths are deliberately not imported.
+        # Include reviewed local dependencies directly referenced by the entry document. Remote
+        # URLs, data URLs, fragments and absolute paths are deliberately never imported.
         $entryText = Get-Content -LiteralPath (Join-Path $source $entry) -Raw
         $matches = [regex]::Matches($entryText, '(?i)(?:src|href)\s*=\s*["''](\./[^"''?#]+)')
         foreach ($match in $matches) {
@@ -101,10 +107,9 @@ foreach ($pkg in ($catalog | Sort-Object packageId, version)) {
         if (-not $seenOutput.Add($fileName)) { throw "Duplicate package artifact filename: $fileName" }
         $zipPath = Join-Path $output ($fileName + '.zip')
         $artifactPath = Join-Path $packagesDir $fileName
-        Compress-Archive -LiteralPath (Join-Path $stage '*') -DestinationPath $zipPath -CompressionLevel Optimal -Force
+        Compress-Archive -Path (Join-Path $stage '*') -DestinationPath $zipPath -CompressionLevel Optimal -Force
         Move-Item -LiteralPath $zipPath -Destination $artifactPath -Force
 
-        Add-Type -AssemblyName System.IO.Compression.FileSystem
         $archive = [System.IO.Compression.ZipFile]::OpenRead($artifactPath)
         try {
             $rootManifests = @($archive.Entries | Where-Object { $_.FullName.Replace('\\','/') -ceq 'swir-package.json' })
@@ -131,12 +136,15 @@ foreach ($pkg in ($catalog | Sort-Object packageId, version)) {
     }
 }
 
+$expectedDesktopCount = @($catalog | Where-Object { $_.desktop -eq $true }).Count
 if ($artifactRecords.Count -eq 0) { throw 'No Desktop-installable packages were produced.' }
-if ($artifactRecords.Count -ne @($catalog | Where-Object { $_.desktop -eq $true }).Count) { throw 'Desktop package artifact count does not match reviewed catalog.' }
+if ($artifactRecords.Count -ne $expectedDesktopCount) { throw "Desktop package artifact count mismatch: built $($artifactRecords.Count), expected $expectedDesktopCount" }
 
+$commit = (& git -C $source rev-parse HEAD).Trim()
+if ($LASTEXITCODE -ne 0 -or $commit -notmatch '^[0-9a-fA-F]{40}$') { throw 'Could not resolve source commit for artifact map.' }
 $map = [ordered]@{
     schema = 'swir.catalog-artifacts/1.0'
-    generatedFrom = (& git -C $source rev-parse HEAD).Trim().ToLowerInvariant()
+    generatedFrom = $commit.ToLowerInvariant()
     artifacts = @($artifactRecords)
 }
 $mapPath = Join-Path $output 'catalog-artifacts.json'
