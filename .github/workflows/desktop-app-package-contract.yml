@@ -9,6 +9,7 @@ on:
       - 'desktop/windows/DesktopPackageBridge.cs'
       - 'desktop/windows/DesktopPackageBridgeSelfTests.cs'
       - 'desktop/windows/DesktopPackageBridgeSelfTestShim.cs'
+      - 'desktop/windows/DesktopSignedPackageLifecycleSelfTests.cs'
       - 'desktop/windows/DesktopPackageDependencyResolver.cs'
       - 'desktop/windows/DesktopPackageDependencyResolverSelfTests.cs'
       - 'desktop/windows/DesktopCatalogTrustVerifier.cs'
@@ -17,6 +18,7 @@ on:
       - 'desktop/windows/catalog-trust-roots.json'
       - 'desktop/windows/SWIR.Desktop.AppPackage.SelfTests.csproj'
       - 'desktop/windows/SWIR.Desktop.PackageBridge.SelfTests.csproj'
+      - 'desktop/windows/SWIR.Desktop.SignedPackageLifecycle.SelfTests.csproj'
       - 'desktop/windows/SWIR.Desktop.DependencyResolver.SelfTests.csproj'
       - 'desktop/windows/SWIR.Desktop.CatalogTrust.SelfTests.csproj'
       - 'desktop/windows/CapabilityBroker.cs'
@@ -40,6 +42,7 @@ on:
       - 'desktop/windows/DesktopPackageBridge.cs'
       - 'desktop/windows/DesktopPackageBridgeSelfTests.cs'
       - 'desktop/windows/DesktopPackageBridgeSelfTestShim.cs'
+      - 'desktop/windows/DesktopSignedPackageLifecycleSelfTests.cs'
       - 'desktop/windows/DesktopPackageDependencyResolver.cs'
       - 'desktop/windows/DesktopPackageDependencyResolverSelfTests.cs'
       - 'desktop/windows/DesktopCatalogTrustVerifier.cs'
@@ -48,6 +51,7 @@ on:
       - 'desktop/windows/catalog-trust-roots.json'
       - 'desktop/windows/SWIR.Desktop.AppPackage.SelfTests.csproj'
       - 'desktop/windows/SWIR.Desktop.PackageBridge.SelfTests.csproj'
+      - 'desktop/windows/SWIR.Desktop.SignedPackageLifecycle.SelfTests.csproj'
       - 'desktop/windows/SWIR.Desktop.DependencyResolver.SelfTests.csproj'
       - 'desktop/windows/SWIR.Desktop.CatalogTrust.SelfTests.csproj'
       - 'desktop/windows/CapabilityBroker.cs'
@@ -126,6 +130,9 @@ jobs:
 
       - name: Run capability-bound package bridge self-tests
         run: dotnet run --project SWIR.Desktop.PackageBridge.SelfTests.csproj --configuration Release
+
+      - name: Run signed package install-update-restart-rollback lifecycle
+        run: dotnet run --project SWIR.Desktop.SignedPackageLifecycle.SelfTests.csproj --configuration Release
 
       - name: Run Desktop dependency resolver shared-vector self-tests
         run: dotnet run --project SWIR.Desktop.DependencyResolver.SelfTests.csproj --configuration Release
