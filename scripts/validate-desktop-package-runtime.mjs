@@ -5,6 +5,9 @@ const program = read('desktop/windows/Program.cs');
 const permissions = read('desktop/windows/PermissionBroker.cs');
 const bridge = read('desktop/windows/DesktopPackageBridge.cs');
 const resolver = read('desktop/windows/DesktopPackageDependencyResolver.cs');
+const catalogTrust = read('desktop/windows/DesktopCatalogTrustVerifier.cs');
+const trustRoots = read('desktop/windows/DesktopCatalogTrustRootStore.cs');
+const hostProject = read('desktop/windows/SWIR.Desktop.Host.csproj');
 const runtime = read('swir-runtime.js');
 
 const checks = [
@@ -25,6 +28,14 @@ const checks = [
   [bridge.includes('EvaluateBundle(path, InstalledPackage)'), 'shipping install performs dependency preflight before payload mutation'],
   [bridge.includes('PACKAGE_DEPENDENCY_UNSATISFIED'), 'unsatisfied dependencies fail closed with stable package code'],
   [bridge.includes('dependencyPreflight = true'), 'package bridge advertises dependency preflight'],
+  [bridge.includes('DesktopCatalogTrustVerifier? _catalogTrust'), 'shipping package bridge owns optional native catalog trust verifier'],
+  [bridge.includes('DesktopCatalogTrustRootStore.CreateVerifier'), 'shipping package bridge loads provisioned native catalog roots'],
+  [bridge.includes('CATALOG_AUTHORIZATION_REQUIRED'), 'provisioned roots disable arbitrary runtime SHA authorization'],
+  [bridge.includes('VerifyAndAuthorize(catalog.GetRawText(), envelope.GetRawText(), packageId, version)'), 'signed authorization resolves package hash through native verifier'],
+  [trustRoots.includes('swir.catalog-trust-roots/1.0') && trustRoots.includes('catalog:official'), 'native trust-root store validates catalog-only root scope'],
+  [trustRoots.includes('SWIR_CATALOG_TRUST_ROOTS'), 'native trust-root path supports explicit deployment provisioning'],
+  [catalogTrust.includes('CATALOG_ROLLBACK_DETECTED') && catalogTrust.includes('CATALOG_BAD_SIGNATURE'), 'native catalog verifier remains fail-closed for rollback and bad signatures'],
+  [hostProject.includes('catalog-trust-roots.json') && hostProject.includes('CopyToOutputDirectory="PreserveNewest"'), 'shipping host carries trust-root provisioning document'],
   [resolver.includes('public const string Contract = "swir.dependencies/1.0"'), 'Desktop resolver implements shared dependency schema'],
   [resolver.includes('compatibility.MinOS') && resolver.includes('compatibility.MinSDK') && resolver.includes('compatibility.PlatformApi'), 'Desktop resolver enforces runtime compatibility requirements'],
   [resolver.includes('package.Dependencies') && resolver.includes('package.OptionalDependencies'), 'Desktop resolver handles required and optional package dependencies'],
