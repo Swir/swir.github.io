@@ -94,6 +94,26 @@ describe()
 
 The terminal command `catalog` displays the current official catalog fingerprint and persistent trust high-water mark when one has been accepted. Diagnostic fingerprint output alone never converts an unsigned catalog into a trusted catalog.
 
+## Native Desktop verifier
+
+`desktop/windows/DesktopCatalogTrustVerifier.cs` is the native counterpart of the browser verifier. It independently validates the `swir.catalog-signature/1.0` envelope inside the .NET Desktop Host and does not depend on JavaScript trust decisions.
+
+It currently enforces:
+
+- canonical catalog SHA-256 verification,
+- Ed25519 signature verification against explicitly supplied public trust roots,
+- the `catalog:official` trust scope,
+- `generatedAt` / `expiresAt` freshness with bounded clock skew,
+- a persistent native sequence high-water mark under the Desktop Host data root,
+- rollback and same-sequence equivocation rejection,
+- exact `packageId` + `version` lookup only after the catalog is trusted,
+- extraction of the installer digest from signed `artifacts.desktop.sha256` metadata (with `packageSha256` retained as a compatibility field),
+- fail-closed rejection when a trusted Desktop artifact digest is absent.
+
+Native self-tests generate an ephemeral Ed25519 keypair and exercise valid authorization, bad signatures, unknown keys, expiry, rollback after restart-state advancement and missing Desktop artifact digests. The private test key exists only in the self-test process.
+
+The Desktop Host pins its Ed25519 verification library to a .NET 8-compatible version. Production private signing material is still deliberately absent from the repository.
+
 ## Release pipeline direction
 
 Production publishing should:
@@ -111,4 +131,4 @@ The repository intentionally does **not** contain a production private signing k
 
 ## Desktop/System requirement
 
-This contract is a shared trust model, but the Desktop/System `package signatures and integrity verification` roadmap item is **not complete** until the native package path independently enforces trusted signature/integrity metadata rather than accepting an arbitrary digest from UI code. Production root-key provisioning and protected release signing remain separate release-engineering responsibilities.
+The native trust verifier is now implemented and CI-verified, but the Desktop/System `package signatures and integrity verification` roadmap item remains **not complete**. The shipping package mutation path still needs to consume authorization from `DesktopCatalogTrustVerifier` instead of accepting an arbitrary digest supplied by UI/runtime code. The official catalog also still needs signed Desktop artifact hashes, production public-root provisioning and a protected release-signing pipeline. These requirements must be completed and exercised through shipping install/update E2E before the roadmap checkbox can become `[x]`.
