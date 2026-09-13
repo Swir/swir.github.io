@@ -30,6 +30,12 @@ A new payload is fully extracted and validated in a managed staging directory be
 
 Rollback swaps `Current` and `Previous`, allowing the last known payload to be restored without downloading it again.
 
+### Startup recovery
+
+The installer performs bounded recovery whenever the Desktop package service is created. It removes orphaned staging and `.incoming-*` directories left by an interrupted deployment. If a crash happened after `Current` was moved aside but before a replacement reached `Current`, an existing `Previous` slot is promoted back to `Current`. Interrupted `.rollback-*` swaps are also reconciled conservatively so a known package slot is not silently discarded.
+
+Recovery never downloads replacement files and never invents package metadata; it only reconciles already-local managed slots.
+
 ## Capability-bound Package bridge
 
 `DesktopPackageBridge` places the installer behind an owner-bound file capability instead of accepting an arbitrary filesystem path from web content. Package mutation is restricted to the trusted `swir.system.shell` owner, and the file capability is consumed after an install attempt, including integrity failures.
@@ -54,12 +60,13 @@ DesktopAppPackageInstaller
        +--> manifest validation
        +--> staged entry health verification
        +--> Current / Previous promotion
+       +--> startup crash recovery
        v
 verified desktop payload
 ```
 
 ## Current integration state
 
-`DesktopAppPackageInstaller` and `DesktopPackageBridge` are compiled into the shipping Windows Desktop Host and covered by Windows contract workflows plus hardened install/update/rollback/hash/traversal/duplicate-path/capability self-tests. Staged package health validation additionally verifies required manifest metadata and the declared entry before promotion.
+`DesktopAppPackageInstaller` and `DesktopPackageBridge` are compiled into the shipping Windows Desktop Host and covered by Windows contract workflows plus hardened install/update/rollback/hash/traversal/duplicate-path/capability self-tests. Staged package health validation verifies required manifest metadata and the declared entry before promotion, while restart-oriented tests exercise recovery of interrupted managed slots.
 
 The remaining shipping integration step is exposing the Package bridge through the trusted `SwirRuntime` native `packages` surface and proving the full shell/runtime E2E. Production completion also requires Package Core to bind a verified catalog/signature decision, expected SHA-256 and native payload transaction into one end-to-end install operation.
