@@ -11,8 +11,13 @@
     <Compile Include="DesktopAppPackageInstaller.cs" />
     <Compile Include="CapabilityBroker.cs" />
     <Compile Include="DesktopPackageDependencyResolver.cs" />
+    <Compile Include="DesktopCatalogTrustVerifier.cs" />
+    <Compile Include="DesktopCatalogTrustRootStore.cs" />
     <Compile Include="DesktopPackageBridge.cs" />
     <Compile Include="DesktopPackageBridgeSelfTests.cs" />
     <Compile Include="DesktopPackageBridgeSelfTestShim.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="NSec.Cryptography" Version="24.4.0" />
   </ItemGroup>
 </Project>
