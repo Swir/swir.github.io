@@ -7,12 +7,18 @@ on:
       - 'desktop/windows/DesktopProcessServiceBroker.cs'
       - 'desktop/windows/DesktopProcessServiceBrokerSelfTests.cs'
       - 'desktop/windows/SWIR.Desktop.ProcessService.SelfTests.csproj'
+      - 'desktop/windows/Program.cs'
+      - 'desktop/windows/PermissionBroker.cs'
+      - 'desktop/windows/validate-process-service-integration.mjs'
       - '.github/workflows/desktop-process-service-contract.yml'
   pull_request:
     paths:
       - 'desktop/windows/DesktopProcessServiceBroker.cs'
       - 'desktop/windows/DesktopProcessServiceBrokerSelfTests.cs'
       - 'desktop/windows/SWIR.Desktop.ProcessService.SelfTests.csproj'
+      - 'desktop/windows/Program.cs'
+      - 'desktop/windows/PermissionBroker.cs'
+      - 'desktop/windows/validate-process-service-integration.mjs'
       - '.github/workflows/desktop-process-service-contract.yml'
   workflow_dispatch:
 
@@ -24,7 +30,14 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate Host process service integration
+        run: node desktop/windows/validate-process-service-integration.mjs
       - name: Build process service self-tests
         run: dotnet build desktop/windows/SWIR.Desktop.ProcessService.SelfTests.csproj -c Release --nologo
       - name: Run process service self-tests
         run: dotnet run --project desktop/windows/SWIR.Desktop.ProcessService.SelfTests.csproj -c Release --no-build
+      - name: Build shipping Desktop Host
+        run: dotnet build desktop/windows/SWIR.Desktop.Host.csproj -c Release --nologo
