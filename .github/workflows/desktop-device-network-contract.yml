@@ -16,6 +16,8 @@ on:
       - 'swir-device.html'
       - 'swir-network.html'
       - 'swir-apps.js'
+      - 'sw.js'
+      - 'manifest.webmanifest'
       - '.github/workflows/desktop-device-network-contract.yml'
   pull_request:
     paths:
@@ -32,6 +34,8 @@ on:
       - 'swir-device.html'
       - 'swir-network.html'
       - 'swir-apps.js'
+      - 'sw.js'
+      - 'manifest.webmanifest'
       - '.github/workflows/desktop-device-network-contract.yml'
   workflow_dispatch:
 
