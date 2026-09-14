@@ -15,7 +15,8 @@ const required = [
   'Pending()',
   'Claim(string activationId)',
   '_pending.Remove(activationId, out var pending)',
-  'windows-file-association'
+  'windows-file-association',
+  'Unexpected arguments after the --open-file path.'
 ];
 for (const token of required) {
   if (!source.includes(token)) throw new Error(`Missing required open-file activation token: ${token}`);
@@ -37,9 +38,9 @@ for (const token of forbiddenPublicPathPatterns) {
 const testRequirements = [
   'native paths must not be exposed to web content',
   'claimed activation must be removed',
-  'Expected InvalidOperationException',
+  'ExpectFailure<InvalidOperationException>',
   'blocked.exe',
-  'Unexpected arguments after the --open-file path.'
+  'CaptureCommandLine(new[] { "--open-file", textPath, "unexpected" })'
 ];
 for (const token of testRequirements) {
   if (!tests.includes(token)) throw new Error(`Missing open-file activation regression assertion: ${token}`);
