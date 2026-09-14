@@ -66,6 +66,9 @@ internal sealed class ExecutionPolicyCatalog
                     native.Add("clipboard.read");
                     native.Add("clipboard.write");
                     break;
+                case "network":
+                    native.Add("network.inspect");
+                    break;
             }
         }
         return native.OrderBy(x => x, StringComparer.Ordinal).ToArray();
