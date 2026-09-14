@@ -68,10 +68,11 @@ internal static class DesktopShellIntegrationBrokerSelfTests
             var infoJson = JsonSerializer.Serialize(broker.Describe(), new JsonSerializerOptions(JsonSerializerDefaults.Web));
             using var infoDoc = JsonDocument.Parse(infoJson);
             var info = infoDoc.RootElement;
-            Require(info.GetProperty("schema").GetString() == "swir.desktop-open-file-activation/0.1", "unexpected activation schema");
+            Require(info.GetProperty("schema").GetString() == "swir.desktop-open-file-activation/0.2", "unexpected activation schema");
             Require(info.GetProperty("activationSwitch").GetString() == "--open-file", "activation switch drifted");
             Require(!info.GetProperty("nativePathExposure").GetBoolean(), "native paths must not be exposed to web content");
             Require(info.GetProperty("oneTimeClaim").GetBoolean(), "activation claims must remain one-time");
+            Require(info.GetProperty("destinationAppBoundCapability").GetBoolean(), "claimed files must be bound to the destination app");
             Require(info.GetProperty("safeExtensions").GetArrayLength() == 5, "activation allowlist must remain bounded");
 
             Require(broker.CaptureCommandLine(Array.Empty<string>()) is null, "ordinary launch must not create an activation");
@@ -83,10 +84,25 @@ internal static class DesktopShellIntegrationBrokerSelfTests
             Require(!descriptor.Id.Contains(textPath, StringComparison.OrdinalIgnoreCase), "activation id must not contain native path data");
             Require(broker.Pending().Length == 1, "activation should be pending before claim");
 
-            var claimed = broker.Claim(descriptor.Id);
-            Require(claimed.NativePath == Path.GetFullPath(textPath), "host-only claim must resolve the original path");
+            string? factoryPath = null;
+            string? factoryOwner = null;
+            var appActivation = broker.ClaimForApplication(descriptor.Id, "swir.code", (nativePath, owner) =>
+            {
+                factoryPath = nativePath;
+                factoryOwner = owner;
+                return new { token = "test-capability", kind = "file", ownerAppId = owner };
+            });
+            Require(factoryPath == Path.GetFullPath(textPath), "capability factory must receive the host-only path");
+            Require(factoryOwner == "swir.code", "capability must be owner-bound to the destination app");
+            Require(appActivation.AppId == "swir.code", "application activation owner mismatch");
+            Require(appActivation.FileCapability is not null, "application activation must include a capability descriptor");
             Require(broker.Pending().Length == 0, "claimed activation must be removed");
             ExpectFailure<InvalidOperationException>(() => broker.Claim(descriptor.Id));
+
+            var invalidOwner = broker.CaptureFile(textPath);
+            ExpectFailure<ArgumentException>(() => broker.ClaimForApplication(invalidOwner.Id, "../bad", (_, _) => new object()));
+            Require(broker.Pending().Length == 1, "invalid destination app must not consume the activation");
+            Require(broker.Cancel(invalidOwner.Id), "invalid-owner activation should remain cancellable");
 
             ExpectFailure<ArgumentException>(() => broker.CaptureCommandLine(new[] { "--open-file" }));
             ExpectFailure<InvalidOperationException>(() => broker.CaptureCommandLine(new[] { "--open-file", textPath, "--open-file", textPath }));
