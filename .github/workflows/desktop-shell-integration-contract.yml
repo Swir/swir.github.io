@@ -6,18 +6,22 @@ on:
     paths:
       - 'desktop/windows/Program.cs'
       - 'desktop/windows/DesktopShellIntegrationBroker.cs'
+      - 'desktop/windows/DesktopOpenFileActivationBroker.cs'
       - 'desktop/windows/DesktopShellIntegrationBrokerSelfTests.cs'
       - 'desktop/windows/SWIR.Desktop.ShellIntegration.SelfTests.csproj'
       - 'desktop/windows/validate-shell-integration-foundation.mjs'
+      - 'desktop/windows/validate-open-file-activation.mjs'
       - 'desktop/windows/SWIR.Desktop.Host.csproj'
       - '.github/workflows/desktop-shell-integration-contract.yml'
   pull_request:
     paths:
       - 'desktop/windows/Program.cs'
       - 'desktop/windows/DesktopShellIntegrationBroker.cs'
+      - 'desktop/windows/DesktopOpenFileActivationBroker.cs'
       - 'desktop/windows/DesktopShellIntegrationBrokerSelfTests.cs'
       - 'desktop/windows/SWIR.Desktop.ShellIntegration.SelfTests.csproj'
       - 'desktop/windows/validate-shell-integration-foundation.mjs'
+      - 'desktop/windows/validate-open-file-activation.mjs'
       - 'desktop/windows/SWIR.Desktop.Host.csproj'
       - '.github/workflows/desktop-shell-integration-contract.yml'
   workflow_dispatch:
@@ -34,9 +38,13 @@ jobs:
         with:
           node-version: '22'
       - name: Check validator syntax
-        run: node --check desktop/windows/validate-shell-integration-foundation.mjs
+        run: |
+          node --check desktop/windows/validate-shell-integration-foundation.mjs
+          node --check desktop/windows/validate-open-file-activation.mjs
       - name: Validate shell integration safety contract
         run: node desktop/windows/validate-shell-integration-foundation.mjs
+      - name: Validate guarded open-file activation contract
+        run: node desktop/windows/validate-open-file-activation.mjs
       - name: Build shell integration self-tests
         run: dotnet build desktop/windows/SWIR.Desktop.ShellIntegration.SelfTests.csproj -c Release --nologo
       - name: Run shell integration self-tests
