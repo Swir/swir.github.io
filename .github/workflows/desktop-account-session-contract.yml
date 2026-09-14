@@ -1,0 +1,50 @@
+name: Desktop Account Session Contract
+
+on:
+  push:
+    paths:
+      - 'desktop/windows/DesktopAccountSessionBroker.cs'
+      - 'desktop/windows/DesktopAccountSessionBrokerSelfTests.cs'
+      - 'desktop/windows/SWIR.Desktop.AccountSession.SelfTests.csproj'
+      - 'desktop/windows/PermissionBroker.cs'
+      - '.github/workflows/desktop-account-session-contract.yml'
+  pull_request:
+    paths:
+      - 'desktop/windows/DesktopAccountSessionBroker.cs'
+      - 'desktop/windows/DesktopAccountSessionBrokerSelfTests.cs'
+      - 'desktop/windows/SWIR.Desktop.AccountSession.SelfTests.csproj'
+      - 'desktop/windows/PermissionBroker.cs'
+      - '.github/workflows/desktop-account-session-contract.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  account-session-contract:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Verify permission policy is read-only
+        shell: pwsh
+        run: |
+          $text = Get-Content -Raw 'desktop/windows/PermissionBroker.cs'
+          if ($text -notmatch 'identity\.inspect') { throw 'identity.inspect permission is missing.' }
+          if ($text -notmatch '\("identity", "info" or "account" or "session"\) => "identity\.inspect"') { throw 'Identity surface is not bound to identity.inspect.' }
+          foreach ($mutation in @('login','logout','setPassword','changePassword','createAccount','removeAccount','unlock')) {
+            if ($text -match ('\("identity",[^\r\n]*"' + [regex]::Escape($mutation) + '"')) {
+              throw "Unsafe identity mutation policy exposed: $mutation"
+            }
+          }
+
+      - name: Build Desktop account session broker self-tests
+        run: dotnet build desktop/windows/SWIR.Desktop.AccountSession.SelfTests.csproj -c Release --nologo
+
+      - name: Run Desktop account session broker self-tests
+        run: dotnet run --project desktop/windows/SWIR.Desktop.AccountSession.SelfTests.csproj -c Release --no-build
