@@ -11,6 +11,7 @@ internal static class DesktopShellIntegrationBrokerSelfTests
         {
             TestShellIntegrationPolicy();
             TestOpenFileActivationBroker();
+            TestShellIntegrationCoordinator();
             Console.WriteLine("Desktop shell integration self-tests passed.");
             return 0;
         }
@@ -113,6 +114,53 @@ internal static class DesktopShellIntegrationBrokerSelfTests
             var cancelled = broker.CaptureFile(textPath);
             Require(broker.Cancel(cancelled.Id), "pending activation should be cancellable");
             Require(!broker.Cancel(cancelled.Id), "cancel must be idempotent after removal");
+        }
+        finally
+        {
+            try { Directory.Delete(root, recursive: true); } catch { }
+        }
+    }
+
+    private static void TestShellIntegrationCoordinator()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "swir-shell-coordinator-tests-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        try
+        {
+            var textPath = Path.Combine(root, "coordinator.txt");
+            File.WriteAllText(textPath, "coordinator");
+            var executable = Environment.ProcessPath ?? throw new InvalidOperationException("Process path is unavailable.");
+            string? capabilityPath = null;
+            string? capabilityOwner = null;
+
+            using var coordinator = new DesktopShellIntegrationCoordinator(executable, (path, owner) =>
+            {
+                capabilityPath = path;
+                capabilityOwner = owner;
+                return new { token = "coordinator-cap", kind = "file", ownerAppId = owner };
+            });
+
+            var json = JsonSerializer.Serialize(coordinator.Describe(), new JsonSerializerOptions(JsonSerializerDefaults.Web));
+            using var doc = JsonDocument.Parse(json);
+            var info = doc.RootElement;
+            Require(info.GetProperty("schema").GetString() == "swir.desktop-shell-host-integration/0.1", "unexpected coordinator schema");
+            Require(info.GetProperty("hostOwnedGlobalShortcuts").GetBoolean(), "global shortcuts must remain host-owned");
+            Require(!info.GetProperty("applicationDefinedGlobalShortcuts").GetBoolean(), "applications must not register arbitrary global shortcuts");
+            Require(!info.GetProperty("changesWindowsUserChoice").GetBoolean(), "coordinator must not take over Windows UserChoice");
+            Require(info.GetProperty("associations").GetArrayLength() == 5, "coordinator association set drifted");
+            Require(info.GetProperty("shortcuts").GetArrayLength() == 2, "host shortcut set drifted");
+
+            var descriptor = coordinator.CaptureStartupArguments(new[] { "--open-file", textPath })
+                ?? throw new InvalidOperationException("coordinator did not capture startup activation");
+            Require(coordinator.PendingOpenFiles().Length == 1, "coordinator activation should be pending");
+            var claimed = coordinator.ClaimOpenFile(descriptor.Id, "swir.code");
+            Require(claimed.AppId == "swir.code", "coordinator claim owner mismatch");
+            Require(capabilityPath == Path.GetFullPath(textPath), "coordinator leaked or changed capability path before native factory");
+            Require(capabilityOwner == "swir.code", "coordinator capability owner mismatch");
+            Require(coordinator.PendingOpenFiles().Length == 0, "coordinator claim must be one-time");
+
+            Require(!coordinator.TryResolveHotKey(41001, out _), "shortcut must not resolve before a window is initialized");
+            ExpectFailure<ArgumentException>(() => coordinator.InitializeWindow(IntPtr.Zero));
         }
         finally
         {
