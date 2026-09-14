@@ -44,7 +44,42 @@
     localStorage.removeItem(pendingKey(appId));try{await window.SwirPlatform?.storage?.remove?.(`open-file.${appId}`)}catch{}
     return payload;
   }
+
+  let nativeDrain=null;
+  const nativeShell=()=>window.SWIR_NATIVE_HOST?.shellIntegration||null;
+  async function openNativeActivation(descriptor){
+    if(!descriptor||typeof descriptor.id!=='string'||!descriptor.name)throw new Error('Invalid native file activation');
+    const shell=nativeShell();
+    if(!shell?.claimOpenFile)throw new Error('Native shell integration is unavailable');
+    const app=defaultFor(descriptor.name);
+    if(!app)throw new Error(`No installed application handles ${descriptor.extension||ext(descriptor.name)||'this file type'}`);
+    const claimed=await shell.claimOpenFile(descriptor.id,app.id);
+    const capability=claimed?.fileCapability;
+    if(!capability||capability.kind!=='file'||capability.ownerAppId!==app.id)throw new Error('Native file activation returned an invalid application capability');
+    return openFile({...capability,name:claimed.name||descriptor.name,extension:claimed.extension||descriptor.extension,source:claimed.source||descriptor.source,nativeActivationId:claimed.id||descriptor.id},app.id);
+  }
+  async function drainNativeActivations(){
+    if(nativeDrain)return nativeDrain;
+    nativeDrain=(async()=>{
+      const shell=nativeShell();
+      if(!shell?.pendingOpenFiles||!shell?.claimOpenFile)return 0;
+      const pending=await shell.pendingOpenFiles();
+      if(!Array.isArray(pending))return 0;
+      let opened=0;
+      for(const descriptor of pending){
+        try{await openNativeActivation(descriptor);opened++}
+        catch(error){window.dispatchEvent(new CustomEvent('swir:native-open-file-error',{detail:{descriptor,error:error?.message||String(error)}}))}
+      }
+      return opened;
+    })();
+    try{return await nativeDrain}finally{nativeDrain=null}
+  }
+
   const allExtensions=()=>[...new Set(catalog().flatMap(p=>p.associations||[]).map(x=>String(x).toLowerCase()))].sort();
   const appDataPath=appId=>`SWIR://APPDATA/${String(appId||'unknown').toUpperCase()}`;
-  window.SwirAssociations=Object.freeze({extension:ext,handlersFor,defaultFor,setDefault,clearDefault,allExtensions,openFile,consume,appDataPath,read});
+  window.SwirAssociations=Object.freeze({extension:ext,handlersFor,defaultFor,setDefault,clearDefault,allExtensions,openFile,openNativeActivation,drainNativeActivations,consume,appDataPath,read});
+
+  window.addEventListener('swir:native-open-file-requested',event=>{openNativeActivation(event.detail).catch(error=>window.dispatchEvent(new CustomEvent('swir:native-open-file-error',{detail:{descriptor:event.detail,error:error?.message||String(error)}})))});
+  window.addEventListener('swir:native-host-ready',()=>{queueMicrotask(()=>{drainNativeActivations().catch(()=>{})})});
+  if(nativeShell())queueMicrotask(()=>{drainNativeActivations().catch(()=>{})});
 })();
