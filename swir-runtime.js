@@ -126,6 +126,10 @@
   });
 
   const processes = Object.freeze({ list: (...args) => call('processes','list',args,(...a)=>platform()?.processes?.list?.(...a)??[]), open:(...args)=>call('processes','open',args,(...a)=>platform()?.processes?.open?.(...a)), kill:(...args)=>call('processes','kill',args,(...a)=>platform()?.processes?.kill?.(...a)??false), spawn:(...args)=>call('processes','spawn',args) });
+  const services = Object.freeze({
+    info:()=>call('services','info',[],async()=>({schema:'swir.desktop-process-service/web',provider:'web-adapter',native:false,readOnly:true,serviceMutation:false,count:0})),
+    list:()=>call('services','list',[],async()=>({schema:'swir.desktop-services/web',provider:'web-adapter',native:false,readOnly:true,truncated:false,count:0,services:[]}))
+  });
   const clipboard = Object.freeze({ readText:(...args)=>call('clipboard','readText',args,(...a)=>platform()?.clipboard?.readText?.(...a)??''), writeText:(...args)=>call('clipboard','writeText',args,(...a)=>platform()?.clipboard?.writeText?.(...a)??false), clear:(...args)=>call('clipboard','clear',args,(...a)=>platform()?.clipboard?.clear?.(...a)) });
   const tray = Object.freeze({ set:(...args)=>call('tray','set',args,async options=>({ok:false,emulated:true,reason:'WEB_RUNTIME',options})), clear:(...args)=>call('tray','clear',args,async()=>({ok:false,emulated:true,reason:'WEB_RUNTIME'})) });
   const network = Object.freeze({ async status(){return call('network','status',[],async()=>({online:navigator.onLine,type:navigator.connection?.type||navigator.connection?.effectiveType||'unknown',downlinkMbps:navigator.connection?.downlink??null,rttMs:navigator.connection?.rtt??null,saveData:navigator.connection?.saveData??false}))}, adapters:(...args)=>call('network','adapters',args,async()=>[]), scan:(...args)=>call('network','scan',args), connect:(...args)=>call('network','connect',args), disconnect:(...args)=>call('network','disconnect',args) });
@@ -154,9 +158,9 @@
     async isAuthenticated(){const ctx=await security.context();return !!ctx?.trusted&&!!ctx?.sessionId}
   });
 
-  function capabilities(){ const native=!!host(); const surfaces=['filesystem','appData','packages','processes','clipboard','tray','network','devices','identity','updater','security']; const result={}; for(const surface of surfaces){const impl=host()?.[surface];result[surface]={provider:impl?'native':'web',native:!!impl,methods:impl?Object.keys(impl).filter(k=>typeof impl[k]==='function'):Object.keys(api[surface]||{}).filter(k=>typeof api[surface][k]==='function')}} return {native,edition:native?String(host()?.edition||'DESKTOP').toUpperCase():'WEB',features:host()?.features||{},surfaces:result}; }
+  function capabilities(){ const native=!!host(); const surfaces=['filesystem','appData','packages','processes','services','clipboard','tray','network','devices','identity','updater','security']; const result={}; for(const surface of surfaces){const impl=host()?.[surface];result[surface]={provider:impl?'native':'web',native:!!impl,methods:impl?Object.keys(impl).filter(k=>typeof impl[k]==='function'):Object.keys(api[surface]||{}).filter(k=>typeof api[surface][k]==='function')}} return {native,edition:native?String(host()?.edition||'DESKTOP').toUpperCase():'WEB',features:host()?.features||{},surfaces:result}; }
   function info(){const caps=capabilities();return {...META,provider:caps.native?'native-host':'web-adapter',edition:caps.edition,nativeHost:caps.native,nativeSessionId:host()?.sessionId||null,nativeFeatures:caps.features,capabilities:caps.surfaces}}
 
-  const api=Object.freeze({meta:META,filesystem,appData,packages,processes,clipboard,tray,network,devices,identity,updater,security,capabilities,info,events:Object.freeze({on,emit}),hasNativeHost:()=>!!host()});
+  const api=Object.freeze({meta:META,filesystem,appData,packages,processes,services,clipboard,tray,network,devices,identity,updater,security,capabilities,info,events:Object.freeze({on,emit}),hasNativeHost:()=>!!host()});
   window.SwirRuntime=api;window.SWIR_RUNTIME=api;emit('ready',info());
 })();
