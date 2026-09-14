@@ -57,6 +57,7 @@ internal sealed class DesktopShellIntegrationCoordinator : IDisposable
                 shortcutWarnings = _shortcutWarnings.ToArray(),
                 associations = AssociationExtensions.ToArray(),
                 associationScope = "current-user",
+                associationRollbackSupported = true,
                 changesWindowsUserChoice = false,
                 openFiles = _openFiles.Describe(),
                 shell = _shell.Describe()
@@ -76,6 +77,14 @@ internal sealed class DesktopShellIntegrationCoordinator : IDisposable
         return AssociationExtensions
             .Select(extension => _shell.PlanAssociation(extension, _executablePath))
             .Select(_shell.RegisterCurrentUserAssociation)
+            .ToArray();
+    }
+
+    public DesktopShellIntegrationBroker.AssociationResult[] RemoveCurrentUserFileHandlers()
+    {
+        ThrowIfDisposed();
+        return AssociationExtensions
+            .Select(_shell.RemoveCurrentUserAssociation)
             .ToArray();
     }
 
