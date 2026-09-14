@@ -4,7 +4,8 @@ namespace Swir.Desktop.Host;
 
 internal sealed class DesktopShellIntegrationCoordinator : IDisposable
 {
-    private const string Schema = "swir.desktop-shell-host-integration/0.1";
+    private const string Schema = "swir.desktop-shell-host-integration/0.2";
+    internal const int WindowsHotKeyMessage = 0x0312;
     private static readonly string[] AssociationExtensions = { ".txt", ".md", ".log", ".json", ".swirapp" };
     private static readonly HostShortcut[] HostShortcuts =
     {
@@ -47,6 +48,7 @@ internal sealed class DesktopShellIntegrationCoordinator : IDisposable
                 hostOwnedGlobalShortcuts = true,
                 applicationDefinedGlobalShortcuts = false,
                 windowInitialized = _windowInitialized,
+                windowsHotKeyMessage = $"WM_HOTKEY/0x{WindowsHotKeyMessage:X4}",
                 shortcuts = HostShortcuts.Select(item => new
                 {
                     id = item.Id,
@@ -122,6 +124,17 @@ internal sealed class DesktopShellIntegrationCoordinator : IDisposable
     {
         ThrowIfDisposed();
         return _shell.TryResolveShortcut(id, out action);
+    }
+
+    public bool TryResolveWindowMessage(int message, IntPtr wParam, out string? action)
+    {
+        ThrowIfDisposed();
+        action = null;
+        if (message != WindowsHotKeyMessage || wParam == IntPtr.Zero) return false;
+
+        var rawId = wParam.ToInt64();
+        if (rawId is < int.MinValue or > int.MaxValue) return false;
+        return _shell.TryResolveShortcut((int)rawId, out action);
     }
 
     public DesktopOpenFileActivationBroker.ActivationDescriptor[] PendingOpenFiles()
