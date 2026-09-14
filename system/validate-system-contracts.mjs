@@ -18,6 +18,7 @@ function assert(condition, message) {
 const hardware = readJson('hardware-catalog.schema.json');
 const snapshot = readJson('hardware-snapshot.schema.json');
 const driverPlan = readJson('driver-plan.schema.json');
+const driverCenter = readJson('driver-center-report.schema.json');
 const providers = readJson('package-provider.schema.json');
 const trust = readJson('trusted-sources.json');
 const baselineCatalog = JSON.parse(fs.readFileSync(path.join(ROOT, 'hardware', 'hardware-catalog.json'), 'utf8'));
@@ -36,6 +37,13 @@ assert(driverPlan.properties?.mode?.const === 'preview', 'driver plan must remai
 assert(driverPlan.properties?.readOnly?.const === true, 'driver plan must remain read-only');
 assert(driverPlan.properties?.autoExecutable?.const === false, 'driver plan must not be directly executable');
 assert(driverPlan.properties?.host, 'driver plan must carry non-privileged host facts');
+assert(driverCenter.$schema?.includes('2020-12'), 'Driver Center report schema must use JSON Schema 2020-12');
+assert(driverCenter.properties?.schema?.const === 'swir.driver-center-report/0.1', 'Driver Center report schema ID mismatch');
+assert(driverCenter.properties?.mode?.const === 'diagnostics', 'Driver Center must remain diagnostics-only');
+assert(driverCenter.properties?.readOnly?.const === true, 'Driver Center report must remain read-only');
+assert(driverCenter.properties?.autoMutation?.const === false, 'Driver Center must not directly mutate hardware state');
+assert(driverCenter.properties?.policy?.properties?.unknownHardwareMayAutoDownload?.const === false, 'Driver Center must prohibit unknown-hardware auto-download');
+assert(driverCenter.properties?.policy?.properties?.windowsKernelDriversAsLinuxDrivers?.const === false, 'Driver Center must reject Windows kernel drivers as Linux drivers');
 assert(providers.properties?.schema?.const === 'swir.package-provider/0.1', 'provider schema ID mismatch');
 assert(trust.schema === 'swir.trusted-sources/0.1', 'trusted source schema mismatch');
 assert(baselineCatalog.schema === 'swir.hardware-catalog/0.1', 'baseline Hardware Catalog schema mismatch');
@@ -94,6 +102,7 @@ for (const ext of ['.exe', '.msi', '.sys']) {
 
 const serviceSource = fs.readFileSync(path.join(ROOT, 'hardware', 'hardware-service.mjs'), 'utf8');
 const resolverSource = fs.readFileSync(path.join(ROOT, 'hardware', 'driver-resolver.mjs'), 'utf8');
+const driverCenterSource = fs.readFileSync(path.join(ROOT, 'hardware', 'driver-center-service.mjs'), 'utf8');
 assert(serviceSource.includes("readOnly: true"), 'Hardware Service must explicitly emit readOnly=true');
 assert(serviceSource.includes("swir.hardware-snapshot/0.2"), 'Hardware Service must emit snapshot contract 0.2');
 assert(serviceSource.includes('detectLinuxHostEnvironment'), 'Hardware Service must expose host environment detection');
@@ -101,10 +110,15 @@ assert(serviceSource.includes('modalias'), 'Hardware Service must preserve modal
 for (const forbiddenCall of ['execSync(', 'spawnSync(', 'execFileSync(', 'spawn(', 'exec(']) {
   assert(!serviceSource.includes(forbiddenCall), `Hardware Service must not execute system commands: ${forbiddenCall}`);
   assert(!resolverSource.includes(forbiddenCall), `Driver resolver must not execute system commands: ${forbiddenCall}`);
+  assert(!driverCenterSource.includes(forbiddenCall), `Driver Center diagnostics must not execute system commands: ${forbiddenCall}`);
 }
 assert(resolverSource.includes("autoExecutable: false"), 'Driver resolver must explicitly disable direct execution');
 assert(resolverSource.includes('fwupdAvailable'), 'Driver resolver must account for fwupd availability');
 assert(resolverSource.includes('packageManagers'), 'Driver resolver must account for package manager availability');
+assert(driverCenterSource.includes("autoMutation: false"), 'Driver Center diagnostics must explicitly disable direct mutations');
+assert(driverCenterSource.includes('ARBITRARY_DRIVER_URL'), 'Driver Center must reject arbitrary driver URLs');
+assert(driverCenterSource.includes('FORBIDDEN_DRIVER_ARTIFACT'), 'Driver Center must reject forbidden binary driver artifacts');
+assert(driverCenterSource.includes('VENDOR_REPOSITORY_ID_REQUIRED'), 'Driver Center must bind vendor exceptions to explicit repository IDs');
 
 const doc = fs.readFileSync(path.join(ROOT, 'SWIR-SYSTEM-EDITION-ARCHITECTURE-0.1.md'), 'utf8');
 for (const phrase of ['Wine / Proton', 'Hardware Service', 'SWIR Driver Center', 'fwupd', 'linux-firmware']) {
@@ -117,3 +131,4 @@ console.log(`Reserved providers: ${[...providerIds].join(', ')}`);
 console.log(`Hardware Catalog entries: ${baselineCatalog.entries.length}`);
 console.log('Hardware snapshot: 0.2 read-only host diagnostics');
 console.log('Driver plan mode: preview/read-only/non-executable');
+console.log('Driver Center report: 0.1 diagnostics/read-only/non-mutating');
