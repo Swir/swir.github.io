@@ -7,11 +7,15 @@ on:
       - 'desktop/windows/DesktopDeviceNetworkBrokerSelfTests.cs'
       - 'desktop/windows/SWIR.Desktop.DeviceNetwork.SelfTests.csproj'
       - 'desktop/windows/validate-device-network-integration.mjs'
+      - 'desktop/windows/validate-device-network-ui-integration.mjs'
       - 'desktop/windows/PermissionBroker.cs'
       - 'desktop/windows/ExecutionPolicyCatalog.cs'
       - 'desktop/windows/app-policy.json'
       - 'desktop/windows/Program.cs'
       - 'swir-runtime.js'
+      - 'swir-device.html'
+      - 'swir-network.html'
+      - 'swir-apps.js'
       - '.github/workflows/desktop-device-network-contract.yml'
   pull_request:
     paths:
@@ -19,11 +23,15 @@ on:
       - 'desktop/windows/DesktopDeviceNetworkBrokerSelfTests.cs'
       - 'desktop/windows/SWIR.Desktop.DeviceNetwork.SelfTests.csproj'
       - 'desktop/windows/validate-device-network-integration.mjs'
+      - 'desktop/windows/validate-device-network-ui-integration.mjs'
       - 'desktop/windows/PermissionBroker.cs'
       - 'desktop/windows/ExecutionPolicyCatalog.cs'
       - 'desktop/windows/app-policy.json'
       - 'desktop/windows/Program.cs'
       - 'swir-runtime.js'
+      - 'swir-device.html'
+      - 'swir-network.html'
+      - 'swir-apps.js'
       - '.github/workflows/desktop-device-network-contract.yml'
   workflow_dispatch:
 
@@ -44,6 +52,9 @@ jobs:
       - name: Verify Runtime to native broker wiring
         working-directory: .
         run: node desktop/windows/validate-device-network-integration.mjs
+      - name: Verify Device Manager and Network Center wiring
+        working-directory: .
+        run: node desktop/windows/validate-device-network-ui-integration.mjs
       - name: Build device network broker self-tests
         run: dotnet build SWIR.Desktop.DeviceNetwork.SelfTests.csproj --configuration Release
       - name: Run device network broker self-tests
