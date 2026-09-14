@@ -14,6 +14,7 @@ on:
       - 'desktop/windows/validate-open-file-activation.mjs'
       - 'desktop/windows/validate-shell-file-handoff.mjs'
       - 'desktop/windows/validate-shell-host-coordinator.mjs'
+      - 'desktop/windows/validate-shell-host-wiring.mjs'
       - 'desktop/windows/SWIR.Desktop.Host.csproj'
       - 'swir-associations.js'
       - 'sw.js'
@@ -30,6 +31,7 @@ on:
       - 'desktop/windows/validate-open-file-activation.mjs'
       - 'desktop/windows/validate-shell-file-handoff.mjs'
       - 'desktop/windows/validate-shell-host-coordinator.mjs'
+      - 'desktop/windows/validate-shell-host-wiring.mjs'
       - 'desktop/windows/SWIR.Desktop.Host.csproj'
       - 'swir-associations.js'
       - 'sw.js'
@@ -53,6 +55,7 @@ jobs:
           node --check desktop/windows/validate-open-file-activation.mjs
           node --check desktop/windows/validate-shell-file-handoff.mjs
           node --check desktop/windows/validate-shell-host-coordinator.mjs
+          node --check desktop/windows/validate-shell-host-wiring.mjs
           node --check swir-associations.js
           node --check sw.js
       - name: Validate shell integration safety contract
@@ -63,6 +66,8 @@ jobs:
         run: node desktop/windows/validate-shell-file-handoff.mjs
       - name: Validate shell host coordinator contract
         run: node desktop/windows/validate-shell-host-coordinator.mjs
+      - name: Validate shipping Desktop Host shell wiring
+        run: node desktop/windows/validate-shell-host-wiring.mjs
       - name: Build shell integration self-tests
         run: dotnet build desktop/windows/SWIR.Desktop.ShellIntegration.SelfTests.csproj -c Release --nologo
       - name: Run shell integration self-tests
