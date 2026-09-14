@@ -20,6 +20,7 @@ internal sealed class MainWindow : Form
     private readonly CapabilityBroker _capabilities = new();
     private readonly AppDataBroker _appData = new();
     private readonly DesktopDeviceNetworkBroker _deviceNetwork = new();
+    private readonly DesktopProcessServiceBroker _processServices = new();
     private readonly DesktopAccountSessionBroker _identity;
     private readonly PermissionBroker _permissions;
     private readonly ExecutionPolicyCatalog _policyCatalog;
@@ -337,7 +338,8 @@ internal sealed class MainWindow : Form
         {
             "filesystem" => DispatchFilesystemAsync(request.Method, request.Args),
             "clipboard" => DispatchClipboardAsync(request.Method, request.Args),
-            "processes" => DispatchProcessesAsync(request.Method, request.Args),
+            "processes" => DispatchProcessesAsync(request.Method),
+            "services" => DispatchServicesAsync(request.Method),
             "network" => DispatchNetworkAsync(request.Method),
             "devices" => DispatchDevicesAsync(request.Method),
             "identity" => DispatchIdentityAsync(request.Method),
@@ -378,6 +380,28 @@ internal sealed class MainWindow : Form
             "account" => _identity.Account(),
             "session" => _identity.Session(),
             _ => throw new BridgeException("RUNTIME_UNSUPPORTED", $"Unsupported identity method: {method}")
+        };
+        return Task.FromResult(result);
+    }
+
+    private Task<object?> DispatchProcessesAsync(string method)
+    {
+        object? result = method switch
+        {
+            "info" => _processServices.Describe(),
+            "list" => _processServices.GetProcesses(),
+            _ => throw new BridgeException("RUNTIME_UNSUPPORTED", $"Unsupported processes method: {method}")
+        };
+        return Task.FromResult(result);
+    }
+
+    private Task<object?> DispatchServicesAsync(string method)
+    {
+        object? result = method switch
+        {
+            "info" => _processServices.Describe(),
+            "list" => _processServices.GetServices(),
+            _ => throw new BridgeException("RUNTIME_UNSUPPORTED", $"Unsupported services method: {method}")
         };
         return Task.FromResult(result);
     }
@@ -456,19 +480,6 @@ internal sealed class MainWindow : Form
             "writeText" => WriteClipboard(ArgString(args, 0)),
             "clear" => ClearClipboard(),
             _ => throw new BridgeException("RUNTIME_UNSUPPORTED", $"Unsupported clipboard method: {method}")
-        };
-        return Task.FromResult(result);
-    }
-
-    private Task<object?> DispatchProcessesAsync(string method, JsonElement args)
-    {
-        object? result = method switch
-        {
-            "list" => new[] { new { pid = Environment.ProcessId, name = "SWIR.Desktop.Host", kind = "desktop-host" } },
-            "open" => new { ok = true, pid = Environment.ProcessId },
-            "kill" => throw new BridgeException("PERMISSION_DENIED", "Process termination is not granted to the shell execution context."),
-            "spawn" => throw new BridgeException("PERMISSION_DENIED", "Process spawning is not granted to the shell execution context."),
-            _ => throw new BridgeException("RUNTIME_UNSUPPORTED", $"Unsupported processes method: {method}")
         };
         return Task.FromResult(result);
     }
@@ -685,20 +696,21 @@ internal sealed class MainWindow : Form
   });
   const surface = (name, methods) => Object.freeze(Object.fromEntries(methods.map(method => [method, (...args) => call(name, method, ...args)])));
   window.SWIR_NATIVE_HOST = Object.freeze({
-    edition: 'DESKTOP', version: '0.5.3-preview', contract: 'swir.runtime/1.0', sessionId: '__SESSION_ID__',
-    features: Object.freeze({ packageContextBroker: true, nativePackageBridge: true, appIsolationRouting: true, appIsolationState: 'APP_BRIDGE_VERIFIED', nativeAppData: true, nativeFilesystem: true, nativeDeviceNetwork: true, nativeAccountSession: true, guardedUpdateRestartLifecycle: true, nativeUpdateBridge: true, nativeUpdatePreparation: true }),
+    edition: 'DESKTOP', version: '0.5.4-preview', contract: 'swir.runtime/1.0', sessionId: '__SESSION_ID__',
+    features: Object.freeze({ packageContextBroker: true, nativePackageBridge: true, appIsolationRouting: true, appIsolationState: 'APP_BRIDGE_VERIFIED', nativeAppData: true, nativeFilesystem: true, nativeDeviceNetwork: true, nativeAccountSession: true, nativeProcessService: true, guardedUpdateRestartLifecycle: true, nativeUpdateBridge: true, nativeUpdatePreparation: true }),
     filesystem: surface('filesystem', ['info','list','get','save','remove','pickFile','pickDirectory','capabilityInfo','readCapabilityText','revokeCapability','revokeOwnerCapabilities','pruneCapabilities','capabilityStatus']),
     appData: surface('appdata', ['info','list','get','set','remove']),
     packages: surface('packages', ['info','installFromCapability','status','rollback']),
     clipboard: surface('clipboard', ['readText','writeText','clear']),
-    processes: surface('processes', ['list','open','kill','spawn']),
+    processes: surface('processes', ['info','list']),
+    services: surface('services', ['info','list']),
     network: surface('network', ['status','adapters']),
     devices: surface('devices', ['info','list']),
     identity: surface('identity', ['info','account','session']),
     security: surface('security', ['contextInfo','can','policyCatalog','appUrl','isolationInfo','syncPackageContexts','packageContexts']),
     updates: surface('updates', ['readiness'])
   });
-  window.dispatchEvent(new CustomEvent('swir:native-host-ready', { detail: { edition: 'DESKTOP', version: '0.5.3-preview', sessionId: '__SESSION_ID__' } }));
+  window.dispatchEvent(new CustomEvent('swir:native-host-ready', { detail: { edition: 'DESKTOP', version: '0.5.4-preview', sessionId: '__SESSION_ID__' } }));
 })();
 """;
 
