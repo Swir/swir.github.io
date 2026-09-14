@@ -18,6 +18,8 @@ internal sealed class DesktopProcessServiceBroker
         commandLineExposure = false,
         executablePathExposure = false,
         environmentExposure = false,
+        processLimit = MaxProcesses,
+        serviceLimit = MaxServices,
         processCount = GetProcesses().Length,
         serviceCount = GetServices().Length
     };
@@ -25,19 +27,29 @@ internal sealed class DesktopProcessServiceBroker
     public ProcessSnapshot[] GetProcesses()
     {
         var result = new List<ProcessSnapshot>();
-        foreach (var process in Process.GetProcesses().OrderBy(p => p.Id).Take(MaxProcesses))
+        var currentPid = Environment.ProcessId;
+        var candidates = Process.GetProcesses()
+            .Where(process => process.Id > 0)
+            .OrderByDescending(process => process.Id == currentPid)
+            .ThenBy(process => process.Id)
+            .Take(MaxProcesses)
+            .ToArray();
+
+        foreach (var process in candidates)
         {
             using (process)
             {
                 try
                 {
-                    var memory = Safe(() => process.WorkingSet64, 0L);
+                    var name = Safe(() => process.ProcessName, string.Empty).Trim();
+                    if (string.IsNullOrWhiteSpace(name)) continue;
+                    var memory = Math.Max(0L, Safe(() => process.WorkingSet64, 0L));
                     var started = Safe<DateTime?>(() => process.StartTime.ToUniversalTime(), null);
                     var responding = Safe<bool?>(() => process.Responding, null);
                     result.Add(new ProcessSnapshot(
                         process.Id,
-                        Safe(() => process.ProcessName, "unknown"),
-                        process.Id == Environment.ProcessId,
+                        name,
+                        process.Id == currentPid,
                         memory,
                         started,
                         responding));
