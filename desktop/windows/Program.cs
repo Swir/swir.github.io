@@ -7,10 +7,10 @@ namespace Swir.Desktop.Host;
 internal static class Program
 {
     [STAThread]
-    private static void Main()
+    private static void Main(string[] args)
     {
         ApplicationConfiguration.Initialize();
-        Application.Run(new MainWindow());
+        Application.Run(new MainWindow(args));
     }
 }
 
@@ -36,13 +36,17 @@ internal sealed class MainWindow : Form
     private readonly NativeFileSystemBroker _nativeFileSystem;
     private readonly DesktopPackageBridge _packages;
     private readonly DesktopTrayIcon _tray;
+    private readonly DesktopShellIntegrationCoordinator _shellIntegration;
+    private readonly string[] _startupArguments;
     private readonly string _repoRoot;
     private readonly string _dataRoot;
     private CoreWebView2? _core;
     private bool _bridgeAttached;
+    private string? _shellAssociationWarning;
 
-    public MainWindow()
+    public MainWindow(IEnumerable<string>? startupArguments = null)
     {
+        _startupArguments = (startupArguments ?? Array.Empty<string>()).ToArray();
         Text = "SWIR OS Desktop Edition Preview";
         Width = 1440;
         Height = 900;
@@ -75,6 +79,7 @@ internal sealed class MainWindow : Form
         Directory.CreateDirectory(_dataRoot);
         _nativeFileSystem = new NativeFileSystemBroker(_dataRoot);
         _packages = new DesktopPackageBridge(_capabilities, new DesktopAppPackageInstaller(_dataRoot));
+        _shellIntegration = new DesktopShellIntegrationCoordinator(Application.ExecutablePath, _capabilities.RegisterFile);
         Controls.Add(_web);
         _tray = new DesktopTrayIcon(this, _trayLifecycle);
         Shown += async (_, _) => await StartAsync();
@@ -83,6 +88,7 @@ internal sealed class MainWindow : Form
         FormClosed += (_, _) =>
         {
             DetachBridge();
+            _shellIntegration.Dispose();
             _tray.Dispose();
         };
     }
@@ -92,6 +98,16 @@ internal sealed class MainWindow : Form
         try
         {
             _startupRecovery.RecoverBeforeShellStart();
+            _shellIntegration.CaptureStartupArguments(_startupArguments);
+            try
+            {
+                _shellIntegration.RegisterCurrentUserFileHandlers();
+            }
+            catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException or IOException or InvalidOperationException)
+            {
+                _shellAssociationWarning = ex.Message;
+            }
+
             var env = await CoreWebView2Environment.CreateAsync(userDataFolder: Path.Combine(_dataRoot, "WebView2"));
             await _web.EnsureCoreWebView2Async(env);
             var core = _web.CoreWebView2;
@@ -135,12 +151,40 @@ internal sealed class MainWindow : Form
                 core.NavigationCompleted -= OnNavigationCompleted;
             }
 
+            _shellIntegration.InitializeWindow(Handle);
             _startupHealth?.ConfirmShellReady();
         }
         catch (Exception ex)
         {
             MessageBox.Show(this, ex.ToString(), "SWIR Desktop Host failed to start", MessageBoxButtons.OK, MessageBoxIcon.Error);
             RequestHostExit();
+        }
+    }
+
+    protected override void WndProc(ref Message m)
+    {
+        if (!IsDisposed && !Disposing && _shellIntegration.TryResolveWindowMessage(m.Msg, m.WParam, out var action))
+        {
+            HandleShellShortcut(action);
+            return;
+        }
+        base.WndProc(ref m);
+    }
+
+    private void HandleShellShortcut(string? action)
+    {
+        switch (action)
+        {
+            case "shell.toggle-visibility":
+                if (Visible && WindowState != FormWindowState.Minimized)
+                    _tray.Hide();
+                else
+                    _tray.Restore();
+                break;
+            case "shell.open-matrix":
+                _tray.Restore();
+                PostNativeHostEvent(new NativeHostEvent("swir-native-event", "shell.action", new { action = "shell.open-matrix", source = "global-shortcut" }));
+                break;
         }
     }
 
@@ -368,6 +412,13 @@ internal sealed class MainWindow : Form
         if (string.Equals(request.Surface, "appdata", StringComparison.Ordinal))
             return DispatchAppDataAsync(request.Method, request.Args, effectiveToken);
 
+        if (string.Equals(request.Surface, "shellIntegration", StringComparison.Ordinal))
+        {
+            if (!trustedShell)
+                throw new BridgeException("SHELL_INTEGRATION_FORBIDDEN", "Native shell integration is restricted to the trusted SWIR system shell.");
+            return DispatchShellIntegrationAsync(request.Method, request.Args);
+        }
+
         _permissions.Authorize(effectiveToken, request.Surface, request.Method, RequestedOwner(request));
         return request.Surface switch
         {
@@ -383,6 +434,19 @@ internal sealed class MainWindow : Form
             "updates" => DispatchUpdatesAsync(request.Method, trustedShell),
             _ => throw new BridgeException("RUNTIME_UNSUPPORTED", $"Unsupported native surface: {request.Surface}")
         };
+    }
+
+    private Task<object?> DispatchShellIntegrationAsync(string method, JsonElement args)
+    {
+        object? result = method switch
+        {
+            "info" => new { host = _shellIntegration.Describe(), associationRegistrationWarning = _shellAssociationWarning },
+            "pendingOpenFiles" => _shellIntegration.PendingOpenFiles(),
+            "claimOpenFile" => _shellIntegration.ClaimOpenFile(ArgString(args, 0), Owner(args, 1)),
+            "cancelOpenFile" => _shellIntegration.CancelOpenFile(ArgString(args, 0)),
+            _ => throw new BridgeException("RUNTIME_UNSUPPORTED", $"Unsupported shell integration method: {method}")
+        };
+        return Task.FromResult(result);
     }
 
     private Task<object?> DispatchNetworkAsync(string method)
@@ -705,6 +769,12 @@ internal sealed class MainWindow : Form
       if (msg.ok) p.resolve(msg.result); else { const error = new Error(msg.error?.message || 'Native host error'); error.code = msg.error?.code || 'NATIVE_HOST_ERROR'; p.reject(error); }
       return;
     }
+    if (msg.type === 'swir-native-event' && msg.name === 'shell.action') {
+      const detail = msg.detail || {};
+      window.dispatchEvent(new CustomEvent('swir:native-shell-action', { detail }));
+      if (detail.action === 'shell.open-matrix') window.postMessage({ type: 'SWIR_NATIVE_OPEN', id: 'matrix' }, location.origin);
+      return;
+    }
     if (msg.type === 'swir-native-event' && msg.name === 'updates.restartFailed') {
       window.dispatchEvent(new CustomEvent('swir:native-update-restart-failed', { detail: msg.detail || {} }));
       forwardUpdateEvent(msg.name, msg.detail);
@@ -731,8 +801,8 @@ internal sealed class MainWindow : Form
   });
   const surface = (name, methods) => Object.freeze(Object.fromEntries(methods.map(method => [method, (...args) => call(name, method, ...args)])));
   window.SWIR_NATIVE_HOST = Object.freeze({
-    edition: 'DESKTOP', version: '0.5.5-preview', contract: 'swir.runtime/1.0', sessionId: '__SESSION_ID__',
-    features: Object.freeze({ packageContextBroker: true, nativePackageBridge: true, appIsolationRouting: true, appIsolationState: 'APP_BRIDGE_VERIFIED', nativeAppData: true, nativeFilesystem: true, nativeDeviceNetwork: true, nativeAccountSession: true, nativeProcessService: true, nativeClipboardTray: true, guardedUpdateRestartLifecycle: true, nativeUpdateBridge: true, nativeUpdatePreparation: true }),
+    edition: 'DESKTOP', version: '0.5.6-preview', contract: 'swir.runtime/1.0', sessionId: '__SESSION_ID__',
+    features: Object.freeze({ packageContextBroker: true, nativePackageBridge: true, appIsolationRouting: true, appIsolationState: 'APP_BRIDGE_VERIFIED', nativeAppData: true, nativeFilesystem: true, nativeDeviceNetwork: true, nativeAccountSession: true, nativeProcessService: true, nativeClipboardTray: true, nativeShellIntegration: true, guardedUpdateRestartLifecycle: true, nativeUpdateBridge: true, nativeUpdatePreparation: true }),
     filesystem: surface('filesystem', ['info','list','get','save','remove','pickFile','pickDirectory','capabilityInfo','readCapabilityText','revokeCapability','revokeOwnerCapabilities','pruneCapabilities','capabilityStatus']),
     appData: surface('appdata', ['info','list','get','set','remove']),
     packages: surface('packages', ['info','installFromCapability','status','rollback']),
@@ -743,9 +813,10 @@ internal sealed class MainWindow : Form
     devices: surface('devices', ['info','list']),
     identity: surface('identity', ['info','account','session']),
     security: surface('security', ['contextInfo','can','policyCatalog','appUrl','isolationInfo','syncPackageContexts','packageContexts']),
+    shellIntegration: surface('shellIntegration', ['info','pendingOpenFiles','claimOpenFile','cancelOpenFile']),
     updates: surface('updates', ['readiness'])
   });
-  window.dispatchEvent(new CustomEvent('swir:native-host-ready', { detail: { edition: 'DESKTOP', version: '0.5.5-preview', sessionId: '__SESSION_ID__' } }));
+  window.dispatchEvent(new CustomEvent('swir:native-host-ready', { detail: { edition: 'DESKTOP', version: '0.5.6-preview', sessionId: '__SESSION_ID__' } }));
 })();
 """;
 
