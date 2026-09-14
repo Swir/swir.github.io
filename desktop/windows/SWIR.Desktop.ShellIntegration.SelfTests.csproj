@@ -9,6 +9,7 @@
   <ItemGroup>
     <Compile Include="DesktopShellIntegrationBroker.cs" />
     <Compile Include="DesktopOpenFileActivationBroker.cs" />
+    <Compile Include="DesktopShellIntegrationCoordinator.cs" />
     <Compile Include="DesktopShellIntegrationBrokerSelfTests.cs" />
   </ItemGroup>
 </Project>
