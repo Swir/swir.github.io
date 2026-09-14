@@ -1,4 +1,4 @@
-# SWIR Runtime Adapter Contract 1.1.1
+# SWIR Runtime Adapter Contract 1.1.2
 
 ## Goal
 
@@ -19,11 +19,17 @@ SWIR App / SWIR Service
 
 ```text
 SwirRuntime.filesystem
+SwirRuntime.appData
+SwirRuntime.packages
 SwirRuntime.processes
+SwirRuntime.services
 SwirRuntime.clipboard
 SwirRuntime.tray
 SwirRuntime.network
+SwirRuntime.devices
+SwirRuntime.identity
 SwirRuntime.updater
+SwirRuntime.security
 ```
 
 The Web Edition delegates compatible operations to `SwirPlatform` and browser APIs. Unsupported privileged operations fail explicitly with `RUNTIME_UNSUPPORTED`.
@@ -32,7 +38,7 @@ The Web Edition delegates compatible operations to `SwirPlatform` and browser AP
 
 Desktop/System hosts must not expose stable raw OS paths to untrusted application code when a narrower capability can represent the same access.
 
-Windows Desktop Host Preview 0.2.1 uses:
+The Windows Desktop Host uses:
 
 ```text
 USER PICKER
@@ -54,7 +60,7 @@ filesystem.pruneCapabilities()
 filesystem.capabilityStatus()
 ```
 
-Tokens use 192 bits of cryptographic randomness, expire after 30 minutes, remain memory-only and are invalidated when the host exits. External text reads are capped at 2 MiB in Preview 0.2.1.
+Tokens use cryptographic randomness, remain session-scoped and are invalidated when the host exits. External resources remain capability-gated; raw native paths are not the portable application contract.
 
 Portable applications should prefer the app-scoped facade:
 
@@ -69,39 +75,74 @@ Legacy/root Runtime calls remain compatible and default to `swir.system.shell`.
 
 ## Security boundary
 
-App-ID ownership in Preview 0.2.1 is a containment primitive, not authenticated authorization. The current same-origin WebView shell can still claim another app ID. Therefore the Desktop host must continue to deny process spawning/termination, native network control, unrestricted external writes and updater apply until an authenticated Permission Broker can bind native calls to a trusted package execution context and approved SWIR permission grant.
+Desktop native calls are bound to authenticated host execution-context tokens issued by the `PermissionBroker`. The trusted shell receives a host-owned execution context; installed packages receive package-scoped contexts synchronized from approved package permissions and execution policy.
+
+A caller-supplied app/package identifier is not treated as authority by itself. Privileged behavior remains fail-closed when no explicit permission policy exists.
+
+The Desktop Host currently keeps process/service mutation, native network control and similar high-risk operations disabled unless a dedicated broker, permission and recovery contract exists.
 
 ## Native host injection
 
 Desktop/System hosts inject `window.SWIR_NATIVE_HOST` before `swir-runtime.js` loads. Each provided surface replaces the Web fallback for that surface only. The host also publishes an ephemeral `sessionId` for diagnostics; applications must not treat it as a secret or authorization token.
 
-## Windows Desktop Host Preview 0.2.1
+## Windows Desktop Host Preview 0.5.5
 
 The concrete Desktop Edition host lives in `desktop/windows/` and targets .NET 8 + Microsoft WebView2.
 
-Implemented native surfaces:
+Implemented native surfaces include:
 
 ```text
-filesystem.list
-filesystem.get
-filesystem.save
-filesystem.remove
-filesystem.pickFile
-filesystem.pickDirectory
-filesystem.capabilityInfo
-filesystem.readCapabilityText
-filesystem.revokeCapability
-filesystem.revokeOwnerCapabilities
-filesystem.pruneCapabilities
-filesystem.capabilityStatus
-clipboard.readText
-clipboard.writeText
-clipboard.clear
-processes.list
-processes.open
+filesystem.info/list/get/save/remove
+filesystem.pickFile/pickDirectory
+filesystem capability inspection/read/revoke/status
+appData.info/list/get/set/remove
+packages.info/installFromCapability/status/rollback
+clipboard.readText/writeText/clear
+processes.info/list
+services.info/list
+network.status/adapters
+devices.info/list
+identity.info/account/session
+security context/policy/isolation/package-context inspection
+updates readiness/check/prepare/cancel/reset/applyAndRestart
 ```
 
-The normal SWIR filesystem remains sandboxed under the current user's local application-data area. External resources require an explicit Windows picker. Raw native paths do not cross the JavaScript/native boundary.
+The normal SWIR filesystem remains sandboxed under the current user's local application-data area. External resources require an explicit Windows picker/capability. Raw native paths do not cross the portable JavaScript/native boundary.
+
+### Clipboard
+
+The shipping Desktop Host maps the portable clipboard surface to the Windows clipboard API. Reads require `clipboard.read`; writes and clear require `clipboard.write`.
+
+### Desktop tray lifecycle
+
+Desktop Host Preview 0.5.5 owns a native Windows notification-area icon through `DesktopTrayIcon` and a deterministic `DesktopTrayLifecycle` state machine.
+
+```text
+VISIBLE
+  | minimize / user close
+  v
+HIDDEN IN TRAY
+  | Show / double click
+  v
+VISIBLE
+
+VISIBLE/HIDDEN
+  | explicit Exit or verified update-restart shutdown
+  v
+EXITING -> DISPOSED
+```
+
+The tray is host-owned. Ordinary window close and minimize can hide the Desktop Host without terminating it. Explicit tray Exit and the guarded update-restart lifecycle mark the host as exiting before normal Form shutdown, so update activation cannot be accidentally converted into hide-to-tray.
+
+The current tray integration intentionally does not expose arbitrary native tray mutation directly to package code. `SwirRuntime.tray` retains its portable Web fallback while future package-visible Desktop tray operations require an explicit permissioned broker contract.
+
+### Process and service inventory
+
+Desktop process/service integration is currently read-only. Task Manager and SWIR Services can consume native inventory through `SwirRuntime` without exposing command lines, executable paths, environment variables, credentials or tokens. Process/service mutation remains disabled.
+
+### Identity and device/network
+
+Desktop identity/session, device inventory and adapter inventory are native read-only surfaces. They are designed to keep portable UI independent from the eventual Linux System Edition implementation.
 
 ## Security rules
 
@@ -113,21 +154,23 @@ The normal SWIR filesystem remains sandboxed under the current user's local appl
 - Keep dangerous native operations fail-closed until their broker exists.
 - Package verification and permission approval remain separate gates before native installation or execution.
 - Desktop bridges expose allowlisted operations only.
+- Host-owned tray/update lifecycle must not be bypassed by arbitrary process termination.
 
 ## Diagnostics
 
-`SwirRuntime.info()` reports active edition, provider, native session ID when present, and available methods per surface.
+`SwirRuntime.info()` reports active edition, provider, native session ID when present, native feature flags and available methods per surface.
 
 `SwirRuntime.capabilities()` reports whether each surface is supplied by a native host or Web adapter.
 
-`SwirRuntime.filesystem.capabilityStatus()` exposes non-secret broker diagnostics such as active grant count, lifetime and text-read limit.
+`SwirRuntime.filesystem.capabilityStatus()` exposes non-secret broker diagnostics such as active grant count and capability limits.
 
 ## Migration path
 
 1. Web Edition validates portable application contracts using browser fallbacks.
 2. Desktop Edition injects a lightweight native host and progressively implements privileged services behind brokers.
-3. Preview 0.2 introduced opaque filesystem capability tokens.
-4. Preview 0.2.1 binds grants to the current host session and an owner app identity while preserving fail-closed privileged operations.
-5. Next milestone: authenticated app execution context + Desktop Permission Broker mapped to installed package grants.
-6. Then add scoped directory capabilities, tray, updater staging and tightly allowlisted process services.
-7. System Edition can replace the Desktop implementation with Linux-native services while preserving `swir.runtime/1.0` where possible.
+3. Filesystem access moved to opaque, owner/session-bound capability tokens.
+4. Package execution contexts and the Desktop Permission Broker bind native calls to installed-package grants.
+5. Native account/session, device/network and process/service inventory now run behind portable adapters.
+6. Native clipboard and host-owned tray lifecycle provide the next desktop-shell integration layer.
+7. Next targets: global shortcuts/native file associations, stronger native notification/tray brokerage and the remaining Desktop packaging/runtime hardening.
+8. System Edition replaces Windows adapters with Linux-native services while preserving `swir.runtime/1.0` where practical; Windows applications use a managed Wine/Proton compatibility layer rather than pretending Windows binaries are Linux-native.
