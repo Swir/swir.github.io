@@ -10,6 +10,11 @@ on:
       - 'desktop/windows/Program.cs'
       - 'desktop/windows/PermissionBroker.cs'
       - 'desktop/windows/validate-process-service-integration.mjs'
+      - 'desktop/windows/validate-process-service-ui.mjs'
+      - 'swir-runtime.js'
+      - 'swir-taskmgr.html'
+      - 'swir-services.html'
+      - 'sw.js'
       - '.github/workflows/desktop-process-service-contract.yml'
   pull_request:
     paths:
@@ -19,6 +24,11 @@ on:
       - 'desktop/windows/Program.cs'
       - 'desktop/windows/PermissionBroker.cs'
       - 'desktop/windows/validate-process-service-integration.mjs'
+      - 'desktop/windows/validate-process-service-ui.mjs'
+      - 'swir-runtime.js'
+      - 'swir-taskmgr.html'
+      - 'swir-services.html'
+      - 'sw.js'
       - '.github/workflows/desktop-process-service-contract.yml'
   workflow_dispatch:
 
@@ -33,8 +43,17 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Check JavaScript syntax
+        shell: pwsh
+        run: |
+          node --check swir-runtime.js
+          node --check sw.js
+          node --check desktop/windows/validate-process-service-integration.mjs
+          node --check desktop/windows/validate-process-service-ui.mjs
       - name: Validate Host process service integration
         run: node desktop/windows/validate-process-service-integration.mjs
+      - name: Validate Task Manager native integration
+        run: node desktop/windows/validate-process-service-ui.mjs
       - name: Build process service self-tests
         run: dotnet build desktop/windows/SWIR.Desktop.ProcessService.SelfTests.csproj -c Release --nologo
       - name: Run process service self-tests
