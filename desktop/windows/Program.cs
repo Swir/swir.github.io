@@ -19,6 +19,7 @@ internal sealed class MainWindow : Form
     private readonly WebView2 _web = new() { Dock = DockStyle.Fill };
     private readonly CapabilityBroker _capabilities = new();
     private readonly AppDataBroker _appData = new();
+    private readonly DesktopDeviceNetworkBroker _deviceNetwork = new();
     private readonly PermissionBroker _permissions;
     private readonly ExecutionPolicyCatalog _policyCatalog;
     private readonly AppIsolationRegistry _isolation;
@@ -335,11 +336,35 @@ internal sealed class MainWindow : Form
             "filesystem" => DispatchFilesystemAsync(request.Method, request.Args),
             "clipboard" => DispatchClipboardAsync(request.Method, request.Args),
             "processes" => DispatchProcessesAsync(request.Method, request.Args),
+            "network" => DispatchNetworkAsync(request.Method),
+            "devices" => DispatchDevicesAsync(request.Method),
             "security" => DispatchSecurityAsync(request.Method, request.Args, effectiveToken),
             "packages" => DispatchPackagesAsync(request.Method, request.Args),
             "updates" => DispatchUpdatesAsync(request.Method, trustedShell),
             _ => throw new BridgeException("RUNTIME_UNSUPPORTED", $"Unsupported native surface: {request.Surface}")
         };
+    }
+
+    private Task<object?> DispatchNetworkAsync(string method)
+    {
+        object? result = method switch
+        {
+            "status" => _deviceNetwork.NetworkStatus(),
+            "adapters" => _deviceNetwork.NetworkAdapters(),
+            _ => throw new BridgeException("RUNTIME_UNSUPPORTED", $"Unsupported network method: {method}")
+        };
+        return Task.FromResult(result);
+    }
+
+    private Task<object?> DispatchDevicesAsync(string method)
+    {
+        object? result = method switch
+        {
+            "info" => _deviceNetwork.Describe(),
+            "list" => _deviceNetwork.Devices(),
+            _ => throw new BridgeException("RUNTIME_UNSUPPORTED", $"Unsupported devices method: {method}")
+        };
+        return Task.FromResult(result);
     }
 
     private async Task<object?> DispatchUpdatesAsync(string method, bool trustedShell)
@@ -581,6 +606,7 @@ internal sealed class MainWindow : Form
         BridgeException bridge => bridge.Code,
         NativeFileSystemException nativeFileSystem => nativeFileSystem.Code,
         DesktopPackageException package => package.Code,
+        DeviceNetworkBrokerException deviceNetwork => deviceNetwork.Code,
         DesktopUpdateBridgeCommandException updateBridge => updateBridge.Code,
         UpdateSecurityException updateSecurity => updateSecurity.Code,
         _ => "NATIVE_HOST_ERROR"
@@ -644,17 +670,19 @@ internal sealed class MainWindow : Form
   });
   const surface = (name, methods) => Object.freeze(Object.fromEntries(methods.map(method => [method, (...args) => call(name, method, ...args)])));
   window.SWIR_NATIVE_HOST = Object.freeze({
-    edition: 'DESKTOP', version: '0.5.1-preview', contract: 'swir.runtime/1.0', sessionId: '__SESSION_ID__',
-    features: Object.freeze({ packageContextBroker: true, nativePackageBridge: true, appIsolationRouting: true, appIsolationState: 'APP_BRIDGE_VERIFIED', nativeAppData: true, nativeFilesystem: true, guardedUpdateRestartLifecycle: true, nativeUpdateBridge: true, nativeUpdatePreparation: true }),
+    edition: 'DESKTOP', version: '0.5.2-preview', contract: 'swir.runtime/1.0', sessionId: '__SESSION_ID__',
+    features: Object.freeze({ packageContextBroker: true, nativePackageBridge: true, appIsolationRouting: true, appIsolationState: 'APP_BRIDGE_VERIFIED', nativeAppData: true, nativeFilesystem: true, nativeDeviceNetwork: true, guardedUpdateRestartLifecycle: true, nativeUpdateBridge: true, nativeUpdatePreparation: true }),
     filesystem: surface('filesystem', ['info','list','get','save','remove','pickFile','pickDirectory','capabilityInfo','readCapabilityText','revokeCapability','revokeOwnerCapabilities','pruneCapabilities','capabilityStatus']),
     appData: surface('appdata', ['info','list','get','set','remove']),
     packages: surface('packages', ['info','installFromCapability','status','rollback']),
     clipboard: surface('clipboard', ['readText','writeText','clear']),
     processes: surface('processes', ['list','open','kill','spawn']),
+    network: surface('network', ['status','adapters']),
+    devices: surface('devices', ['info','list']),
     security: surface('security', ['contextInfo','can','policyCatalog','appUrl','isolationInfo','syncPackageContexts','packageContexts']),
     updates: surface('updates', ['readiness'])
   });
-  window.dispatchEvent(new CustomEvent('swir:native-host-ready', { detail: { edition: 'DESKTOP', version: '0.5.1-preview', sessionId: '__SESSION_ID__' } }));
+  window.dispatchEvent(new CustomEvent('swir:native-host-ready', { detail: { edition: 'DESKTOP', version: '0.5.2-preview', sessionId: '__SESSION_ID__' } }));
 })();
 """;
 
