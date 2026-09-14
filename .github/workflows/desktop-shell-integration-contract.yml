@@ -11,7 +11,10 @@ on:
       - 'desktop/windows/SWIR.Desktop.ShellIntegration.SelfTests.csproj'
       - 'desktop/windows/validate-shell-integration-foundation.mjs'
       - 'desktop/windows/validate-open-file-activation.mjs'
+      - 'desktop/windows/validate-shell-file-handoff.mjs'
       - 'desktop/windows/SWIR.Desktop.Host.csproj'
+      - 'swir-associations.js'
+      - 'sw.js'
       - '.github/workflows/desktop-shell-integration-contract.yml'
   pull_request:
     paths:
@@ -22,7 +25,10 @@ on:
       - 'desktop/windows/SWIR.Desktop.ShellIntegration.SelfTests.csproj'
       - 'desktop/windows/validate-shell-integration-foundation.mjs'
       - 'desktop/windows/validate-open-file-activation.mjs'
+      - 'desktop/windows/validate-shell-file-handoff.mjs'
       - 'desktop/windows/SWIR.Desktop.Host.csproj'
+      - 'swir-associations.js'
+      - 'sw.js'
       - '.github/workflows/desktop-shell-integration-contract.yml'
   workflow_dispatch:
 
@@ -37,14 +43,19 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Check validator syntax
+      - name: Check JavaScript syntax
         run: |
           node --check desktop/windows/validate-shell-integration-foundation.mjs
           node --check desktop/windows/validate-open-file-activation.mjs
+          node --check desktop/windows/validate-shell-file-handoff.mjs
+          node --check swir-associations.js
+          node --check sw.js
       - name: Validate shell integration safety contract
         run: node desktop/windows/validate-shell-integration-foundation.mjs
       - name: Validate guarded open-file activation contract
         run: node desktop/windows/validate-open-file-activation.mjs
+      - name: Validate native-to-portable file handoff contract
+        run: node desktop/windows/validate-shell-file-handoff.mjs
       - name: Build shell integration self-tests
         run: dotnet build desktop/windows/SWIR.Desktop.ShellIntegration.SelfTests.csproj -c Release --nologo
       - name: Run shell integration self-tests
