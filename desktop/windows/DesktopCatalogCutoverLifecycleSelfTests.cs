@@ -78,15 +78,20 @@ internal static class DesktopCatalogCutoverLifecycleSelfTests
                 "CATALOG_KEY_RETIRED");
             Require(Status(context.Bridge).Contains("2.0.0", StringComparison.Ordinal), "retired-root rejection must not mutate payload");
 
-            // 7) A stale next-root catalog remains blocked by the restart-safe high-water mark after rollback.
-            ExpectPackageCode(
-                () => InstallRelease(context, v2, nextKey, NextKeyId, "2.0.0", 1001),
-                "CATALOG_ROLLBACK_DETECTED");
-
-            // 8) A fresh next-root sequence succeeds and restores forward progress.
+            // 7) A fresh next-root sequence succeeds after rollback and advances the trust high-water mark.
             InstallRelease(context, v3, nextKey, NextKeyId, "3.0.0", 1003);
             context = NewBridge(packageData, trustData, releaseRoot);
-            Require(Status(context.Bridge).Contains("3.0.0", StringComparison.Ordinal), "fresh next-root update should survive final Host restart");
+            Require(Status(context.Bridge).Contains("3.0.0", StringComparison.Ordinal), "fresh next-root update should survive Host restart");
+
+            // 8) Once next-root sequence 1003 has been accepted, an older but otherwise active
+            // next-root catalog at sequence 1002 must be rejected specifically by anti-rollback.
+            ExpectPackageCode(
+                () => InstallRelease(context, v2, nextKey, NextKeyId, "2.0.0", 1002),
+                "CATALOG_ROLLBACK_DETECTED");
+            Require(Status(context.Bridge).Contains("3.0.0", StringComparison.Ordinal), "stale next-root rejection must not mutate the installed payload");
+
+            context = NewBridge(packageData, trustData, releaseRoot);
+            Require(Status(context.Bridge).Contains("3.0.0", StringComparison.Ordinal), "final v3 payload should survive restart after stale catalog rejection");
 
             Console.WriteLine("Native Desktop catalog cutover package lifecycle self-tests passed.");
             return 0;
