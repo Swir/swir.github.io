@@ -20,6 +20,7 @@ internal sealed class MainWindow : Form
     private readonly CapabilityBroker _capabilities = new();
     private readonly AppDataBroker _appData = new();
     private readonly DesktopDeviceNetworkBroker _deviceNetwork = new();
+    private readonly DesktopAccountSessionBroker _identity;
     private readonly PermissionBroker _permissions;
     private readonly ExecutionPolicyCatalog _policyCatalog;
     private readonly AppIsolationRegistry _isolation;
@@ -66,6 +67,7 @@ internal sealed class MainWindow : Form
         _policyCatalog = new ExecutionPolicyCatalog(Path.Combine(_repoRoot, "desktop", "windows", "app-policy.json"));
         _isolation = new AppIsolationRegistry(_policyCatalog);
         _permissions = new PermissionBroker(_capabilities, _policyCatalog);
+        _identity = new DesktopAccountSessionBroker(_capabilities.SessionId);
         _dataRoot = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SWIR", "DesktopHost", "Data");
         Directory.CreateDirectory(_dataRoot);
         _nativeFileSystem = new NativeFileSystemBroker(_dataRoot);
@@ -338,6 +340,7 @@ internal sealed class MainWindow : Form
             "processes" => DispatchProcessesAsync(request.Method, request.Args),
             "network" => DispatchNetworkAsync(request.Method),
             "devices" => DispatchDevicesAsync(request.Method),
+            "identity" => DispatchIdentityAsync(request.Method),
             "security" => DispatchSecurityAsync(request.Method, request.Args, effectiveToken),
             "packages" => DispatchPackagesAsync(request.Method, request.Args),
             "updates" => DispatchUpdatesAsync(request.Method, trustedShell),
@@ -363,6 +366,18 @@ internal sealed class MainWindow : Form
             "info" => _deviceNetwork.Describe(),
             "list" => _deviceNetwork.Devices(),
             _ => throw new BridgeException("RUNTIME_UNSUPPORTED", $"Unsupported devices method: {method}")
+        };
+        return Task.FromResult(result);
+    }
+
+    private Task<object?> DispatchIdentityAsync(string method)
+    {
+        object? result = method switch
+        {
+            "info" => _identity.Describe(),
+            "account" => _identity.Account(),
+            "session" => _identity.Session(),
+            _ => throw new BridgeException("RUNTIME_UNSUPPORTED", $"Unsupported identity method: {method}")
         };
         return Task.FromResult(result);
     }
@@ -670,8 +685,8 @@ internal sealed class MainWindow : Form
   });
   const surface = (name, methods) => Object.freeze(Object.fromEntries(methods.map(method => [method, (...args) => call(name, method, ...args)])));
   window.SWIR_NATIVE_HOST = Object.freeze({
-    edition: 'DESKTOP', version: '0.5.2-preview', contract: 'swir.runtime/1.0', sessionId: '__SESSION_ID__',
-    features: Object.freeze({ packageContextBroker: true, nativePackageBridge: true, appIsolationRouting: true, appIsolationState: 'APP_BRIDGE_VERIFIED', nativeAppData: true, nativeFilesystem: true, nativeDeviceNetwork: true, guardedUpdateRestartLifecycle: true, nativeUpdateBridge: true, nativeUpdatePreparation: true }),
+    edition: 'DESKTOP', version: '0.5.3-preview', contract: 'swir.runtime/1.0', sessionId: '__SESSION_ID__',
+    features: Object.freeze({ packageContextBroker: true, nativePackageBridge: true, appIsolationRouting: true, appIsolationState: 'APP_BRIDGE_VERIFIED', nativeAppData: true, nativeFilesystem: true, nativeDeviceNetwork: true, nativeAccountSession: true, guardedUpdateRestartLifecycle: true, nativeUpdateBridge: true, nativeUpdatePreparation: true }),
     filesystem: surface('filesystem', ['info','list','get','save','remove','pickFile','pickDirectory','capabilityInfo','readCapabilityText','revokeCapability','revokeOwnerCapabilities','pruneCapabilities','capabilityStatus']),
     appData: surface('appdata', ['info','list','get','set','remove']),
     packages: surface('packages', ['info','installFromCapability','status','rollback']),
@@ -679,10 +694,11 @@ internal sealed class MainWindow : Form
     processes: surface('processes', ['list','open','kill','spawn']),
     network: surface('network', ['status','adapters']),
     devices: surface('devices', ['info','list']),
+    identity: surface('identity', ['info','account','session']),
     security: surface('security', ['contextInfo','can','policyCatalog','appUrl','isolationInfo','syncPackageContexts','packageContexts']),
     updates: surface('updates', ['readiness'])
   });
-  window.dispatchEvent(new CustomEvent('swir:native-host-ready', { detail: { edition: 'DESKTOP', version: '0.5.2-preview', sessionId: '__SESSION_ID__' } }));
+  window.dispatchEvent(new CustomEvent('swir:native-host-ready', { detail: { edition: 'DESKTOP', version: '0.5.3-preview', sessionId: '__SESSION_ID__' } }));
 })();
 """;
 
