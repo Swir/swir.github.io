@@ -9,6 +9,7 @@ on:
       - 'desktop/windows/DesktopTrayLifecycleSelfTests.cs'
       - 'desktop/windows/SWIR.Desktop.Tray.SelfTests.csproj'
       - 'desktop/windows/validate-clipboard-tray-foundation.mjs'
+      - 'desktop/windows/validate-clipboard-tray-host-integration.mjs'
       - 'desktop/windows/Program.cs'
       - 'desktop/windows/PermissionBroker.cs'
       - 'desktop/windows/SWIR.Desktop.Host.csproj'
@@ -20,6 +21,7 @@ on:
       - 'desktop/windows/DesktopTrayLifecycleSelfTests.cs'
       - 'desktop/windows/SWIR.Desktop.Tray.SelfTests.csproj'
       - 'desktop/windows/validate-clipboard-tray-foundation.mjs'
+      - 'desktop/windows/validate-clipboard-tray-host-integration.mjs'
       - 'desktop/windows/Program.cs'
       - 'desktop/windows/PermissionBroker.cs'
       - 'desktop/windows/SWIR.Desktop.Host.csproj'
@@ -38,9 +40,13 @@ jobs:
         with:
           node-version: '22'
       - name: Check validator syntax
-        run: node --check desktop/windows/validate-clipboard-tray-foundation.mjs
+        run: |
+          node --check desktop/windows/validate-clipboard-tray-foundation.mjs
+          node --check desktop/windows/validate-clipboard-tray-host-integration.mjs
       - name: Validate clipboard and tray foundation
         run: node desktop/windows/validate-clipboard-tray-foundation.mjs
+      - name: Validate shipping Desktop tray integration
+        run: node desktop/windows/validate-clipboard-tray-host-integration.mjs
       - name: Build tray lifecycle self-tests
         run: dotnet build desktop/windows/SWIR.Desktop.Tray.SelfTests.csproj -c Release --nologo
       - name: Run tray lifecycle self-tests
