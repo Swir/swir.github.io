@@ -10,7 +10,9 @@ on:
       - 'desktop/windows/Program.cs'
       - 'desktop/windows/validate-account-session-integration.mjs'
       - 'desktop/windows/validate-account-session-runtime.mjs'
+      - 'desktop/windows/validate-account-session-ui.mjs'
       - 'swir-runtime.js'
+      - 'swir-settings.html'
       - 'sw.js'
       - '.github/workflows/desktop-account-session-contract.yml'
   pull_request:
@@ -22,7 +24,9 @@ on:
       - 'desktop/windows/Program.cs'
       - 'desktop/windows/validate-account-session-integration.mjs'
       - 'desktop/windows/validate-account-session-runtime.mjs'
+      - 'desktop/windows/validate-account-session-ui.mjs'
       - 'swir-runtime.js'
+      - 'swir-settings.html'
       - 'sw.js'
       - '.github/workflows/desktop-account-session-contract.yml'
   workflow_dispatch:
@@ -47,6 +51,7 @@ jobs:
           node --check sw.js
           node --check desktop/windows/validate-account-session-integration.mjs
           node --check desktop/windows/validate-account-session-runtime.mjs
+          node --check desktop/windows/validate-account-session-ui.mjs
 
       - name: Verify permission policy is read-only
         shell: pwsh
@@ -65,6 +70,9 @@ jobs:
 
       - name: Verify portable account/session runtime integration
         run: node desktop/windows/validate-account-session-runtime.mjs
+
+      - name: Verify System Settings account/session integration
+        run: node desktop/windows/validate-account-session-ui.mjs
 
       - name: Build Desktop account session broker self-tests
         run: dotnet build desktop/windows/SWIR.Desktop.AccountSession.SelfTests.csproj -c Release --nologo
