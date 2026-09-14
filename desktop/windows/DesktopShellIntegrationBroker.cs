@@ -6,24 +6,34 @@ namespace Swir.Desktop.Host;
 
 internal sealed class DesktopShellIntegrationBroker : IDisposable
 {
-    private const string Schema = "swir.desktop-shell-integration/0.1";
+    private const string Schema = "swir.desktop-shell-integration/0.2";
+    private static readonly HashSet<string> SafeAssociationExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".txt", ".md", ".log", ".json", ".swirapp"
+    };
+
     private readonly Dictionary<int, ShortcutRegistration> _shortcuts = new();
     private readonly object _gate = new();
     private bool _disposed;
 
-    public object Describe() => new
+    public object Describe()
     {
-        schema = Schema,
-        platform = "windows",
-        shortcutProvider = "RegisterHotKey",
-        associationProvider = "HKCU\\Software\\Classes",
-        machineWideWrites = false,
-        changesDefaultApplicationWithoutUserChoice = false,
-        windowsUserChoiceProtected = true,
-        registeredShortcutCount = _shortcuts.Count,
-        supportedAssociationScope = "current-user",
-        safeAssociationExtensions = new[] { ".txt", ".md", ".log", ".json", ".swirapp" }
-    };
+        int shortcutCount;
+        lock (_gate) shortcutCount = _shortcuts.Count;
+        return new
+        {
+            schema = Schema,
+            platform = "windows",
+            shortcutProvider = "RegisterHotKey",
+            associationProvider = "HKCU\\Software\\Classes",
+            machineWideWrites = false,
+            changesDefaultApplicationWithoutUserChoice = false,
+            windowsUserChoiceProtected = true,
+            registeredShortcutCount = shortcutCount,
+            supportedAssociationScope = "current-user",
+            safeAssociationExtensions = SafeAssociationExtensions.OrderBy(value => value, StringComparer.Ordinal).ToArray()
+        };
+    }
 
     public ShortcutRegistration RegisterShortcut(IntPtr windowHandle, int id, ShortcutModifiers modifiers, uint virtualKey, string action)
     {
@@ -46,6 +56,7 @@ internal sealed class DesktopShellIntegrationBroker : IDisposable
 
     public bool TryResolveShortcut(int id, out string? action)
     {
+        ThrowIfDisposed();
         lock (_gate)
         {
             if (_shortcuts.TryGetValue(id, out var registration))
@@ -73,7 +84,7 @@ internal sealed class DesktopShellIntegrationBroker : IDisposable
     public AssociationPlan PlanAssociation(string extension, string executablePath)
     {
         ThrowIfDisposed();
-        var normalized = NormalizeExtension(extension);
+        var normalized = NormalizeSupportedExtension(extension);
         var executable = Path.GetFullPath(executablePath ?? throw new ArgumentNullException(nameof(executablePath)));
         if (!File.Exists(executable)) throw new FileNotFoundException("Association executable does not exist.", executable);
 
@@ -86,13 +97,15 @@ internal sealed class DesktopShellIntegrationBroker : IDisposable
     {
         ThrowIfDisposed();
         ArgumentNullException.ThrowIfNull(plan);
-        var normalized = NormalizeExtension(plan.Extension);
+        var normalized = NormalizeSupportedExtension(plan.Extension);
         if (!string.Equals(normalized, plan.Extension, StringComparison.Ordinal))
             throw new InvalidOperationException("Association plan extension is not normalized.");
         if (!string.Equals(plan.Scope, "current-user", StringComparison.Ordinal) || plan.MachineWide)
             throw new InvalidOperationException("Only current-user associations are supported.");
-        if (!plan.ProgId.StartsWith("SWIR.OS", StringComparison.Ordinal))
-            throw new InvalidOperationException("Only SWIR-owned ProgIDs may be registered.");
+        if (!string.Equals(plan.ProgId, BuildProgId(normalized), StringComparison.Ordinal))
+            throw new InvalidOperationException("Association ProgID does not match the SWIR-owned extension mapping.");
+        if (string.IsNullOrWhiteSpace(plan.OpenCommand) || !plan.OpenCommand.Contains(" --open-file ", StringComparison.Ordinal) || !plan.OpenCommand.EndsWith("\"%1\"", StringComparison.Ordinal))
+            throw new InvalidOperationException("Association command must use the controlled --open-file activation contract.");
 
         using var classes = Registry.CurrentUser.CreateSubKey("Software\\Classes", writable: true)
             ?? throw new InvalidOperationException("Unable to open current-user Classes registry hive.");
@@ -111,8 +124,8 @@ internal sealed class DesktopShellIntegrationBroker : IDisposable
     public AssociationResult RemoveCurrentUserAssociation(string extension)
     {
         ThrowIfDisposed();
-        var normalized = NormalizeExtension(extension);
-        var progId = "SWIR.OS" + normalized.Replace(".", "_", StringComparison.Ordinal).ToUpperInvariant();
+        var normalized = NormalizeSupportedExtension(extension);
+        var progId = BuildProgId(normalized);
         using var classes = Registry.CurrentUser.OpenSubKey("Software\\Classes", writable: true);
         if (classes is null) return new AssociationResult(normalized, progId, false, false, "No current-user Classes hive was available.");
         try { classes.DeleteSubKeyTree(progId, throwOnMissingSubKey: false); } catch (ArgumentException) { }
@@ -136,6 +149,14 @@ internal sealed class DesktopShellIntegrationBroker : IDisposable
         }
     }
 
+    private static string NormalizeSupportedExtension(string extension)
+    {
+        var value = NormalizeExtension(extension);
+        if (!SafeAssociationExtensions.Contains(value))
+            throw new NotSupportedException($"File extension '{value}' is outside the SWIR Desktop association allowlist.");
+        return value;
+    }
+
     private static string NormalizeExtension(string extension)
     {
         if (string.IsNullOrWhiteSpace(extension)) throw new ArgumentException("File extension is required.", nameof(extension));
@@ -145,6 +166,9 @@ internal sealed class DesktopShellIntegrationBroker : IDisposable
             throw new ArgumentException("File extension contains unsupported characters.", nameof(extension));
         return value;
     }
+
+    private static string BuildProgId(string normalizedExtension)
+        => "SWIR.OS" + normalizedExtension.Replace(".", "_", StringComparison.Ordinal).ToUpperInvariant();
 
     private void ThrowIfDisposed()
     {
