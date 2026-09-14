@@ -8,6 +8,14 @@ const sw = fs.readFileSync('sw.js', 'utf8');
 const requireText = (text, needle, message) => {
   if (!text.includes(needle)) throw new Error(message || `Missing required contract fragment: ${needle}`);
 };
+const parseInlineScript = (html, label) => {
+  const scripts = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(match => match[1]).filter(Boolean);
+  if (!scripts.length) throw new Error(`${label} inline script missing`);
+  for (const script of scripts) new Function(script);
+};
+
+parseInlineScript(taskmgr, 'Task Manager');
+parseInlineScript(services, 'SWIR Services');
 
 requireText(runtime, "const processes = Object.freeze({ list:", 'SwirRuntime process surface missing');
 requireText(runtime, 'const services = Object.freeze({', 'SwirRuntime services surface missing');
@@ -28,6 +36,7 @@ requireText(services, 'rt.services.list()', 'SWIR Services must request service 
 requireText(services, 'surfaces?.services?.native', 'SWIR Services must detect the native services provider');
 requireText(services, 'READ ONLY', 'SWIR Services must visibly communicate native read-only policy');
 requireText(services, 'service inventory is intentionally read-only', 'SWIR Services must explain privileged mutation policy');
+requireText(sw, "process-service-ui-0.2.0", 'Process/service UI cache generation must be current');
 requireText(sw, "'./swir-taskmgr.html'", 'Task Manager must remain in the offline core cache');
 requireText(sw, "'./swir-services.html'", 'SWIR Services must remain in the offline core cache');
 
