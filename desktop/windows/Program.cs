@@ -21,6 +21,7 @@ internal sealed class MainWindow : Form
     private readonly AppDataBroker _appData = new();
     private readonly DesktopDeviceNetworkBroker _deviceNetwork = new();
     private readonly DesktopProcessServiceBroker _processServices = new();
+    private readonly DesktopTrayLifecycle _trayLifecycle = new();
     private readonly DesktopAccountSessionBroker _identity;
     private readonly PermissionBroker _permissions;
     private readonly ExecutionPolicyCatalog _policyCatalog;
@@ -34,6 +35,7 @@ internal sealed class MainWindow : Form
     private readonly DesktopUpdatePreparationHostService _updatePreparationHost;
     private readonly NativeFileSystemBroker _nativeFileSystem;
     private readonly DesktopPackageBridge _packages;
+    private readonly DesktopTrayIcon _tray;
     private readonly string _repoRoot;
     private readonly string _dataRoot;
     private CoreWebView2? _core;
@@ -74,8 +76,15 @@ internal sealed class MainWindow : Form
         _nativeFileSystem = new NativeFileSystemBroker(_dataRoot);
         _packages = new DesktopPackageBridge(_capabilities, new DesktopAppPackageInstaller(_dataRoot));
         Controls.Add(_web);
+        _tray = new DesktopTrayIcon(this, _trayLifecycle);
         Shown += async (_, _) => await StartAsync();
-        FormClosed += (_, _) => DetachBridge();
+        Resize += OnHostResize;
+        FormClosing += OnHostFormClosing;
+        FormClosed += (_, _) =>
+        {
+            DetachBridge();
+            _tray.Dispose();
+        };
     }
 
     private async Task StartAsync()
@@ -131,8 +140,33 @@ internal sealed class MainWindow : Form
         catch (Exception ex)
         {
             MessageBox.Show(this, ex.ToString(), "SWIR Desktop Host failed to start", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            Close();
+            RequestHostExit();
         }
+    }
+
+    private void OnHostResize(object? sender, EventArgs e)
+    {
+        if (WindowState != FormWindowState.Minimized || IsDisposed || Disposing)
+            return;
+
+        BeginInvoke(new Action(() =>
+        {
+            if (!IsDisposed && !Disposing && WindowState == FormWindowState.Minimized)
+                _tray.Hide();
+        }));
+    }
+
+    private void OnHostFormClosing(object? sender, FormClosingEventArgs e)
+    {
+        var trayState = _trayLifecycle.Describe().WindowState;
+        if (e.CloseReason == CloseReason.UserClosing && trayState is not "exiting" and not "disposed")
+        {
+            e.Cancel = true;
+            _tray.Hide();
+            return;
+        }
+
+        _trayLifecycle.RequestExit();
     }
 
     private async void OnWebMessageReceived(object? sender, CoreWebView2WebMessageReceivedEventArgs e)
@@ -258,6 +292,7 @@ internal sealed class MainWindow : Form
             BeginInvoke(new Action(RequestHostExit));
             return;
         }
+        _trayLifecycle.RequestExit();
         Close();
     }
 
@@ -696,8 +731,8 @@ internal sealed class MainWindow : Form
   });
   const surface = (name, methods) => Object.freeze(Object.fromEntries(methods.map(method => [method, (...args) => call(name, method, ...args)])));
   window.SWIR_NATIVE_HOST = Object.freeze({
-    edition: 'DESKTOP', version: '0.5.4-preview', contract: 'swir.runtime/1.0', sessionId: '__SESSION_ID__',
-    features: Object.freeze({ packageContextBroker: true, nativePackageBridge: true, appIsolationRouting: true, appIsolationState: 'APP_BRIDGE_VERIFIED', nativeAppData: true, nativeFilesystem: true, nativeDeviceNetwork: true, nativeAccountSession: true, nativeProcessService: true, guardedUpdateRestartLifecycle: true, nativeUpdateBridge: true, nativeUpdatePreparation: true }),
+    edition: 'DESKTOP', version: '0.5.5-preview', contract: 'swir.runtime/1.0', sessionId: '__SESSION_ID__',
+    features: Object.freeze({ packageContextBroker: true, nativePackageBridge: true, appIsolationRouting: true, appIsolationState: 'APP_BRIDGE_VERIFIED', nativeAppData: true, nativeFilesystem: true, nativeDeviceNetwork: true, nativeAccountSession: true, nativeProcessService: true, nativeClipboardTray: true, guardedUpdateRestartLifecycle: true, nativeUpdateBridge: true, nativeUpdatePreparation: true }),
     filesystem: surface('filesystem', ['info','list','get','save','remove','pickFile','pickDirectory','capabilityInfo','readCapabilityText','revokeCapability','revokeOwnerCapabilities','pruneCapabilities','capabilityStatus']),
     appData: surface('appdata', ['info','list','get','set','remove']),
     packages: surface('packages', ['info','installFromCapability','status','rollback']),
@@ -710,7 +745,7 @@ internal sealed class MainWindow : Form
     security: surface('security', ['contextInfo','can','policyCatalog','appUrl','isolationInfo','syncPackageContexts','packageContexts']),
     updates: surface('updates', ['readiness'])
   });
-  window.dispatchEvent(new CustomEvent('swir:native-host-ready', { detail: { edition: 'DESKTOP', version: '0.5.4-preview', sessionId: '__SESSION_ID__' } }));
+  window.dispatchEvent(new CustomEvent('swir:native-host-ready', { detail: { edition: 'DESKTOP', version: '0.5.5-preview', sessionId: '__SESSION_ID__' } }));
 })();
 """;
 
