@@ -38,7 +38,7 @@ internal sealed class DesktopShellIntegrationBroker : IDisposable
             if (_shortcuts.ContainsKey(id)) throw new InvalidOperationException($"Shortcut id {id} is already registered.");
             if (!RegisterHotKey(windowHandle, id, (uint)modifiers | ModifierNoRepeat, virtualKey))
                 throw new Win32Exception(Marshal.GetLastWin32Error(), "Windows rejected the global shortcut registration.");
-            var registration = new ShortcutRegistration(id, modifiers, virtualKey, action.Trim());
+            var registration = new ShortcutRegistration(windowHandle, id, modifiers, virtualKey, action.Trim());
             _shortcuts[id] = registration;
             return registration;
         }
@@ -63,8 +63,9 @@ internal sealed class DesktopShellIntegrationBroker : IDisposable
         ThrowIfDisposed();
         lock (_gate)
         {
-            if (!_shortcuts.Remove(id)) return false;
-            if (windowHandle != IntPtr.Zero) _ = UnregisterHotKey(windowHandle, id);
+            if (!_shortcuts.Remove(id, out var registration)) return false;
+            var owner = windowHandle != IntPtr.Zero ? windowHandle : registration.WindowHandle;
+            if (owner != IntPtr.Zero) _ = UnregisterHotKey(owner, id);
             return true;
         }
     }
@@ -124,7 +125,15 @@ internal sealed class DesktopShellIntegrationBroker : IDisposable
     {
         if (_disposed) return;
         _disposed = true;
-        lock (_gate) _shortcuts.Clear();
+        lock (_gate)
+        {
+            foreach (var registration in _shortcuts.Values)
+            {
+                if (registration.WindowHandle != IntPtr.Zero)
+                    _ = UnregisterHotKey(registration.WindowHandle, registration.Id);
+            }
+            _shortcuts.Clear();
+        }
     }
 
     private static string NormalizeExtension(string extension)
@@ -161,7 +170,7 @@ internal sealed class DesktopShellIntegrationBroker : IDisposable
         Windows = 0x0008
     }
 
-    internal sealed record ShortcutRegistration(int Id, ShortcutModifiers Modifiers, uint VirtualKey, string Action);
+    internal sealed record ShortcutRegistration(IntPtr WindowHandle, int Id, ShortcutModifiers Modifiers, uint VirtualKey, string Action);
     internal sealed record AssociationPlan(string Extension, string ProgId, string OpenCommand, string Scope, bool MachineWide);
     internal sealed record AssociationResult(string Extension, string ProgId, bool Registered, bool DefaultChanged, string Note);
 }
