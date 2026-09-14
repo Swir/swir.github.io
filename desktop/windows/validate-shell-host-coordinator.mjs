@@ -26,7 +26,10 @@ for (const token of required) {
 const forbidden = [
   'Registry.LocalMachine',
   'HKEY_LOCAL_MACHINE',
-  'UserChoice',
+  'Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\FileExts',
+  'CreateSubKey("UserChoice"',
+  'OpenSubKey("UserChoice"',
+  'DeleteSubKeyTree("UserChoice"',
   'Process.Kill',
   'Environment.Exit',
   'applicationDefinedGlobalShortcuts = true'
