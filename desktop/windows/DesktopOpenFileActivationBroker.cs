@@ -4,7 +4,7 @@ namespace Swir.Desktop.Host;
 
 internal sealed class DesktopOpenFileActivationBroker
 {
-    private const string Schema = "swir.desktop-open-file-activation/0.1";
+    private const string Schema = "swir.desktop-open-file-activation/0.2";
     private const int MaxPendingActivations = 32;
     private static readonly TimeSpan ActivationLifetime = TimeSpan.FromMinutes(5);
     private static readonly HashSet<string> SafeExtensions = new(StringComparer.OrdinalIgnoreCase)
@@ -30,6 +30,7 @@ internal sealed class DesktopOpenFileActivationBroker
                 lifetimeSeconds = (int)ActivationLifetime.TotalSeconds,
                 nativePathExposure = false,
                 oneTimeClaim = true,
+                destinationAppBoundCapability = true,
                 safeExtensions = SafeExtensions.OrderBy(value => value, StringComparer.Ordinal).ToArray()
             };
         }
@@ -101,6 +102,27 @@ internal sealed class DesktopOpenFileActivationBroker
         }
     }
 
+    public ApplicationActivation ClaimForApplication(
+        string activationId,
+        string appId,
+        Func<string, string, object> capabilityFactory)
+    {
+        ArgumentNullException.ThrowIfNull(capabilityFactory);
+        var owner = NormalizeAppId(appId);
+        var claimed = Claim(activationId);
+        var capability = capabilityFactory(claimed.NativePath, owner)
+            ?? throw new InvalidOperationException("Capability factory returned no file capability.");
+        return new ApplicationActivation(
+            claimed.Id,
+            claimed.Name,
+            claimed.Extension,
+            claimed.Size,
+            claimed.CreatedAt,
+            owner,
+            capability,
+            "windows-file-association");
+    }
+
     internal ClaimedActivation Claim(string activationId)
     {
         if (string.IsNullOrWhiteSpace(activationId)) throw new ArgumentException("Activation id is required.", nameof(activationId));
@@ -143,6 +165,15 @@ internal sealed class DesktopOpenFileActivationBroker
         return expired.Length;
     }
 
+    private static string NormalizeAppId(string appId)
+    {
+        var owner = (appId ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(owner)) throw new ArgumentException("Destination application identity is required.", nameof(appId));
+        if (owner.Length > 128 || owner.Any(ch => !(char.IsLetterOrDigit(ch) || ch is '.' or '-' or '_')))
+            throw new ArgumentException("Destination application identity contains unsupported characters.", nameof(appId));
+        return owner;
+    }
+
     private static ActivationDescriptor ToDescriptor(PendingActivation activation)
         => new(
             activation.Id,
@@ -169,6 +200,16 @@ internal sealed class DesktopOpenFileActivationBroker
         long Size,
         DateTimeOffset CreatedAt,
         DateTimeOffset ExpiresAt,
+        string Source);
+
+    internal sealed record ApplicationActivation(
+        string Id,
+        string Name,
+        string Extension,
+        long Size,
+        DateTimeOffset CreatedAt,
+        string AppId,
+        object FileCapability,
         string Source);
 
     internal sealed record ClaimedActivation(
