@@ -1,0 +1,36 @@
+name: Desktop Tray Contract
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'desktop/windows/DesktopTrayLifecycle.cs'
+      - 'desktop/windows/DesktopTrayIcon.cs'
+      - 'desktop/windows/DesktopTrayLifecycleSelfTests.cs'
+      - 'desktop/windows/SWIR.Desktop.Tray.SelfTests.csproj'
+      - 'desktop/windows/SWIR.Desktop.Host.csproj'
+      - '.github/workflows/desktop-tray-contract.yml'
+  pull_request:
+    paths:
+      - 'desktop/windows/DesktopTrayLifecycle.cs'
+      - 'desktop/windows/DesktopTrayIcon.cs'
+      - 'desktop/windows/DesktopTrayLifecycleSelfTests.cs'
+      - 'desktop/windows/SWIR.Desktop.Tray.SelfTests.csproj'
+      - 'desktop/windows/SWIR.Desktop.Host.csproj'
+      - '.github/workflows/desktop-tray-contract.yml'
+  workflow_dispatch:
+
+jobs:
+  tray-contract:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Build tray lifecycle self-tests
+        run: dotnet build desktop/windows/SWIR.Desktop.Tray.SelfTests.csproj -c Release --nologo
+      - name: Run tray lifecycle self-tests
+        run: dotnet run --project desktop/windows/SWIR.Desktop.Tray.SelfTests.csproj -c Release --no-build
+      - name: Build shipping Desktop Host with tray adapter
+        run: dotnet build desktop/windows/SWIR.Desktop.Host.csproj -c Release --nologo
