@@ -4,6 +4,8 @@ namespace Swir.Desktop.Host;
 
 internal static class DesktopAccountSessionBrokerSelfTests
 {
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+
     private static int Main()
     {
         try
@@ -13,7 +15,7 @@ internal static class DesktopAccountSessionBrokerSelfTests
             AssertSchema(broker.Account(), "swir.desktop-account/0.1");
             AssertSchema(broker.Session(), "swir.desktop-session/0.1");
 
-            using var identity = JsonDocument.Parse(JsonSerializer.Serialize(broker.Describe()));
+            using var identity = JsonDocument.Parse(JsonSerializer.Serialize(broker.Describe(), JsonOptions));
             var root = identity.RootElement;
             if (!root.GetProperty("readOnly").GetBoolean())
                 throw new InvalidOperationException("Desktop identity broker must remain read-only.");
@@ -29,7 +31,7 @@ internal static class DesktopAccountSessionBrokerSelfTests
                 identity = broker.Describe(),
                 account = broker.Account(),
                 session = broker.Session()
-            });
+            }, JsonOptions);
 
             foreach (var forbidden in new[]
             {
@@ -41,7 +43,7 @@ internal static class DesktopAccountSessionBrokerSelfTests
                     throw new InvalidOperationException($"Security regression: identity broker exposed forbidden field {forbidden}.");
             }
 
-            using var session = JsonDocument.Parse(JsonSerializer.Serialize(broker.Session()));
+            using var session = JsonDocument.Parse(JsonSerializer.Serialize(broker.Session(), JsonOptions));
             if (session.RootElement.GetProperty("sessionId").GetString() != "ci-session-001")
                 throw new InvalidOperationException("Native account/session broker must bind to the Desktop Host session id.");
             if (session.RootElement.GetProperty("lockStateAuthoritative").GetBoolean())
@@ -59,7 +61,7 @@ internal static class DesktopAccountSessionBrokerSelfTests
 
     private static void AssertSchema(object value, string schema)
     {
-        using var document = JsonDocument.Parse(JsonSerializer.Serialize(value));
+        using var document = JsonDocument.Parse(JsonSerializer.Serialize(value, JsonOptions));
         if (!document.RootElement.TryGetProperty("schema", out var actual) || actual.GetString() != schema)
             throw new InvalidOperationException($"Expected schema {schema}.");
     }
