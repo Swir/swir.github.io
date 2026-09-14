@@ -6,6 +6,7 @@ on:
       - 'desktop/windows/DesktopDeviceNetworkBroker.cs'
       - 'desktop/windows/DesktopDeviceNetworkBrokerSelfTests.cs'
       - 'desktop/windows/SWIR.Desktop.DeviceNetwork.SelfTests.csproj'
+      - 'desktop/windows/validate-device-network-integration.mjs'
       - 'desktop/windows/PermissionBroker.cs'
       - 'desktop/windows/ExecutionPolicyCatalog.cs'
       - 'desktop/windows/app-policy.json'
@@ -17,6 +18,7 @@ on:
       - 'desktop/windows/DesktopDeviceNetworkBroker.cs'
       - 'desktop/windows/DesktopDeviceNetworkBrokerSelfTests.cs'
       - 'desktop/windows/SWIR.Desktop.DeviceNetwork.SelfTests.csproj'
+      - 'desktop/windows/validate-device-network-integration.mjs'
       - 'desktop/windows/PermissionBroker.cs'
       - 'desktop/windows/ExecutionPolicyCatalog.cs'
       - 'desktop/windows/app-policy.json'
@@ -39,6 +41,9 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
+      - name: Verify Runtime to native broker wiring
+        working-directory: .
+        run: node desktop/windows/validate-device-network-integration.mjs
       - name: Build device network broker self-tests
         run: dotnet build SWIR.Desktop.DeviceNetwork.SelfTests.csproj --configuration Release
       - name: Run device network broker self-tests
