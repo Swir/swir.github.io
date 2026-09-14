@@ -1,0 +1,43 @@
+name: Desktop Shell Integration Contract
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'desktop/windows/DesktopShellIntegrationBroker.cs'
+      - 'desktop/windows/DesktopShellIntegrationBrokerSelfTests.cs'
+      - 'desktop/windows/SWIR.Desktop.ShellIntegration.SelfTests.csproj'
+      - 'desktop/windows/validate-shell-integration-foundation.mjs'
+      - 'desktop/windows/SWIR.Desktop.Host.csproj'
+      - '.github/workflows/desktop-shell-integration-contract.yml'
+  pull_request:
+    paths:
+      - 'desktop/windows/DesktopShellIntegrationBroker.cs'
+      - 'desktop/windows/DesktopShellIntegrationBrokerSelfTests.cs'
+      - 'desktop/windows/SWIR.Desktop.ShellIntegration.SelfTests.csproj'
+      - 'desktop/windows/validate-shell-integration-foundation.mjs'
+      - 'desktop/windows/SWIR.Desktop.Host.csproj'
+      - '.github/workflows/desktop-shell-integration-contract.yml'
+  workflow_dispatch:
+
+jobs:
+  shell-integration-contract:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check validator syntax
+        run: node --check desktop/windows/validate-shell-integration-foundation.mjs
+      - name: Validate shell integration safety contract
+        run: node desktop/windows/validate-shell-integration-foundation.mjs
+      - name: Build shell integration self-tests
+        run: dotnet build desktop/windows/SWIR.Desktop.ShellIntegration.SelfTests.csproj -c Release --nologo
+      - name: Run shell integration self-tests
+        run: dotnet run --project desktop/windows/SWIR.Desktop.ShellIntegration.SelfTests.csproj -c Release --no-build
+      - name: Build shipping Desktop Host with shell integration broker
+        run: dotnet build desktop/windows/SWIR.Desktop.Host.csproj -c Release --nologo
