@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Windows.Forms;
 
 namespace Swir.Desktop.Host;
 
@@ -143,10 +144,11 @@ internal static class DesktopShellIntegrationBrokerSelfTests
             var json = JsonSerializer.Serialize(coordinator.Describe(), new JsonSerializerOptions(JsonSerializerDefaults.Web));
             using var doc = JsonDocument.Parse(json);
             var info = doc.RootElement;
-            Require(info.GetProperty("schema").GetString() == "swir.desktop-shell-host-integration/0.1", "unexpected coordinator schema");
+            Require(info.GetProperty("schema").GetString() == "swir.desktop-shell-host-integration/0.2", "unexpected coordinator schema");
             Require(info.GetProperty("hostOwnedGlobalShortcuts").GetBoolean(), "global shortcuts must remain host-owned");
             Require(!info.GetProperty("applicationDefinedGlobalShortcuts").GetBoolean(), "applications must not register arbitrary global shortcuts");
             Require(!info.GetProperty("changesWindowsUserChoice").GetBoolean(), "coordinator must not take over Windows UserChoice");
+            Require(info.GetProperty("windowsHotKeyMessage").GetString() == "WM_HOTKEY/0x0312", "WM_HOTKEY contract drifted");
             Require(info.GetProperty("associations").GetArrayLength() == 5, "coordinator association set drifted");
             Require(info.GetProperty("shortcuts").GetArrayLength() == 2, "host shortcut set drifted");
 
@@ -160,7 +162,19 @@ internal static class DesktopShellIntegrationBrokerSelfTests
             Require(coordinator.PendingOpenFiles().Length == 0, "coordinator claim must be one-time");
 
             Require(!coordinator.TryResolveHotKey(41001, out _), "shortcut must not resolve before a window is initialized");
+            Require(!coordinator.TryResolveWindowMessage(0x000F, new IntPtr(41001), out _), "non-WM_HOTKEY message must not resolve a shortcut");
+            Require(!coordinator.TryResolveWindowMessage(DesktopShellIntegrationCoordinator.WindowsHotKeyMessage, IntPtr.Zero, out _), "zero hotkey id must not resolve");
             ExpectFailure<ArgumentException>(() => coordinator.InitializeWindow(IntPtr.Zero));
+
+            using var window = new TestMessageWindow();
+            var initialized = coordinator.InitializeWindow(window.Handle);
+            Require(initialized.Initialized, "window shortcut initialization did not complete");
+            Require(initialized.RegisteredCount == 2, $"expected both host shortcuts to register, got {initialized.RegisteredCount}: {string.Join(" | ", initialized.Warnings)}");
+            Require(coordinator.TryResolveWindowMessage(DesktopShellIntegrationCoordinator.WindowsHotKeyMessage, new IntPtr(41001), out var toggleAction), "registered toggle shortcut did not resolve from WM_HOTKEY");
+            Require(toggleAction == "shell.toggle-visibility", "toggle shortcut action drifted");
+            Require(coordinator.TryResolveWindowMessage(DesktopShellIntegrationCoordinator.WindowsHotKeyMessage, new IntPtr(41002), out var matrixAction), "registered Matrix shortcut did not resolve from WM_HOTKEY");
+            Require(matrixAction == "shell.open-matrix", "Matrix shortcut action drifted");
+            Require(!coordinator.TryResolveWindowMessage(DesktopShellIntegrationCoordinator.WindowsHotKeyMessage, new IntPtr(49999), out _), "unknown WM_HOTKEY id must fail closed");
         }
         finally
         {
@@ -178,5 +192,19 @@ internal static class DesktopShellIntegrationBrokerSelfTests
         try { action(); }
         catch (T) { return; }
         throw new InvalidOperationException($"Expected {typeof(T).Name}.");
+    }
+
+    private sealed class TestMessageWindow : NativeWindow, IDisposable
+    {
+        public TestMessageWindow()
+        {
+            CreateHandle(new CreateParams { Caption = "SWIR Shell Integration Self-Test" });
+        }
+
+        public void Dispose()
+        {
+            if (Handle != IntPtr.Zero) DestroyHandle();
+            GC.SuppressFinalize(this);
+        }
     }
 }
