@@ -22,11 +22,13 @@ function Sha256-RawBase64([string]$Value) {
 $desktop = Join-Path $SourceRoot 'desktop\windows'
 $storeBuilder = Join-Path $desktop 'build-store-packages.ps1'
 $hostPublish = Join-Path $desktop 'publish-desktop-host.ps1'
+$hostProject = Join-Path $desktop 'SWIR.Desktop.Host.csproj'
+$hostProgram = Join-Path $desktop 'Program.cs'
 $runtimeStage = Join-Path $desktop 'stage-desktop-runtime.ps1'
 $rotationApply = Join-Path $SourceRoot 'scripts\apply-catalog-root-rotation.mjs'
 $rotationVerify = Join-Path $SourceRoot 'scripts\verify-catalog-root-rotation.mjs'
 $catalogBuilder = Join-Path $SourceRoot 'scripts\build-signed-catalog-release.mjs'
-foreach ($required in @($storeBuilder, $hostPublish, $runtimeStage, $rotationApply, $rotationVerify, $catalogBuilder)) { Require-File $required }
+foreach ($required in @($storeBuilder, $hostPublish, $hostProject, $hostProgram, $runtimeStage, $rotationApply, $rotationVerify, $catalogBuilder)) { Require-File $required }
 
 $publish = Join-Path $WorkRoot 'publish'
 $store = Join-Path $WorkRoot 'store'
@@ -90,7 +92,7 @@ try {
   node $rotationVerify $trustPath $currentFingerprint ci-rc-current ([string]$next.fingerprint) ci-rc-next 910001 910002
   if ($LASTEXITCODE -ne 0) { throw 'Catalog root rotation verification failed before staging.' }
 
-  & $hostPublish -PublishDir $publish -ReleaseVersion '0.5.2' -Channel 'preview' -SourceCommit ($env:GITHUB_SHA ?? 'local-contract')
+  & $hostPublish -PublishDir $publish -ReleaseVersion '0.5.2' -Channel 'preview' -ProjectFile $hostProject -ProgramFile $hostProgram -SourceCommit ($env:GITHUB_SHA ?? 'local-contract')
   & $runtimeStage -PublishDir $publish -SourceRoot $SourceRoot -CatalogReleaseDir $catalog
 
   $publishPackages = Join-Path $publish 'packages'
