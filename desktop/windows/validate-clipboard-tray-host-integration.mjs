@@ -1,8 +1,8 @@
 import fs from 'node:fs';
 
-const program = fs.readFileSync('desktop/windows/Program.cs', 'utf8');
-const trayLifecycle = fs.readFileSync('desktop/windows/DesktopTrayLifecycle.cs', 'utf8');
-const trayIcon = fs.readFileSync('desktop/windows/DesktopTrayIcon.cs', 'utf8');
+const program = fs.readFileSync('desktop/windows/Program.cs', 'utf8').replaceAll('\r\n', '\n');
+const trayLifecycle = fs.readFileSync('desktop/windows/DesktopTrayLifecycle.cs', 'utf8').replaceAll('\r\n', '\n');
+const trayIcon = fs.readFileSync('desktop/windows/DesktopTrayIcon.cs', 'utf8').replaceAll('\r\n', '\n');
 
 function requireText(source, text, message) {
   if (!source.includes(text)) throw new Error(message);
