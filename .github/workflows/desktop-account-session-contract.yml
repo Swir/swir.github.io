@@ -7,6 +7,8 @@ on:
       - 'desktop/windows/DesktopAccountSessionBrokerSelfTests.cs'
       - 'desktop/windows/SWIR.Desktop.AccountSession.SelfTests.csproj'
       - 'desktop/windows/PermissionBroker.cs'
+      - 'desktop/windows/Program.cs'
+      - 'desktop/windows/validate-account-session-integration.mjs'
       - '.github/workflows/desktop-account-session-contract.yml'
   pull_request:
     paths:
@@ -14,6 +16,8 @@ on:
       - 'desktop/windows/DesktopAccountSessionBrokerSelfTests.cs'
       - 'desktop/windows/SWIR.Desktop.AccountSession.SelfTests.csproj'
       - 'desktop/windows/PermissionBroker.cs'
+      - 'desktop/windows/Program.cs'
+      - 'desktop/windows/validate-account-session-integration.mjs'
       - '.github/workflows/desktop-account-session-contract.yml'
   workflow_dispatch:
 
@@ -23,7 +27,7 @@ permissions:
 jobs:
   account-session-contract:
     runs-on: windows-latest
-    timeout-minutes: 10
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
 
@@ -43,8 +47,14 @@ jobs:
             }
           }
 
+      - name: Verify Desktop Host account/session integration
+        run: node desktop/windows/validate-account-session-integration.mjs
+
       - name: Build Desktop account session broker self-tests
         run: dotnet build desktop/windows/SWIR.Desktop.AccountSession.SelfTests.csproj -c Release --nologo
 
       - name: Run Desktop account session broker self-tests
         run: dotnet run --project desktop/windows/SWIR.Desktop.AccountSession.SelfTests.csproj -c Release --no-build
+
+      - name: Build shipping Desktop Host
+        run: dotnet build desktop/windows/SWIR.Desktop.Host.csproj -c Release --nologo
