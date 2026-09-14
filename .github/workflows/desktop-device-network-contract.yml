@@ -1,0 +1,47 @@
+name: Desktop Device Network Contract
+
+on:
+  push:
+    paths:
+      - 'desktop/windows/DesktopDeviceNetworkBroker.cs'
+      - 'desktop/windows/DesktopDeviceNetworkBrokerSelfTests.cs'
+      - 'desktop/windows/SWIR.Desktop.DeviceNetwork.SelfTests.csproj'
+      - 'desktop/windows/PermissionBroker.cs'
+      - 'desktop/windows/ExecutionPolicyCatalog.cs'
+      - 'desktop/windows/app-policy.json'
+      - 'desktop/windows/Program.cs'
+      - 'swir-runtime.js'
+      - '.github/workflows/desktop-device-network-contract.yml'
+  pull_request:
+    paths:
+      - 'desktop/windows/DesktopDeviceNetworkBroker.cs'
+      - 'desktop/windows/DesktopDeviceNetworkBrokerSelfTests.cs'
+      - 'desktop/windows/SWIR.Desktop.DeviceNetwork.SelfTests.csproj'
+      - 'desktop/windows/PermissionBroker.cs'
+      - 'desktop/windows/ExecutionPolicyCatalog.cs'
+      - 'desktop/windows/app-policy.json'
+      - 'desktop/windows/Program.cs'
+      - 'swir-runtime.js'
+      - '.github/workflows/desktop-device-network-contract.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  device-network-contract:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: desktop/windows
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Build device network broker self-tests
+        run: dotnet build SWIR.Desktop.DeviceNetwork.SelfTests.csproj --configuration Release
+      - name: Run device network broker self-tests
+        run: dotnet run --project SWIR.Desktop.DeviceNetwork.SelfTests.csproj --configuration Release --no-build
+      - name: Build shipping Desktop Host
+        run: dotnet build SWIR.Desktop.Host.csproj --configuration Release
