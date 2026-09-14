@@ -1,0 +1,30 @@
+name: Desktop Process Service Contract
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'desktop/windows/DesktopProcessServiceBroker.cs'
+      - 'desktop/windows/DesktopProcessServiceBrokerSelfTests.cs'
+      - 'desktop/windows/SWIR.Desktop.ProcessService.SelfTests.csproj'
+      - '.github/workflows/desktop-process-service-contract.yml'
+  pull_request:
+    paths:
+      - 'desktop/windows/DesktopProcessServiceBroker.cs'
+      - 'desktop/windows/DesktopProcessServiceBrokerSelfTests.cs'
+      - 'desktop/windows/SWIR.Desktop.ProcessService.SelfTests.csproj'
+      - '.github/workflows/desktop-process-service-contract.yml'
+  workflow_dispatch:
+
+jobs:
+  process-service-contract:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Build process service self-tests
+        run: dotnet build desktop/windows/SWIR.Desktop.ProcessService.SelfTests.csproj -c Release --nologo
+      - name: Run process service self-tests
+        run: dotnet run --project desktop/windows/SWIR.Desktop.ProcessService.SelfTests.csproj -c Release --no-build
