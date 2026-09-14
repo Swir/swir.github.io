@@ -23,7 +23,13 @@ requireText(program, 'e.Cancel = true;', 'Ordinary user close must be cancelled 
 requireText(program, '_trayLifecycle.RequestExit();\n        Close();', 'Explicit/update exit must mark tray lifecycle exiting before closing the host.');
 requireText(program, '_tray.Dispose();', 'Tray adapter must be disposed when the shipping host closes.');
 requireText(program, "nativeClipboardTray: true", 'Desktop Host capability diagnostics must advertise verified clipboard/tray integration.');
-requireText(program, "version: '0.5.5-preview'", 'Desktop Host bridge version must reflect tray lifecycle integration.');
+
+const hostVersionMatch = program.match(/version:\s*'([0-9]+\.[0-9]+\.[0-9]+-preview)'/);
+if (!hostVersionMatch) throw new Error('Desktop Host bridge must advertise an explicit preview version.');
+const [major, minor, patch] = hostVersionMatch[1].replace('-preview', '').split('.').map(Number);
+if (major !== 0 || minor < 5 || (minor === 5 && patch < 5)) {
+  throw new Error(`Desktop Host bridge version ${hostVersionMatch[1]} predates verified tray lifecycle integration.`);
+}
 
 requireText(trayLifecycle, 'DesktopTrayWindowState.Exiting', 'Tray lifecycle must retain an explicit exiting state.');
 requireText(trayLifecycle, 'DesktopTrayWindowState.Disposed', 'Tray lifecycle must retain a terminal disposed state.');
@@ -34,4 +40,4 @@ rejectText(program, 'Process.Kill(', 'Tray integration must not terminate proces
 rejectText(program, 'Environment.Exit(', 'Tray integration must not bypass normal host shutdown.');
 rejectText(program, 'Application.ExitThread(', 'Tray integration must not bypass normal host shutdown.');
 
-console.log('Clipboard + Desktop tray shipping-host integration contract passed.');
+console.log(`Clipboard + Desktop tray shipping-host integration contract passed for host ${hostVersionMatch[1]}.`);
