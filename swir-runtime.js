@@ -130,6 +130,11 @@
   const tray = Object.freeze({ set:(...args)=>call('tray','set',args,async options=>({ok:false,emulated:true,reason:'WEB_RUNTIME',options})), clear:(...args)=>call('tray','clear',args,async()=>({ok:false,emulated:true,reason:'WEB_RUNTIME'})) });
   const network = Object.freeze({ async status(){return call('network','status',[],async()=>({online:navigator.onLine,type:navigator.connection?.type||navigator.connection?.effectiveType||'unknown',downlinkMbps:navigator.connection?.downlink??null,rttMs:navigator.connection?.rtt??null,saveData:navigator.connection?.saveData??false}))}, adapters:(...args)=>call('network','adapters',args,async()=>[]), scan:(...args)=>call('network','scan',args), connect:(...args)=>call('network','connect',args), disconnect:(...args)=>call('network','disconnect',args) });
   const devices = Object.freeze({ info:()=>call('devices','info',[],async()=>({schema:'swir.desktop-device-network/web',provider:'web-adapter',native:false,readOnly:true,capabilities:[]})), list:()=>call('devices','list',[],async()=>({schema:'swir.desktop-devices/web',provider:'web-adapter',supported:false,readOnly:true,truncated:false,count:0,devices:[]})) });
+  const identity = Object.freeze({
+    info:()=>call('identity','info',[],async()=>({schema:'swir.desktop-account-session/web',provider:'web-adapter',native:false,readOnly:true,accountManagement:false,credentialExposure:false})),
+    account:()=>call('identity','account',[],async()=>{const user=await platform()?.identity?.active?.();return{schema:'swir.identity-account/web',provider:'web-adapter',native:false,readOnly:true,id:user?.id??null,name:user?.name??user?.displayName??'Web User',role:user?.role??'user'}}),
+    session:()=>call('identity','session',[],async()=>{const user=await platform()?.identity?.active?.();return{schema:'swir.identity-session/web',provider:'web-adapter',native:false,readOnly:true,sessionId:null,interactive:true,authenticated:!!user}})
+  });
   const updater = Object.freeze({ async check(){return call('updater','check',[],async()=>({runtime:'web',serviceWorker:'serviceWorker' in navigator,controller:!!navigator.serviceWorker?.controller,updateAvailable:false}))}, apply:(...args)=>call('updater','apply',args), restart:(...args)=>call('updater','restart',args,async()=>{location.reload();return true}) });
 
   async function buildInstalledContextSnapshot() {
@@ -149,9 +154,9 @@
     async isAuthenticated(){const ctx=await security.context();return !!ctx?.trusted&&!!ctx?.sessionId}
   });
 
-  function capabilities(){ const native=!!host(); const surfaces=['filesystem','appData','packages','processes','clipboard','tray','network','devices','updater','security']; const result={}; for(const surface of surfaces){const impl=host()?.[surface];result[surface]={provider:impl?'native':'web',native:!!impl,methods:impl?Object.keys(impl).filter(k=>typeof impl[k]==='function'):Object.keys(api[surface]||{}).filter(k=>typeof api[surface][k]==='function')}} return {native,edition:native?String(host()?.edition||'DESKTOP').toUpperCase():'WEB',features:host()?.features||{},surfaces:result}; }
+  function capabilities(){ const native=!!host(); const surfaces=['filesystem','appData','packages','processes','clipboard','tray','network','devices','identity','updater','security']; const result={}; for(const surface of surfaces){const impl=host()?.[surface];result[surface]={provider:impl?'native':'web',native:!!impl,methods:impl?Object.keys(impl).filter(k=>typeof impl[k]==='function'):Object.keys(api[surface]||{}).filter(k=>typeof api[surface][k]==='function')}} return {native,edition:native?String(host()?.edition||'DESKTOP').toUpperCase():'WEB',features:host()?.features||{},surfaces:result}; }
   function info(){const caps=capabilities();return {...META,provider:caps.native?'native-host':'web-adapter',edition:caps.edition,nativeHost:caps.native,nativeSessionId:host()?.sessionId||null,nativeFeatures:caps.features,capabilities:caps.surfaces}}
 
-  const api=Object.freeze({meta:META,filesystem,appData,packages,processes,clipboard,tray,network,devices,updater,security,capabilities,info,events:Object.freeze({on,emit}),hasNativeHost:()=>!!host()});
+  const api=Object.freeze({meta:META,filesystem,appData,packages,processes,clipboard,tray,network,devices,identity,updater,security,capabilities,info,events:Object.freeze({on,emit}),hasNativeHost:()=>!!host()});
   window.SwirRuntime=api;window.SWIR_RUNTIME=api;emit('ready',info());
 })();
