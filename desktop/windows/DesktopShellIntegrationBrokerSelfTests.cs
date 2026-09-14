@@ -13,10 +13,12 @@ internal static class DesktopShellIntegrationBrokerSelfTests
             var json = JsonSerializer.Serialize(broker.Describe(), new JsonSerializerOptions(JsonSerializerDefaults.Web));
             using var doc = JsonDocument.Parse(json);
             var root = doc.RootElement;
-            Require(root.GetProperty("schema").GetString() == "swir.desktop-shell-integration/0.1", "unexpected schema");
+            Require(root.GetProperty("schema").GetString() == "swir.desktop-shell-integration/0.2", "unexpected schema");
             Require(root.GetProperty("machineWideWrites").GetBoolean() == false, "machine-wide writes must remain disabled");
             Require(root.GetProperty("changesDefaultApplicationWithoutUserChoice").GetBoolean() == false, "broker must not override Windows UserChoice");
             Require(root.GetProperty("windowsUserChoiceProtected").GetBoolean(), "Windows UserChoice protection must be explicit");
+            Require(root.GetProperty("supportedAssociationScope").GetString() == "current-user", "association scope must remain current-user");
+            Require(root.GetProperty("safeAssociationExtensions").GetArrayLength() == 5, "association allowlist must remain explicit and bounded");
 
             var executable = Environment.ProcessPath ?? throw new InvalidOperationException("Process path is unavailable.");
             var plan = broker.PlanAssociation("TXT", executable);
@@ -27,11 +29,14 @@ internal static class DesktopShellIntegrationBrokerSelfTests
             Require(plan.OpenCommand.Contains("\"%1\"", StringComparison.Ordinal), "open command must quote the selected file");
 
             ExpectFailure<ArgumentException>(() => broker.PlanAssociation("../exe", executable));
+            ExpectFailure<NotSupportedException>(() => broker.PlanAssociation(".exe", executable));
+            ExpectFailure<NotSupportedException>(() => broker.PlanAssociation(".html", executable));
             ExpectFailure<FileNotFoundException>(() => broker.PlanAssociation(".md", Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".exe")));
             Require(!broker.TryResolveShortcut(9001, out _), "unknown shortcut must not resolve");
 
             broker.Dispose();
             ExpectFailure<ObjectDisposedException>(() => broker.PlanAssociation(".txt", executable));
+            ExpectFailure<ObjectDisposedException>(() => broker.TryResolveShortcut(9001, out _));
 
             Console.WriteLine("Desktop shell integration self-tests passed.");
             return 0;
