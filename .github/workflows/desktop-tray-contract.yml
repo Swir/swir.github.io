@@ -8,6 +8,9 @@ on:
       - 'desktop/windows/DesktopTrayIcon.cs'
       - 'desktop/windows/DesktopTrayLifecycleSelfTests.cs'
       - 'desktop/windows/SWIR.Desktop.Tray.SelfTests.csproj'
+      - 'desktop/windows/validate-clipboard-tray-foundation.mjs'
+      - 'desktop/windows/Program.cs'
+      - 'desktop/windows/PermissionBroker.cs'
       - 'desktop/windows/SWIR.Desktop.Host.csproj'
       - '.github/workflows/desktop-tray-contract.yml'
   pull_request:
@@ -16,6 +19,9 @@ on:
       - 'desktop/windows/DesktopTrayIcon.cs'
       - 'desktop/windows/DesktopTrayLifecycleSelfTests.cs'
       - 'desktop/windows/SWIR.Desktop.Tray.SelfTests.csproj'
+      - 'desktop/windows/validate-clipboard-tray-foundation.mjs'
+      - 'desktop/windows/Program.cs'
+      - 'desktop/windows/PermissionBroker.cs'
       - 'desktop/windows/SWIR.Desktop.Host.csproj'
       - '.github/workflows/desktop-tray-contract.yml'
   workflow_dispatch:
@@ -28,6 +34,13 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check validator syntax
+        run: node --check desktop/windows/validate-clipboard-tray-foundation.mjs
+      - name: Validate clipboard and tray foundation
+        run: node desktop/windows/validate-clipboard-tray-foundation.mjs
       - name: Build tray lifecycle self-tests
         run: dotnet build desktop/windows/SWIR.Desktop.Tray.SelfTests.csproj -c Release --nologo
       - name: Run tray lifecycle self-tests
