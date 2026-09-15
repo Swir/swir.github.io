@@ -6,6 +6,17 @@ namespace Swir.Desktop.Host;
 internal sealed class ExecutionPolicyCatalog
 {
     private static readonly Regex PackageIdPattern = new("^[a-zA-Z0-9._-]{1,128}$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+    private static readonly HashSet<string> KnownPackagePermissions = new(StringComparer.Ordinal)
+    {
+        "storage",
+        "files.read",
+        "files.write",
+        "clipboard",
+        "network",
+        "identity.basic",
+        "notifications",
+        "downloads"
+    };
     private readonly Dictionary<string, PackagePolicy> _packages;
 
     public ExecutionPolicyCatalog(string policyPath)
@@ -41,6 +52,9 @@ internal sealed class ExecutionPolicyCatalog
         var policy = Require(packageId);
         var declared = policy.Permissions.ToHashSet(StringComparer.Ordinal);
         var granted = grantedPackagePermissions.Distinct(StringComparer.Ordinal).ToArray();
+        var unknown = granted.Where(permission => !KnownPackagePermissions.Contains(permission)).ToArray();
+        if (unknown.Length > 0)
+            throw new BridgeException("PACKAGE_PERMISSION_UNKNOWN", $"Package {packageId} requested unknown Desktop grants: {string.Join(", ", unknown)}");
         var undeclared = granted.Where(permission => !declared.Contains(permission)).ToArray();
         if (undeclared.Length > 0)
             throw new BridgeException("PACKAGE_PERMISSION_ESCALATION", $"Package {packageId} requested undeclared Desktop grants: {string.Join(", ", undeclared)}");
@@ -78,6 +92,8 @@ internal sealed class ExecutionPolicyCatalog
     {
         schema = "swir.desktop-policy/0.1",
         packageCount = _packages.Count,
+        knownPermissions = KnownPackagePermissions.OrderBy(x => x, StringComparer.Ordinal).ToArray(),
+        unknownPermissionsFailClosed = true,
         packages = All().Select(policy => new { packageId = policy.PackageId, entry = policy.Entry, permissions = policy.Permissions }).ToArray()
     };
 
@@ -89,6 +105,9 @@ internal sealed class ExecutionPolicyCatalog
             throw new InvalidDataException($"Desktop package policy {policy.PackageId} contains an unsafe entry path.");
         if (policy.Permissions is null || policy.Permissions.Any(string.IsNullOrWhiteSpace))
             throw new InvalidDataException($"Desktop package policy {policy.PackageId} contains invalid permissions.");
+        var unknown = policy.Permissions.Where(permission => !KnownPackagePermissions.Contains(permission)).Distinct(StringComparer.Ordinal).ToArray();
+        if (unknown.Length > 0)
+            throw new InvalidDataException($"Desktop package policy {policy.PackageId} contains unknown permissions: {string.Join(", ", unknown)}");
     }
 
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web) { PropertyNameCaseInsensitive = true };
