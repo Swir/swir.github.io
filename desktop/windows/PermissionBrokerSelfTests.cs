@@ -61,6 +61,18 @@ internal static class PermissionBrokerSelfTests
             {
                 new Swir.Desktop.Host.PermissionBroker.PackageContextRequest("swir.code", new[] { "storage" })
             }));
+            ExpectCode("PACKAGE_PERMISSION_UNKNOWN", () => policies.ResolveNativePermissions("swir.code", new[] { "future.superuser" }));
+
+            var invalidPolicyPath = Path.Combine(root, "invalid-policy.json");
+            File.WriteAllText(invalidPolicyPath, """
+            {
+              "schema": "swir.desktop-policy/0.1",
+              "packages": [
+                { "packageId": "swir.bad", "entry": "./bad.html", "permissions": ["future.superuser"] }
+              ]
+            }
+            """);
+            ExpectException<InvalidDataException>(() => new Swir.Desktop.Host.ExecutionPolicyCatalog(invalidPolicyPath));
 
             var filePath = Path.Combine(root, "capability.txt");
             File.WriteAllText(filePath, "capability owner test");
@@ -93,6 +105,7 @@ internal static class PermissionBrokerSelfTests
 
             Console.WriteLine("SWIR Permission Broker self-tests: PASS");
             Console.WriteLine("- package permission projection");
+            Console.WriteLine("- fail-closed unknown permission rejection in policy and grants");
             Console.WriteLine("- trusted-shell update inspect/apply workflow permissions");
             Console.WriteLine("- package denial for signed check, preparation and native apply");
             Console.WriteLine("- cross-package App Data denial");
@@ -122,6 +135,18 @@ internal static class PermissionBrokerSelfTests
             throw new InvalidOperationException($"Expected BridgeException {code} was not thrown.");
         }
         catch (Swir.Desktop.Host.BridgeException ex) when (ex.Code == code)
+        {
+        }
+    }
+
+    private static void ExpectException<T>(Action action) where T : Exception
+    {
+        try
+        {
+            action();
+            throw new InvalidOperationException($"Expected {typeof(T).Name} was not thrown.");
+        }
+        catch (T)
         {
         }
     }
