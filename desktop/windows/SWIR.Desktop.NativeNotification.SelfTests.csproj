@@ -5,9 +5,11 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <StartupObject>Swir.Desktop.Host.NativeNotificationPolicySelfTests</StartupObject>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="NativeNotificationPolicy.cs" />
     <Compile Include="NativeNotificationPolicySelfTests.cs" />
+    <Compile Include="DesktopNotificationBridgeService.cs" />
   </ItemGroup>
 </Project>
