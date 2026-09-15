@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="DesktopNotificationBridgeService.cs" />
+    <Compile Include="DesktopNotificationHostBinding.cs" />
+    <Compile Include="DesktopNotificationHostBindingSelfTests.cs" />
+  </ItemGroup>
+</Project>
