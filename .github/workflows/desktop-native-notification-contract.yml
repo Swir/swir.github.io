@@ -9,12 +9,15 @@ on:
       - 'desktop/windows/DesktopTrayIcon.cs'
       - 'desktop/windows/NativeNotificationPolicy.cs'
       - 'desktop/windows/NativeNotificationPolicySelfTests.cs'
+      - 'desktop/windows/DesktopNotificationBridgeService.cs'
+      - 'desktop/windows/DesktopNotificationBridgeServiceSelfTests.cs'
       - 'desktop/windows/PermissionBroker.cs'
       - 'desktop/windows/ExecutionPolicyCatalog.cs'
       - 'desktop/windows/PermissionBrokerSelfTests.cs'
       - 'desktop/windows/Program.cs'
       - 'desktop/windows/validate-native-notification-web-bridge.mjs'
       - 'desktop/windows/SWIR.Desktop.NativeNotification.SelfTests.csproj'
+      - 'desktop/windows/SWIR.Desktop.NotificationBridge.SelfTests.csproj'
       - 'desktop/windows/SWIR.Desktop.Permission.SelfTests.csproj'
       - 'desktop/windows/SWIR.Desktop.Host.csproj'
       - '.github/workflows/desktop-native-notification-contract.yml'
@@ -44,6 +47,10 @@ jobs:
         run: dotnet build desktop/windows/SWIR.Desktop.NativeNotification.SelfTests.csproj -c Release
       - name: Run native notification policy self-tests
         run: dotnet run --project desktop/windows/SWIR.Desktop.NativeNotification.SelfTests.csproj -c Release --no-build
+      - name: Build notification bridge boundary self-tests
+        run: dotnet build desktop/windows/SWIR.Desktop.NotificationBridge.SelfTests.csproj -c Release
+      - name: Run notification bridge boundary self-tests
+        run: dotnet run --project desktop/windows/SWIR.Desktop.NotificationBridge.SelfTests.csproj -c Release --no-build
       - name: Build permission self-tests
         run: dotnet build desktop/windows/SWIR.Desktop.Permission.SelfTests.csproj -c Release
       - name: Run permission self-tests
