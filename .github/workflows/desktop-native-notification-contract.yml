@@ -11,6 +11,7 @@ on:
       - 'desktop/windows/NativeNotificationPolicySelfTests.cs'
       - 'desktop/windows/DesktopNotificationBridgeService.cs'
       - 'desktop/windows/DesktopNotificationBridgeServiceSelfTests.cs'
+      - 'desktop/windows/DesktopNotificationHostBinding.cs'
       - 'desktop/windows/PermissionBroker.cs'
       - 'desktop/windows/ExecutionPolicyCatalog.cs'
       - 'desktop/windows/PermissionBrokerSelfTests.cs'
@@ -55,5 +56,5 @@ jobs:
         run: dotnet build desktop/windows/SWIR.Desktop.Permission.SelfTests.csproj -c Release
       - name: Run permission self-tests
         run: dotnet run --project desktop/windows/SWIR.Desktop.Permission.SelfTests.csproj -c Release --no-build
-      - name: Build shipping Desktop Host
+      - name: Build shipping Desktop Host with production notification binding
         run: dotnet build desktop/windows/SWIR.Desktop.Host.csproj -c Release
