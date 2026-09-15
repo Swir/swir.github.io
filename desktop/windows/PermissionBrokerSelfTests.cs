@@ -26,7 +26,7 @@ internal static class PermissionBrokerSelfTests
             broker.SynchronizeApplicationContexts(new[]
             {
                 new Swir.Desktop.Host.PermissionBroker.PackageContextRequest("swir.code", new[] { "files.read", "files.write" }),
-                new Swir.Desktop.Host.PermissionBroker.PackageContextRequest("swir.chat", new[] { "storage" })
+                new Swir.Desktop.Host.PermissionBroker.PackageContextRequest("swir.chat", new[] { "storage", "notifications" })
             });
 
             var codeToken = broker.RequirePackageExecutionToken("swir.code");
@@ -37,8 +37,13 @@ internal static class PermissionBrokerSelfTests
             Require(broker.Can(codeToken, "filesystem.sandbox.write"), "swir.code did not receive sandbox write from files.write");
             Require(broker.Can(chatToken, "filesystem.sandbox.read"), "swir.chat did not receive sandbox read from storage");
             Require(broker.Can(chatToken, "filesystem.sandbox.write"), "swir.chat did not receive sandbox write from storage");
+            Require(broker.Can(chatToken, "notifications.show"), "swir.chat did not receive native notifications.show from notifications");
+            Require(!broker.Can(codeToken, "notifications.show"), "swir.code received native notifications.show without a package grant");
+            Require(broker.Can(shellToken, "notifications.show"), "trusted shell did not receive notifications.show");
             Require(broker.Can(shellToken, "updates.inspect"), "trusted shell did not receive updates.inspect");
             Require(broker.Can(shellToken, "updates.apply"), "trusted shell did not receive updates.apply");
+            broker.Authorize(chatToken, "notifications", "show");
+            ExpectCode("PERMISSION_DENIED", () => broker.Authorize(codeToken, "notifications", "show"));
 
             foreach (var method in new[] { "readiness", "check", "preparationStatus" })
             {
@@ -91,6 +96,8 @@ internal static class PermissionBrokerSelfTests
             var downgradedCodeToken = broker.RequirePackageExecutionToken("swir.code");
             ExpectCode("PERMISSION_DENIED", () => broker.AuthorizePackageTarget(downgradedCodeToken, "swir.code", "appdata", "get"));
             ExpectCode("CAPABILITY_INVALID", () => capabilities.Describe(capabilityToken, "swir.code"));
+            var downgradedChatToken = broker.RequirePackageExecutionToken("swir.chat");
+            ExpectCode("PERMISSION_DENIED", () => broker.Authorize(downgradedChatToken, "notifications", "show"));
 
             broker.SynchronizeApplicationContexts(new[]
             {
@@ -105,6 +112,7 @@ internal static class PermissionBrokerSelfTests
 
             Console.WriteLine("SWIR Permission Broker self-tests: PASS");
             Console.WriteLine("- package permission projection");
+            Console.WriteLine("- native notification permission projection, denial and downgrade revocation");
             Console.WriteLine("- fail-closed unknown permission rejection in policy and grants");
             Console.WriteLine("- trusted-shell update inspect/apply workflow permissions");
             Console.WriteLine("- package denial for signed check, preparation and native apply");
