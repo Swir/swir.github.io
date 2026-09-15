@@ -25,16 +25,22 @@
       openApp:options.openApp?String(options.openApp):''
     };
   }
+  async function deliverNative(item){
+    const show=window.SWIR_NATIVE_HOST?.notifications?.show;
+    if(typeof show!=='function')return null;
+    return show(item.title,item.message,item.packageId,item.silent);
+  }
   async function send(appId,options={}){
     const pkg=manifest(appId),id=pkg?.id||String(appId||'');
     if(!(await allowed(id)))throw new Error('Notification permission denied');
     const n=normalize(options),item={id:`ntf-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,7)}`,appId:id,packageId:pkg?.packageId||'swir.system',appName:pkg?.name||'SWIR OS',...n,time:new Date().toISOString()};
+    const nativeDelivery=await deliverNative(item);
     const history=read();
     if(item.tag){const i=history.findIndex(x=>x.appId===item.appId&&x.tag===item.tag);if(i>=0)history.splice(i,1)}
     history.unshift(item);write(history);
-    window.dispatchEvent(new CustomEvent('swir:notification',{detail:item}));
-    window.SwirOS?.toast?.(item.title,item.message);
-    return item;
+    window.dispatchEvent(new CustomEvent('swir:notification',{detail:{...item,nativeDelivery}}));
+    if(!nativeDelivery)window.SwirOS?.toast?.(item.title,item.message);
+    return {...item,nativeDelivery};
   }
   function list(appId=null){const h=read();return appId?h.filter(x=>x.appId===appId):h}
   function clear(appId=null){if(appId)write(read().filter(x=>x.appId!==appId));else write([]);window.dispatchEvent(new CustomEvent('swir:notifications-clear',{detail:{appId}}));}
