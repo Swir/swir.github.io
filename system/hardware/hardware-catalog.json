@@ -1,5 +1,97 @@
 {
   "schema": "swir.hardware-catalog/0.1",
-  "version": "0.1.0",
-  "entries": []
+  "version": "0.2.0",
+  "entries": [
+    {
+      "id": "usb.logitech.receiver.c534",
+      "match": {
+        "bus": "usb",
+        "ids": ["usb:046d:c534"]
+      },
+      "support": {
+        "kernelModules": ["usbhid", "hid_logitech_dj"],
+        "firmware": [],
+        "packages": []
+      },
+      "sources": [
+        {
+          "class": "kernel-in-tree",
+          "ref": "linux:drivers/hid",
+          "rollback": false
+        }
+      ]
+    },
+    {
+      "id": "pci.realtek.rtl8168-family",
+      "match": {
+        "bus": "pci",
+        "ids": ["pci:10ec:8168:*"]
+      },
+      "support": {
+        "kernelModules": ["r8169"],
+        "firmware": ["rtl_nic"],
+        "packages": ["linux-firmware"]
+      },
+      "sources": [
+        {
+          "class": "kernel-in-tree",
+          "ref": "linux:drivers/net/ethernet/realtek/r8169",
+          "rollback": false
+        },
+        {
+          "class": "linux-firmware",
+          "ref": "linux-firmware:rtl_nic",
+          "rollback": true
+        },
+        {
+          "class": "distribution-repository",
+          "ref": "package:linux-firmware",
+          "rollback": true
+        }
+      ]
+    },
+    {
+      "id": "pci.intel.i219-v-15f3",
+      "match": {
+        "bus": "pci",
+        "ids": ["pci:8086:15f3:*"]
+      },
+      "support": {
+        "kernelModules": ["e1000e"],
+        "firmware": [],
+        "packages": []
+      },
+      "sources": [
+        {
+          "class": "kernel-in-tree",
+          "ref": "linux:drivers/net/ethernet/intel/e1000e",
+          "rollback": false
+        }
+      ]
+    },
+    {
+      "id": "pci.nvidia.2684",
+      "match": {
+        "bus": "pci",
+        "ids": ["pci:10de:2684:*"]
+      },
+      "support": {
+        "kernelModules": ["nvidia"],
+        "firmware": [],
+        "packages": ["nvidia-driver"]
+      },
+      "sources": [
+        {
+          "class": "distribution-repository",
+          "ref": "package:nvidia-driver",
+          "rollback": true
+        },
+        {
+          "class": "vendor-official-repository",
+          "ref": "vendor:nvidia-linux-driver-repository",
+          "rollback": true
+        }
+      ]
+    }
+  ]
 }
