@@ -1,6 +1,6 @@
 {
   "schema": "swir.hardware-catalog/0.1",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "entries": [
     {
       "id": "usb.logitech.receiver.c534",
@@ -25,7 +25,7 @@
       "id": "pci.realtek.rtl8168-family",
       "match": {
         "bus": "pci",
-        "ids": ["pci:10ec:8168:*"]
+        "ids": ["pci:10ec:8168"]
       },
       "support": {
         "kernelModules": ["r8169"],
@@ -54,7 +54,7 @@
       "id": "pci.intel.i219-v-15f3",
       "match": {
         "bus": "pci",
-        "ids": ["pci:8086:15f3:*"]
+        "ids": ["pci:8086:15f3"]
       },
       "support": {
         "kernelModules": ["e1000e"],
@@ -73,7 +73,7 @@
       "id": "pci.nvidia.2684",
       "match": {
         "bus": "pci",
-        "ids": ["pci:10de:2684:*"]
+        "ids": ["pci:10de:2684"]
       },
       "support": {
         "kernelModules": ["nvidia"],
