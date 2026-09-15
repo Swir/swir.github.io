@@ -19,6 +19,7 @@ on:
       - 'desktop/windows/Program.cs'
       - 'desktop/windows/validate-native-notification-web-bridge.mjs'
       - 'desktop/windows/validate-shipping-notification-surface.mjs'
+      - 'desktop/windows/validate-shipping-notification-response-contract.mjs'
       - 'desktop/windows/SWIR.Desktop.NativeNotification.SelfTests.csproj'
       - 'desktop/windows/SWIR.Desktop.NotificationBridge.SelfTests.csproj'
       - 'desktop/windows/SWIR.Desktop.NotificationHostBinding.SelfTests.csproj'
@@ -49,6 +50,8 @@ jobs:
         run: node desktop/windows/validate-native-notification-web-bridge.mjs
       - name: Validate shipping native notification surface
         run: node desktop/windows/validate-shipping-notification-surface.mjs
+      - name: Validate shipping notification response and error contract
+        run: node desktop/windows/validate-shipping-notification-response-contract.mjs
       - name: Build native notification policy self-tests
         run: dotnet build desktop/windows/SWIR.Desktop.NativeNotification.SelfTests.csproj -c Release
       - name: Run native notification policy self-tests
