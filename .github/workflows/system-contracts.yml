@@ -35,6 +35,7 @@ jobs:
           node --check system/hardware/hardware-service.mjs
           node --check system/hardware/hardware-probe.mjs
           node --check system/hardware/hardware-service.selftest.mjs
+          node --check system/hardware/hardware-catalog.selftest.mjs
           node --check system/hardware/driver-resolver.mjs
           node --check system/hardware/driver-resolver.selftest.mjs
           node --check system/hardware/driver-plan.mjs
@@ -44,6 +45,9 @@ jobs:
 
       - name: Validate System Edition contracts
         run: node system/validate-system-contracts.mjs
+
+      - name: Enforce trusted Hardware Catalog policy
+        run: node system/hardware/hardware-catalog.selftest.mjs
 
       - name: Run Hardware Service self-tests
         run: node system/hardware/hardware-service.selftest.mjs
