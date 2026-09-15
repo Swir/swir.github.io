@@ -1,0 +1,85 @@
+name: Desktop Release Trust Chain Contract
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/validate-desktop-release-trust-chain.mjs'
+      - 'scripts/build-signed-catalog-release.mjs'
+      - 'scripts/verify-catalog-root-pin.mjs'
+      - 'scripts/apply-catalog-root-rotation.mjs'
+      - 'scripts/verify-catalog-root-rotation.mjs'
+      - 'desktop/windows/catalog-trust-roots.json'
+      - 'desktop/windows/DesktopCatalogTrustRootStore.cs'
+      - 'desktop/windows/DesktopCatalogTrustVerifier.cs'
+      - 'desktop/windows/DesktopPackageBridge.cs'
+      - 'desktop/windows/DesktopAppPackageInstaller.cs'
+      - 'desktop/windows/DesktopSignedPackageLifecycleSelfTests.cs'
+      - 'desktop/windows/SWIR.Desktop.SignedPackageLifecycle.SelfTests.csproj'
+      - '.github/workflows/desktop-release.yml'
+      - '.github/workflows/desktop-catalog-cutover-contract.yml'
+      - '.github/workflows/desktop-release-trust-chain-contract.yml'
+  pull_request:
+    paths:
+      - 'scripts/validate-desktop-release-trust-chain.mjs'
+      - 'scripts/build-signed-catalog-release.mjs'
+      - 'scripts/verify-catalog-root-pin.mjs'
+      - 'scripts/apply-catalog-root-rotation.mjs'
+      - 'scripts/verify-catalog-root-rotation.mjs'
+      - 'desktop/windows/catalog-trust-roots.json'
+      - 'desktop/windows/DesktopCatalogTrustRootStore.cs'
+      - 'desktop/windows/DesktopCatalogTrustVerifier.cs'
+      - 'desktop/windows/DesktopPackageBridge.cs'
+      - 'desktop/windows/DesktopAppPackageInstaller.cs'
+      - 'desktop/windows/DesktopSignedPackageLifecycleSelfTests.cs'
+      - 'desktop/windows/SWIR.Desktop.SignedPackageLifecycle.SelfTests.csproj'
+      - '.github/workflows/desktop-release.yml'
+      - '.github/workflows/desktop-catalog-cutover-contract.yml'
+      - '.github/workflows/desktop-release-trust-chain-contract.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-release-trust-chain-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  trust-chain:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Syntax check trust-chain tooling
+        run: |
+          node --check scripts/validate-desktop-release-trust-chain.mjs
+          node --check scripts/build-signed-catalog-release.mjs
+          node --check scripts/verify-catalog-root-pin.mjs
+          node --check scripts/apply-catalog-root-rotation.mjs
+          node --check scripts/verify-catalog-root-rotation.mjs
+
+      - name: Validate release trust-chain wiring
+        run: node scripts/validate-desktop-release-trust-chain.mjs
+
+      - name: Build signed package lifecycle self-tests
+        run: dotnet build desktop/windows/SWIR.Desktop.SignedPackageLifecycle.SelfTests.csproj -c Release
+
+      - name: Run signed install-update-restart-rollback lifecycle
+        run: dotnet run --project desktop/windows/SWIR.Desktop.SignedPackageLifecycle.SelfTests.csproj -c Release --no-build
+
+      - name: Build shipping Desktop Host
+        run: dotnet build desktop/windows/SWIR.Desktop.Host.csproj -c Release
