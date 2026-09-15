@@ -23,7 +23,13 @@ for (const fragment of requiredWorkflowFragments) {
   if (!workflow.includes(fragment)) fail(`Desktop release trust-chain wiring missing: ${fragment}`);
 }
 
-if (/SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM:\s*(?!\$\{\{\s*secrets\.)[^\r\n]+/.test(workflow)) {
+const privateKeyAssignments = workflow
+  .split(/\r?\n/)
+  .map((line) => line.trim())
+  .filter((line) => line.startsWith('SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM:'));
+const expectedPrivateKeyAssignment =
+  'SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM: ${{ secrets.SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM }}';
+if (privateKeyAssignments.length === 0 || privateKeyAssignments.some((line) => line !== expectedPrivateKeyAssignment)) {
   fail('Catalog signing private key must only enter the release workflow through GitHub Actions secrets.');
 }
 if (/BEGIN (?:ED25519 |EC |RSA )?PRIVATE KEY/.test(workflow)) {
