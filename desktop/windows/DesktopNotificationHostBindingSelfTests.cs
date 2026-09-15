@@ -16,6 +16,7 @@ internal static class DesktopNotificationHostBindingSelfTests
     {
         CreateBindsPermissionAndProvider();
         DispatchPreservesStableErrors();
+        DispatchPreservesProviderPolicyErrors();
         DispatchRejectsUnsupportedMethod();
         Console.WriteLine($"Desktop notification host binding self-tests passed: {_passed}");
         return 0;
@@ -49,6 +50,27 @@ internal static class DesktopNotificationHostBindingSelfTests
         catch (BridgeException ex)
         {
             Assert(ex.Code == "INVALID_APP_ID", "Binding must preserve INVALID_APP_ID for host bridge responses.");
+        }
+    }
+
+    private static void DispatchPreservesProviderPolicyErrors()
+    {
+        foreach (var code in new[] { "NOTIFICATION_RATE_LIMITED", "NOTIFICATION_DUPLICATE" })
+        {
+            var bridge = new DesktopNotificationBridgeService(
+                (_, _) => { },
+                (_, _, _, _) => throw new NativeNotificationException(code, $"policy:{code}"));
+            using var doc = JsonDocument.Parse("[\"Title\",\"Message\",\"swir.chat\"]");
+            try
+            {
+                _ = DesktopNotificationHostBinding.Dispatch(bridge, "show", doc.RootElement, "token");
+                throw new InvalidOperationException($"{code} should fail closed.");
+            }
+            catch (BridgeException ex)
+            {
+                Assert(ex.Code == code, $"Binding must preserve {code} for host bridge responses.");
+                Assert(ex.Message == $"policy:{code}", $"Binding must preserve {code} diagnostic message.");
+            }
         }
     }
 
