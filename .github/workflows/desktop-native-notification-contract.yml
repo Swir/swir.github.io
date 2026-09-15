@@ -1,0 +1,45 @@
+name: Desktop Native Notification Contract
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'swir-notifications.js'
+      - 'sw.js'
+      - 'desktop/windows/DesktopTrayIcon.cs'
+      - 'desktop/windows/PermissionBroker.cs'
+      - 'desktop/windows/ExecutionPolicyCatalog.cs'
+      - 'desktop/windows/PermissionBrokerSelfTests.cs'
+      - 'desktop/windows/Program.cs'
+      - 'desktop/windows/validate-native-notification-web-bridge.mjs'
+      - 'desktop/windows/SWIR.Desktop.Permission.SelfTests.csproj'
+      - 'desktop/windows/SWIR.Desktop.Host.csproj'
+      - '.github/workflows/desktop-native-notification-contract.yml'
+  pull_request:
+    paths:
+      - 'swir-notifications.js'
+      - 'desktop/windows/**'
+      - '.github/workflows/desktop-native-notification-contract.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  native-notification-contract:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Validate portable web to native notification bridge
+        run: node desktop/windows/validate-native-notification-web-bridge.mjs
+      - name: Build permission self-tests
+        run: dotnet build desktop/windows/SWIR.Desktop.Permission.SelfTests.csproj -c Release
+      - name: Run permission self-tests
+        run: dotnet run --project desktop/windows/SWIR.Desktop.Permission.SelfTests.csproj -c Release --no-build
+      - name: Build shipping Desktop Host
+        run: dotnet build desktop/windows/SWIR.Desktop.Host.csproj -c Release
