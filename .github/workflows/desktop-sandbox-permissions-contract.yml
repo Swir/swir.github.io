@@ -1,0 +1,48 @@
+name: Desktop Sandbox Permissions Contract
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'desktop/windows/Program.cs'
+      - 'desktop/windows/PermissionBroker.cs'
+      - 'desktop/windows/PermissionBrokerSelfTests.cs'
+      - 'desktop/windows/ExecutionPolicyCatalog.cs'
+      - 'desktop/windows/CapabilityBroker.cs'
+      - 'desktop/windows/DesktopAppIsolation.cs'
+      - 'desktop/windows/app-policy.json'
+      - 'desktop/windows/validate-policy.mjs'
+      - 'desktop/windows/validate-sandboxed-permissions.mjs'
+      - '.github/workflows/desktop-sandbox-permissions-contract.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sandbox-permissions:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Validate policy registry
+        shell: pwsh
+        run: node desktop/windows/validate-policy.mjs
+      - name: Validate sandbox permission boundary
+        shell: pwsh
+        run: node desktop/windows/validate-sandboxed-permissions.mjs
+      - name: Build permission broker self-tests
+        shell: pwsh
+        run: dotnet build desktop/windows/SWIR.Desktop.PermissionBroker.SelfTests.csproj -c Release
+      - name: Run permission broker self-tests
+        shell: pwsh
+        run: dotnet run --project desktop/windows/SWIR.Desktop.PermissionBroker.SelfTests.csproj -c Release --no-build
+      - name: Build shipping Desktop Host
+        shell: pwsh
+        run: dotnet build desktop/windows/SWIR.Desktop.Host.csproj -c Release
