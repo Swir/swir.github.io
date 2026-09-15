@@ -30,10 +30,11 @@ internal static class DesktopNotificationHostBinding
     }
 
     /// <summary>
-    /// Shipping-host dispatch boundary. Notification-specific validation errors are
-    /// translated into the host's stable BridgeException contract here so Program.cs
-    /// never needs to know provider exception details and cannot accidentally collapse
-    /// INVALID_ARGUMENT / INVALID_APP_ID into NATIVE_HOST_ERROR.
+    /// Shipping-host dispatch boundary. Notification-specific validation and provider
+    /// policy errors are translated into the host's stable BridgeException contract here
+    /// so Program.cs never needs provider internals and cannot collapse abuse-control
+    /// results such as NOTIFICATION_RATE_LIMITED / NOTIFICATION_DUPLICATE into a generic
+    /// NATIVE_HOST_ERROR.
     /// </summary>
     internal static object Dispatch(
         DesktopNotificationBridgeService bridge,
@@ -50,11 +51,15 @@ internal static class DesktopNotificationHostBinding
         {
             throw new BridgeException(ex.Code, ex.Message);
         }
+        catch (NativeNotificationException ex)
+        {
+            throw new BridgeException(ex.Code, ex.Message);
+        }
     }
 
     internal static object Describe() => new
     {
-        schema = "swir.desktop-notification-host-binding/0.2",
+        schema = "swir.desktop-notification-host-binding/0.3",
         surface = "notifications",
         methods = new[] { "show" },
         permission = "notifications.show",
@@ -63,6 +68,7 @@ internal static class DesktopNotificationHostBinding
         authorization = "PermissionBroker",
         strictArguments = true,
         stableBridgeErrors = true,
+        providerPolicyErrors = new[] { "INVALID_APP_ID", "NOTIFICATION_RATE_LIMITED", "NOTIFICATION_DUPLICATE" },
         failClosed = true
     };
 }
