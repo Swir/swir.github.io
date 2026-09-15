@@ -13,6 +13,7 @@ on:
       - 'desktop/windows/app-policy.json'
       - 'desktop/windows/validate-policy.mjs'
       - 'desktop/windows/validate-sandboxed-permissions.mjs'
+      - 'desktop/windows/SWIR.Desktop.Permission.SelfTests.csproj'
       - '.github/workflows/desktop-sandbox-permissions-contract.yml'
   workflow_dispatch:
 
@@ -39,10 +40,10 @@ jobs:
         run: node desktop/windows/validate-sandboxed-permissions.mjs
       - name: Build permission broker self-tests
         shell: pwsh
-        run: dotnet build desktop/windows/SWIR.Desktop.PermissionBroker.SelfTests.csproj -c Release
+        run: dotnet build desktop/windows/SWIR.Desktop.Permission.SelfTests.csproj -c Release
       - name: Run permission broker self-tests
         shell: pwsh
-        run: dotnet run --project desktop/windows/SWIR.Desktop.PermissionBroker.SelfTests.csproj -c Release --no-build
+        run: dotnet run --project desktop/windows/SWIR.Desktop.Permission.SelfTests.csproj -c Release --no-build
       - name: Build shipping Desktop Host
         shell: pwsh
         run: dotnet build desktop/windows/SWIR.Desktop.Host.csproj -c Release
