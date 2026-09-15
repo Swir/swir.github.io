@@ -83,6 +83,9 @@ internal sealed class ExecutionPolicyCatalog
                 case "network":
                     native.Add("network.inspect");
                     break;
+                case "notifications":
+                    native.Add("notifications.show");
+                    break;
             }
         }
         return native.OrderBy(x => x, StringComparer.Ordinal).ToArray();
