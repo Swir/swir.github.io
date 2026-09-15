@@ -36,6 +36,7 @@ internal sealed class MainWindow : Form
     private readonly NativeFileSystemBroker _nativeFileSystem;
     private readonly DesktopPackageBridge _packages;
     private readonly DesktopTrayIcon _tray;
+    private readonly DesktopNotificationBridgeService _notifications;
     private readonly DesktopShellIntegrationCoordinator _shellIntegration;
     private readonly string[] _startupArguments;
     private readonly string _repoRoot;
@@ -82,6 +83,7 @@ internal sealed class MainWindow : Form
         _shellIntegration = new DesktopShellIntegrationCoordinator(Application.ExecutablePath, _capabilities.RegisterFile);
         Controls.Add(_web);
         _tray = new DesktopTrayIcon(this, _trayLifecycle);
+        _notifications = DesktopNotificationHostBinding.Create(_permissions, _tray);
         Shown += async (_, _) => await StartAsync();
         Resize += OnHostResize;
         FormClosing += OnHostFormClosing;
@@ -418,6 +420,9 @@ internal sealed class MainWindow : Form
                 throw new BridgeException("SHELL_INTEGRATION_FORBIDDEN", "Native shell integration is restricted to the trusted SWIR system shell.");
             return DispatchShellIntegrationAsync(request.Method, request.Args);
         }
+
+        if (string.Equals(request.Surface, "notifications", StringComparison.Ordinal))
+            return Task.FromResult<object?>(DesktopNotificationHostBinding.Dispatch(_notifications, request.Method, request.Args, effectiveToken));
 
         _permissions.Authorize(effectiveToken, request.Surface, request.Method, RequestedOwner(request));
         return request.Surface switch
@@ -801,12 +806,13 @@ internal sealed class MainWindow : Form
   });
   const surface = (name, methods) => Object.freeze(Object.fromEntries(methods.map(method => [method, (...args) => call(name, method, ...args)])));
   window.SWIR_NATIVE_HOST = Object.freeze({
-    edition: 'DESKTOP', version: '0.5.6-preview', contract: 'swir.runtime/1.0', sessionId: '__SESSION_ID__',
-    features: Object.freeze({ packageContextBroker: true, nativePackageBridge: true, appIsolationRouting: true, appIsolationState: 'APP_BRIDGE_VERIFIED', nativeAppData: true, nativeFilesystem: true, nativeDeviceNetwork: true, nativeAccountSession: true, nativeProcessService: true, nativeClipboardTray: true, nativeShellIntegration: true, guardedUpdateRestartLifecycle: true, nativeUpdateBridge: true, nativeUpdatePreparation: true }),
+    edition: 'DESKTOP', version: '0.5.7-preview', contract: 'swir.runtime/1.0', sessionId: '__SESSION_ID__',
+    features: Object.freeze({ packageContextBroker: true, nativePackageBridge: true, appIsolationRouting: true, appIsolationState: 'APP_BRIDGE_VERIFIED', nativeAppData: true, nativeFilesystem: true, nativeDeviceNetwork: true, nativeAccountSession: true, nativeProcessService: true, nativeClipboardTray: true, nativeNotifications: true, nativeShellIntegration: true, guardedUpdateRestartLifecycle: true, nativeUpdateBridge: true, nativeUpdatePreparation: true }),
     filesystem: surface('filesystem', ['info','list','get','save','remove','pickFile','pickDirectory','capabilityInfo','readCapabilityText','revokeCapability','revokeOwnerCapabilities','pruneCapabilities','capabilityStatus']),
     appData: surface('appdata', ['info','list','get','set','remove']),
     packages: surface('packages', ['info','installFromCapability','status','rollback']),
     clipboard: surface('clipboard', ['readText','writeText','clear']),
+    notifications: surface('notifications', ['show']),
     processes: surface('processes', ['info','list']),
     services: surface('services', ['info','list']),
     network: surface('network', ['status','adapters']),
@@ -816,7 +822,7 @@ internal sealed class MainWindow : Form
     shellIntegration: surface('shellIntegration', ['info','pendingOpenFiles','claimOpenFile','cancelOpenFile']),
     updates: surface('updates', ['readiness'])
   });
-  window.dispatchEvent(new CustomEvent('swir:native-host-ready', { detail: { edition: 'DESKTOP', version: '0.5.6-preview', sessionId: '__SESSION_ID__' } }));
+  window.dispatchEvent(new CustomEvent('swir:native-host-ready', { detail: { edition: 'DESKTOP', version: '0.5.7-preview', sessionId: '__SESSION_ID__' } }));
 })();
 """;
 
