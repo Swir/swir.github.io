@@ -48,6 +48,35 @@ internal sealed class DesktopTrayIcon : IDisposable
 
     internal DesktopTraySnapshot Describe() => _lifecycle.Describe();
 
+    internal object ShowNotification(string title, string message, string appId, bool silent = false)
+    {
+        EnsureUiThread();
+        title = Normalize(title, "SWIR OS", 63);
+        message = Normalize(message, "Application event", 255);
+        appId = Normalize(appId, "swir.system", 128);
+
+        // WinForms NotifyIcon uses the Windows notification area and does not require
+        // a second process, arbitrary executable activation, or browser Notification permission.
+        // silent is retained in the portable result even though classic NotifyIcon balloons
+        // do not expose a reliable per-notification sound switch across supported Windows builds.
+        _notifyIcon.BalloonTipTitle = title;
+        _notifyIcon.BalloonTipText = message;
+        _notifyIcon.BalloonTipIcon = ToolTipIcon.Info;
+        _notifyIcon.ShowBalloonTip(5000);
+        return new
+        {
+            schema = "swir.native-notification/0.1",
+            delivered = true,
+            provider = "windows-notifyicon",
+            appId,
+            title,
+            message,
+            silentRequested = silent,
+            actionsSupported = false,
+            persistenceSupported = false
+        };
+    }
+
     internal bool Hide()
     {
         EnsureUiThread();
@@ -110,6 +139,13 @@ internal sealed class DesktopTrayIcon : IDisposable
         if (_disposed) throw new ObjectDisposedException(nameof(DesktopTrayIcon));
         if (_window.InvokeRequired)
             throw new InvalidOperationException("Desktop tray operations must run on the host UI thread.");
+    }
+
+    private static string Normalize(string? value, string fallback, int maxLength)
+    {
+        var normalized = string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
+        normalized = new string(normalized.Where(ch => !char.IsControl(ch) || ch is '\t').ToArray());
+        return normalized.Length <= maxLength ? normalized : normalized[..maxLength];
     }
 
     public void Dispose()
