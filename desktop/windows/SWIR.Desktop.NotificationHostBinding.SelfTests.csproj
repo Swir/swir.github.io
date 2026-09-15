@@ -9,6 +9,7 @@
   <ItemGroup>
     <Compile Include="DesktopNotificationBridgeService.cs" />
     <Compile Include="DesktopNotificationHostBinding.cs" />
+    <Compile Include="NativeNotificationPolicy.cs" />
     <Compile Include="DesktopNotificationHostBindingSelfTests.cs" />
   </ItemGroup>
 </Project>
