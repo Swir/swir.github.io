@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://swir.github.io/system/contracts/windows-compat-launch.schema.json",
+  "title": "SWIR Windows Compatibility Launch Plan 0.1",
+  "type": "object",
+  "required": [
+    "schema", "mode", "brokerRequired", "shell", "executionClass", "appId", "provider",
+    "architecture", "prefixPolicy", "prefix", "application", "runtime", "environment", "trust"
+  ],
+  "properties": {
+    "schema": { "const": "swir.windows-compat-launch/0.1" },
+    "mode": { "const": "guarded" },
+    "brokerRequired": { "const": true },
+    "shell": { "const": false },
+    "executionClass": { "const": "windows-compat" },
+    "appId": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{1,127}$" },
+    "provider": { "enum": ["swir.compat.wine", "swir.compat.proton"] },
+    "architecture": { "enum": ["win64", "win32"] },
+    "prefixPolicy": { "const": "per-app" },
+    "prefix": { "type": "string", "pattern": "^/", "minLength": 2 },
+    "application": {
+      "type": "object",
+      "required": ["executable", "args"],
+      "properties": {
+        "executable": { "type": "string", "pattern": "^/", "minLength": 2 },
+        "args": { "type": "array", "maxItems": 256, "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    },
+    "runtime": {
+      "type": "object",
+      "required": ["family", "executable", "args"],
+      "properties": {
+        "family": { "enum": ["wine", "proton"] },
+        "executable": { "type": "string", "pattern": "^/", "minLength": 2 },
+        "args": { "type": "array", "minItems": 1, "maxItems": 258, "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    },
+    "environment": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "trust": {
+      "type": "object",
+      "required": ["verified", "signatureRequired"],
+      "properties": {
+        "verified": { "const": true },
+        "signatureRequired": { "const": true }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
