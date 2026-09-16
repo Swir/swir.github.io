@@ -18,7 +18,7 @@ const verificationNow = Date.parse('2026-09-17T00:00:00Z');
 
 const { privateKey, publicKey } = crypto.generateKeyPairSync('ed25519');
 const jwk = publicKey.export({ format: 'jwk' });
-const rawPublic = Buffer.from(String(jwk.x).replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(String(jwk.x).length / 4) * 4, '='));
+const rawPublic = Buffer.from(String(jwk.x).replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(String(jwk.x).length / 4) * 4, '='), 'base64');
 const trustRoots = {
   schema: 'swir.catalog-trust-roots/1.0',
   requireSignedCatalog: true,
