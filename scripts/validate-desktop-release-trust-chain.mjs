@@ -9,6 +9,7 @@ const lifecycle = read('desktop/windows/DesktopSignedPackageLifecycleSelfTests.c
 const cutover = read('.github/workflows/desktop-catalog-cutover-contract.yml');
 const runtimeStage = read('desktop/windows/stage-desktop-runtime.ps1');
 const packageBridge = read('desktop/windows/DesktopPackageBridge.cs');
+const packageInstaller = read('desktop/windows/DesktopAppPackageInstaller.cs');
 
 const requiredWorkflowFragments = [
   'SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM: ${{ secrets.SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM }}',
@@ -43,9 +44,6 @@ if (roots.requireSignedCatalog !== false || !Array.isArray(roots.roots) || roots
   fail('The source-tree preview trust store must remain empty/fail-neutral; production roots are staged only by the controlled release pipeline.');
 }
 
-// A shipping Desktop runtime must not be able to silently fall back to caller-provided hashes.
-// Keep this check separate from verifier self-tests so release/staging refactors fail CI even if
-// the cryptographic implementation itself remains correct.
 for (const fragment of [
   "Copy-Item -LiteralPath (Join-Path $catalogRelease 'catalog-trust-roots.json')",
   "$trust.requireSignedCatalog -ne $true",
@@ -58,9 +56,29 @@ for (const fragment of [
 for (const fragment of [
   'legacySha256Fallback = _catalogTrust is null',
   'trustMode = _catalogTrust is null ? "LEGACY_SHA_UNTIL_ROOT_PROVISIONED" : "SIGNED_CATALOG_REQUIRED"',
-  'CATALOG_AUTHORIZATION_REQUIRED'
+  'CATALOG_AUTHORIZATION_REQUIRED',
+  'return _installer.Install(path, trust.Sha256);'
 ]) {
   if (!packageBridge.includes(fragment)) fail(`Desktop package bridge production trust boundary missing: ${fragment}`);
+}
+
+// The signed catalog is only useful if its authorized digest is enforced again at the final
+// native payload boundary. Keep these invariants in CI so a refactor cannot accidentally turn
+// signed metadata into an identity-only check or replace constant-time digest comparison.
+for (const fragment of [
+  'integrity = "sha256-required"',
+  'var expected = NormalizeHash(expectedSha256);',
+  'var actual = ComputeSha256(bundlePath);',
+  'CryptographicOperations.FixedTimeEquals',
+  'PACKAGE_HASH_MISMATCH',
+  'bundleSha256 = actual'
+]) {
+  if (!packageInstaller.includes(fragment)) fail(`Desktop package payload integrity boundary missing: ${fragment}`);
+}
+const hashCheck = packageInstaller.indexOf('CryptographicOperations.FixedTimeEquals');
+const archiveOpen = packageInstaller.indexOf('ZipFile.OpenRead(bundlePath)');
+if (hashCheck < 0 || archiveOpen < 0 || hashCheck > archiveOpen) {
+  fail('Desktop package SHA-256 must be verified before the .swirapp archive is opened or extracted.');
 }
 
 for (const fragment of [
