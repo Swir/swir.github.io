@@ -30,8 +30,36 @@ if (!/if \(\$env:SWIR_CATALOG_ROTATION_ENABLED -eq 'true'\)/.test(text)) {
   throw new Error('Desktop release does not fail closed behind an explicit rotation mode branch.');
 }
 
-if (!text.includes("Remove-Item Env:SWIR_CATALOG_NEXT_PUBLIC_KEY_BASE64")) {
-  throw new Error('Desktop release cleanup does not remove next-root material from the process environment.');
+// Rotation roots and fingerprints used to be exposed through job-level env and therefore
+// required explicit process-environment cleanup. The hardened release workflow now scopes
+// every signing/trust secret to only the step that consumes it. Keep this contract aligned
+// with that stronger boundary: a future move back to job-level secret env must fail CI.
+const jobStart = text.indexOf('\n  build-and-verify:');
+const stepsStart = text.indexOf('\n    steps:', jobStart);
+if (jobStart < 0 || stepsStart < 0) {
+  throw new Error('Desktop release build-and-verify job boundary could not be resolved.');
+}
+const signingJobHeader = text.slice(jobStart, stepsStart);
+const protectedRotationSecrets = [
+  'secrets.SWIR_CATALOG_NEXT_PUBLIC_KEY_BASE64',
+  'secrets.SWIR_CATALOG_NEXT_SIGNING_PUBLIC_KEY_SHA256',
+  'secrets.SWIR_CATALOG_ROTATION_CUTOVER_SEQUENCE',
+  'secrets.SWIR_CATALOG_CURRENT_RETIRE_AFTER_SEQUENCE',
+];
+for (const secret of protectedRotationSecrets) {
+  if (signingJobHeader.includes(secret)) {
+    throw new Error(`Desktop release exposes rotation secret at job scope: ${secret}`);
+  }
+  if (!text.includes(secret)) {
+    throw new Error(`Desktop release no longer wires required protected rotation input: ${secret}`);
+  }
 }
 
-console.log('Desktop release current-next root rotation wiring validated.');
+if (!text.includes('environment: swir-release-signing')) {
+  throw new Error('Desktop release rotation signing job must use the protected swir-release-signing environment.');
+}
+if (!text.includes("if: ${{ github.repository == 'Swir/swir.github.io' && github.ref == 'refs/heads/main' }}")) {
+  throw new Error('Desktop release rotation signing job must be restricted to canonical main.');
+}
+
+console.log('Desktop release current-next root rotation wiring validated with step-scoped protected secrets.');
