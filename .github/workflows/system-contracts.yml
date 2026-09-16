@@ -40,6 +40,7 @@ jobs:
           node --check system/runtime/native-package-execution-service.selftest.mjs
           node --check system/packages/package-transaction-service.mjs
           node --check system/packages/package-transaction-service.selftest.mjs
+          node --check system/packages/package-transaction-security.selftest.mjs
           node --check system/packages/privileged-package-executor.mjs
           node --check system/packages/privileged-package-executor.selftest.mjs
           node --check system/packages/distribution-package-state.mjs
@@ -76,6 +77,9 @@ jobs:
 
       - name: Run System package transaction lifecycle self-tests
         run: node system/packages/package-transaction-service.selftest.mjs
+
+      - name: Run package transaction tamper-resistance self-tests
+        run: node system/packages/package-transaction-security.selftest.mjs
 
       - name: Run guarded pkexec package executor self-tests
         run: node system/packages/privileged-package-executor.selftest.mjs
