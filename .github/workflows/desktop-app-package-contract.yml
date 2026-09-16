@@ -36,10 +36,12 @@ on:
       - 'swir-runtime.js'
       - 'swir-store-desktop.js'
       - 'swir-store.html'
+      - 'scripts/sign-desktop-package.mjs'
       - 'scripts/validate-desktop-package-runtime.mjs'
       - 'scripts/validate-desktop-package-authorization.mjs'
       - 'scripts/validate-store-desktop-coordinator.mjs'
       - 'scripts/validate-shared-dependency-contract.mjs'
+      - 'SWIR-DESKTOP-PACKAGE-SIGNATURE-1.0.md'
       - '.github/workflows/desktop-app-package-contract.yml'
   pull_request:
     paths:
@@ -75,10 +77,12 @@ on:
       - 'swir-runtime.js'
       - 'swir-store-desktop.js'
       - 'swir-store.html'
+      - 'scripts/sign-desktop-package.mjs'
       - 'scripts/validate-desktop-package-runtime.mjs'
       - 'scripts/validate-desktop-package-authorization.mjs'
       - 'scripts/validate-store-desktop-coordinator.mjs'
       - 'scripts/validate-shared-dependency-contract.mjs'
+      - 'SWIR-DESKTOP-PACKAGE-SIGNATURE-1.0.md'
       - '.github/workflows/desktop-app-package-contract.yml'
 
 permissions:
@@ -117,6 +121,10 @@ jobs:
       - name: Check SWIR Store Desktop coordinator syntax
         working-directory: .
         run: node --check swir-store-desktop.js
+
+      - name: Run release-side swirapp signing self-test
+        working-directory: .
+        run: node scripts/sign-desktop-package.mjs --self-test
 
       - name: Validate shipping package runtime wiring
         working-directory: .

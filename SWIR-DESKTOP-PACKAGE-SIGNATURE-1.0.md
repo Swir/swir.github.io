@@ -35,6 +35,29 @@ The canonical signed payload is the UTF-8 JSON serialization of those fields in 
 
 The Desktop Host recomputes SHA-256 from the selected `.swirapp`, compares it in constant time, checks package identity/version against the manifest-derived dependency plan, verifies key scope, imports the pinned raw Ed25519 public key and verifies the signature before payload mutation.
 
+## Release-side signing tool
+
+`scripts/sign-desktop-package.mjs` is the release-side producer for the same canonical envelope. It accepts a `.swirapp`, package identity/version and Ed25519 key identifier, reads the private key only from a named environment variable (default `SWIR_PACKAGE_SIGNING_PRIVATE_KEY_PEM`), hashes the exact package bytes, signs the canonical payload and immediately performs an independent verification before writing public output.
+
+Example release invocation:
+
+```text
+SWIR_PACKAGE_SIGNING_PRIVATE_KEY_PEM=<protected PKCS#8 PEM>
+node scripts/sign-desktop-package.mjs \
+  --package packages/swir.example.swirapp \
+  --package-id swir.example \
+  --version 1.0.0 \
+  --key-id release-2026 \
+  --output packages/swir.example.swirapp.sig.json \
+  --trust-root-output package-trust-roots.json
+```
+
+The signer defaults the generated public root to the least-privilege scope `package:<packageId>`. `package:*` or `*` require an explicit `--scope`. The generated root contains only raw public verification material; the tool refuses to write output containing a private-key marker. It also emits a SHA-256 fingerprint of the raw public key for independent release pinning.
+
+The CI contract runs `node scripts/sign-desktop-package.mjs --self-test` with an ephemeral Ed25519 key before the native verifier tests. This checks deterministic canonical-field ordering, exact-byte hashing, signature length, least-privilege scope, public-key fingerprinting, output hygiene and a tamper digest vector.
+
+Release automation should source `packageId` and `version` from the same verified package-build metadata used to create the `.swirapp`; the Desktop verifier remains the final fail-closed authority and rejects a signature whose identity/version does not match the package manifest.
+
 ## Trust roots
 
 Native public roots use `swir.package-trust-roots/1.0` and are provisioned through `package-trust-roots.json` or the `SWIR_PACKAGE_TRUST_ROOTS` deployment override.
@@ -81,4 +104,4 @@ For combined authorization, the existing `swir.desktop-catalog-authorization/1.0
 
 Verification fails closed for malformed metadata, invalid digest, missing signature, unknown key, wrong key scope, package identity/version mismatch, bundle hash mismatch and cryptographic signature failure. No payload is promoted to `Current` before the trust decision succeeds.
 
-The contract is exercised by the Windows `Desktop App Package Contract` workflow using ephemeral test signing keys and valid/tampered package vectors.
+The contract is exercised by the Windows `Desktop App Package Contract` workflow using ephemeral test signing keys and valid/tampered package vectors on both the release-side signer and the native Desktop verifier.
