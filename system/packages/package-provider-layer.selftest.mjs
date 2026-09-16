@@ -3,8 +3,10 @@ import {
   DistributionPackageStackAdapter,
   SystemPackageProviderLayer,
   SystemPackageProviderLayerPolicy,
+  createExperimentalSystemPackageProviderLayer,
   createSystemPackageProviderLayer
 } from './package-provider-layer.mjs';
+import { FlatpakUserPackageAdapter, GuardedFlatpakUserExecutor } from './flatpak-user-package-provider.mjs';
 
 const manifest = {
   schema: 'swir.package-provider/0.2',
@@ -47,6 +49,7 @@ assert.equal(description.directCommandExecution, false);
 assert.equal(description.arbitraryProviderRegistration, false);
 assert.equal(description.providers.find(item => item.id === 'swir.package.system')?.state, 'ready');
 assert.equal(description.providers.find(item => item.id === 'swir.package.flatpak')?.state, 'not-provisioned');
+assert.equal(description.providers.find(item => item.id === 'swir.package.flatpak')?.roadmapStatus, 'experimental');
 assert.equal(description.providers.find(item => item.id === 'swir.package.appimage')?.state, 'not-provisioned');
 
 const plan = layer.plan('install', manifest);
@@ -67,13 +70,40 @@ assert.equal(recovered[0].state, 'recovered');
 assert.deepEqual(calls.shift(), ['recover', 'session:1000']);
 assert.equal(calls.length, 0);
 
-const futureManifest = {
+const flatpakManifest = {
   ...manifest,
-  id: 'org.example.flatpak',
+  id: 'org.example.FlatEditor',
   provider: 'swir.package.flatpak',
+  package: { name: 'Flat Editor', sourceRef: 'org.example.FlatEditor', nativeEntryPoint: 'org.example.FlatEditor', remote: 'flathub', scope: 'user' },
   trust: { sourceClass: 'flatpak-remote', repositoryId: 'flathub', signatureRequired: true }
 };
-assert.throws(() => layer.plan('install', futureManifest), error => error?.code === 'PROVIDER_NOT_PROVISIONED');
+assert.throws(() => layer.plan('install', flatpakManifest), error => error?.code === 'PROVIDER_NOT_PROVISIONED');
+
+const previewLayer = createExperimentalSystemPackageProviderLayer({ distributionStack: stack, flatpakAllowedRemotes: ['flathub'] });
+assert.equal(previewLayer.providerState('swir.package.flatpak').state, 'ready');
+assert.equal(previewLayer.plan('install', flatpakManifest).provider, 'swir.package.flatpak');
+
+const flatpakCalls = [];
+const flatpakExecutor = new GuardedFlatpakUserExecutor({
+  allowlistedRemotes: ['flathub'],
+  runner(binary, args, options) {
+    flatpakCalls.push([binary, args, options.shell]);
+    return { status: 0, stdout: '', stderr: '' };
+  }
+});
+const flatpakAdapter = new FlatpakUserPackageAdapter({ allowlistedRemotes: ['flathub'], executor: flatpakExecutor });
+const mixed = new SystemPackageProviderLayer({
+  adapters: new Map([
+    ['swir.package.system', new DistributionPackageStackAdapter(stack)],
+    ['swir.package.flatpak', flatpakAdapter]
+  ])
+});
+const flatpakResult = await mixed.execute('install', flatpakManifest, { subject: 'session:1000' });
+assert.equal(flatpakResult.provider, 'swir.package.flatpak');
+assert.equal(flatpakResult.result.state, 'committed');
+assert.equal(flatpakCalls.length, 1);
+assert.equal(flatpakCalls[0][0], '/usr/bin/flatpak');
+assert.equal(flatpakCalls[0][2], false);
 
 const windowsManifest = {
   ...manifest,
@@ -90,6 +120,7 @@ assert.throws(() => mismatchLayer.plan('install', manifest), error => error?.cod
 const adapter = new DistributionPackageStackAdapter(stack);
 assert.equal(adapter.describe().provider, 'swir.package.system');
 assert.deepEqual(SystemPackageProviderLayerPolicy.provisionedByProductionFactory, ['swir.package.system']);
-assert.deepEqual(SystemPackageProviderLayerPolicy.plannedProviders, ['swir.package.flatpak', 'swir.package.appimage']);
+assert.deepEqual(SystemPackageProviderLayerPolicy.experimentalProviders, ['swir.package.flatpak']);
+assert.deepEqual(SystemPackageProviderLayerPolicy.plannedProviders, ['swir.package.appimage']);
 
 console.log('System Package Provider Layer self-test: OK');
