@@ -31,6 +31,10 @@ if (!desktopShell.includes('id="os-shell"')) fail('dedicated OS shell marker is 
 if (!publicIndex.includes('SWIR OS') || !publicIndex.includes('swir-preview.css')) fail('public showcase entry is missing or no longer separated from the OS shell');
 if (manifest.start_url !== './swir-desktop.html') fail('PWA start_url must target the dedicated Web Edition shell');
 if (!sw.includes("'./swir-desktop.html'") || !sw.includes("'./swir-i18n.js'")) fail('offline cache does not include the dedicated shell and locale runtime');
+if (!sw.includes("const OPTIONAL_CORE = new Set(['./swir-desktop.html'])")) fail('service worker must tolerate the source-only shell alias being absent in native packages');
+if (!sw.includes('async function seedCore(cache)')) fail('service worker is missing native-safe per-resource precache');
+if (sw.includes('cache.addAll(CORE)')) fail('atomic addAll precache would break native packages where swir-desktop.html is remapped to index.html');
+if (!sw.includes('const requiredFailures = failures.filter(item => !OPTIONAL_CORE.has(item.path))')) fail('optional/required precache failure split is missing');
 if (!sw.includes("url.pathname.endsWith('/index.html')") || !sw.includes("url.pathname.includes('/swir-preview.')")) fail('service worker must keep the public showcase network-only');
 if (!stage.includes("$desktopEntryRelative = 'swir-desktop.html'")) fail('Desktop runtime staging does not bind the dedicated shell entry');
 if (!stage.includes("'swir-i18n.js'")) fail('Desktop runtime staging does not require swir-i18n.js');
@@ -50,4 +54,4 @@ for (const method of ['locale.info','locale.translate','locale.formatDate','loca
 }
 if (bridgeHost.includes("case 'locale.set'") || bridgeClient.includes("'locale.set'")) fail('isolated applications must not be able to mutate system locale through the read-only bridge');
 
-console.log('SWIR i18n contract OK: dedicated OS shell, BCP-47 core, RTL, PWA cache isolation, Settings, App SDK/Bridge and Desktop staging are wired.');
+console.log('SWIR i18n contract OK: dedicated OS shell, BCP-47 core, RTL, native-safe PWA cache isolation, Settings, App SDK/Bridge and Desktop staging are wired.');
