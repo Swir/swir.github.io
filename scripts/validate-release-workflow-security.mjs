@@ -11,6 +11,10 @@ const ACTION_PINS = new Map([
 const MAIN_REPO_GUARD = "if: ${{ github.repository == 'Swir/swir.github.io' && github.ref == 'refs/heads/main' }}";
 const SIGNING_ENVIRONMENT = 'environment: swir-release-signing';
 
+function normalizeText(source) {
+  return String(source).replace(/\r\n?/g, '\n');
+}
+
 function requireText(source, needle, message) {
   if (!source.includes(needle)) throw new Error(message || `Missing required release security wiring: ${needle}`);
 }
@@ -52,7 +56,10 @@ function verifySecretBoundary(label, source, requiredSecretNames) {
   }
 }
 
-function verifyReleaseWorkflow(label, source, requiredSecretNames) {
+function verifyReleaseWorkflow(label, rawSource, requiredSecretNames) {
+  // Git may check workflow files out as CRLF on Windows runners. Security checks must be
+  // byte-style strict about the YAML tokens while remaining platform-independent.
+  const source = normalizeText(rawSource);
   requireText(source, MAIN_REPO_GUARD, `${label}: secret-bearing signing job must refuse non-main/non-canonical repository dispatches`);
   requireText(source, SIGNING_ENVIRONMENT, `${label}: signing job must use the fixed swir-release-signing environment`);
   requireText(source, 'persist-credentials: false', `${label}: checkout must not persist Git credentials`);
@@ -70,6 +77,9 @@ function runSelfTest() {
   const good = `name: test\npermissions:\n  contents: read\njobs:\n  sign:\n    ${MAIN_REPO_GUARD}\n    ${SIGNING_ENVIRONMENT}\n    runs-on: ubuntu-latest\n    steps:\n${actionLines}\n      - run: echo ok\n        env:\n          KEY: \${{ secrets.TEST_KEY }}\n      - run: echo checkout\n        env:\n          NOTE: persist-credentials: false\n`;
   verifyReleaseWorkflow('self-test-good', good, ['TEST_KEY']);
 
+  // Prove Windows checkout line endings cannot weaken or accidentally break the contract.
+  verifyReleaseWorkflow('self-test-good-crlf', good.replace(/\n/g, '\r\n'), ['TEST_KEY']);
+
   const mutable = good.replace(ACTION_PINS.get('actions/checkout'), 'v7');
   let mutableRejected = false;
   try { verifyReleaseWorkflow('self-test-mutable', mutable, ['TEST_KEY']); } catch { mutableRejected = true; }
@@ -85,7 +95,7 @@ function runSelfTest() {
   try { verifyReleaseWorkflow('self-test-repo-guard', branch, ['TEST_KEY']); } catch { branchRejected = true; }
   if (!branchRejected) throw new Error('self-test failed: incomplete canonical repository guard was accepted');
 
-  console.log('SWIR release workflow security validator self-test OK');
+  console.log('SWIR release workflow security validator self-test OK (LF + CRLF)');
 }
 
 if (process.argv.includes('--self-test')) {
