@@ -12,20 +12,20 @@ SWIR OS is designed in three editions sharing one application model and platform
 <!-- ROADMAP-PROGRESS:START -->
 <p align="center">
   <a href="https://github.com/Swir/swir.github.io/actions/workflows/system-contracts.yml"><img alt="CI" src="https://github.com/Swir/swir.github.io/actions/workflows/system-contracts.yml/badge.svg"></a>
-  <img alt="Roadmap progress" src="https://img.shields.io/badge/ROADMAP-63.0%25-2ea043?style=for-the-badge">
-  <img alt="Completed" src="https://img.shields.io/badge/DONE-34%2F54-1f6feb?style=for-the-badge">
+  <img alt="Roadmap progress" src="https://img.shields.io/badge/ROADMAP-64.8%25-2ea043?style=for-the-badge">
+  <img alt="Completed" src="https://img.shields.io/badge/DONE-35%2F54-1f6feb?style=for-the-badge">
   <img alt="Status" src="https://img.shields.io/badge/STATUS-IN%20PROGRESS-7c3aed?style=for-the-badge">
 </p>
 
 ## 📊 Overall progress
 
 ```text
-█████████████░░░░░░░ 63.0%
+█████████████░░░░░░░ 64.8%
 ```
 
 | ✅ Completed | ⏳ Remaining | 📦 Total | 🎯 Progress |
 |---:|---:|---:|---:|
-| **34** | **20** | **54** | **63.0%** |
+| **35** | **19** | **54** | **64.8%** |
 
 > **Progress rule:** the explicit `[x]/[ ]` deliverables in **Version roadmap** are the source of truth for the full Web → Desktop → System plan. Update the checklist first, then badges, numbers, percentage and the 20-segment bar. A prototype does not count as complete until the described deliverable is actually implemented and verified.
 <!-- ROADMAP-PROGRESS:END -->
@@ -108,7 +108,7 @@ The specification lives in `SWIR-APP-PACKAGE-1.0.md`.
 
 ## Files, Associations, Notifications & Dependency Core — 1.7
 
-SWIR OS 1.7 reaches **SWIR App SDK 1.3**. The 1.7 line adds portable file-association, app-data, application-notification and package dependency contracts.
+SWIR OS 1.7 currently exposes **SWIR App SDK 1.6.2** while retaining the `swir.app/1.0` package contract. The 1.7 line adds portable file-association, app-data, application-notification and package dependency contracts.
 
 ### File handoff
 
@@ -156,7 +156,7 @@ Web Edition maps this to namespaced SWIR Platform storage. Desktop Edition maps 
 
 ### Application Notification Service
 
-Applications with the `notifications` permission can publish portable notifications through the SDK. The Web Edition maps them to the SWIR shell toast/notification center and keeps a bounded application notification history.
+Applications with the `notifications` permission can publish portable notifications through the SDK. The Web Edition maps them to the SWIR shell toast/notification center and keeps a bounded application notification history. The 1.7 notification lifecycle now uses an edition-neutral persistence adapter, migrates legacy local history into `SwirPlatform.storage`, supports owner-bound `open` / `dismiss` actions, and exposes the same activation path for future native notification action callbacks. Non-system applications cannot redirect a notification action to another package.
 
 ```text
 SWIR App
@@ -167,9 +167,26 @@ SwirAppSDK.notifications.send(appId, options)
    +--> package installed check
    +--> manifest permission declaration
    +--> granted permission check
+   +--> owner-bound actions
    |
    v
 SWIR Notification Service
+   |
+   +--> SwirPlatform storage adapter
+   +--> Web shell fallback
+   +--> Desktop native provider / future rich action callback
+```
+
+Portable notification lifecycle APIs include:
+
+```text
+SwirAppSDK.notifications.send(...)
+SwirAppSDK.notifications.history(...)
+SwirAppSDK.notifications.dismiss(...)
+SwirAppSDK.notifications.activate(...)
+SwirAppSDK.notifications.clear(...)
+SwirAppSDK.notifications.ready()
+SwirAppSDK.notifications.persistence()
 ```
 
 ### Package Dependency Core
@@ -335,7 +352,7 @@ The detailed foundation and machine-readable contract schemas live under `system
 - [x] SWIR Chat + downloadable backend
 - [x] Task Manager / SWIR Services
 - [x] permissions / clipboard / Update Center
-- [x] **SWIR App SDK 1.3**
+- [x] **SWIR App SDK 1.6.2**
 - [x] **SWIR App Package 1.0**
 - [x] **SWIR Store 2.2 dependency-aware lifecycle**
 - [x] **package compatibility + dependency resolver**
@@ -351,7 +368,7 @@ The detailed foundation and machine-readable contract schemas live under `system
 - [ ] application developer template / SDK examples
 - [ ] larger binary/file storage on IndexedDB instead of localStorage mirror
 - [x] package update transactions / rollback metadata
-- [ ] native-ready notification actions and persistence adapter
+- [x] native-ready notification actions and persistence adapter
 
 ### Desktop Edition 2.x
 
