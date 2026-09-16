@@ -1,5 +1,7 @@
 # SWIR Desktop Package Signature 1.0
 
+Status: **implemented and verified Desktop Edition deliverable**
+
 `swir.desktop-package-signature/1.0` defines detached Ed25519 authorization for Desktop Edition `.swirapp` payloads.
 
 ## Goals
@@ -104,4 +106,8 @@ For combined authorization, the existing `swir.desktop-catalog-authorization/1.0
 
 Verification fails closed for malformed metadata, invalid digest, missing signature, unknown key, wrong key scope, package identity/version mismatch, bundle hash mismatch and cryptographic signature failure. No payload is promoted to `Current` before the trust decision succeeds.
 
-The contract is exercised by the Windows `Desktop App Package Contract` workflow using ephemeral test signing keys and valid/tampered package vectors on both the release-side signer and the native Desktop verifier.
+## Roadmap completion evidence
+
+The Desktop package-signature/integrity deliverable is considered implemented because the shipping Windows host contains the native verifier and trust-root store, the release-side signer produces the same canonical Ed25519 envelope, the package bridge binds signature identity/version/hash to the selected `.swirapp`, and signed install/update/restart/rollback lifecycle tests execute the real native package path. The source tree intentionally contains no production private signing key; release roots remain a deployment input rather than application code.
+
+The `Desktop App Package Contract` workflow builds the shipping Desktop Host and runs the release-side signing self-test, hardened payload tests, capability-bound bridge tests, native Ed25519 signature tests, signed package lifecycle tests, dependency vectors and native catalog trust tests. Any regression in signature/integrity behavior fails the Desktop contract before merge.

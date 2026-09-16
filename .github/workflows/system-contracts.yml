@@ -38,6 +38,18 @@ jobs:
           node --check system/runtime/native-app-supervisor.selftest.mjs
           node --check system/runtime/native-package-execution-service.mjs
           node --check system/runtime/native-package-execution-service.selftest.mjs
+          node --check system/runtime/windows-compatibility-service.mjs
+          node --check system/runtime/windows-compatibility-service.selftest.mjs
+          node --check system/runtime/validate-windows-compatibility-contract.mjs
+          node --check system/runtime/windows-compat-runtime-registry.mjs
+          node --check system/runtime/windows-compat-runtime-registry.selftest.mjs
+          node --check system/runtime/managed-windows-compatibility-stack.mjs
+          node --check system/runtime/managed-windows-compatibility-stack.selftest.mjs
+          node --check system/packages/package-provider-layer.mjs
+          node --check system/packages/package-provider-layer.selftest.mjs
+          node --check system/packages/system-package-stack.mjs
+          node --check system/packages/system-package-stack.selftest.mjs
+          node --check system/packages/validate-system-package-stack.mjs
           node --check system/packages/package-transaction-service.mjs
           node --check system/packages/package-transaction-service.selftest.mjs
           node --check system/packages/package-transaction-security.selftest.mjs
@@ -79,6 +91,25 @@ jobs:
 
       - name: Run native package execution service self-tests
         run: node system/runtime/native-package-execution-service.selftest.mjs
+
+      - name: Re-run Windows compatibility service contract
+        run: |
+          node system/runtime/validate-windows-compatibility-contract.mjs
+          node system/runtime/windows-compatibility-service.selftest.mjs
+
+      - name: Run trusted Wine/Proton runtime discovery self-tests
+        run: node system/runtime/windows-compat-runtime-registry.selftest.mjs
+
+      - name: Run managed Windows compatibility composition self-tests
+        run: node system/runtime/managed-windows-compatibility-stack.selftest.mjs
+
+      - name: Run common System Package Provider layer self-tests
+        run: node system/packages/package-provider-layer.selftest.mjs
+
+      - name: Re-run production System package stack integration
+        run: |
+          node system/packages/validate-system-package-stack.mjs
+          node system/packages/system-package-stack.selftest.mjs
 
       - name: Enforce System package transaction security boundaries
         run: node system/packages/validate-package-transaction-service.mjs

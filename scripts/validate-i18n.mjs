@@ -31,7 +31,7 @@ if (!desktopShell.includes('id="os-shell"')) fail('dedicated OS shell marker is 
 if (!publicIndex.includes('SWIR OS') || !publicIndex.includes('swir-preview.css')) fail('public showcase entry is missing or no longer separated from the OS shell');
 if (manifest.start_url !== './swir-desktop.html') fail('PWA start_url must target the dedicated Web Edition shell');
 if (!sw.includes("'./swir-desktop.html'") || !sw.includes("'./swir-i18n.js'")) fail('offline cache does not include the dedicated shell and locale runtime');
-if (!sw.includes("const OPTIONAL_CORE = new Set(['./swir-desktop.html'])")) fail('service worker must tolerate the source-only shell alias being absent in native packages');
+if (!/const OPTIONAL_CORE\s*=\s*new Set\(\[[\s\S]*?'\.\/swir-desktop\.html'[\s\S]*?\]\);/.test(sw)) fail('service worker must tolerate the source-only shell alias being absent in native packages');
 if (!sw.includes('async function seedCore(cache)')) fail('service worker is missing native-safe per-resource precache');
 if (sw.includes('cache.addAll(CORE)')) fail('atomic addAll precache would break native packages where swir-desktop.html is remapped to index.html');
 if (!sw.includes('const requiredFailures = failures.filter(item => !OPTIONAL_CORE.has(item.path))')) fail('optional/required precache failure split is missing');
