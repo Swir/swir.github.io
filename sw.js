@@ -1,7 +1,9 @@
 // SWIR OS dual-surface service worker.
 // The public GitHub Pages showcase stays network-only, while the dedicated
 // swir-desktop.html Web Edition keeps an offline-capable application shell.
-const CACHE = 'swir-desktop-web-v2';
+// Desktop packages remap swir-desktop.html to index.html, so the source-only
+// shell alias is optional during native-runtime precache.
+const CACHE = 'swir-desktop-web-v3';
 const LEGACY_CACHE_PREFIX = 'swir-os-';
 const DESKTOP_CACHE_PREFIX = 'swir-desktop-web-';
 const CORE = [
@@ -40,11 +42,33 @@ const CORE = [
   './swir-v16.js',
   './swir-v17.js'
 ];
+const OPTIONAL_CORE = new Set(['./swir-desktop.html']);
+
+async function seedCore(cache) {
+  const failures = [];
+  for (const path of CORE) {
+    try {
+      const request = new Request(path, { cache: 'reload' });
+      const response = await fetch(request);
+      if (!response || !response.ok) throw new Error(`HTTP ${response?.status || 'ERR'}`);
+      await cache.put(request, response.clone());
+    } catch (error) {
+      failures.push({ path, error: String(error?.message || error) });
+    }
+  }
+
+  const requiredFailures = failures.filter(item => !OPTIONAL_CORE.has(item.path));
+  if (requiredFailures.length) {
+    const summary = requiredFailures.map(item => `${item.path}: ${item.error}`).join('; ');
+    throw new Error(`Required SWIR precache failed: ${summary}`);
+  }
+  return failures;
+}
 
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE);
-    await cache.addAll(CORE);
+    await seedCore(cache);
     await self.skipWaiting();
   })());
 });
@@ -64,7 +88,8 @@ function isDesktopNavigation(url, request) {
 }
 
 function isDesktopAsset(url) {
-  if (!url.pathname.startsWith(self.registration.scope ? new URL(self.registration.scope).pathname : '/')) return false;
+  const scopePath = self.registration.scope ? new URL(self.registration.scope).pathname : '/';
+  if (!url.pathname.startsWith(scopePath)) return false;
   const name = url.pathname.split('/').pop() || '';
   if (name.startsWith('swir-preview.')) return false;
   return name.startsWith('swir-') || name === 'manifest.webmanifest' || name === 'ding.mp3';
