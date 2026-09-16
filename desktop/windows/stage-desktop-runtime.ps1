@@ -12,8 +12,10 @@ Set-StrictMode -Version Latest
 
 $source = [System.IO.Path]::GetFullPath($SourceRoot)
 $publish = [System.IO.Path]::GetFullPath($PublishDir)
+$desktopEntryRelative = 'swir-desktop.html'
+$desktopEntrySource = Join-Path $source $desktopEntryRelative
 if (-not (Test-Path $source -PathType Container)) { throw "SWIR source root does not exist: $source" }
-if (-not (Test-Path (Join-Path $source 'index.html') -PathType Leaf)) { throw "SWIR source root is missing index.html: $source" }
+if (-not (Test-Path $desktopEntrySource -PathType Leaf)) { throw "SWIR source root is missing the dedicated Desktop shell entry: $desktopEntrySource" }
 if (-not (Test-Path $publish -PathType Container)) { throw "Desktop publish directory does not exist: $publish" }
 
 $catalogRelease = $null
@@ -35,7 +37,9 @@ if ($publishWithSep.StartsWith($sourceWithSep, [System.StringComparison]::Ordina
 
 # Runtime web assets live beside SWIR.Desktop.Host.exe. Program.ResolveRepoRoot() deliberately
 # resolves index.html from AppContext.BaseDirectory first, so the signed package is standalone
-# and does not depend on a Git checkout after installation.
+# and does not depend on a Git checkout after installation. The public GitHub Pages index.html
+# is only the product preview; swir-desktop.html is the canonical Desktop shell and is staged
+# as index.html for the native host.
 $runtimeRoot = $publish
 
 # Only tracked files can enter a Desktop release. This prevents local secrets, build outputs
@@ -43,6 +47,7 @@ $runtimeRoot = $publish
 $tracked = @(& git -C $source ls-files)
 if ($LASTEXITCODE -ne 0) { throw 'git ls-files failed while staging the Desktop runtime.' }
 if ($tracked.Count -eq 0) { throw 'No tracked files were returned for the Desktop runtime.' }
+if (-not ($tracked -contains $desktopEntryRelative)) { throw "Dedicated Desktop shell is not tracked by Git: $desktopEntryRelative" }
 
 $runtimeExtensions = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
 @(
@@ -59,6 +64,10 @@ foreach ($relativeRaw in ($tracked | Sort-Object -Unique)) {
     if ($relative.StartsWith('.github/', [System.StringComparison]::OrdinalIgnoreCase)) { continue }
     if ($relative.StartsWith('desktop/windows/', [System.StringComparison]::OrdinalIgnoreCase) -and
         -not $relative.Equals('desktop/windows/app-policy.json', [System.StringComparison]::OrdinalIgnoreCase)) { continue }
+
+    # GitHub Pages owns root index.html. Desktop Edition must never accidentally package the
+    # public showcase as its shell. The dedicated shell is remapped to index.html below.
+    if ($relative.Equals('index.html', [System.StringComparison]::OrdinalIgnoreCase)) { continue }
 
     $extension = [System.IO.Path]::GetExtension($relative)
     if (-not $runtimeExtensions.Contains($extension)) { continue }
@@ -83,9 +92,10 @@ foreach ($relativeRaw in ($tracked | Sort-Object -Unique)) {
         $copySource = Join-Path $catalogRelease 'swir-signed-catalog-release.js'
     }
 
-    $destination = Join-Path $runtimeRoot $relative
+    $runtimeRelative = if ($relative.Equals($desktopEntryRelative, [System.StringComparison]::OrdinalIgnoreCase)) { 'index.html' } else { $relative }
+    $destination = Join-Path $runtimeRoot $runtimeRelative
     if (Test-Path $destination -PathType Leaf) {
-        throw "Tracked web runtime would overwrite Desktop publish output: $relative"
+        throw "Tracked web runtime would overwrite Desktop publish output: $runtimeRelative (source: $relative)"
     }
     $destinationDir = Split-Path $destination -Parent
     New-Item -ItemType Directory -Path $destinationDir -Force | Out-Null
@@ -104,9 +114,10 @@ foreach ($relativeRaw in ($tracked | Sort-Object -Unique)) {
 
     $hash = (Get-FileHash -LiteralPath $destination -Algorithm SHA256).Hash.ToLowerInvariant()
     $manifestFiles.Add([ordered]@{
-        path = $relative
+        path = $runtimeRelative
         sha256 = $hash
         size = [long](Get-Item -LiteralPath $destination).Length
+        sourcePath = $relative
     })
 }
 
@@ -138,6 +149,21 @@ foreach ($relative in $required) {
         throw "Required Desktop web runtime file was not staged: $relative"
     }
 }
+
+# Fail closed if a future website redesign is accidentally routed into the native Desktop Host.
+$runtimeEntryPath = Join-Path $runtimeRoot 'index.html'
+$runtimeEntryHtml = Get-Content -LiteralPath $runtimeEntryPath -Raw
+foreach ($needle in @('id="boot-screen"', 'id="os-shell"', './swir-app-bridge-host.js', './swir-os.js')) {
+    if (-not $runtimeEntryHtml.Contains($needle)) { throw "Desktop runtime entry is missing shell invariant: $needle" }
+}
+if ($runtimeEntryHtml.Contains('ONE OS.<span>EVERY SCREEN.</span>')) {
+    throw 'Desktop runtime entry resolved to the public SWIR OS showcase instead of the native shell.'
+}
+$entryManifestRecords = @($manifestFiles | Where-Object { $_.path -eq 'index.html' })
+if ($entryManifestRecords.Count -ne 1 -or $entryManifestRecords[0].sourcePath -ne $desktopEntryRelative) {
+    throw 'Desktop runtime manifest does not bind index.html uniquely to swir-desktop.html.'
+}
+
 if ($catalogRelease) {
     foreach ($relative in @('catalog-trust-roots.json', 'catalog-envelope.json', 'catalog.json')) {
         if (-not (Test-Path (Join-Path $runtimeRoot $relative) -PathType Leaf)) { throw "Signed catalog runtime file was not staged: $relative" }
@@ -152,8 +178,9 @@ $commit = (& git -C $source rev-parse HEAD).Trim()
 if ($LASTEXITCODE -ne 0 -or $commit -notmatch '^[0-9a-fA-F]{40}$') { throw 'Could not resolve source commit for Desktop runtime manifest.' }
 
 $manifest = [ordered]@{
-    schema = 'swir.desktop-web-runtime/0.1'
+    schema = 'swir.desktop-web-runtime/0.2'
     sourceCommit = $commit.ToLowerInvariant()
+    entrySource = $desktopEntryRelative
     fileCount = $manifestFiles.Count
     files = @($manifestFiles)
 }
@@ -163,6 +190,7 @@ $manifestJson = $manifest | ConvertTo-Json -Depth 5 -Compress
 [System.IO.File]::WriteAllText($manifestPath, $manifestJson, [System.Text.UTF8Encoding]::new($false))
 
 Write-Host "Staged SWIR Desktop web runtime: $($manifestFiles.Count) tracked files"
+Write-Host "Desktop entry: $desktopEntryRelative -> index.html"
 if ($catalogRelease) { Write-Host "Signed catalog release: $catalogRelease" }
 Write-Host "Runtime root: $runtimeRoot"
 Write-Host "Runtime manifest: $manifestPath"
