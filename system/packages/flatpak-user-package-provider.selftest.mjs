@@ -10,7 +10,7 @@ import {
 
 const manifest = {
   schema: 'swir.package-provider/0.2',
-  id: 'org.example.FlatEditor',
+  id: 'org.example.flateditor',
   targetEditions: ['system'],
   executionClass: 'linux-native',
   provider: 'swir.package.flatpak',
