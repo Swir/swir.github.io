@@ -32,6 +32,8 @@ jobs:
       - name: Check JavaScript syntax
         run: |
           node --check system/validate-system-contracts.mjs
+          node --check system/runtime/native-app-launcher.mjs
+          node --check system/runtime/native-app-launcher.selftest.mjs
           node --check system/hardware/hardware-service.mjs
           node --check system/hardware/hardware-probe.mjs
           node --check system/hardware/hardware-service.selftest.mjs
@@ -45,6 +47,9 @@ jobs:
 
       - name: Validate System Edition contracts
         run: node system/validate-system-contracts.mjs
+
+      - name: Run guarded native Linux launcher self-tests
+        run: node system/runtime/native-app-launcher.selftest.mjs
 
       - name: Enforce trusted Hardware Catalog policy
         run: node system/hardware/hardware-catalog.selftest.mjs
