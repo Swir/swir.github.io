@@ -15,23 +15,19 @@ concurrency:
 
 env:
   MIGRATION_BASELINE: 3f6ed2812c435dca200b19492245d1dd656e7787
-  MIGRATION_READY: "false"
+  MIGRATION_PHASE: "snapshot"
 
 jobs:
   migrate:
-    if: github.repository == 'Swir/SWIR_OS' && env.MIGRATION_READY == 'true'
+    if: github.repository == 'Swir/SWIR_OS'
     runs-on: ubuntu-latest
     steps:
-      - name: Mirror verified source history into SWIR_OS
-        env:
-          DEST_TOKEN: ${{ github.token }}
+      - name: Verify controlled source state
         shell: bash
         run: |
           set -euo pipefail
-          git clone --mirror https://github.com/Swir/swir.github.io.git source.git
-          cd source.git
-
-          actual_head="$(git rev-parse refs/heads/main)"
+          git clone --mirror https://github.com/Swir/swir.github.io.git source-check.git
+          cd source-check.git
           git merge-base --is-ancestor "$MIGRATION_BASELINE" refs/heads/main
           changed="$(git diff --name-only "$MIGRATION_BASELINE"..refs/heads/main)"
           if [[ "$changed" != ".github/workflows/import-swir-os.yml" ]]; then
@@ -40,8 +36,43 @@ jobs:
             exit 1
           fi
 
+      - name: Stage non-workflow repository snapshot
+        if: env.MIGRATION_PHASE == 'snapshot'
+        env:
+          DEST_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone https://github.com/Swir/swir.github.io.git source
+          git clone "https://x-access-token:${DEST_TOKEN}@github.com/Swir/SWIR_OS.git" destination
+
+          rsync -a --delete \
+            --exclude='.git/' \
+            --exclude='.github/workflows/' \
+            source/ destination/
+
+          cd destination
+          git config user.name "SWIR OS Migration"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Non-workflow snapshot already matches source."
+            exit 0
+          fi
+          git commit -m "Stage SWIR OS repository snapshot"
+          git push origin HEAD:main
+
+      - name: Mirror verified source history
+        if: env.MIGRATION_PHASE == 'mirror'
+        env:
+          DEST_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --mirror https://github.com/Swir/swir.github.io.git source.git
+          cd source.git
+          actual_head="$(git rev-parse refs/heads/main)"
           git remote add destination "https://x-access-token:${DEST_TOKEN}@github.com/Swir/SWIR_OS.git"
           git push --force destination 'refs/heads/*:refs/heads/*'
           git push --force destination 'refs/tags/*:refs/tags/*'
-
           echo "Migrated source HEAD $actual_head into Swir/SWIR_OS with branch/tag history."
