@@ -8,6 +8,9 @@ const resolver = read('desktop/windows/DesktopPackageDependencyResolver.cs');
 const catalogTrust = read('desktop/windows/DesktopCatalogTrustVerifier.cs');
 const trustRoots = read('desktop/windows/DesktopCatalogTrustRootStore.cs');
 const trustRootTemplate = read('desktop/windows/catalog-trust-roots.json');
+const packageTrust = read('desktop/windows/DesktopPackageSignatureVerifier.cs');
+const packageRoots = read('desktop/windows/DesktopPackageTrustRootStore.cs');
+const packageRootTemplate = read('desktop/windows/package-trust-roots.json');
 const hostProject = read('desktop/windows/SWIR.Desktop.Host.csproj');
 const runtime = read('swir-runtime.js');
 
@@ -24,7 +27,7 @@ const checks = [
   [bridge.includes('PACKAGE_DEPENDENCY_UNSATISFIED'), 'unsatisfied dependencies fail closed with stable package code'],
   [bridge.includes('DesktopCatalogTrustVerifier? _catalogTrust'), 'shipping package bridge owns native catalog trust verifier'],
   [bridge.includes('DesktopCatalogTrustRootStore.CreateVerifier'), 'shipping package bridge loads provisioned native catalog roots'],
-  [bridge.includes('CATALOG_AUTHORIZATION_REQUIRED'), 'provisioned roots disable arbitrary runtime SHA authorization'],
+  [bridge.includes('CATALOG_AUTHORIZATION_REQUIRED'), 'provisioned catalog roots disable arbitrary runtime SHA authorization'],
   [bridge.includes('VerifyAndAuthorize(catalog.GetRawText(), envelope.GetRawText(), packageId, version)'), 'signed authorization resolves trust through native verifier'],
   [bridge.includes('BindAuthorizationToBundle(trust, plan)'), 'shipping install binds authorization to bundle identity'],
   [bridge.includes('signedReleaseArtifactRouting = true'), 'package bridge advertises signed release artifact routing'],
@@ -37,10 +40,20 @@ const checks = [
   [catalogTrust.includes('IsSafeDesktopArtifactUrl'), 'native verifier owns release-local artifact URL policy'],
   [catalogTrust.includes('CATALOG_ROLLBACK_DETECTED') && catalogTrust.includes('CATALOG_BAD_SIGNATURE'), 'native catalog verifier remains fail-closed for rollback and bad signatures'],
   [trustRoots.includes('swir.catalog-trust-roots/1.0') && trustRoots.includes('catalog:official'), 'native trust-root store validates catalog-only root scope'],
-  [trustRoots.includes('SWIR_CATALOG_TRUST_ROOTS'), 'native trust-root path supports explicit deployment provisioning'],
-  [trustRoots.includes('RequireSignedCatalog') && trustRoots.includes('CATALOG_TRUST_ROOT_REQUIRED'), 'release trust lock fails closed when signed catalog is required but roots are missing'],
-  [trustRootTemplate.includes('"requireSignedCatalog": false'), 'source trust-root template explicitly identifies preview fallback policy'],
-  [hostProject.includes('catalog-trust-roots.json') && hostProject.includes('CopyToOutputDirectory="PreserveNewest"'), 'shipping host carries trust-root provisioning document'],
+  [trustRoots.includes('SWIR_CATALOG_TRUST_ROOTS'), 'native catalog trust-root path supports explicit deployment provisioning'],
+  [trustRoots.includes('RequireSignedCatalog') && trustRoots.includes('CATALOG_TRUST_ROOT_REQUIRED'), 'release catalog trust lock fails closed when signed catalog is required but roots are missing'],
+  [trustRootTemplate.includes('"requireSignedCatalog": false'), 'source catalog trust-root template explicitly identifies preview fallback policy'],
+  [bridge.includes('DesktopPackageSignatureVerifier? _packageTrust'), 'shipping package bridge owns native package signature verifier'],
+  [bridge.includes('DesktopPackageTrustRootStore.CreateVerifier'), 'shipping package bridge loads provisioned .swirapp trust roots'],
+  [bridge.includes('PACKAGE_SIGNATURE_REQUIRED') && bridge.includes('_packageTrust.Verify('), 'provisioned package roots fail closed and verify .swirapp signatures before mutation'],
+  [bridge.includes('SIGNED_CATALOG_AND_PACKAGE_SIGNATURE_REQUIRED'), 'bridge exposes combined catalog plus package-signature trust mode'],
+  [packageTrust.includes('swir.desktop-package-signature/1.0') && packageTrust.includes('SignatureAlgorithm.Ed25519'), 'native package signature verifier implements Ed25519 contract'],
+  [packageTrust.includes('CryptographicOperations.FixedTimeEquals') && packageTrust.includes('PACKAGE_SIGNATURE_HASH_MISMATCH'), 'package signature verifier binds signature metadata to actual bundle SHA-256'],
+  [packageTrust.includes('PACKAGE_SIGNATURE_IDENTITY_MISMATCH') && packageTrust.includes('package:'), 'package signature verifier binds package identity and scoped trust roots'],
+  [packageRoots.includes('swir.package-trust-roots/1.0') && packageRoots.includes('SWIR_PACKAGE_TRUST_ROOTS'), 'package trust-root store supports explicit deployment provisioning'],
+  [packageRoots.includes('RequireSignedPackages') && packageRoots.includes('PACKAGE_TRUST_ROOT_REQUIRED'), 'release package trust lock fails closed when signatures are required but roots are missing'],
+  [packageRootTemplate.includes('"requireSignedPackages": false'), 'source package trust-root template explicitly identifies preview fallback policy'],
+  [hostProject.includes('catalog-trust-roots.json') && hostProject.includes('package-trust-roots.json') && hostProject.includes('CopyToOutputDirectory="PreserveNewest"'), 'shipping host carries catalog and package trust-root provisioning documents'],
   [resolver.includes('public const string Contract = "swir.dependencies/1.0"'), 'Desktop resolver implements shared dependency schema'],
   [runtime.includes("version: '1.7.0'"), 'runtime contract version is 1.7.0'],
   [runtime.includes("DESKTOP_CATALOG_AUTH_SCHEMA = 'swir.desktop-catalog-authorization/1.0'"), 'runtime knows structured Desktop catalog authorization schema'],

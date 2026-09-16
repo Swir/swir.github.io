@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
-    <StartupObject>Swir.Desktop.Host.DesktopCatalogCutoverLifecycleSelfTests</StartupObject>
+    <StartupObject>Swir.Desktop.Host.DesktopPackageSignatureSelfTests</StartupObject>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="DesktopAppPackageInstaller.cs" />
@@ -16,7 +16,7 @@
     <Compile Include="DesktopPackageSignatureVerifier.cs" />
     <Compile Include="DesktopPackageTrustRootStore.cs" />
     <Compile Include="DesktopPackageBridge.cs" />
-    <Compile Include="DesktopCatalogCutoverLifecycleSelfTests.cs" />
+    <Compile Include="DesktopPackageSignatureSelfTests.cs" />
     <Compile Include="DesktopPackageBridgeSelfTestShim.cs" />
   </ItemGroup>
   <ItemGroup>

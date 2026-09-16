@@ -9,6 +9,9 @@ on:
       - 'desktop/windows/DesktopPackageBridge.cs'
       - 'desktop/windows/DesktopPackageBridgeSelfTests.cs'
       - 'desktop/windows/DesktopPackageBridgeSelfTestShim.cs'
+      - 'desktop/windows/DesktopPackageSignatureVerifier.cs'
+      - 'desktop/windows/DesktopPackageTrustRootStore.cs'
+      - 'desktop/windows/DesktopPackageSignatureSelfTests.cs'
       - 'desktop/windows/DesktopSignedPackageLifecycleSelfTests.cs'
       - 'desktop/windows/DesktopPackageDependencyResolver.cs'
       - 'desktop/windows/DesktopPackageDependencyResolverSelfTests.cs'
@@ -16,9 +19,12 @@ on:
       - 'desktop/windows/DesktopCatalogTrustVerifierSelfTests.cs'
       - 'desktop/windows/DesktopCatalogTrustRootStore.cs'
       - 'desktop/windows/catalog-trust-roots.json'
+      - 'desktop/windows/package-trust-roots.json'
       - 'desktop/windows/SWIR.Desktop.AppPackage.SelfTests.csproj'
       - 'desktop/windows/SWIR.Desktop.PackageBridge.SelfTests.csproj'
+      - 'desktop/windows/SWIR.Desktop.PackageSignature.SelfTests.csproj'
       - 'desktop/windows/SWIR.Desktop.SignedPackageLifecycle.SelfTests.csproj'
+      - 'desktop/windows/SWIR.Desktop.CatalogCutoverLifecycle.SelfTests.csproj'
       - 'desktop/windows/SWIR.Desktop.DependencyResolver.SelfTests.csproj'
       - 'desktop/windows/SWIR.Desktop.CatalogTrust.SelfTests.csproj'
       - 'desktop/windows/CapabilityBroker.cs'
@@ -42,6 +48,9 @@ on:
       - 'desktop/windows/DesktopPackageBridge.cs'
       - 'desktop/windows/DesktopPackageBridgeSelfTests.cs'
       - 'desktop/windows/DesktopPackageBridgeSelfTestShim.cs'
+      - 'desktop/windows/DesktopPackageSignatureVerifier.cs'
+      - 'desktop/windows/DesktopPackageTrustRootStore.cs'
+      - 'desktop/windows/DesktopPackageSignatureSelfTests.cs'
       - 'desktop/windows/DesktopSignedPackageLifecycleSelfTests.cs'
       - 'desktop/windows/DesktopPackageDependencyResolver.cs'
       - 'desktop/windows/DesktopPackageDependencyResolverSelfTests.cs'
@@ -49,9 +58,12 @@ on:
       - 'desktop/windows/DesktopCatalogTrustVerifierSelfTests.cs'
       - 'desktop/windows/DesktopCatalogTrustRootStore.cs'
       - 'desktop/windows/catalog-trust-roots.json'
+      - 'desktop/windows/package-trust-roots.json'
       - 'desktop/windows/SWIR.Desktop.AppPackage.SelfTests.csproj'
       - 'desktop/windows/SWIR.Desktop.PackageBridge.SelfTests.csproj'
+      - 'desktop/windows/SWIR.Desktop.PackageSignature.SelfTests.csproj'
       - 'desktop/windows/SWIR.Desktop.SignedPackageLifecycle.SelfTests.csproj'
+      - 'desktop/windows/SWIR.Desktop.CatalogCutoverLifecycle.SelfTests.csproj'
       - 'desktop/windows/SWIR.Desktop.DependencyResolver.SelfTests.csproj'
       - 'desktop/windows/SWIR.Desktop.CatalogTrust.SelfTests.csproj'
       - 'desktop/windows/CapabilityBroker.cs'
@@ -130,6 +142,9 @@ jobs:
 
       - name: Run capability-bound package bridge self-tests
         run: dotnet run --project SWIR.Desktop.PackageBridge.SelfTests.csproj --configuration Release
+
+      - name: Run native Ed25519 swirapp signature self-tests
+        run: dotnet run --project SWIR.Desktop.PackageSignature.SelfTests.csproj --configuration Release
 
       - name: Run signed package install-update-restart-rollback lifecycle
         run: dotnet run --project SWIR.Desktop.SignedPackageLifecycle.SelfTests.csproj --configuration Release

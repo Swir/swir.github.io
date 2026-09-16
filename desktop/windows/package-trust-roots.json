@@ -1,0 +1,5 @@
+{
+  "schema": "swir.package-trust-roots/1.0",
+  "requireSignedPackages": false,
+  "roots": []
+}

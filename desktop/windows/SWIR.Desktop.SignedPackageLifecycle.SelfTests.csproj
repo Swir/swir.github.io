@@ -13,6 +13,8 @@
     <Compile Include="DesktopPackageDependencyResolver.cs" />
     <Compile Include="DesktopCatalogTrustVerifier.cs" />
     <Compile Include="DesktopCatalogTrustRootStore.cs" />
+    <Compile Include="DesktopPackageSignatureVerifier.cs" />
+    <Compile Include="DesktopPackageTrustRootStore.cs" />
     <Compile Include="DesktopPackageBridge.cs" />
     <Compile Include="DesktopSignedPackageLifecycleSelfTests.cs" />
     <Compile Include="DesktopPackageBridgeSelfTestShim.cs" />

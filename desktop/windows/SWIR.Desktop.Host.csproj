@@ -43,6 +43,7 @@
 
   <ItemGroup>
     <None Include="catalog-trust-roots.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="package-trust-roots.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
