@@ -2,7 +2,9 @@ import fs from 'node:fs';
 
 const read = path => fs.readFileSync(path, 'utf8');
 const i18n = read('swir-i18n.js');
-const index = read('index.html');
+const desktopShell = read('swir-desktop.html');
+const publicIndex = read('index.html');
+const manifest = JSON.parse(read('manifest.webmanifest'));
 const sw = read('sw.js');
 const stage = read('desktop/windows/stage-desktop-runtime.ps1');
 const settings = read('swir-settings.html');
@@ -21,11 +23,16 @@ if (!i18n.includes('Intl.getCanonicalLocales')) fail('BCP-47 canonicalization is
 if (!i18n.includes('Intl.Locale')) fail('Intl.Locale support is missing');
 if (!i18n.includes("document.documentElement.dir=directionOf(canonical)")) fail('document RTL/LTR direction propagation is missing');
 
-const i18nScript = index.indexOf('<script src="./swir-i18n.js"></script>');
-const platformScript = index.indexOf('<script src="./swir-platform.js"></script>');
-if (i18nScript < 0) fail('index.html does not load swir-i18n.js');
-if (platformScript < 0 || i18nScript > platformScript) fail('locale runtime must load before platform runtime');
-if (!sw.includes("'./swir-i18n.js'")) fail('offline cache does not include swir-i18n.js');
+const i18nScript = desktopShell.indexOf('<script src="./swir-i18n.js"></script>');
+const platformScript = desktopShell.indexOf('<script src="./swir-platform.js"></script>');
+if (i18nScript < 0) fail('swir-desktop.html does not load swir-i18n.js');
+if (platformScript < 0 || i18nScript > platformScript) fail('locale runtime must load before platform runtime in the dedicated OS shell');
+if (!desktopShell.includes('id="os-shell"')) fail('dedicated OS shell marker is missing');
+if (!publicIndex.includes('SWIR OS') || !publicIndex.includes('swir-preview.css')) fail('public showcase entry is missing or no longer separated from the OS shell');
+if (manifest.start_url !== './swir-desktop.html') fail('PWA start_url must target the dedicated Web Edition shell');
+if (!sw.includes("'./swir-desktop.html'") || !sw.includes("'./swir-i18n.js'")) fail('offline cache does not include the dedicated shell and locale runtime');
+if (!sw.includes("url.pathname.endsWith('/index.html')") || !sw.includes("url.pathname.includes('/swir-preview.')")) fail('service worker must keep the public showcase network-only');
+if (!stage.includes("$desktopEntryRelative = 'swir-desktop.html'")) fail('Desktop runtime staging does not bind the dedicated shell entry');
 if (!stage.includes("'swir-i18n.js'")) fail('Desktop runtime staging does not require swir-i18n.js');
 
 for (const marker of ['Language & Region','SYSTEM LOCALE','Intl.getCanonicalLocales','system.language','system.region','setLocale?.(canonical)']) {
@@ -43,4 +50,4 @@ for (const method of ['locale.info','locale.translate','locale.formatDate','loca
 }
 if (bridgeHost.includes("case 'locale.set'") || bridgeClient.includes("'locale.set'")) fail('isolated applications must not be able to mutate system locale through the read-only bridge');
 
-console.log('SWIR i18n contract OK: BCP-47 core, RTL, Language & Region settings, App SDK/Bridge, offline cache and Desktop staging are wired.');
+console.log('SWIR i18n contract OK: dedicated OS shell, BCP-47 core, RTL, PWA cache isolation, Settings, App SDK/Bridge and Desktop staging are wired.');
