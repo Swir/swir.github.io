@@ -1,0 +1,41 @@
+name: One-time SWIR OS repository migration
+
+on:
+  push:
+    paths:
+      - ".github/workflows/import-swir-os.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: swir-os-repository-migration
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    if: github.repository == 'Swir/SWIR_OS'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mirror verified source history into SWIR_OS
+        env:
+          DEST_TOKEN: ${{ github.token }}
+          EXPECTED_SOURCE_HEAD: __SOURCE_HEAD_FILLED_IN_DESTINATION_ONLY__
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --mirror https://github.com/Swir/swir.github.io.git source.git
+          cd source.git
+
+          actual_head="$(git rev-parse refs/heads/main)"
+          if [[ "$actual_head" != "$EXPECTED_SOURCE_HEAD" ]]; then
+            echo "Source main moved: expected $EXPECTED_SOURCE_HEAD, got $actual_head" >&2
+            exit 1
+          fi
+
+          git remote add destination "https://x-access-token:${DEST_TOKEN}@github.com/Swir/SWIR_OS.git"
+          git push --force destination 'refs/heads/*:refs/heads/*'
+          git push --force destination 'refs/tags/*:refs/tags/*'
+
+          echo "Migrated source HEAD $actual_head into Swir/SWIR_OS with branch/tag history."
