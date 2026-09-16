@@ -39,13 +39,27 @@ for (const phrase of [
   'package transaction command does not match the trusted provider plan',
   'automatic rollback is currently limited to rpm-ostree deployment rollback',
   'JOURNAL_PLAN_DIGEST_MISMATCH',
+  'JOURNAL_ID_PATH_MISMATCH',
+  'UNSAFE_JOURNAL_DIRECTORY_MODE',
+  'UNSAFE_JOURNAL_FILE_MODE',
+  'SNAPSHOT_PACKAGE_MISMATCH',
+  'SNAPSHOT_MANAGER_MISMATCH',
+  'SNAPSHOT_SOURCE_MISMATCH',
+  'HEALTH_PACKAGE_MISMATCH',
   'failed-needs-recovery',
   'packages.recover'
 ]) assert(service.includes(phrase), `package transaction service missing fail-closed boundary: ${phrase}`);
 
+assert(service.includes('mode: 0o700'), 'package transaction journal directory must request owner-only mode');
+assert(service.includes('mode: 0o600'), 'package transaction journal must request owner-only file mode');
+assert(service.includes('(stat.mode & 0o022) === 0'), 'package transaction journal must reject group/world-writable storage');
+assert(service.includes('path.basename(filePath) === `${parsed.id}.json`'), 'package transaction journal must bind the stored transaction id to its filename');
+assert(service.includes('validatePackageSnapshot(await this.#snapshotProvider.capture'), 'transaction service must validate the live pre-mutation snapshot before journaling');
+assert(service.includes('validatePackageHealth(await this.#healthVerifier.verify'), 'transaction service must validate the live post-mutation health result');
+assert(service.includes('validatePackageSnapshot(record.snapshot'), 'crash recovery must revalidate the persisted snapshot before rollback');
+assert(service.includes('validatePackageHealth(record.health'), 'crash recovery must revalidate any persisted health result before rollback');
 assert(service.includes('fs.fsyncSync'), 'package transaction journal must fsync data before atomic replacement');
 assert(service.includes('fs.renameSync'), 'package transaction journal must use atomic rename');
-assert(service.includes('mode: 0o600'), 'package transaction journal must request owner-only file mode');
 assert(!service.includes('node:child_process'), 'transaction orchestrator must not directly spawn privileged processes');
 for (const forbidden of ['exec(', 'execSync(', 'spawn(', 'spawnSync(', 'shell: true']) {
   assert(!service.includes(forbidden), `transaction orchestrator contains forbidden direct execution primitive: ${forbidden}`);
@@ -76,6 +90,7 @@ assert(!state.includes('shell: true'), 'read-only package state adapter must nev
 
 console.log('SWIR System Package Transaction Service contract validation: OK');
 console.log('Mutation boundary: signed/allowlisted repository + authorization + pre-mutation snapshot + durable journal');
+console.log('Journal hardening: owner-only storage + id/filename binding + snapshot/health revalidation');
 console.log('Privileged transport: guarded pkexec with shell=false and root-owned allowlisted executables');
 console.log('State adapters: read-only package version snapshots + constrained native entry-point health checks');
 console.log('Automatic rollback: rpm-ostree deployment rollback only; other managers fail closed to recovery-needed state');
