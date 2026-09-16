@@ -1,8 +1,9 @@
 {
   "name": "SWIR OS 1.7 — Neon Core Web Edition",
   "short_name": "SWIR OS",
-  "description": "SWIR OS Web Edition — dependency-aware SWIR App Packages, Files & Associations, Open With, App Data namespaces, SWIR App SDK 1.3, permission-aware application notifications, Device & Network Core, Identity, Chat and Services.",
-  "start_url": "./",
+  "id": "./swir-desktop.html",
+  "description": "SWIR OS Web Edition — dependency-aware SWIR App Packages, Files & Associations, Open With, App Data namespaces, SWIR App SDK 1.6, permission-aware application notifications, Device & Network Core, Identity, Chat and Services.",
+  "start_url": "./swir-desktop.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#020617",
