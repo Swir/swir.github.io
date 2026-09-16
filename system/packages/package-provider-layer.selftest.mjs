@@ -12,6 +12,7 @@ import {
 } from './package-provider-layer.mjs';
 import { FlatpakUserPackageAdapter, GuardedFlatpakUserExecutor } from './flatpak-user-package-provider.mjs';
 import { AppImageUserPackageAdapter } from './appimage-user-package-provider.mjs';
+import { MemoryCatalogTrustState, SystemCatalogTrustInternals, SystemCatalogTrustVerifier } from '../security/system-catalog-authorization.mjs';
 
 const manifest = {
   schema: 'swir.package-provider/0.2', id: 'org.example.editor', targetEditions: ['system'], executionClass: 'linux-native', provider: 'swir.package.system',
@@ -70,15 +71,28 @@ await fs.promises.writeFile(artifact, '#!/bin/sh\nexit 0\n');
 const sha256 = crypto.createHash('sha256').update(await fs.promises.readFile(artifact)).digest('hex');
 const appImageManifest = {
   ...manifest, id: 'org.example.viewer', provider: 'swir.package.appimage',
-  package: { name: 'Viewer', sourceRef: 'viewer.AppImage', nativeEntryPoint: path.join(appImageInstallRoot, 'org.example.viewer.AppImage'), scope: 'user', sha256 },
-  trust: { sourceClass: 'swir-signed', repositoryId: 'swir-appimage-catalog', signatureRequired: true }
+  package: { name: 'Viewer', version: '1.0.0', sourceRef: 'viewer-1.0.0.AppImage', nativeEntryPoint: path.join(appImageInstallRoot, 'org.example.viewer.AppImage'), scope: 'user', sha256 },
+  trust: { sourceClass: 'swir-signed', repositoryId: 'official', signatureRequired: true }
 };
 assert.throws(() => layer.plan('install', appImageManifest), error => error?.code === 'PROVIDER_NOT_PROVISIONED');
-const previewLayer = createExperimentalSystemPackageProviderLayer({ distributionStack: stack, flatpakAllowedRemotes: ['flathub'], appImageInstallRoot });
+assert.throws(() => createExperimentalSystemPackageProviderLayer({ distributionStack: stack, appImageInstallRoot }), error => error?.code === 'INVALID_APPIMAGE_COMPOSITION');
+
+const { privateKey, publicKey } = crypto.generateKeyPairSync('ed25519');
+const jwk = publicKey.export({ format: 'jwk' });
+const raw = Buffer.from(String(jwk.x).replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(String(jwk.x).length / 4) * 4, '='), 'base64');
+const trustVerifier = new SystemCatalogTrustVerifier({
+  trustRoots: { schema: 'swir.catalog-trust-roots/1.0', requireSignedCatalog: true, roots: [{ keyId: 'layer-test', algorithm: 'Ed25519', format: 'raw', publicKey: raw.toString('base64'), scope: ['catalog:official'], enabled: true }] },
+  stateStore: new MemoryCatalogTrustState()
+});
+const catalog = [{ packageId: appImageManifest.id, version: appImageManifest.package.version, artifacts: { system: { appimage: { provider: 'swir.package.appimage', sourceRef: appImageManifest.package.sourceRef, sha256 } } } }];
+const envelope = { schema: 'swir.catalog-signature/1.0', catalogId: 'official', catalogVersion: '2026.09.17.layer', sequence: 1, generatedAt: '2026-09-16T23:55:00Z', expiresAt: '2026-09-17T02:00:00Z', algorithm: 'Ed25519', keyId: 'layer-test', catalogSha256: SystemCatalogTrustInternals.fingerprintCatalog(catalog) };
+envelope.signature = crypto.sign(null, Buffer.from(SystemCatalogTrustInternals.signedPayload(envelope)), privateKey).toString('base64');
+
+const previewLayer = createExperimentalSystemPackageProviderLayer({ distributionStack: stack, flatpakAllowedRemotes: ['flathub'], appImageInstallRoot, appImageTrustVerifier: trustVerifier });
 assert.equal(previewLayer.providerState('swir.package.flatpak').state, 'ready');
 assert.equal(previewLayer.providerState('swir.package.appimage').state, 'ready');
 assert.equal(previewLayer.plan('install', appImageManifest).provider, 'swir.package.appimage');
-const appImageResult = await previewLayer.execute('install', appImageManifest, { artifactPath: artifact, signatureVerified: true });
+const appImageResult = await previewLayer.execute('install', appImageManifest, { artifactPath: artifact, catalog, envelope, now: Date.parse('2026-09-17T00:00:00Z') });
 assert.equal(appImageResult.result.state, 'committed');
 assert.equal(await fs.promises.stat(appImageManifest.package.nativeEntryPoint).then(s => s.isFile(), () => false), true);
 await fs.promises.rm(tempRoot, { recursive: true, force: true });
@@ -90,10 +104,10 @@ const badAdapter = new Map([['swir.package.system', { plan() {}, execute() {} }]
 const mismatchLayer = new SystemPackageProviderLayer({ adapters: badAdapter });
 assert.throws(() => mismatchLayer.plan('install', manifest), error => error?.code === 'INVALID_PROVIDER_PLAN');
 
-const appImageAdapter = new AppImageUserPackageAdapter({ installRoot: '/tmp/swir-appimage-adapter-shape' });
-assert.equal(appImageAdapter.describe().provider, 'swir.package.appimage');
+assert.throws(() => new AppImageUserPackageAdapter({ installRoot: '/tmp/swir-appimage-adapter-shape' }), error => error?.code === 'TRUST_VERIFIER_REQUIRED');
 assert.deepEqual(SystemPackageProviderLayerPolicy.provisionedByProductionFactory, ['swir.package.system']);
 assert.deepEqual(SystemPackageProviderLayerPolicy.experimentalProviders, ['swir.package.flatpak', 'swir.package.appimage']);
 assert.deepEqual(SystemPackageProviderLayerPolicy.plannedProviders, []);
+assert.equal(SystemPackageProviderLayerPolicy.appImageRequiresNativeCatalogTrustVerifier, true);
 
 console.log('System Package Provider Layer self-test: OK');
