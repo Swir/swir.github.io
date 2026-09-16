@@ -178,7 +178,7 @@ $commit = (& git -C $source rev-parse HEAD).Trim()
 if ($LASTEXITCODE -ne 0 -or $commit -notmatch '^[0-9a-fA-F]{40}$') { throw 'Could not resolve source commit for Desktop runtime manifest.' }
 
 $manifest = [ordered]@{
-    schema = 'swir.desktop-web-runtime/0.2'
+    schema = 'swir.desktop-web-runtime/0.1'
     sourceCommit = $commit.ToLowerInvariant()
     entrySource = $desktopEntryRelative
     fileCount = $manifestFiles.Count
