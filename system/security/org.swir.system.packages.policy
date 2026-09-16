@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN" "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+<policyconfig>
+  <vendor>SWIR OS</vendor>
+  <vendor_url>https://github.com/Swir/swir.github.io</vendor_url>
+
+  <action id="org.swir.system.packages.mutate">
+    <description>Install, update or remove trusted SWIR OS system packages</description>
+    <message>Authentication is required to change system packages.</message>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.owner">root</annotate>
+  </action>
+
+  <action id="org.swir.system.packages.recover">
+    <description>Recover a journaled SWIR OS system package transaction</description>
+    <message>Administrator authentication is required to recover a system package transaction.</message>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>auth_admin</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.owner">root</annotate>
+  </action>
+</policyconfig>

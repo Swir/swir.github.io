@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://swir.local/contracts/system-authorization-grant.schema.json",
+  "title": "SWIR System Authorization Grant 0.1",
+  "type": "object",
+  "required": ["schema", "authorized", "scope", "actionId", "actorId", "packageId", "operation", "planDigest"],
+  "properties": {
+    "schema": { "const": "swir.system-authorization-grant/0.1" },
+    "authorized": { "type": "boolean" },
+    "grantId": { "type": "string", "minLength": 8, "maxLength": 160, "pattern": "^[A-Za-z0-9._:-]+$" },
+    "actorId": { "type": "string", "pattern": "^uid:[0-9]+$" },
+    "scope": { "enum": ["packages.mutate", "packages.recover"] },
+    "actionId": { "enum": ["org.swir.system.packages.mutate", "org.swir.system.packages.recover"] },
+    "packageId": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "operation": { "enum": ["install", "update", "remove"] },
+    "planDigest": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "subject": {
+      "type": "object",
+      "required": ["pid", "uid", "startTime"],
+      "properties": {
+        "pid": { "type": "integer", "minimum": 1 },
+        "uid": { "type": "integer", "minimum": 0 },
+        "startTime": { "type": "string", "pattern": "^[0-9]+$" }
+      },
+      "additionalProperties": false
+    },
+    "interactive": { "type": "boolean" },
+    "authorizedAt": { "type": "string", "minLength": 1 },
+    "reason": { "type": "string", "minLength": 1 }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "authorized": { "const": true } }, "required": ["authorized"] },
+      "then": { "required": ["grantId", "subject", "interactive", "authorizedAt"] }
+    }
+  ],
+  "additionalProperties": false
+}
