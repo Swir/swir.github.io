@@ -7,6 +7,8 @@ const workflow = read('.github/workflows/desktop-release.yml');
 const roots = JSON.parse(read('desktop/windows/catalog-trust-roots.json'));
 const lifecycle = read('desktop/windows/DesktopSignedPackageLifecycleSelfTests.cs');
 const cutover = read('.github/workflows/desktop-catalog-cutover-contract.yml');
+const runtimeStage = read('desktop/windows/stage-desktop-runtime.ps1');
+const packageBridge = read('desktop/windows/DesktopPackageBridge.cs');
 
 const requiredWorkflowFragments = [
   'SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM: ${{ secrets.SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM }}',
@@ -39,6 +41,26 @@ if (/BEGIN (?:ED25519 |EC |RSA )?PRIVATE KEY/.test(workflow)) {
 if (roots.schema !== 'swir.catalog-trust-roots/1.0') fail('Unexpected checked-in catalog trust-root schema.');
 if (roots.requireSignedCatalog !== false || !Array.isArray(roots.roots) || roots.roots.length !== 0) {
   fail('The source-tree preview trust store must remain empty/fail-neutral; production roots are staged only by the controlled release pipeline.');
+}
+
+// A shipping Desktop runtime must not be able to silently fall back to caller-provided hashes.
+// Keep this check separate from verifier self-tests so release/staging refactors fail CI even if
+// the cryptographic implementation itself remains correct.
+for (const fragment of [
+  "Copy-Item -LiteralPath (Join-Path $catalogRelease 'catalog-trust-roots.json')",
+  "$trust.requireSignedCatalog -ne $true",
+  "@($trust.roots).Count -lt 1",
+  "throw 'Production signed catalog trust roots must require signed catalogs and contain at least one root.'"
+]) {
+  if (!runtimeStage.includes(fragment)) fail(`Desktop runtime signed-catalog staging guard missing: ${fragment}`);
+}
+
+for (const fragment of [
+  'legacySha256Fallback = _catalogTrust is null',
+  'trustMode = _catalogTrust is null ? "LEGACY_SHA_UNTIL_ROOT_PROVISIONED" : "SIGNED_CATALOG_REQUIRED"',
+  'CATALOG_AUTHORIZATION_REQUIRED'
+]) {
+  if (!packageBridge.includes(fragment)) fail(`Desktop package bridge production trust boundary missing: ${fragment}`);
 }
 
 for (const fragment of [
