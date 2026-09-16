@@ -1,7 +1,9 @@
+import { createFlatpakUserPackageAdapter } from './flatpak-user-package-provider.mjs';
+
 const OPERATIONS = new Set(['install', 'update', 'remove']);
 const LINUX_PROVIDERS = Object.freeze({
   'swir.package.system': Object.freeze({ kind: 'distribution', status: 'implemented' }),
-  'swir.package.flatpak': Object.freeze({ kind: 'flatpak', status: 'planned' }),
+  'swir.package.flatpak': Object.freeze({ kind: 'flatpak', status: 'experimental' }),
   'swir.package.appimage': Object.freeze({ kind: 'appimage', status: 'planned' })
 });
 
@@ -160,10 +162,19 @@ export class SystemPackageProviderLayer {
 }
 
 export function createSystemPackageProviderLayer({ distributionStack } = {}) {
-  // Production composition intentionally provisions only the reviewed distribution stack today.
-  // Future Flatpak/AppImage support must add reviewed adapters here rather than accepting arbitrary caller injection.
+  // Production composition remains fail-closed and only provisions the reviewed
+  // privileged distribution stack. Experimental providers have separate factories.
   const adapter = new DistributionPackageStackAdapter(distributionStack);
   return new SystemPackageProviderLayer({ adapters: new Map([['swir.package.system', adapter]]) });
+}
+
+export function createExperimentalSystemPackageProviderLayer({ distributionStack, flatpakAllowedRemotes = [] } = {}) {
+  const distribution = new DistributionPackageStackAdapter(distributionStack);
+  const adapters = new Map([['swir.package.system', distribution]]);
+  if (Array.isArray(flatpakAllowedRemotes) && flatpakAllowedRemotes.length > 0) {
+    adapters.set('swir.package.flatpak', createFlatpakUserPackageAdapter({ allowlistedRemotes: flatpakAllowedRemotes }));
+  }
+  return new SystemPackageProviderLayer({ adapters });
 }
 
 export const SystemPackageProviderLayerPolicy = Object.freeze({
@@ -172,7 +183,8 @@ export const SystemPackageProviderLayerPolicy = Object.freeze({
   executionClass: 'linux-native',
   knownProviders: Object.keys(LINUX_PROVIDERS),
   provisionedByProductionFactory: ['swir.package.system'],
-  plannedProviders: ['swir.package.flatpak', 'swir.package.appimage'],
+  experimentalProviders: ['swir.package.flatpak'],
+  plannedProviders: ['swir.package.appimage'],
   arbitraryProviderRegistration: false,
   directCommandExecution: false,
   privilegedMutationDelegated: true
