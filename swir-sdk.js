@@ -1,4 +1,4 @@
-/* SWIR App SDK 1.6.1 — Web Edition bridge */
+/* SWIR App SDK 1.6.2 — Web Edition bridge */
 (() => {
   'use strict';
   const catalog = () => Array.isArray(window.SWIR_PACKAGE_CATALOG) ? window.SWIR_PACKAGE_CATALOG : [];
@@ -48,6 +48,10 @@
   async function sendNotification(appId,options){const svc=notificationService();if(!svc)throw new Error('Notification service unavailable');return svc.send(appId,options)}
   function notificationHistory(appId=null){return notificationService()?.list?.(appId)||[]}
   function clearNotifications(appId=null){return notificationService()?.clear?.(appId)}
+  function dismissNotification(notificationId){const svc=notificationService();if(!svc)throw new Error('Notification service unavailable');return svc.dismiss(notificationId)}
+  function activateNotification(notificationId,actionId){const svc=notificationService();if(!svc)throw new Error('Notification service unavailable');return svc.activate(notificationId,actionId)}
+  function notificationReady(){const svc=notificationService();if(!svc)throw new Error('Notification service unavailable');return svc.persistence?.ready?.()||Promise.resolve([])}
+  function notificationPersistence(){const svc=notificationService();if(!svc)throw new Error('Notification service unavailable');return svc.persistence?.info?.()||null}
   function packageResolver(){return window.SwirPackageResolver||null}
   async function checkPackage(id){const svc=packageResolver();if(!svc)throw new Error('Package resolver unavailable');return svc.checkCompatibility(id)}
   async function planInstall(id){const svc=packageResolver();if(!svc)throw new Error('Package resolver unavailable');return svc.planInstall(id)}
@@ -84,7 +88,7 @@
   function localeList(items,options,locale){return localeRequired().formatList(items,options,locale)}
 
   window.SwirAppSDK = Object.freeze({
-    meta: Object.freeze({ name: 'SWIR App SDK', version: '1.6.1', schema: 'swir.app/1.0', os: 'SWIR OS 1.7', edition: 'WEB' }),
+    meta: Object.freeze({ name: 'SWIR App SDK', version: '1.6.2', schema: 'swir.app/1.0', os: 'SWIR OS 1.7', edition: 'WEB' }),
     catalog,
     manifest,
     installed,
@@ -94,7 +98,7 @@
     identity: Object.freeze({ active: activeIdentity }),
     locale: Object.freeze({ info:localeInfo, translate:localeTranslate, set:localeSet, formatDate:localeDate, formatNumber:localeNumber, formatCurrency:localeCurrency, formatRelativeTime:localeRelative, formatList:localeList }),
     files: Object.freeze({ open:openFile, consumeOpen, handlersFor, defaultFor, setDefault, extension, appData }),
-    notifications: Object.freeze({ send:sendNotification, history:notificationHistory, clear:clearNotifications }),
+    notifications: Object.freeze({ send:sendNotification, history:notificationHistory, clear:clearNotifications, dismiss:dismissNotification, activate:activateNotification, ready:notificationReady, persistence:notificationPersistence }),
     packages: Object.freeze({ check:checkPackage, planInstall, planRemove, audit:packageAudit, runtime:packageRuntime, compareVersions, fingerprint:packageFingerprint, verifyManifest, verifyEntry, verifySignature, integrityPlan, validateSignatureDescriptor, trustInfo, trustedKeys, trustedKey, trustFor, prepareInstall, secureInstall, secureRemove, installPipelineInfo }),
     system: Object.freeze({ info: systemInfo }),
     shell: Object.freeze({ open, notify })
