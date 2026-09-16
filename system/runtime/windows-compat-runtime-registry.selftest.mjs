@@ -20,7 +20,9 @@ try {
   fs.writeFileSync(proton, '#!/bin/sh\nprintf "Proton 9.0 test\\n"\n', { mode: 0o755 });
 
   const rejected = path.join(bin, 'wine');
-  fs.writeFileSync(rejected, '#!/bin/sh\nprintf "unsafe-wine\\n"\n', { mode: 0o777 });
+  fs.writeFileSync(rejected, '#!/bin/sh\nprintf "unsafe-wine\\n"\n', { mode: 0o755 });
+  // chmod after creation so the test is not weakened by the host process umask.
+  fs.chmodSync(rejected, 0o777);
 
   const registry = new WindowsCompatibilityRuntimeRegistry({
     runtimeRoots: [root],
