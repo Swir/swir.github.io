@@ -127,11 +127,22 @@ if(replay41.ok||replay41.state!=='ROLLBACK_DETECTED'||replay41.accepted!==false)
 const afterReplay=await trustState.state();
 if(afterReplay?.sequence!==42) throw new Error('Rejected rollback modified persisted trust state');
 
-if(!swSource.includes("'./swir-catalog-integrity.js'")) throw new Error('Catalog integrity core is missing from service-worker cache');
-if(!swSource.includes("'./swir-catalog-trust-state.js'")) throw new Error('Catalog trust-state core is missing from service-worker cache');
+const offlineSecurityCore = [
+  'swir-trusted-keys.js',
+  'swir-package-integrity.js',
+  'swir-catalog-integrity.js',
+  'swir-catalog-trust-state.js',
+  'swir-install-pipeline.js'
+];
+for (const name of offlineSecurityCore) {
+  if(!swSource.includes(`'./${name}'`)) throw new Error(`Security runtime ${name} is missing from service-worker cache`);
+  if(!v17Source.includes(`load('./${name}')`)) throw new Error(`SWIR 1.7 security core does not load ${name}`);
+}
 if(!swSource.includes("'./SWIR-SIGNED-CATALOG-1.0.md'")) throw new Error('Signed catalog contract is missing from service-worker cache');
-if(!v17Source.includes("load('./swir-catalog-integrity.js')")) throw new Error('SWIR 1.7 security core does not load catalog integrity service');
-if(!v17Source.includes("load('./swir-catalog-trust-state.js')")) throw new Error('SWIR 1.7 security core does not load catalog trust-state service');
+const optionalStart=swSource.indexOf('const OPTIONAL_CORE = new Set(');
+const optionalEnd=swSource.indexOf('async function seedCore', optionalStart);
+const optionalSource=optionalStart>=0&&optionalEnd>optionalStart?swSource.slice(optionalStart,optionalEnd):'';
+if(!optionalSource.includes("'./SWIR-SIGNED-CATALOG-1.0.md'")) throw new Error('Signed catalog contract must remain an optional native precache asset');
 if(!v17Source.includes('TRUST HIGH-WATER')) throw new Error('Catalog trust high-water diagnostics are missing');
 
-console.log(`Signed catalog contract OK: ${catalog.length} packages, high-water sequence ${afterReplay.sequence}, digest ${afterReplay.catalogSha256}`);
+console.log(`Signed catalog contract OK: ${catalog.length} packages, high-water sequence ${afterReplay.sequence}, digest ${afterReplay.catalogSha256}; offline security core ${offlineSecurityCore.length}/5`);

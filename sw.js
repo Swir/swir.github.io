@@ -1,9 +1,9 @@
 // SWIR OS dual-surface service worker.
 // The public GitHub Pages showcase stays network-only, while the dedicated
 // swir-desktop.html Web Edition keeps an offline-capable application shell.
-// Desktop packages remap swir-desktop.html to index.html, so the source-only
-// shell alias is optional during native-runtime precache.
-const CACHE = 'swir-desktop-web-v3';
+// Desktop packages remap swir-desktop.html to index.html, so source-only
+// documentation/shell aliases may be absent during native-runtime precache.
+const CACHE = 'swir-desktop-web-v4';
 const LEGACY_CACHE_PREFIX = 'swir-os-';
 const DESKTOP_CACHE_PREFIX = 'swir-desktop-web-';
 const CORE = [
@@ -31,6 +31,11 @@ const CORE = [
   './swir-apps.js',
   './swir-os.js',
   './swir-runtime.js',
+  './swir-trusted-keys.js',
+  './swir-package-integrity.js',
+  './swir-catalog-integrity.js',
+  './swir-catalog-trust-state.js',
+  './swir-install-pipeline.js',
   './swir-v11.js',
   './swir-v11-fixed.js',
   './swir-v12.js',
@@ -40,9 +45,13 @@ const CORE = [
   './swir-oobe.js',
   './swir-v15.js',
   './swir-v16.js',
-  './swir-v17.js'
+  './swir-v17.js',
+  './SWIR-SIGNED-CATALOG-1.0.md'
 ];
-const OPTIONAL_CORE = new Set(['./swir-desktop.html']);
+const OPTIONAL_CORE = new Set([
+  './swir-desktop.html',
+  './SWIR-SIGNED-CATALOG-1.0.md'
+]);
 
 async function seedCore(cache) {
   const failures = [];
