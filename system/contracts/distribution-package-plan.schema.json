@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://swir.github.io/system/contracts/distribution-package-plan.schema.json",
+  "title": "SWIR System Distribution Package Plan 0.1",
+  "type": "object",
+  "required": ["schema", "mode", "readOnly", "autoExecutable", "provider", "executionClass", "operation", "package", "host", "source", "trust", "transaction", "commandPreview"],
+  "properties": {
+    "schema": { "const": "swir.system-package-plan/0.1" },
+    "mode": { "const": "preview" },
+    "readOnly": { "const": true },
+    "autoExecutable": { "const": false },
+    "provider": { "const": "swir.package.system" },
+    "executionClass": { "const": "linux-native" },
+    "operation": { "enum": ["install", "update", "remove"] },
+    "package": {
+      "type": "object",
+      "required": ["id", "sourceRef", "nativeEntryPoint"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "sourceRef": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9+._:@-]{0,127}$" },
+        "nativeEntryPoint": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "host": {
+      "type": "object",
+      "required": ["distribution", "packageManager", "availablePackageManagers"],
+      "properties": {
+        "distribution": { "type": "object" },
+        "packageManager": { "enum": ["apt", "dnf", "rpm-ostree", "pacman", "zypper"] },
+        "availablePackageManagers": { "type": "array", "uniqueItems": true, "items": { "enum": ["apt", "dnf", "rpm-ostree", "pacman", "zypper"] } }
+      },
+      "additionalProperties": false
+    },
+    "source": {
+      "type": "object",
+      "required": ["class", "repositoryId"],
+      "properties": {
+        "class": { "const": "distribution-repository" },
+        "repositoryId": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "trust": {
+      "type": "object",
+      "required": ["signatureVerificationRequired", "arbitraryRepositoryUrlAllowed"],
+      "properties": {
+        "signatureVerificationRequired": { "const": true },
+        "arbitraryRepositoryUrlAllowed": { "const": false }
+      },
+      "additionalProperties": false
+    },
+    "transaction": {
+      "type": "object",
+      "required": ["requiresPrivilege", "journalRequired", "healthCheckRequired", "rollback"],
+      "properties": {
+        "requiresPrivilege": { "const": true },
+        "journalRequired": { "const": true },
+        "healthCheckRequired": { "type": "boolean" },
+        "rollback": {
+          "type": "object",
+          "required": ["supported", "mechanism", "note"],
+          "properties": {
+            "supported": { "type": "boolean" },
+            "mechanism": { "type": ["string", "null"] },
+            "note": { "type": "string" }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "commandPreview": { "type": "array", "minItems": 1, "items": { "type": "string" } }
+  },
+  "additionalProperties": false
+}
