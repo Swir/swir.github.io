@@ -33,7 +33,8 @@
         "sourceRef": { "type": "string" },
         "nativeEntryPoint": { "type": "string", "minLength": 1 },
         "remote": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$" },
-        "scope": { "enum": ["user", "system"] }
+        "scope": { "enum": ["user", "system"] },
+        "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
       },
       "additionalProperties": false
     },
@@ -93,12 +94,25 @@
       "then": {
         "properties": {
           "executionClass": { "const": "linux-native" },
-          "package": {
-            "required": ["sourceRef", "nativeEntryPoint", "remote", "scope"]
-          },
+          "package": { "required": ["sourceRef", "nativeEntryPoint", "remote", "scope"] },
           "trust": {
             "properties": {
               "sourceClass": { "const": "flatpak-remote" },
+              "signatureRequired": { "const": true }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "provider": { "const": "swir.package.appimage" } }, "required": ["provider"] },
+      "then": {
+        "properties": {
+          "executionClass": { "const": "linux-native" },
+          "package": { "required": ["sourceRef", "nativeEntryPoint", "scope", "sha256"], "properties": { "scope": { "const": "user" } } },
+          "trust": {
+            "properties": {
+              "sourceClass": { "const": "swir-signed" },
               "signatureRequired": { "const": true }
             }
           }
