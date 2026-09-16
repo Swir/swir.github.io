@@ -1,8 +1,8 @@
 # SWIR System Package Provider Layer 0.1
 
-Status: **implemented common routing foundation / experimental Flatpak user provider / AppImage and System-image E2E pending**
+Status: **implemented common routing foundation / experimental Flatpak + managed AppImage providers / System-image E2E pending**
 
-`system/packages/package-provider-layer.mjs` is the edition-neutral System package routing boundary that sits above concrete Linux package providers. It gives Store/Update Center code one stable surface for native Linux package planning and execution without allowing UI/runtime code to invoke a package manager directly.
+`system/packages/package-provider-layer.mjs` is the edition-neutral System package routing boundary above concrete Linux package providers. Store/Update Center code gets one stable surface for native Linux package planning/execution without invoking package managers or arbitrary commands directly.
 
 ## Current composition
 
@@ -12,64 +12,52 @@ System Store / Update Center
         v
 SystemPackageProviderLayer
         |
-        +--> swir.package.system  -> DistributionPackageStackAdapter
-        |                            -> SystemPackageStack
-        |                            -> trust + Polkit + snapshot + journal + guarded pkexec
+        +--> swir.package.system   -> DistributionPackageStackAdapter
+        |                             -> trust + Polkit + snapshot + journal + guarded pkexec
         |
-        +--> swir.package.flatpak -> experimental reviewed user-scope adapter
-        |                            -> preconfigured allowlisted remote
-        |                            -> guarded /usr/bin/flatpak, shell=false
+        +--> swir.package.flatpak  -> experimental user-scope adapter
+        |                             -> preconfigured allowlisted remote
+        |                             -> guarded /usr/bin/flatpak, shell=false
         |
-        +--> swir.package.appimage -> known, fail-closed: not provisioned
+        +--> swir.package.appimage -> experimental managed-import adapter
+                                      -> signed metadata + SHA-256
+                                      -> managed per-user root + journal + rollback backup
+                                      -> no network acquisition
 ```
 
-The stable production factory `createSystemPackageProviderLayer()` continues to accept only the reviewed `distributionStack`. It does **not** accept an arbitrary adapter map and does not silently enable experimental providers.
+The stable production factory `createSystemPackageProviderLayer()` remains distribution-only. It does not accept arbitrary adapter injection and does not silently enable experimental providers.
 
-`createExperimentalSystemPackageProviderLayer()` is an explicit opt-in composition for development/System-image integration work. It can provision the reviewed Flatpak user adapter only when one or more remote IDs are explicitly allowlisted. It still cannot register arbitrary providers.
+`createExperimentalSystemPackageProviderLayer()` is an explicit opt-in composition for development/System-image integration. Flatpak requires one or more allowlisted remote IDs. AppImage requires an explicit managed install root. Store/UI code still cannot register arbitrary providers.
 
 ## Contract
 
-The layer accepts `swir.package-provider/0.2` manifests only when:
+The layer accepts `swir.package-provider/0.2` manifests only when `targetEditions` contains `system`, `executionClass` is `linux-native`, the provider is one of the three reviewed Linux providers, and the operation is `install`, `update` or `remove`.
 
-- `targetEditions` includes `system`;
-- `executionClass` is `linux-native`;
-- the provider is one of `swir.package.system`, `swir.package.flatpak`, `swir.package.appimage`;
-- the operation is `install`, `update` or `remove`.
+Provider-specific security remains inside each adapter. Distribution mutation delegates to the privileged transaction stack. Flatpak 0.1 is fixed to user scope and reviewed argv templates. AppImage 0.1 is a local managed-import path requiring SWIR-signed trust evidence and an exact SHA-256 digest; it has no download URL support.
 
-The routing layer never generates command lines. Provider-specific planning stays inside the concrete provider. Privileged distribution mutation is delegated to the reviewed transaction service. Experimental Flatpak 0.1 is user-scoped and therefore does not request root privilege.
+## AppImage 0.1 boundary
 
-`describe()` exposes readiness without pretending unavailable providers exist. The production factory reports distribution `ready`, Flatpak `not-provisioned` with roadmap status `experimental`, and AppImage `not-provisioned`. The experimental factory can report Flatpak `ready` when it is explicitly configured.
+AppImage is not represented as intrinsically sandboxed. The provider records `formatProvidesSandbox: false` and requires execution to stay behind SWIR trust/permissions. Install/update verify the artifact digest before mutation and again after copy, write a prepared transaction journal, use a unique temporary file and atomic rename, and keep a managed rollback backup for replace/remove operations. Pending prepared journals can be recovered after interruption.
 
-## Flatpak 0.1 boundary
-
-The new Flatpak provider is deliberately narrow:
-
-- user scope only (`--user`);
-- fixed `/usr/bin/flatpak` binary;
-- exact reviewed install/update/uninstall argv templates;
-- `shell=false` and minimal environment;
-- preconfigured, explicitly allowlisted remote ID;
-- Flatpak remote signatures required by manifest policy;
-- no remote creation, arbitrary URL, custom command, `--command` injection or system-scope escalation.
-
-Flatpak/OSTree supplies native transaction atomicity for this experimental path. SWIR version-aware Flatpak rollback metadata is not implemented yet, so the provider remains experimental and does not complete the roadmap checkbox.
+The managed target is derived from the configured install root plus package ID. A manifest cannot redirect installation to `/tmp`, `/usr/bin` or another arbitrary path. The provider accepts an opaque artifact reference rather than a URL and requires explicit `signatureVerified: true` evidence from the acquisition/trust layer.
 
 ## Security invariants
 
 - no shell or child-process execution in the common routing layer;
-- no arbitrary provider identifiers;
-- no arbitrary production adapter injection;
-- plan provider/operation identity is checked before it is returned;
-- Flatpak execution is isolated in its reviewed adapter and full argv is revalidated before spawn;
-- Windows compatibility packages are rejected and remain behind the separate Wine/Proton compatibility service;
-- distribution recovery remains provider-owned and cannot be synthesized by the Store.
+- no arbitrary provider identifiers or production adapter injection;
+- plan provider/operation identity is rechecked by the router;
+- Flatpak full argv is revalidated immediately before spawn;
+- AppImage has no built-in network acquisition, requires signature + digest verification and uses a managed install root;
+- AppImage does not claim sandbox isolation that the format does not provide;
+- Windows compatibility packages remain behind the separate Wine/Proton service;
+- distribution recovery remains provider-owned rather than synthesized by Store UI.
 
 ## Verification
 
-`package-provider-layer.selftest.mjs` verifies distribution routing, execution, recovery, provider identity binding, unsupported-operation rejection, production fail-closed behavior, experimental Flatpak routing and separation from `windows-compat`.
+`package-provider-layer.selftest.mjs` covers production fail-closed behavior and explicit experimental Flatpak/AppImage routing. `flatpak-user-package-provider.selftest.mjs` covers remote/argv enforcement. `appimage-user-package-provider.selftest.mjs` covers signature gating, SHA-256 verification, install/update/remove and rollback metadata. `system/e2e/appimage-native-execution.selftest.mjs` verifies managed install followed by trusted native launch on Linux.
 
-`flatpak-user-package-provider.selftest.mjs` verifies remote allowlisting, manifest binding, exact command templates, tamper rejection, user scope, shell isolation and failure behavior. Dedicated provider workflows and the aggregate System Edition Contracts protect the existing distribution path from regressions.
+Dedicated provider workflows protect the two experimental adapters while the aggregate System Edition workflow continues to protect the existing distribution/security stack.
 
 ## Roadmap meaning
 
-This materially advances the common Package Provider layer: distribution packages are on the production transaction stack and a reviewed Flatpak user provider now exists behind explicit experimental composition. The System Edition roadmap checkbox remains open because AppImage is not implemented, Flatpak lacks production System-image E2E/version-aware rollback, and the bootable System Edition image itself is not yet available.
+The common provider layer now has reviewed foundations for distribution packages, Flatpak and AppImage. The System Edition roadmap checkbox remains open because these experimental providers still require production System-image E2E; Flatpak still needs version-aware SWIR rollback, and AppImage still needs stronger sandbox/portal policy, signed acquisition integration, bounded rollback retention and desktop/icon integration before broad production enablement.

@@ -1,31 +1,17 @@
+import { createAppImageUserPackageAdapter } from './appimage-user-package-provider.mjs';
 import { createFlatpakUserPackageAdapter } from './flatpak-user-package-provider.mjs';
 
 const OPERATIONS = new Set(['install', 'update', 'remove']);
 const LINUX_PROVIDERS = Object.freeze({
   'swir.package.system': Object.freeze({ kind: 'distribution', status: 'implemented' }),
   'swir.package.flatpak': Object.freeze({ kind: 'flatpak', status: 'experimental' }),
-  'swir.package.appimage': Object.freeze({ kind: 'appimage', status: 'planned' })
+  'swir.package.appimage': Object.freeze({ kind: 'appimage', status: 'experimental' })
 });
 
-function clone(value) {
-  return value == null ? value : JSON.parse(JSON.stringify(value));
-}
-
-function fail(code, message) {
-  const error = new Error(message);
-  error.name = 'SystemPackageProviderLayerError';
-  error.code = code;
-  throw error;
-}
-
-function assert(condition, code, message) {
-  if (!condition) fail(code, message);
-}
-
-function validateOperation(operation) {
-  assert(OPERATIONS.has(operation), 'UNSUPPORTED_OPERATION', 'Unsupported package provider operation');
-  return operation;
-}
+function clone(value) { return value == null ? value : JSON.parse(JSON.stringify(value)); }
+function fail(code, message) { const error = new Error(message); error.name = 'SystemPackageProviderLayerError'; error.code = code; throw error; }
+function assert(condition, code, message) { if (!condition) fail(code, message); }
+function validateOperation(operation) { assert(OPERATIONS.has(operation), 'UNSUPPORTED_OPERATION', 'Unsupported package provider operation'); return operation; }
 
 function validateManifest(manifest) {
   assert(manifest && typeof manifest === 'object' && !Array.isArray(manifest), 'INVALID_MANIFEST', 'Package manifest must be an object');
@@ -46,40 +32,21 @@ function validateAdapter(providerId, adapter) {
 
 export class DistributionPackageStackAdapter {
   #stack;
-
   constructor(stack) {
     assert(stack && typeof stack.plan === 'function' && typeof stack.execute === 'function' && typeof stack.recoverPending === 'function', 'INVALID_DISTRIBUTION_STACK', 'System package stack must expose plan/execute/recoverPending');
     this.#stack = stack;
   }
-
   describe() {
     const stack = typeof this.#stack.describe === 'function' ? this.#stack.describe() : null;
-    return Object.freeze({
-      schema: 'swir.package-provider-adapter/0.1',
-      provider: 'swir.package.system',
-      kind: 'distribution',
-      available: true,
-      privilegedMutation: true,
-      stack: clone(stack)
-    });
+    return Object.freeze({ schema: 'swir.package-provider-adapter/0.1', provider: 'swir.package.system', kind: 'distribution', available: true, privilegedMutation: true, stack: clone(stack) });
   }
-
-  plan(operation, manifest) {
-    return this.#stack.plan(validateOperation(operation), clone(manifest));
-  }
-
-  execute(operation, manifest, authorizationContext = {}) {
-    return this.#stack.execute(validateOperation(operation), clone(manifest), clone(authorizationContext));
-  }
-
-  recoverPending(authorizationContext = {}) {
-    return this.#stack.recoverPending(clone(authorizationContext));
-  }
+  plan(operation, manifest) { return this.#stack.plan(validateOperation(operation), clone(manifest)); }
+  execute(operation, manifest, authorizationContext = {}) { return this.#stack.execute(validateOperation(operation), clone(manifest), clone(authorizationContext)); }
+  recoverPending(authorizationContext = {}) { return this.#stack.recoverPending(clone(authorizationContext)); }
 }
 
 export class SystemPackageProviderLayer {
   #adapters;
-
   constructor({ adapters = new Map() } = {}) {
     assert(adapters instanceof Map, 'INVALID_ADAPTER_MAP', 'Package provider adapters must be supplied as a Map');
     this.#adapters = new Map();
@@ -88,40 +55,18 @@ export class SystemPackageProviderLayer {
       this.#adapters.set(providerId, validateAdapter(providerId, adapter));
     }
   }
-
   describe() {
     const providers = Object.entries(LINUX_PROVIDERS).map(([id, metadata]) => {
       const adapter = this.#adapters.get(id);
-      return {
-        id,
-        kind: metadata.kind,
-        roadmapStatus: metadata.status,
-        available: Boolean(adapter),
-        state: adapter ? 'ready' : 'not-provisioned',
-        adapter: adapter && typeof adapter.describe === 'function' ? clone(adapter.describe()) : null
-      };
+      return { id, kind: metadata.kind, roadmapStatus: metadata.status, available: Boolean(adapter), state: adapter ? 'ready' : 'not-provisioned', adapter: adapter && typeof adapter.describe === 'function' ? clone(adapter.describe()) : null };
     });
-    return Object.freeze({
-      schema: 'swir.system-package-provider-layer/0.1',
-      executionClass: 'linux-native',
-      providers,
-      arbitraryProviderRegistration: false,
-      directCommandExecution: false,
-      privilegedMutationDelegated: true
-    });
+    return Object.freeze({ schema: 'swir.system-package-provider-layer/0.1', executionClass: 'linux-native', providers, arbitraryProviderRegistration: false, directCommandExecution: false, privilegedMutationDelegated: true });
   }
-
   providerState(providerId) {
     assert(Object.prototype.hasOwnProperty.call(LINUX_PROVIDERS, providerId), 'UNSUPPORTED_PROVIDER', 'Unsupported Linux package provider');
     const adapter = this.#adapters.get(providerId);
-    return Object.freeze({
-      provider: providerId,
-      kind: LINUX_PROVIDERS[providerId].kind,
-      available: Boolean(adapter),
-      state: adapter ? 'ready' : 'not-provisioned'
-    });
+    return Object.freeze({ provider: providerId, kind: LINUX_PROVIDERS[providerId].kind, available: Boolean(adapter), state: adapter ? 'ready' : 'not-provisioned' });
   }
-
   plan(operation, manifest) {
     const providerId = validateManifest(manifest);
     const adapter = this.#requireAdapter(providerId);
@@ -131,61 +76,36 @@ export class SystemPackageProviderLayer {
     assert(result.operation === operation, 'PROVIDER_OPERATION_MISMATCH', 'Package provider plan operation mismatch');
     return clone(result);
   }
-
   async execute(operation, manifest, authorizationContext = {}) {
     const providerId = validateManifest(manifest);
     const adapter = this.#requireAdapter(providerId);
     const planned = this.plan(operation, manifest);
     const result = await adapter.execute(validateOperation(operation), clone(manifest), clone(authorizationContext));
     assert(result && typeof result === 'object', 'INVALID_PROVIDER_RESULT', 'Package provider returned an invalid execution result');
-    return Object.freeze({
-      schema: 'swir.system-package-provider-result/0.1',
-      provider: providerId,
-      operation,
-      plan: planned,
-      result: clone(result)
-    });
+    return Object.freeze({ schema: 'swir.system-package-provider-result/0.1', provider: providerId, operation, plan: planned, result: clone(result) });
   }
-
   async recoverPending(providerId, authorizationContext = {}) {
     assert(Object.prototype.hasOwnProperty.call(LINUX_PROVIDERS, providerId), 'UNSUPPORTED_PROVIDER', 'Unsupported Linux package provider');
     const adapter = this.#requireAdapter(providerId);
     assert(typeof adapter.recoverPending === 'function', 'RECOVERY_UNAVAILABLE', 'Selected package provider does not expose recovery');
     return clone(await adapter.recoverPending(clone(authorizationContext)));
   }
-
-  #requireAdapter(providerId) {
-    const adapter = this.#adapters.get(providerId);
-    assert(adapter, 'PROVIDER_NOT_PROVISIONED', `${providerId} is recognized but not provisioned on this System Edition build`);
-    return adapter;
-  }
+  #requireAdapter(providerId) { const adapter = this.#adapters.get(providerId); assert(adapter, 'PROVIDER_NOT_PROVISIONED', `${providerId} is recognized but not provisioned on this System Edition build`); return adapter; }
 }
 
 export function createSystemPackageProviderLayer({ distributionStack } = {}) {
-  // Production composition remains fail-closed and only provisions the reviewed
-  // privileged distribution stack. Experimental providers have separate factories.
   const adapter = new DistributionPackageStackAdapter(distributionStack);
   return new SystemPackageProviderLayer({ adapters: new Map([['swir.package.system', adapter]]) });
 }
 
-export function createExperimentalSystemPackageProviderLayer({ distributionStack, flatpakAllowedRemotes = [] } = {}) {
+export function createExperimentalSystemPackageProviderLayer({ distributionStack, flatpakAllowedRemotes = [], appImageInstallRoot = null } = {}) {
   const distribution = new DistributionPackageStackAdapter(distributionStack);
   const adapters = new Map([['swir.package.system', distribution]]);
-  if (Array.isArray(flatpakAllowedRemotes) && flatpakAllowedRemotes.length > 0) {
-    adapters.set('swir.package.flatpak', createFlatpakUserPackageAdapter({ allowlistedRemotes: flatpakAllowedRemotes }));
-  }
+  if (Array.isArray(flatpakAllowedRemotes) && flatpakAllowedRemotes.length > 0) adapters.set('swir.package.flatpak', createFlatpakUserPackageAdapter({ allowlistedRemotes: flatpakAllowedRemotes }));
+  if (typeof appImageInstallRoot === 'string' && appImageInstallRoot.length > 0) adapters.set('swir.package.appimage', createAppImageUserPackageAdapter({ installRoot: appImageInstallRoot }));
   return new SystemPackageProviderLayer({ adapters });
 }
 
 export const SystemPackageProviderLayerPolicy = Object.freeze({
-  schema: 'swir.system-package-provider-layer/0.1',
-  manifestSchema: 'swir.package-provider/0.2',
-  executionClass: 'linux-native',
-  knownProviders: Object.keys(LINUX_PROVIDERS),
-  provisionedByProductionFactory: ['swir.package.system'],
-  experimentalProviders: ['swir.package.flatpak'],
-  plannedProviders: ['swir.package.appimage'],
-  arbitraryProviderRegistration: false,
-  directCommandExecution: false,
-  privilegedMutationDelegated: true
+  schema: 'swir.system-package-provider-layer/0.1', manifestSchema: 'swir.package-provider/0.2', executionClass: 'linux-native', knownProviders: Object.keys(LINUX_PROVIDERS), provisionedByProductionFactory: ['swir.package.system'], experimentalProviders: ['swir.package.flatpak', 'swir.package.appimage'], plannedProviders: [], arbitraryProviderRegistration: false, directCommandExecution: false, privilegedMutationDelegated: true
 });
