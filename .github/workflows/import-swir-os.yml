@@ -13,15 +13,18 @@ concurrency:
   group: swir-os-repository-migration
   cancel-in-progress: false
 
+env:
+  MIGRATION_BASELINE: 3f6ed2812c435dca200b19492245d1dd656e7787
+  MIGRATION_READY: "false"
+
 jobs:
   migrate:
-    if: github.repository == 'Swir/SWIR_OS'
+    if: github.repository == 'Swir/SWIR_OS' && env.MIGRATION_READY == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Mirror verified source history into SWIR_OS
         env:
           DEST_TOKEN: ${{ github.token }}
-          EXPECTED_SOURCE_HEAD: __SOURCE_HEAD_FILLED_IN_DESTINATION_ONLY__
         shell: bash
         run: |
           set -euo pipefail
@@ -29,8 +32,11 @@ jobs:
           cd source.git
 
           actual_head="$(git rev-parse refs/heads/main)"
-          if [[ "$actual_head" != "$EXPECTED_SOURCE_HEAD" ]]; then
-            echo "Source main moved: expected $EXPECTED_SOURCE_HEAD, got $actual_head" >&2
+          git merge-base --is-ancestor "$MIGRATION_BASELINE" refs/heads/main
+          changed="$(git diff --name-only "$MIGRATION_BASELINE"..refs/heads/main)"
+          if [[ "$changed" != ".github/workflows/import-swir-os.yml" ]]; then
+            echo "Source moved outside the controlled migration anchor:" >&2
+            printf '%s\n' "$changed" >&2
             exit 1
           fi
 
