@@ -1,0 +1,16 @@
+{
+  "schema": "swir.system-repository-trust-policy/0.1",
+  "defaultRepositoryId": "example-debian-main",
+  "repositories": [
+    {
+      "id": "example-debian-main",
+      "manager": "apt",
+      "nativeId": "deb.example.invalid/debian",
+      "sourceClass": "distribution-repository",
+      "distributions": ["debian"],
+      "signatureVerification": "native-required",
+      "allowInsecure": false,
+      "enabled": true
+    }
+  ]
+}
