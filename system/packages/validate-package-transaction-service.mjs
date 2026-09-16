@@ -8,16 +8,25 @@ const readJson = name => JSON.parse(fs.readFileSync(path.join(contractsDir, name
 const assert = (condition, message) => { if (!condition) throw new Error(message); };
 
 const journal = readJson('package-transaction-journal.schema.json');
+const snapshot = readJson('package-snapshot.schema.json');
+const health = readJson('package-health.schema.json');
 const plan = readJson('distribution-package-plan.schema.json');
 const service = fs.readFileSync(path.join(packageDir, 'package-transaction-service.mjs'), 'utf8');
 const executor = fs.readFileSync(path.join(packageDir, 'privileged-package-executor.mjs'), 'utf8');
+const state = fs.readFileSync(path.join(packageDir, 'distribution-package-state.mjs'), 'utf8');
 
 assert(journal.$schema?.includes('2020-12'), 'package transaction journal must use JSON Schema 2020-12');
 assert(journal.properties?.schema?.const === 'swir.system-package-transaction/0.1', 'package transaction journal schema mismatch');
 assert(journal.properties?.plan?.$ref === './distribution-package-plan.schema.json', 'journal must bind to the distribution package plan contract');
+assert(journal.properties?.snapshot?.$ref === './package-snapshot.schema.json', 'journal must bind to the package snapshot contract');
+assert(journal.properties?.health?.oneOf?.some(entry => entry?.$ref === './package-health.schema.json'), 'journal must bind to the package health contract');
 assert(journal.properties?.planDigest?.pattern === '^[a-f0-9]{64}$', 'journal must require SHA-256 plan digest');
 assert(journal.properties?.authorization?.properties?.scope?.const === 'packages.mutate', 'journal must bind the mutation authorization scope');
 assert(journal.properties?.recovery?.properties?.rollbackCommand, 'journal must expose recovery metadata');
+assert(snapshot.properties?.schema?.const === 'swir.package-snapshot/0.1', 'package snapshot schema mismatch');
+assert(snapshot.properties?.manager?.enum?.length === 5, 'package snapshot must support all five distribution package managers');
+assert(health.properties?.schema?.const === 'swir.package-health/0.1', 'package health schema mismatch');
+assert(health.required?.includes('healthy') && health.required?.includes('checks'), 'package health contract must expose health result and checks');
 assert(plan.properties?.transaction?.properties?.journalRequired?.const === true, 'system package plans must require a journal');
 assert(plan.properties?.transaction?.properties?.requiresPrivilege?.const === true, 'system package plans must require privilege');
 
@@ -54,7 +63,19 @@ for (const forbidden of ['exec(', 'execSync(', 'spawnSync(', 'sudo ']) {
   assert(!executor.includes(forbidden), `privileged executor contains forbidden primitive: ${forbidden}`);
 }
 
+assert(state.includes("readOnly: true"), 'package snapshot adapter must explicitly remain read-only');
+assert(state.includes('shell: false'), 'package snapshot query must explicitly disable shell execution');
+assert(state.includes("file: '/usr/bin/dpkg-query'"), 'apt snapshots must use dpkg-query');
+assert(state.includes("file: '/usr/bin/rpm'"), 'rpm-family snapshots must use the RPM database query');
+assert(state.includes("file: '/usr/bin/pacman'"), 'pacman snapshots must use pacman query mode');
+assert(state.includes("defaultHealthRoots: ['/usr', '/opt']"), 'native health checks must constrain default entry-point roots');
+assert(state.includes('ENTRY_POINT_OUTSIDE_ALLOWED_ROOT'), 'native health checks must reject entry-point root escape');
+assert(!state.includes('pkexec'), 'read-only package state adapter must never elevate');
+assert(!state.includes('sudo '), 'read-only package state adapter must never invoke sudo');
+assert(!state.includes('shell: true'), 'read-only package state adapter must never enable shell execution');
+
 console.log('SWIR System Package Transaction Service contract validation: OK');
 console.log('Mutation boundary: signed/allowlisted repository + authorization + pre-mutation snapshot + durable journal');
 console.log('Privileged transport: guarded pkexec with shell=false and root-owned allowlisted executables');
+console.log('State adapters: read-only package version snapshots + constrained native entry-point health checks');
 console.log('Automatic rollback: rpm-ostree deployment rollback only; other managers fail closed to recovery-needed state');
