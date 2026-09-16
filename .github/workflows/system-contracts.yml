@@ -36,6 +36,8 @@ jobs:
           node --check system/runtime/native-app-launcher.selftest.mjs
           node --check system/runtime/native-app-supervisor.mjs
           node --check system/runtime/native-app-supervisor.selftest.mjs
+          node --check system/runtime/native-package-execution-service.mjs
+          node --check system/runtime/native-package-execution-service.selftest.mjs
           node --check system/hardware/hardware-service.mjs
           node --check system/hardware/hardware-probe.mjs
           node --check system/hardware/hardware-service.selftest.mjs
@@ -55,6 +57,9 @@ jobs:
 
       - name: Run native application supervisor self-tests
         run: node system/runtime/native-app-supervisor.selftest.mjs
+
+      - name: Run native package execution service self-tests
+        run: node system/runtime/native-package-execution-service.selftest.mjs
 
       - name: Enforce trusted Hardware Catalog policy
         run: node system/hardware/hardware-catalog.selftest.mjs
