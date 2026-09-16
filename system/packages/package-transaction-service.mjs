@@ -5,6 +5,7 @@ import path from 'node:path';
 const SUPPORTED_MANAGERS = new Set(['apt', 'dnf', 'rpm-ostree', 'pacman', 'zypper']);
 const OPERATIONS = new Set(['install', 'update', 'remove']);
 const PACKAGE_NAME = /^[A-Za-z0-9][A-Za-z0-9+._:@-]{0,127}$/;
+const TRANSACTION_ID = /^[A-Za-z0-9._-]{8,128}$/;
 const ACTIVE_STATES = new Set(['prepared', 'mutating', 'verifying', 'rolling-back']);
 const TERMINAL_STATES = new Set(['committed', 'rolled-back', 'aborted', 'failed-needs-recovery']);
 const MAX_JOURNAL_BYTES = 1024 * 1024;
@@ -27,6 +28,12 @@ function clone(value) {
 
 function uniqueStrings(values) {
   return [...new Set((values || []).filter(value => typeof value === 'string' && value.length > 0))];
+}
+
+function expectedSnapshotSource(manager) {
+  if (manager === 'apt') return 'dpkg-query';
+  if (manager === 'pacman') return 'pacman';
+  return 'rpm';
 }
 
 export class PackageTransactionError extends Error {
@@ -82,6 +89,43 @@ export function validatePrivilegedCommand({ manager, operation, packageName, com
   const expected = expectedPackageManagerCommand(manager, operation, packageName);
   assert(stableStringify(command) === stableStringify(expected), 'COMMAND_MISMATCH', 'package transaction command does not match the trusted provider plan');
   return expected;
+}
+
+export function validatePackageSnapshot(snapshot, { manager, packageName, packageId }) {
+  assert(isObject(snapshot), 'SNAPSHOT_REQUIRED', 'package transaction snapshot provider must return an object');
+  assert(snapshot.schema === 'swir.package-snapshot/0.1', 'INVALID_SNAPSHOT_SCHEMA', 'package snapshot schema mismatch');
+  assert(typeof snapshot.capturedAt === 'string' && snapshot.capturedAt.length > 0, 'INVALID_SNAPSHOT', 'package snapshot requires capturedAt');
+  assert(snapshot.packageId === packageId, 'SNAPSHOT_PACKAGE_MISMATCH', 'package snapshot package id does not match transaction plan');
+  assert(snapshot.manager === manager, 'SNAPSHOT_MANAGER_MISMATCH', 'package snapshot manager does not match transaction plan');
+  assert(snapshot.packageName === packageName, 'SNAPSHOT_PACKAGE_MISMATCH', 'package snapshot package name does not match transaction plan');
+  assert(typeof snapshot.installed === 'boolean', 'INVALID_SNAPSHOT', 'package snapshot installed flag must be boolean');
+  if (snapshot.installed) {
+    assert(typeof snapshot.version === 'string' && snapshot.version.length > 0, 'INVALID_SNAPSHOT_VERSION', 'installed package snapshot requires a version');
+  } else {
+    assert(snapshot.version === null, 'INVALID_SNAPSHOT_VERSION', 'non-installed package snapshot must use null version');
+  }
+  assert(isObject(snapshot.query), 'INVALID_SNAPSHOT', 'package snapshot requires query metadata');
+  assert(snapshot.query.source === expectedSnapshotSource(manager), 'SNAPSHOT_SOURCE_MISMATCH', 'package snapshot query source does not match package manager');
+  assert(Number.isInteger(snapshot.query.exitCode), 'INVALID_SNAPSHOT', 'package snapshot query requires integer exit code');
+  assert(snapshot.query.signal === null || typeof snapshot.query.signal === 'string', 'INVALID_SNAPSHOT', 'package snapshot query signal must be string or null');
+  return snapshot;
+}
+
+export function validatePackageHealth(health, { packageName, packageId }) {
+  assert(isObject(health), 'HEALTH_RESULT_REQUIRED', 'package health verifier must return an object');
+  assert(health.schema === 'swir.package-health/0.1', 'INVALID_HEALTH_SCHEMA', 'package health schema mismatch');
+  assert(health.packageId === packageId, 'HEALTH_PACKAGE_MISMATCH', 'package health package id does not match transaction plan');
+  assert(health.packageName === packageName, 'HEALTH_PACKAGE_MISMATCH', 'package health package name does not match transaction plan');
+  assert(typeof health.healthy === 'boolean', 'INVALID_HEALTH_RESULT', 'package health result must include boolean healthy');
+  assert(Array.isArray(health.checks) && health.checks.length > 0, 'INVALID_HEALTH_RESULT', 'package health result must include checks');
+  for (const check of health.checks) {
+    assert(isObject(check), 'INVALID_HEALTH_CHECK', 'package health check must be an object');
+    assert(typeof check.id === 'string' && check.id.length > 0, 'INVALID_HEALTH_CHECK', 'package health check requires id');
+    assert(typeof check.ok === 'boolean', 'INVALID_HEALTH_CHECK', 'package health check requires boolean ok');
+    if (Object.prototype.hasOwnProperty.call(check, 'reason')) assert(typeof check.reason === 'string' && check.reason.length > 0, 'INVALID_HEALTH_CHECK', 'package health check reason must be non-empty string');
+    if (Object.prototype.hasOwnProperty.call(check, 'resolved')) assert(typeof check.resolved === 'string' && check.resolved.length > 0, 'INVALID_HEALTH_CHECK', 'package health check resolved path must be non-empty string');
+  }
+  return health;
 }
 
 export function validateSystemPackagePlan(plan, { allowlistedRepositories = [] } = {}) {
@@ -150,9 +194,11 @@ function ensureJournalDirectory(journalDirectory) {
   fs.mkdirSync(journalDirectory, { recursive: true, mode: 0o700 });
   const stat = fs.lstatSync(journalDirectory);
   assert(stat.isDirectory() && !stat.isSymbolicLink(), 'UNSAFE_JOURNAL_DIRECTORY', 'package journal path must be a real directory');
+  if (Number.isInteger(stat.mode)) assert((stat.mode & 0o022) === 0, 'UNSAFE_JOURNAL_DIRECTORY_MODE', 'package journal directory must not be group/world writable');
 }
 
 function atomicWriteJson(directory, id, value) {
+  assert(typeof id === 'string' && TRANSACTION_ID.test(id), 'INVALID_TRANSACTION_ID', 'transaction id contains unsafe characters');
   ensureJournalDirectory(directory);
   const target = path.join(directory, `${id}.json`);
   const temporary = path.join(directory, `.${id}.${process.pid}.${crypto.randomBytes(6).toString('hex')}.tmp`);
@@ -174,10 +220,12 @@ function atomicWriteJson(directory, id, value) {
 function readJournalFile(filePath) {
   const stat = fs.lstatSync(filePath);
   assert(stat.isFile() && !stat.isSymbolicLink(), 'UNSAFE_JOURNAL_FILE', 'package transaction journal must be a regular file');
+  if (Number.isInteger(stat.mode)) assert((stat.mode & 0o022) === 0, 'UNSAFE_JOURNAL_FILE_MODE', 'package transaction journal must not be group/world writable');
   assert(stat.size <= MAX_JOURNAL_BYTES, 'JOURNAL_TOO_LARGE', 'package transaction journal exceeds size limit');
   const parsed = JSON.parse(fs.readFileSync(filePath, 'utf8'));
   assert(parsed?.schema === 'swir.system-package-transaction/0.1', 'INVALID_JOURNAL_SCHEMA', 'unsupported package transaction journal schema');
-  assert(typeof parsed.id === 'string' && parsed.id.length > 0, 'INVALID_JOURNAL', 'package transaction journal requires id');
+  assert(typeof parsed.id === 'string' && TRANSACTION_ID.test(parsed.id), 'INVALID_JOURNAL', 'package transaction journal requires a safe transaction id');
+  assert(path.basename(filePath) === `${parsed.id}.json`, 'JOURNAL_ID_PATH_MISMATCH', 'package transaction journal id does not match file name');
   assert(isObject(parsed.plan), 'INVALID_JOURNAL', 'package transaction journal requires original plan');
   assert(parsed.planDigest === digestPackagePlan(parsed.plan), 'JOURNAL_PLAN_DIGEST_MISMATCH', 'package transaction journal plan digest mismatch');
   assert(ACTIVE_STATES.has(parsed.state) || TERMINAL_STATES.has(parsed.state), 'INVALID_JOURNAL_STATE', 'invalid package transaction journal state');
@@ -258,16 +306,19 @@ export class SystemPackageTransactionService {
     assert(trust?.verified === true, 'REPOSITORY_TRUST_NOT_VERIFIED', 'distribution repository trust verification failed');
 
     const authorization = await this.#authorize('packages.mutate', validated.planDigest, plan, context);
-    const snapshot = await this.#snapshotProvider.capture({
+    const snapshot = validatePackageSnapshot(await this.#snapshotProvider.capture({
       manager: validated.manager,
       operation: validated.operation,
       packageName: validated.packageName,
       packageId: plan.package.id
+    }), {
+      manager: validated.manager,
+      packageName: validated.packageName,
+      packageId: plan.package.id
     });
-    assert(isObject(snapshot), 'SNAPSHOT_REQUIRED', 'package transaction snapshot provider must return an object');
 
     const id = this.#idFactory();
-    assert(/^[A-Za-z0-9._-]{8,128}$/.test(id), 'INVALID_TRANSACTION_ID', 'transaction id contains unsafe characters');
+    assert(typeof id === 'string' && TRANSACTION_ID.test(id), 'INVALID_TRANSACTION_ID', 'transaction id contains unsafe characters');
     const now = this.#clock();
     let record = {
       schema: 'swir.system-package-transaction/0.1',
@@ -315,17 +366,20 @@ export class SystemPackageTransactionService {
 
       if (plan.transaction.healthCheckRequired) {
         record = this.#transition(record, 'verifying', 'post-mutation health verification');
-        const health = await this.#healthVerifier.verify({
+        const health = validatePackageHealth(await this.#healthVerifier.verify({
           transactionId: id,
           packageId: plan.package.id,
           packageName: validated.packageName,
           nativeEntryPoint: plan.package.nativeEntryPoint,
           operation: validated.operation,
           manager: validated.manager
+        }), {
+          packageId: plan.package.id,
+          packageName: validated.packageName
         });
-        record.health = clone(health || {});
+        record.health = clone(health);
         atomicWriteJson(this.#journalDirectory, id, record);
-        assert(health?.healthy === true, 'HEALTH_CHECK_FAILED', 'post-mutation package health check failed');
+        assert(health.healthy === true, 'HEALTH_CHECK_FAILED', 'post-mutation package health check failed');
       }
 
       record = this.#transition(record, 'committed', 'package transaction committed');
@@ -361,6 +415,17 @@ export class SystemPackageTransactionService {
       let validated;
       try {
         validated = validateSystemPackagePlan(record.plan, { allowlistedRepositories: this.#allowlistedRepositories });
+        validatePackageSnapshot(record.snapshot, {
+          manager: validated.manager,
+          packageName: validated.packageName,
+          packageId: record.plan.package.id
+        });
+        if (record.health !== null) {
+          validatePackageHealth(record.health, {
+            packageName: validated.packageName,
+            packageId: record.plan.package.id
+          });
+        }
       } catch (error) {
         outcomes.push({ id: record.id, status: 'blocked', error: safeError(error) });
         continue;
@@ -390,7 +455,7 @@ export class SystemPackageTransactionService {
   }
 
   readJournal(id) {
-    assert(typeof id === 'string' && /^[A-Za-z0-9._-]{8,128}$/.test(id), 'INVALID_TRANSACTION_ID', 'invalid transaction id');
+    assert(typeof id === 'string' && TRANSACTION_ID.test(id), 'INVALID_TRANSACTION_ID', 'invalid transaction id');
     return clone(readJournalFile(path.join(this.#journalDirectory, `${id}.json`)));
   }
 
@@ -459,6 +524,10 @@ export const SystemPackageTransactionPolicy = Object.freeze({
   arbitraryRepositoryUrls: false,
   shellExecution: false,
   durableJournalRequiredBeforeMutation: true,
+  journalDirectoryMustNotBeGroupWorldWritable: true,
+  journalIdBoundToFilename: true,
+  snapshotBindingRequired: true,
+  healthBindingRequired: true,
   authorizationScope: 'packages.mutate',
   recoveryAuthorizationScope: 'packages.recover',
   automaticRollbackManagers: ['rpm-ostree']
