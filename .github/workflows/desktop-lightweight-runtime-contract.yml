@@ -1,0 +1,52 @@
+name: Desktop Lightweight Runtime Contract
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'desktop/windows/SWIR.Desktop.Host.csproj'
+      - 'desktop/windows/Program.cs'
+      - 'desktop/windows/publish-desktop-host.ps1'
+      - '.github/workflows/desktop-lightweight-runtime-contract.yml'
+  pull_request:
+    paths:
+      - 'desktop/windows/SWIR.Desktop.Host.csproj'
+      - 'desktop/windows/Program.cs'
+      - 'desktop/windows/publish-desktop-host.ps1'
+      - '.github/workflows/desktop-lightweight-runtime-contract.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: desktop/windows
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Publish lightweight runtime
+        shell: pwsh
+        run: |
+          $out = Join-Path '${{ runner.temp }}' 'swir-lightweight-runtime'
+          ./publish-desktop-host.ps1 -PublishDir $out -ReleaseVersion '0.5.7' -Channel preview -SourceCommit '${{ github.sha }}'
+          $manifest = Get-Content (Join-Path $out 'desktop-host-build.json') -Raw | ConvertFrom-Json
+          if ($manifest.schema -ne 'swir.desktop-host-build/0.1') { throw 'Unexpected host build schema.' }
+          if ($manifest.deployment.contract -ne 'swir.desktop-lightweight-runtime/0.1') { throw 'Lightweight runtime contract missing.' }
+          if ($manifest.deployment.mode -ne 'framework-dependent' -or $manifest.deployment.selfContained -ne $false) { throw 'Desktop Host must remain explicitly framework-dependent.' }
+          if ($manifest.deployment.runtimeIdentifier -ne 'win-x64' -or $manifest.deployment.targetFramework -ne 'net8.0-windows') { throw 'Desktop runtime identity mismatch.' }
+          $requirements = @($manifest.deployment.requirements)
+          if (@($requirements | Where-Object id -eq 'Microsoft.WindowsDesktop.App').Count -ne 1) { throw '.NET Desktop Runtime requirement missing.' }
+          if (@($requirements | Where-Object id -eq 'Microsoft.Edge.WebView2.Runtime').Count -ne 1) { throw 'WebView2 Evergreen Runtime requirement missing.' }
+          foreach ($file in @('SWIR.Desktop.Host.exe','SWIR.Desktop.Host.dll','SWIR.Desktop.Host.runtimeconfig.json')) {
+            if (-not (Test-Path (Join-Path $out $file) -PathType Leaf)) { throw "Published host missing $file" }
+          }
+      - name: Build shipping Desktop Host
+        run: dotnet build SWIR.Desktop.Host.csproj --configuration Release
