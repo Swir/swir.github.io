@@ -59,6 +59,8 @@ concurrency:
 
 jobs:
   build-and-verify:
+    if: ${{ github.repository == 'Swir/swir.github.io' && github.ref == 'refs/heads/main' }}
+    environment: swir-release-signing
     runs-on: windows-latest
     timeout-minutes: 25
     defaults:
@@ -68,33 +70,26 @@ jobs:
       SWIR_RELEASE_VERSION: ${{ inputs.version }}
       SWIR_RELEASE_CHANNEL: ${{ inputs.channel }}
       SWIR_RELEASE_KEY_ID: ${{ inputs.key_id }}
-      SWIR_RELEASE_PRIVATE_KEY_PEM: ${{ secrets.SWIR_DESKTOP_RELEASE_PRIVATE_KEY_PEM }}
       SWIR_CATALOG_KEY_ID: ${{ inputs.catalog_key_id }}
       SWIR_CATALOG_SEQUENCE: ${{ inputs.catalog_sequence }}
       SWIR_CATALOG_VERSION: ${{ inputs.catalog_version }}
       SWIR_CATALOG_VALID_HOURS: ${{ inputs.catalog_valid_hours }}
       SWIR_CATALOG_ROTATION_ENABLED: ${{ inputs.enable_catalog_root_rotation }}
       SWIR_CATALOG_NEXT_KEY_ID: ${{ inputs.catalog_next_key_id }}
-      SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM: ${{ secrets.SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM }}
-      SWIR_CATALOG_EXPECTED_ROOT_SHA256: ${{ secrets.SWIR_CATALOG_SIGNING_PUBLIC_KEY_SHA256 }}
-      SWIR_CATALOG_NEXT_PUBLIC_KEY_BASE64: ${{ secrets.SWIR_CATALOG_NEXT_PUBLIC_KEY_BASE64 }}
-      SWIR_CATALOG_NEXT_EXPECTED_ROOT_SHA256: ${{ secrets.SWIR_CATALOG_NEXT_SIGNING_PUBLIC_KEY_SHA256 }}
-      SWIR_CATALOG_ROTATION_CUTOVER_SEQUENCE: ${{ secrets.SWIR_CATALOG_ROTATION_CUTOVER_SEQUENCE }}
-      SWIR_CATALOG_CURRENT_RETIRE_AFTER_SEQUENCE: ${{ secrets.SWIR_CATALOG_CURRENT_RETIRE_AFTER_SEQUENCE }}
 
     steps:
       - name: Checkout exact release commit
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
       - name: Setup .NET 8
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@d4c94342e560b34958eacfc5d055d21461ed1c5d # v5.0.0
         with:
           dotnet-version: '8.0.x'
 
       - name: Setup Node 22
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: '22'
 
@@ -106,6 +101,14 @@ jobs:
 
       - name: Validate release and catalog signing inputs
         shell: pwsh
+        env:
+          SWIR_RELEASE_PRIVATE_KEY_PEM: ${{ secrets.SWIR_DESKTOP_RELEASE_PRIVATE_KEY_PEM }}
+          SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM: ${{ secrets.SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM }}
+          SWIR_CATALOG_EXPECTED_ROOT_SHA256: ${{ secrets.SWIR_CATALOG_SIGNING_PUBLIC_KEY_SHA256 }}
+          SWIR_CATALOG_NEXT_PUBLIC_KEY_BASE64: ${{ secrets.SWIR_CATALOG_NEXT_PUBLIC_KEY_BASE64 }}
+          SWIR_CATALOG_NEXT_EXPECTED_ROOT_SHA256: ${{ secrets.SWIR_CATALOG_NEXT_SIGNING_PUBLIC_KEY_SHA256 }}
+          SWIR_CATALOG_ROTATION_CUTOVER_SEQUENCE: ${{ secrets.SWIR_CATALOG_ROTATION_CUTOVER_SEQUENCE }}
+          SWIR_CATALOG_CURRENT_RETIRE_AFTER_SEQUENCE: ${{ secrets.SWIR_CATALOG_CURRENT_RETIRE_AFTER_SEQUENCE }}
         run: |
           $ErrorActionPreference = 'Stop'
           $version = [Version]::Parse($env:SWIR_RELEASE_VERSION)
@@ -153,6 +156,13 @@ jobs:
       - name: Build signed catalog from real swirapp digests
         shell: pwsh
         working-directory: .
+        env:
+          SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM: ${{ secrets.SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM }}
+          SWIR_CATALOG_EXPECTED_ROOT_SHA256: ${{ secrets.SWIR_CATALOG_SIGNING_PUBLIC_KEY_SHA256 }}
+          SWIR_CATALOG_NEXT_PUBLIC_KEY_BASE64: ${{ secrets.SWIR_CATALOG_NEXT_PUBLIC_KEY_BASE64 }}
+          SWIR_CATALOG_NEXT_EXPECTED_ROOT_SHA256: ${{ secrets.SWIR_CATALOG_NEXT_SIGNING_PUBLIC_KEY_SHA256 }}
+          SWIR_CATALOG_ROTATION_CUTOVER_SEQUENCE: ${{ secrets.SWIR_CATALOG_ROTATION_CUTOVER_SEQUENCE }}
+          SWIR_CATALOG_CURRENT_RETIRE_AFTER_SEQUENCE: ${{ secrets.SWIR_CATALOG_CURRENT_RETIRE_AFTER_SEQUENCE }}
         run: |
           $store = Join-Path '${{ runner.temp }}' 'swir-store-artifacts'
           $catalog = Join-Path '${{ runner.temp }}' 'swir-catalog-release'
@@ -250,6 +260,11 @@ jobs:
       - name: Verify staged catalog root policy
         shell: pwsh
         working-directory: .
+        env:
+          SWIR_CATALOG_EXPECTED_ROOT_SHA256: ${{ secrets.SWIR_CATALOG_SIGNING_PUBLIC_KEY_SHA256 }}
+          SWIR_CATALOG_NEXT_EXPECTED_ROOT_SHA256: ${{ secrets.SWIR_CATALOG_NEXT_SIGNING_PUBLIC_KEY_SHA256 }}
+          SWIR_CATALOG_ROTATION_CUTOVER_SEQUENCE: ${{ secrets.SWIR_CATALOG_ROTATION_CUTOVER_SEQUENCE }}
+          SWIR_CATALOG_CURRENT_RETIRE_AFTER_SEQUENCE: ${{ secrets.SWIR_CATALOG_CURRENT_RETIRE_AFTER_SEQUENCE }}
         run: |
           $trustPath = Join-Path '${{ runner.temp }}' 'swir-release-publish\catalog-trust-roots.json'
           if ($env:SWIR_CATALOG_ROTATION_ENABLED -eq 'true') {
@@ -262,6 +277,8 @@ jobs:
 
       - name: Materialize ephemeral Desktop update signing key and public verifier key
         shell: pwsh
+        env:
+          SWIR_RELEASE_PRIVATE_KEY_PEM: ${{ secrets.SWIR_DESKTOP_RELEASE_PRIVATE_KEY_PEM }}
         run: |
           $privateKey = Join-Path '${{ runner.temp }}' 'swir-release-private.pem'
           $publicKey = Join-Path '${{ runner.temp }}' 'swir-release-public.pem'
@@ -294,6 +311,11 @@ jobs:
       - name: Independently verify signed release bundle
         shell: pwsh
         working-directory: .
+        env:
+          SWIR_CATALOG_EXPECTED_ROOT_SHA256: ${{ secrets.SWIR_CATALOG_SIGNING_PUBLIC_KEY_SHA256 }}
+          SWIR_CATALOG_NEXT_EXPECTED_ROOT_SHA256: ${{ secrets.SWIR_CATALOG_NEXT_SIGNING_PUBLIC_KEY_SHA256 }}
+          SWIR_CATALOG_ROTATION_CUTOVER_SEQUENCE: ${{ secrets.SWIR_CATALOG_ROTATION_CUTOVER_SEQUENCE }}
+          SWIR_CATALOG_CURRENT_RETIRE_AFTER_SEQUENCE: ${{ secrets.SWIR_CATALOG_CURRENT_RETIRE_AFTER_SEQUENCE }}
         run: |
           $bundle = Join-Path '${{ runner.temp }}' 'swir-release-bundle'
           $publicKey = Join-Path '${{ runner.temp }}' 'swir-release-public.pem'
@@ -326,7 +348,7 @@ jobs:
           }
 
       - name: Upload verified release bundle
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: swir-desktop-${{ inputs.version }}-${{ inputs.channel }}
           path: ${{ runner.temp }}\swir-release-bundle\*
@@ -339,16 +361,9 @@ jobs:
         run: |
           Remove-Item (Join-Path '${{ runner.temp }}' 'swir-release-private.pem') -Force -ErrorAction SilentlyContinue
           Remove-Item (Join-Path '${{ runner.temp }}' 'swir-release-public.pem') -Force -ErrorAction SilentlyContinue
-          Remove-Item Env:SWIR_RELEASE_PRIVATE_KEY_PEM -ErrorAction SilentlyContinue
-          Remove-Item Env:SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM -ErrorAction SilentlyContinue
-          Remove-Item Env:SWIR_CATALOG_EXPECTED_ROOT_SHA256 -ErrorAction SilentlyContinue
-          Remove-Item Env:SWIR_CATALOG_NEXT_PUBLIC_KEY_BASE64 -ErrorAction SilentlyContinue
-          Remove-Item Env:SWIR_CATALOG_NEXT_EXPECTED_ROOT_SHA256 -ErrorAction SilentlyContinue
-          Remove-Item Env:SWIR_CATALOG_ROTATION_CUTOVER_SEQUENCE -ErrorAction SilentlyContinue
-          Remove-Item Env:SWIR_CATALOG_CURRENT_RETIRE_AFTER_SEQUENCE -ErrorAction SilentlyContinue
 
   publish-github-release:
-    if: ${{ inputs.publish_release && github.ref == 'refs/heads/main' }}
+    if: ${{ inputs.publish_release && github.repository == 'Swir/swir.github.io' && github.ref == 'refs/heads/main' }}
     needs: build-and-verify
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -359,7 +374,7 @@ jobs:
       SWIR_RELEASE_VERSION: ${{ inputs.version }}
       SWIR_RELEASE_CHANNEL: ${{ inputs.channel }}
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           name: swir-desktop-${{ inputs.version }}-${{ inputs.channel }}
           path: release-bundle

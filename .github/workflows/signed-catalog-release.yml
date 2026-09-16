@@ -44,28 +44,30 @@ concurrency:
 
 jobs:
   sign-and-verify:
+    if: ${{ github.repository == 'Swir/swir.github.io' && github.ref == 'refs/heads/main' }}
+    environment: swir-release-signing
     runs-on: ubuntu-latest
     timeout-minutes: 8
-    env:
-      SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM: ${{ secrets.SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM }}
-      SWIR_CATALOG_EXPECTED_ROOT_SHA256: ${{ secrets.SWIR_CATALOG_SIGNING_PUBLIC_KEY_SHA256 }}
-      SWIR_CATALOG_NEXT_PUBLIC_KEY_BASE64: ${{ secrets.SWIR_CATALOG_NEXT_PUBLIC_KEY_BASE64 }}
-      SWIR_CATALOG_NEXT_EXPECTED_ROOT_SHA256: ${{ secrets.SWIR_CATALOG_NEXT_SIGNING_PUBLIC_KEY_SHA256 }}
-      SWIR_CATALOG_ROTATION_CUTOVER_SEQUENCE: ${{ secrets.SWIR_CATALOG_ROTATION_CUTOVER_SEQUENCE }}
-      SWIR_CATALOG_CURRENT_RETIRE_AFTER_SEQUENCE: ${{ secrets.SWIR_CATALOG_CURRENT_RETIRE_AFTER_SEQUENCE }}
     steps:
       - name: Checkout exact catalog source
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
       - name: Setup Node 22
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: '22'
 
       - name: Validate protected signing inputs
         shell: bash
+        env:
+          SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM: ${{ secrets.SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM }}
+          SWIR_CATALOG_EXPECTED_ROOT_SHA256: ${{ secrets.SWIR_CATALOG_SIGNING_PUBLIC_KEY_SHA256 }}
+          SWIR_CATALOG_NEXT_PUBLIC_KEY_BASE64: ${{ secrets.SWIR_CATALOG_NEXT_PUBLIC_KEY_BASE64 }}
+          SWIR_CATALOG_NEXT_EXPECTED_ROOT_SHA256: ${{ secrets.SWIR_CATALOG_NEXT_SIGNING_PUBLIC_KEY_SHA256 }}
+          SWIR_CATALOG_ROTATION_CUTOVER_SEQUENCE: ${{ secrets.SWIR_CATALOG_ROTATION_CUTOVER_SEQUENCE }}
+          SWIR_CATALOG_CURRENT_RETIRE_AFTER_SEQUENCE: ${{ secrets.SWIR_CATALOG_CURRENT_RETIRE_AFTER_SEQUENCE }}
         run: |
           set -euo pipefail
           [[ '${{ inputs.key_id }}' =~ ^[A-Za-z0-9._-]{1,128}$ ]] || { echo 'Invalid key_id' >&2; exit 1; }
@@ -90,6 +92,8 @@ jobs:
 
       - name: Build signed catalog and public trust-root bundle
         shell: bash
+        env:
+          SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM: ${{ secrets.SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM }}
         run: |
           set -euo pipefail
           node scripts/build-signed-catalog-release.mjs \
@@ -104,6 +108,12 @@ jobs:
       - name: Apply protected current-next root rotation
         if: ${{ inputs.enable_root_rotation }}
         shell: bash
+        env:
+          SWIR_CATALOG_EXPECTED_ROOT_SHA256: ${{ secrets.SWIR_CATALOG_SIGNING_PUBLIC_KEY_SHA256 }}
+          SWIR_CATALOG_NEXT_PUBLIC_KEY_BASE64: ${{ secrets.SWIR_CATALOG_NEXT_PUBLIC_KEY_BASE64 }}
+          SWIR_CATALOG_NEXT_EXPECTED_ROOT_SHA256: ${{ secrets.SWIR_CATALOG_NEXT_SIGNING_PUBLIC_KEY_SHA256 }}
+          SWIR_CATALOG_ROTATION_CUTOVER_SEQUENCE: ${{ secrets.SWIR_CATALOG_ROTATION_CUTOVER_SEQUENCE }}
+          SWIR_CATALOG_CURRENT_RETIRE_AFTER_SEQUENCE: ${{ secrets.SWIR_CATALOG_CURRENT_RETIRE_AFTER_SEQUENCE }}
         run: |
           set -euo pipefail
           node scripts/apply-catalog-root-rotation.mjs \
@@ -119,6 +129,8 @@ jobs:
       - name: Verify pinned catalog public root
         if: ${{ !inputs.enable_root_rotation }}
         shell: bash
+        env:
+          SWIR_CATALOG_EXPECTED_ROOT_SHA256: ${{ secrets.SWIR_CATALOG_SIGNING_PUBLIC_KEY_SHA256 }}
         run: |
           set -euo pipefail
           node scripts/verify-catalog-root-pin.mjs \
@@ -129,6 +141,11 @@ jobs:
       - name: Verify pinned current-next root rotation
         if: ${{ inputs.enable_root_rotation }}
         shell: bash
+        env:
+          SWIR_CATALOG_EXPECTED_ROOT_SHA256: ${{ secrets.SWIR_CATALOG_SIGNING_PUBLIC_KEY_SHA256 }}
+          SWIR_CATALOG_NEXT_EXPECTED_ROOT_SHA256: ${{ secrets.SWIR_CATALOG_NEXT_SIGNING_PUBLIC_KEY_SHA256 }}
+          SWIR_CATALOG_ROTATION_CUTOVER_SEQUENCE: ${{ secrets.SWIR_CATALOG_ROTATION_CUTOVER_SEQUENCE }}
+          SWIR_CATALOG_CURRENT_RETIRE_AFTER_SEQUENCE: ${{ secrets.SWIR_CATALOG_CURRENT_RETIRE_AFTER_SEQUENCE }}
         run: |
           set -euo pipefail
           node scripts/verify-catalog-root-rotation.mjs \
@@ -163,21 +180,15 @@ jobs:
           NODE
 
       - name: Upload PUBLIC signed catalog release bundle
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: swir-signed-catalog-${{ inputs.catalog_version }}-seq-${{ inputs.sequence }}
           path: ${{ runner.temp }}/swir-catalog-release/*
           if-no-files-found: error
           retention-days: 14
 
-      - name: Remove signing inputs
+      - name: Remove transient signing inputs
         if: always()
         shell: bash
         run: |
           rm -f "$RUNNER_TEMP/swir-catalog-artifacts.json"
-          unset SWIR_CATALOG_SIGNING_PRIVATE_KEY_PEM || true
-          unset SWIR_CATALOG_EXPECTED_ROOT_SHA256 || true
-          unset SWIR_CATALOG_NEXT_PUBLIC_KEY_BASE64 || true
-          unset SWIR_CATALOG_NEXT_EXPECTED_ROOT_SHA256 || true
-          unset SWIR_CATALOG_ROTATION_CUTOVER_SEQUENCE || true
-          unset SWIR_CATALOG_CURRENT_RETIRE_AFTER_SEQUENCE || true
