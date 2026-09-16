@@ -26,7 +26,7 @@ const manifest = {
 
 const { privateKey, publicKey } = crypto.generateKeyPairSync('ed25519');
 const jwk = publicKey.export({ format: 'jwk' });
-const rawPublic = Buffer.from(String(jwk.x).replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(String(jwk.x).length / 4) * 4, '='));
+const rawPublic = Buffer.from(String(jwk.x).replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(String(jwk.x).length / 4) * 4, '='), 'base64');
 const trustVerifier = new SystemCatalogTrustVerifier({
   trustRoots: { schema: 'swir.catalog-trust-roots/1.0', requireSignedCatalog: true, roots: [{ keyId: 'e2e-system-catalog', algorithm: 'Ed25519', format: 'raw', publicKey: rawPublic.toString('base64'), scope: ['catalog:official'], enabled: true }] },
   stateStore: new MemoryCatalogTrustState()
