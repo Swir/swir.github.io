@@ -2,7 +2,7 @@
 
 Status: **implemented foundation / host integration pending**
 
-This document defines the first executable transaction boundary between the read-only `swir.package.system` distribution provider and future SWIR OS System Edition package management. It does **not** mark the System Edition package-manager roadmap items complete yet: the service is implemented and contract-tested, but still needs real base-distribution integration, production authorization/trust/snapshot adapters, and hardware/VM end-to-end validation.
+This document defines the first executable transaction boundary between the read-only `swir.package.system` distribution provider and future SWIR OS System Edition package management. It does **not** mark the System Edition package-manager roadmap items complete yet: the service is implemented and contract-tested, including read-only package-state snapshots and native entry-point health probes, but still needs real base-distribution integration, production authorization/trust policy and hardware/VM end-to-end validation.
 
 ## Goals
 
@@ -59,6 +59,22 @@ prepared -> mutating -> verifying -> committed
 
 The original plan is stored with a canonical SHA-256 digest. Recovery refuses to execute a journal whose stored plan no longer matches that digest.
 
+## Read-only package state and health adapters
+
+`DistributionPackageSnapshotProvider` adds the first concrete host-state adapter used before mutation. It is deliberately read-only and does not elevate privileges:
+
+| Package family | State query |
+|---|---|
+| apt/dpkg | `/usr/bin/dpkg-query` |
+| dnf / rpm-ostree / zypper | `/usr/bin/rpm -q` |
+| pacman | `/usr/bin/pacman -Q` |
+
+The adapter returns `swir.package-snapshot/0.1` with installed/not-installed state, the currently installed version when available and the exact query source. Package names are validated before argument construction, the subprocess always uses `shell=false`, inherits no caller environment and has time/output limits.
+
+`NativePackageHealthVerifier` provides the first post-mutation health gate for Linux-native applications. Install/update plans must expose an absolute native entry point whose resolved target remains below an explicitly allowed System root (defaults: `/usr` and `/opt`), resolves to a regular file and is executable. Symlink escapes outside those roots are rejected. Remove operations have a separate health path and do not require an entry point that should no longer exist.
+
+The journal contract now binds the embedded snapshot to `package-snapshot.schema.json` and any health result to `package-health.schema.json`, so those records have an explicit machine-readable shape instead of free-form objects.
+
 ## Privileged execution boundary
 
 `GuardedPkexecPackageExecutor` is the first Linux privilege transport adapter. It uses `/usr/bin/pkexec` and never invokes a shell. The adapter independently validates the command shape even though the transaction service already validated it. This is intentional defense in depth.
@@ -94,12 +110,16 @@ system/packages/package-transaction-service.mjs
 system/packages/package-transaction-service.selftest.mjs
 system/packages/privileged-package-executor.mjs
 system/packages/privileged-package-executor.selftest.mjs
+system/packages/distribution-package-state.mjs
+system/packages/distribution-package-state.selftest.mjs
 system/packages/validate-package-transaction-service.mjs
 system/contracts/package-transaction-journal.schema.json
+system/contracts/package-snapshot.schema.json
+system/contracts/package-health.schema.json
 .github/workflows/system-package-transaction-contract.yml
 ```
 
-The self-tests cover successful commit, trust rejection, authorization rejection, command tampering, repository allowlisting, durable journal state, failed health verification, rpm-ostree rollback, restart recovery, corrupted-journal blocking, `shell=false`, environment isolation, root ownership checks and non-zero package-manager exit handling. Tests inject the process runner and never modify the GitHub Actions host.
+The self-tests cover successful commit, trust rejection, authorization rejection, command tampering, repository allowlisting, durable journal state, failed health verification, rpm-ostree rollback, restart recovery, corrupted-journal blocking, `shell=false`, environment isolation, root ownership checks and non-zero package-manager exit handling. They also exercise apt/rpm/pacman state parsing, missing-package state, native entry-point root confinement and executability, plus an integrated transaction using the real snapshot/health adapters with an injected non-mutating host runner. Tests inject process/file probes and never modify the GitHub Actions host.
 
 ## Next production gates
 
@@ -107,9 +127,9 @@ Before the roadmap items **dependency-aware system package manager/updater** and
 
 - a production repository trust verifier backed by the selected distribution's package trust database;
 - an active-session authorization broker and explicit polkit policy;
-- package/version snapshot adapters for the chosen base distribution;
+- VM validation of the new package/version snapshot adapters against the chosen base distribution;
 - version-aware rollback for non-atomic package managers, or a filesystem/image snapshot strategy;
-- package health probes tied to manifests and native entry points;
+- richer package health probes tied to manifests, services and application-specific readiness where appropriate;
 - integration with SWIR Update Center and Driver Center;
 - VM tests that perform real install/update/remove/recovery against a disposable System Edition image;
 - reboot/interruption tests proving recovery after power-loss-style termination.
