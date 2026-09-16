@@ -46,6 +46,14 @@ jobs:
           node --check system/packages/distribution-package-state.mjs
           node --check system/packages/distribution-package-state.selftest.mjs
           node --check system/packages/validate-package-transaction-service.mjs
+          node --check system/security/polkit-authorization-broker.mjs
+          node --check system/security/polkit-authorization-broker.selftest.mjs
+          node --check system/security/distribution-repository-trust.mjs
+          node --check system/security/distribution-repository-trust.selftest.mjs
+          node --check system/security/system-package-security-boundary.mjs
+          node --check system/security/system-package-security-boundary.selftest.mjs
+          node --check system/security/validate-system-security-boundary.mjs
+          node --check system/security/system-security-host-probe.mjs
           node --check system/hardware/hardware-service.mjs
           node --check system/hardware/hardware-probe.mjs
           node --check system/hardware/hardware-service.selftest.mjs
@@ -59,6 +67,9 @@ jobs:
 
       - name: Validate System Edition contracts
         run: node system/validate-system-contracts.mjs
+
+      - name: Validate System package security boundary
+        run: node system/security/validate-system-security-boundary.mjs
 
       - name: Run guarded native Linux launcher self-tests
         run: node system/runtime/native-app-launcher.selftest.mjs
@@ -83,6 +94,21 @@ jobs:
 
       - name: Run guarded pkexec package executor self-tests
         run: node system/packages/privileged-package-executor.selftest.mjs
+
+      - name: Run Polkit authorization broker self-tests
+        run: node system/security/polkit-authorization-broker.selftest.mjs
+
+      - name: Run distribution repository trust self-tests
+        run: node system/security/distribution-repository-trust.selftest.mjs
+
+      - name: Run composed package security boundary self-tests
+        run: node system/security/system-package-security-boundary.selftest.mjs
+
+      - name: Probe CI host security assumptions read-only
+        shell: bash
+        run: |
+          node system/security/system-security-host-probe.mjs --compact > "$RUNNER_TEMP/swir-security-host.json"
+          node -e "const r=JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')); if(r.schema!=='swir.system-security-host-probe/0.1'||r.readOnly!==true||!r.distribution?.id||!Number.isInteger(r.subject?.pid)||!Array.isArray(r.policy?.availablePackageManagers)) process.exit(1); for(const item of Object.values(r.binaries)){if(item.available&&(item.rootOwned!==true||item.writableByGroupOrWorld!==false)) process.exit(1)} console.log('Security host probe:', r.distribution.prettyName, 'pkcheck=', r.policy.pkcheckSuitable, 'pkg=', r.policy.availablePackageManagers.join(','))" "$RUNNER_TEMP/swir-security-host.json"
 
       - name: Enforce trusted Hardware Catalog policy
         run: node system/hardware/hardware-catalog.selftest.mjs
@@ -130,5 +156,8 @@ jobs:
           node -e "JSON.parse(require('fs').readFileSync('system/contracts/package-transaction-journal.schema.json','utf8'))"
           node -e "JSON.parse(require('fs').readFileSync('system/contracts/package-snapshot.schema.json','utf8'))"
           node -e "JSON.parse(require('fs').readFileSync('system/contracts/package-health.schema.json','utf8'))"
+          node -e "JSON.parse(require('fs').readFileSync('system/contracts/system-authorization-grant.schema.json','utf8'))"
+          node -e "JSON.parse(require('fs').readFileSync('system/contracts/repository-trust-policy.schema.json','utf8'))"
+          node -e "JSON.parse(require('fs').readFileSync('system/contracts/repository-trust-proof.schema.json','utf8'))"
           node -e "JSON.parse(require('fs').readFileSync('system/contracts/trusted-sources.json','utf8'))"
           node -e "JSON.parse(require('fs').readFileSync('system/hardware/hardware-catalog.json','utf8'))"
