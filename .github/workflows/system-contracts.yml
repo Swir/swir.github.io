@@ -38,6 +38,11 @@ jobs:
           node --check system/runtime/native-app-supervisor.selftest.mjs
           node --check system/runtime/native-package-execution-service.mjs
           node --check system/runtime/native-package-execution-service.selftest.mjs
+          node --check system/packages/package-transaction-service.mjs
+          node --check system/packages/package-transaction-service.selftest.mjs
+          node --check system/packages/privileged-package-executor.mjs
+          node --check system/packages/privileged-package-executor.selftest.mjs
+          node --check system/packages/validate-package-transaction-service.mjs
           node --check system/hardware/hardware-service.mjs
           node --check system/hardware/hardware-probe.mjs
           node --check system/hardware/hardware-service.selftest.mjs
@@ -60,6 +65,15 @@ jobs:
 
       - name: Run native package execution service self-tests
         run: node system/runtime/native-package-execution-service.selftest.mjs
+
+      - name: Enforce System package transaction security boundaries
+        run: node system/packages/validate-package-transaction-service.mjs
+
+      - name: Run System package transaction lifecycle self-tests
+        run: node system/packages/package-transaction-service.selftest.mjs
+
+      - name: Run guarded pkexec package executor self-tests
+        run: node system/packages/privileged-package-executor.selftest.mjs
 
       - name: Enforce trusted Hardware Catalog policy
         run: node system/hardware/hardware-catalog.selftest.mjs
@@ -104,5 +118,6 @@ jobs:
           node -e "JSON.parse(require('fs').readFileSync('system/contracts/driver-plan.schema.json','utf8'))"
           node -e "JSON.parse(require('fs').readFileSync('system/contracts/driver-center-report.schema.json','utf8'))"
           node -e "JSON.parse(require('fs').readFileSync('system/contracts/package-provider.schema.json','utf8'))"
+          node -e "JSON.parse(require('fs').readFileSync('system/contracts/package-transaction-journal.schema.json','utf8'))"
           node -e "JSON.parse(require('fs').readFileSync('system/contracts/trusted-sources.json','utf8'))"
           node -e "JSON.parse(require('fs').readFileSync('system/hardware/hardware-catalog.json','utf8'))"
