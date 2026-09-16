@@ -1,0 +1,41 @@
+name: System Windows Runtime Provisioner Contract
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'system/runtime/windows-compat-runtime-provisioner.mjs'
+      - 'system/runtime/windows-compat-runtime-provisioner.selftest.mjs'
+      - 'system/contracts/compat-runtime-provisioning-catalog.schema.json'
+      - 'system/SWIR-MANAGED-WINDOWS-COMPAT-RUNTIME-0.1.md'
+      - '.github/workflows/system-windows-runtime-provisioner-contract.yml'
+  pull_request:
+    paths:
+      - 'system/runtime/windows-compat-runtime-provisioner.mjs'
+      - 'system/runtime/windows-compat-runtime-provisioner.selftest.mjs'
+      - 'system/contracts/compat-runtime-provisioning-catalog.schema.json'
+      - 'system/SWIR-MANAGED-WINDOWS-COMPAT-RUNTIME-0.1.md'
+      - '.github/workflows/system-windows-runtime-provisioner-contract.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check syntax and catalog schema
+        run: |
+          node --check system/runtime/windows-compat-runtime-provisioner.mjs
+          node --check system/runtime/windows-compat-runtime-provisioner.selftest.mjs
+          node -e "JSON.parse(require('fs').readFileSync('system/contracts/compat-runtime-provisioning-catalog.schema.json','utf8'))"
+      - name: Run runtime provisioner self-test
+        run: node system/runtime/windows-compat-runtime-provisioner.selftest.mjs
+      - name: Enforce provisioning trust boundary
+        run: |
+          node -e "const fs=require('fs');const s=fs.readFileSync('system/runtime/windows-compat-runtime-provisioner.mjs','utf8');for(const required of ['arbitraryDownloads: false','arbitraryRepositoryUrls: false','arbitraryExecutablePaths: false','directPackageManagerExecution: false','trustedRuntimeRediscoveryRequired: true'])if(!s.includes(required))throw new Error('Runtime provisioning security invariant missing: '+required);if(/node:child_process|spawnSync\(|execSync\(|execFileSync\(/.test(s))throw new Error('Provisioner must delegate package mutation instead of executing commands');console.log('Runtime provisioning trust boundary: OK')"
