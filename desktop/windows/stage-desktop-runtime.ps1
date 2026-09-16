@@ -58,6 +58,7 @@ $runtimeExtensions = [System.Collections.Generic.HashSet[string]]::new([System.S
 ) | ForEach-Object { [void]$runtimeExtensions.Add($_) }
 
 $manifestFiles = [System.Collections.Generic.List[object]]::new()
+$desktopEntryStaged = $false
 foreach ($relativeRaw in ($tracked | Sort-Object -Unique)) {
     $relative = $relativeRaw.Replace('\', '/')
     if ([string]::IsNullOrWhiteSpace($relative)) { continue }
@@ -92,7 +93,8 @@ foreach ($relativeRaw in ($tracked | Sort-Object -Unique)) {
         $copySource = Join-Path $catalogRelease 'swir-signed-catalog-release.js'
     }
 
-    $runtimeRelative = if ($relative.Equals($desktopEntryRelative, [System.StringComparison]::OrdinalIgnoreCase)) { 'index.html' } else { $relative }
+    $isDesktopEntry = $relative.Equals($desktopEntryRelative, [System.StringComparison]::OrdinalIgnoreCase)
+    $runtimeRelative = if ($isDesktopEntry) { 'index.html' } else { $relative }
     $destination = Join-Path $runtimeRoot $runtimeRelative
     if (Test-Path $destination -PathType Leaf) {
         throw "Tracked web runtime would overwrite Desktop publish output: $runtimeRelative (source: $relative)"
@@ -100,6 +102,7 @@ foreach ($relativeRaw in ($tracked | Sort-Object -Unique)) {
     $destinationDir = Split-Path $destination -Parent
     New-Item -ItemType Directory -Path $destinationDir -Force | Out-Null
     Copy-Item -LiteralPath $copySource -Destination $destination -Force
+    if ($isDesktopEntry) { $desktopEntryStaged = $true }
 
     # Shipping Desktop Store loads public release metadata before the coordinator. Web/source
     # builds do not need this extra script tag and keep their fail-closed null release slot.
@@ -117,7 +120,6 @@ foreach ($relativeRaw in ($tracked | Sort-Object -Unique)) {
         path = $runtimeRelative
         sha256 = $hash
         size = [long](Get-Item -LiteralPath $destination).Length
-        sourcePath = $relative
     })
 }
 
@@ -151,6 +153,7 @@ foreach ($relative in $required) {
 }
 
 # Fail closed if a future website redesign is accidentally routed into the native Desktop Host.
+if (-not $desktopEntryStaged) { throw 'Dedicated Desktop shell was not staged.' }
 $runtimeEntryPath = Join-Path $runtimeRoot 'index.html'
 $runtimeEntryHtml = Get-Content -LiteralPath $runtimeEntryPath -Raw
 foreach ($needle in @('id="boot-screen"', 'id="os-shell"', './swir-app-bridge-host.js', './swir-os.js')) {
@@ -160,9 +163,7 @@ if ($runtimeEntryHtml.Contains('ONE OS.<span>EVERY SCREEN.</span>')) {
     throw 'Desktop runtime entry resolved to the public SWIR OS showcase instead of the native shell.'
 }
 $entryManifestRecords = @($manifestFiles | Where-Object { $_.path -eq 'index.html' })
-if ($entryManifestRecords.Count -ne 1 -or $entryManifestRecords[0].sourcePath -ne $desktopEntryRelative) {
-    throw 'Desktop runtime manifest does not bind index.html uniquely to swir-desktop.html.'
-}
+if ($entryManifestRecords.Count -ne 1) { throw 'Desktop runtime manifest must contain exactly one index.html shell entry.' }
 
 if ($catalogRelease) {
     foreach ($relative in @('catalog-trust-roots.json', 'catalog-envelope.json', 'catalog.json')) {
@@ -180,7 +181,6 @@ if ($LASTEXITCODE -ne 0 -or $commit -notmatch '^[0-9a-fA-F]{40}$') { throw 'Coul
 $manifest = [ordered]@{
     schema = 'swir.desktop-web-runtime/0.1'
     sourceCommit = $commit.ToLowerInvariant()
-    entrySource = $desktopEntryRelative
     fileCount = $manifestFiles.Count
     files = @($manifestFiles)
 }
