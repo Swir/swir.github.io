@@ -6,6 +6,7 @@ on:
     paths:
       - 'system/packages/package-transaction-service.mjs'
       - 'system/packages/package-transaction-service.selftest.mjs'
+      - 'system/packages/package-transaction-security.selftest.mjs'
       - 'system/packages/privileged-package-executor.mjs'
       - 'system/packages/privileged-package-executor.selftest.mjs'
       - 'system/packages/distribution-package-state.mjs'
@@ -22,6 +23,7 @@ on:
     paths:
       - 'system/packages/package-transaction-service.mjs'
       - 'system/packages/package-transaction-service.selftest.mjs'
+      - 'system/packages/package-transaction-security.selftest.mjs'
       - 'system/packages/privileged-package-executor.mjs'
       - 'system/packages/privileged-package-executor.selftest.mjs'
       - 'system/packages/distribution-package-state.mjs'
@@ -55,6 +57,7 @@ jobs:
         run: |
           node --check system/packages/package-transaction-service.mjs
           node --check system/packages/package-transaction-service.selftest.mjs
+          node --check system/packages/package-transaction-security.selftest.mjs
           node --check system/packages/privileged-package-executor.mjs
           node --check system/packages/privileged-package-executor.selftest.mjs
           node --check system/packages/distribution-package-state.mjs
@@ -77,6 +80,9 @@ jobs:
 
       - name: Run package transaction lifecycle self-tests
         run: node system/packages/package-transaction-service.selftest.mjs
+
+      - name: Run package transaction tamper-resistance self-tests
+        run: node system/packages/package-transaction-security.selftest.mjs
 
       - name: Run guarded pkexec executor self-tests
         run: node system/packages/privileged-package-executor.selftest.mjs
