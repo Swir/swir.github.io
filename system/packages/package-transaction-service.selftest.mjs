@@ -8,6 +8,10 @@ import {
   digestPackagePlan,
   validateSystemPackagePlan
 } from './package-transaction-service.mjs';
+import {
+  DistributionPackageSnapshotProvider,
+  NativePackageHealthVerifier
+} from './distribution-package-state.mjs';
 
 function aptPlan(overrides = {}) {
   const base = {
@@ -57,6 +61,12 @@ function rpmOstreePlan() {
   };
 }
 
+function snapshotSource(manager) {
+  if (manager === 'apt') return 'dpkg-query';
+  if (manager === 'pacman') return 'pacman';
+  return 'rpm';
+}
+
 function createDependencies({ healthy = true, trustVerified = true, authorization = true, executeFailure = null } = {}) {
   const events = [];
   return {
@@ -78,7 +88,16 @@ function createDependencies({ healthy = true, trustVerified = true, authorizatio
     snapshotProvider: {
       async capture(input) {
         events.push(['snapshot', input.manager, input.packageName]);
-        return { schema: 'swir.package-snapshot/0.1', installed: false, version: null };
+        return {
+          schema: 'swir.package-snapshot/0.1',
+          capturedAt: '2026-09-16T20:00:00.000Z',
+          packageId: input.packageId ?? null,
+          manager: input.manager,
+          packageName: input.packageName,
+          installed: false,
+          version: null,
+          query: { source: snapshotSource(input.manager), exitCode: 1, signal: null }
+        };
       }
     },
     executor: {
@@ -91,7 +110,13 @@ function createDependencies({ healthy = true, trustVerified = true, authorizatio
     healthVerifier: {
       async verify(input) {
         events.push(['health', input.packageName]);
-        return { healthy, checks: [{ id: 'entry-point', ok: healthy }] };
+        return {
+          schema: 'swir.package-health/0.1',
+          packageId: input.packageId ?? null,
+          packageName: input.packageName,
+          healthy,
+          checks: [{ id: 'entry-point', ok: healthy, ...(healthy ? {} : { reason: 'SELFTEST_FAILURE' }) }]
+        };
       }
     }
   };
@@ -135,6 +160,8 @@ try {
   assert.equal(committed.authorization.actorId, 'user:1000');
   assert.equal(committed.trust.verified, true);
   assert.equal(committed.health.healthy, true);
+  assert.equal(committed.snapshot.schema, 'swir.package-snapshot/0.1');
+  assert.equal(committed.health.schema, 'swir.package-health/0.1');
   assert.deepEqual(successDeps.events.map(event => event[0]), ['trust', 'authorize', 'snapshot', 'execute', 'health']);
   const stored = success.readJournal('tx-selftest-0001');
   assert.equal(stored.state, 'committed');
@@ -171,6 +198,42 @@ try {
   assert.equal(rolledBack.state, 'rolled-back');
   assert.deepEqual(rollbackDeps.events.find(event => event[0] === 'execute' && event[1] === 'rollback')?.[2], ['rpm-ostree', 'rollback']);
 
+  const integrationEvents = [];
+  const integratedSnapshotProvider = new DistributionPackageSnapshotProvider({
+    clock: () => '2026-09-16T20:01:00.000Z',
+    runner: async (file, args) => {
+      integrationEvents.push(['query', file, [...args]]);
+      return { exitCode: 0, signal: null, stdout: 'install ok installed\t1.2.3-1\n', stderr: '' };
+    }
+  });
+  const integratedHealthVerifier = new NativePackageHealthVerifier({
+    lstatSync: () => ({ isSymbolicLink: () => false, isFile: () => true }),
+    realpathSync: value => value,
+    accessSync: () => undefined
+  });
+  const integratedDeps = {
+    ...createDependencies(),
+    snapshotProvider: integratedSnapshotProvider,
+    healthVerifier: integratedHealthVerifier,
+    executor: {
+      async execute(input) {
+        integrationEvents.push(['execute', input.operation, [...input.command]]);
+        return { schema: 'swir.package-executor-result/0.1', ok: true, exitCode: 0, operation: input.operation };
+      }
+    }
+  };
+  const integrationDir = path.join(tempRoot, 'real-state-adapters');
+  const integrated = makeService(integrationDir, integratedDeps, ['ubuntu-main'], 'tx-selftest-0008');
+  const integratedResult = await integrated.execute(aptPlan(), { reason: 'state-adapter integration' });
+  assert.equal(integratedResult.state, 'committed');
+  assert.equal(integratedResult.snapshot.installed, true);
+  assert.equal(integratedResult.snapshot.version, '1.2.3-1');
+  assert.equal(integratedResult.snapshot.query.source, 'dpkg-query');
+  assert.equal(integratedResult.health.schema, 'swir.package-health/0.1');
+  assert.equal(integratedResult.health.healthy, true);
+  assert.deepEqual(integrationEvents[0], ['query', '/usr/bin/dpkg-query', ['-W', '-f=${Status}\t${Version}\n', 'example-editor']]);
+  assert.deepEqual(integrationEvents[1], ['execute', 'install', ['apt-get', 'install', '--', 'example-editor']]);
+
   const recoveryDeps = createDependencies();
   const recoveryDir = path.join(tempRoot, 'crash-recovery');
   const recovery = makeService(recoveryDir, recoveryDeps, ['fedora-base'], 'tx-selftest-0006');
@@ -186,7 +249,16 @@ try {
     plan: crashPlan,
     trust: { verified: true, proofId: 'proof', repositoryId: 'fedora-base' },
     authorization: { grantId: 'old-grant', actorId: 'user:1000', scope: 'packages.mutate' },
-    snapshot: { schema: 'swir.package-snapshot/0.1', installed: false, version: null },
+    snapshot: {
+      schema: 'swir.package-snapshot/0.1',
+      capturedAt: '2026-09-16T20:00:00.500Z',
+      packageId: 'org.example.editor',
+      manager: 'rpm-ostree',
+      packageName: 'example-editor',
+      installed: false,
+      version: null,
+      query: { source: 'rpm', exitCode: 1, signal: null }
+    },
     execution: null,
     health: null,
     recovery: { automaticRollbackAvailable: true, rollbackCommand: ['rpm-ostree', 'rollback'] },
