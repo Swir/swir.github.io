@@ -82,8 +82,14 @@ requireText(updateCenter, "confirm('Apply the verified SWIR OS Desktop update an
 rejectText(updateCenter, 'host.updates.applyAndRestart', 'Update Center must not call a public mutating native updates method.');
 rejectText(updateCenter, 'host.updates.prepare', 'Update Center must not bypass the trusted shell broker for preparation.');
 
-requireText(serviceWorker, "'./swir-updates.html'", 'Service Worker CORE cache must keep Update Center available offline.');
-requireText(serviceWorker, 'swir-os-v1.7.13-desktop-update-flow-0.6.0', 'PWA cache key must invalidate the pre-preparation Update Center cache.');
+// swir.github.io is now the public showcase. The Desktop runtime stages its own local assets and must not
+// depend on the old root-scope PWA worker. Keep the root worker as a one-shot retirement worker so returning
+// browsers cannot keep serving stale Web Edition caches over the showcase.
+requireText(serviceWorker, "LEGACY_CACHE_PREFIX = 'swir-os-'", 'Public showcase worker must target legacy SWIR OS cache namespaces.');
+requireText(serviceWorker, 'await caches.keys()', 'Public showcase worker must enumerate legacy caches for cleanup.');
+requireText(serviceWorker, 'await self.registration.unregister()', 'Public showcase worker must unregister itself after retiring legacy caches.');
+rejectText(serviceWorker, "'./swir-updates.html'", 'Public showcase worker must not re-cache the Desktop Update Center.');
+rejectText(serviceWorker, 'swir-os-v1.7.13-desktop-update-flow-0.6.0', 'Retired Web Edition cache keys must not be recreated by the public showcase worker.');
 
 const scripts = [...updateCenter.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(match => match[1]).filter(Boolean);
 if (!scripts.length) throw new Error('Update Center must contain its executable script.');
@@ -95,4 +101,4 @@ for (const [index, script] of scripts.entries()) {
   }
 }
 
-console.log('Update Center Desktop workflow validated (signed check + guarded preparation + cancel/reset + deferred mutation + guarded restart).');
+console.log('Update Center Desktop workflow validated (signed check + guarded preparation + cancel/reset + deferred mutation + guarded restart + showcase cache retirement).');
