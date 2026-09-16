@@ -29,6 +29,8 @@ $projectPath = (Resolve-Path -LiteralPath $ProjectFile).Path
 $programPath = (Resolve-Path -LiteralPath $ProgramFile).Path
 $publishPath = [System.IO.Path]::GetFullPath($PublishDir)
 $hostVersion = "$ReleaseVersion-$Channel"
+$runtimeIdentifier = 'win-x64'
+$targetFramework = 'net8.0-windows'
 
 $sourceBytes = [System.IO.File]::ReadAllBytes($programPath)
 $sourceText = [System.Text.Encoding]::UTF8.GetString($sourceBytes)
@@ -56,7 +58,10 @@ try {
     }
     New-Item -ItemType Directory -Path $publishPath -Force | Out-Null
 
-    & dotnet publish $projectPath --configuration Release --output $publishPath
+    # Desktop Preview intentionally uses a small framework-dependent host. The machine must
+    # provide the supported .NET Desktop Runtime and Microsoft Edge WebView2 Evergreen Runtime.
+    # We make that dependency explicit instead of accidentally producing an ambiguous publish.
+    & dotnet publish $projectPath --configuration Release --runtime $runtimeIdentifier --self-contained false --output $publishPath /p:PublishSingleFile=false /p:PublishTrimmed=false
     if ($LASTEXITCODE -ne 0) {
         throw "dotnet publish failed with exit code $LASTEXITCODE"
     }
@@ -67,11 +72,26 @@ finally {
 
 $hostExe = Join-Path $publishPath 'SWIR.Desktop.Host.exe'
 $hostDll = Join-Path $publishPath 'SWIR.Desktop.Host.dll'
+$runtimeConfig = Join-Path $publishPath 'SWIR.Desktop.Host.runtimeconfig.json'
 if (-not (Test-Path -LiteralPath $hostExe -PathType Leaf)) {
     throw "Desktop Host publish output is missing the entry point: $hostExe"
 }
 if (-not (Test-Path -LiteralPath $hostDll -PathType Leaf)) {
     throw "Desktop Host publish output is missing the managed assembly: $hostDll"
+}
+if (-not (Test-Path -LiteralPath $runtimeConfig -PathType Leaf)) {
+    throw "Desktop Host publish output is missing runtimeconfig: $runtimeConfig"
+}
+
+$runtimeConfigJson = Get-Content -LiteralPath $runtimeConfig -Raw | ConvertFrom-Json
+$frameworkNames = @()
+if ($null -ne $runtimeConfigJson.runtimeOptions.frameworks) {
+    $frameworkNames = @($runtimeConfigJson.runtimeOptions.frameworks | ForEach-Object { [string]$_.name })
+} elseif ($null -ne $runtimeConfigJson.runtimeOptions.framework) {
+    $frameworkNames = @([string]$runtimeConfigJson.runtimeOptions.framework.name)
+}
+if ('Microsoft.WindowsDesktop.App' -notin $frameworkNames) {
+    throw 'Published Desktop Host runtimeconfig does not require Microsoft.WindowsDesktop.App as expected.'
 }
 
 $commit = if ([string]::IsNullOrWhiteSpace($SourceCommit)) { 'local-unpinned' } else { $SourceCommit.Trim().ToLowerInvariant() }
@@ -80,17 +100,29 @@ if ($commit -ne 'local-unpinned' -and $commit -notmatch '^[0-9a-f]{40}$') {
 }
 
 $manifest = [ordered]@{
-    schema = 'swir.desktop-host-build/0.1'
+    schema = 'swir.desktop-host-build/0.2'
     releaseVersion = $ReleaseVersion
     channel = $Channel
     hostVersion = $hostVersion
     sourceCommit = $commit
     entryPoint = 'SWIR.Desktop.Host.exe'
+    deployment = [ordered]@{
+        mode = 'framework-dependent'
+        runtimeIdentifier = $runtimeIdentifier
+        targetFramework = $targetFramework
+        selfContained = $false
+        singleFile = $false
+        trimmed = $false
+        requirements = @(
+            [ordered]@{ id = 'Microsoft.WindowsDesktop.App'; major = 8; source = 'microsoft-dotnet-desktop-runtime' },
+            [ordered]@{ id = 'Microsoft.Edge.WebView2.Runtime'; channel = 'evergreen'; source = 'microsoft-webview2-runtime' }
+        )
+    }
 }
 $manifestPath = Join-Path $publishPath 'desktop-host-build.json'
 [System.IO.File]::WriteAllText(
     $manifestPath,
-    ($manifest | ConvertTo-Json -Depth 4),
+    ($manifest | ConvertTo-Json -Depth 8),
     $utf8NoBom)
 
 $restoredBytes = [System.IO.File]::ReadAllBytes($programPath)
@@ -98,5 +130,5 @@ if (-not [System.Linq.Enumerable]::SequenceEqual([byte[]]$sourceBytes, [byte[]]$
     throw 'Program.cs was not restored byte-for-byte after Desktop Host publish.'
 }
 
-Write-Host "SWIR Desktop Host published as $hostVersion"
+Write-Host "SWIR Desktop Host published as $hostVersion ($runtimeIdentifier, framework-dependent)"
 Write-Host "Build manifest: $manifestPath"
