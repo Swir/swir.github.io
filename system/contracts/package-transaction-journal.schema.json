@@ -61,9 +61,14 @@
       },
       "additionalProperties": false
     },
-    "snapshot": { "type": "object" },
+    "snapshot": { "$ref": "./package-snapshot.schema.json" },
     "execution": { "type": ["object", "null"] },
-    "health": { "type": ["object", "null"] },
+    "health": {
+      "oneOf": [
+        { "type": "null" },
+        { "$ref": "./package-health.schema.json" }
+      ]
+    },
     "recovery": {
       "type": "object",
       "required": ["automaticRollbackAvailable", "rollbackCommand"],
