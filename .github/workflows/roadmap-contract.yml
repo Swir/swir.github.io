@@ -1,0 +1,38 @@
+name: SWIR Roadmap Contract
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'SWIR-OS-ARCHITECTURE.md'
+      - 'SWIR-ROADMAP-STANDARD.md'
+      - 'scripts/validate-roadmap-progress.mjs'
+      - '.github/workflows/roadmap-contract.yml'
+  pull_request:
+    paths:
+      - 'SWIR-OS-ARCHITECTURE.md'
+      - 'SWIR-ROADMAP-STANDARD.md'
+      - 'scripts/validate-roadmap-progress.mjs'
+      - '.github/workflows/roadmap-contract.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  roadmap-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Check roadmap validator syntax
+        run: node --check scripts/validate-roadmap-progress.mjs
+
+      - name: Validate locked roadmap dashboard and checklist math
+        run: node scripts/validate-roadmap-progress.mjs
