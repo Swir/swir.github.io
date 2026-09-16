@@ -31,7 +31,9 @@
         "channel": { "type": "string" },
         "architecture": { "type": "string" },
         "sourceRef": { "type": "string" },
-        "nativeEntryPoint": { "type": "string", "minLength": 1 }
+        "nativeEntryPoint": { "type": "string", "minLength": 1 },
+        "remote": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$" },
+        "scope": { "enum": ["user", "system"] }
       },
       "additionalProperties": false
     },
@@ -83,6 +85,23 @@
         "properties": {
           "provider": { "enum": ["swir.package.system", "swir.package.flatpak", "swir.package.appimage"] },
           "package": { "required": ["nativeEntryPoint"] }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "provider": { "const": "swir.package.flatpak" } }, "required": ["provider"] },
+      "then": {
+        "properties": {
+          "executionClass": { "const": "linux-native" },
+          "package": {
+            "required": ["sourceRef", "nativeEntryPoint", "remote", "scope"]
+          },
+          "trust": {
+            "properties": {
+              "sourceClass": { "const": "flatpak-remote" },
+              "signatureRequired": { "const": true }
+            }
+          }
         }
       }
     },
