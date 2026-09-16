@@ -44,18 +44,18 @@ assert(driverCenter.properties?.readOnly?.const === true, 'Driver Center report 
 assert(driverCenter.properties?.autoMutation?.const === false, 'Driver Center must not directly mutate hardware state');
 assert(driverCenter.properties?.policy?.properties?.unknownHardwareMayAutoDownload?.const === false, 'Driver Center must prohibit unknown-hardware auto-download');
 assert(driverCenter.properties?.policy?.properties?.windowsKernelDriversAsLinuxDrivers?.const === false, 'Driver Center must reject Windows kernel drivers as Linux drivers');
-assert(providers.properties?.schema?.const === 'swir.package-provider/0.1', 'provider schema ID mismatch');
+assert(providers.properties?.schema?.const === 'swir.package-provider/0.2', 'provider schema ID mismatch');
+assert(providers.required?.includes('targetEditions'), 'provider manifest must declare target editions');
+assert(providers.properties?.package?.properties?.nativeEntryPoint, 'provider manifest must support a native entry point');
+const providerRules = JSON.stringify(providers.allOf ?? []);
+assert(providerRules.includes('targetEditions') && providerRules.includes('system'), 'provider schema must define a System Edition target rule');
+assert(providerRules.includes('linux-native') && providerRules.includes('windows-compat'), 'System Edition rule must allow Linux native and Windows compatibility execution');
+assert(providerRules.includes('nativeEntryPoint'), 'native execution classes must require a native entry point');
 assert(trust.schema === 'swir.trusted-sources/0.1', 'trusted source schema mismatch');
 assert(baselineCatalog.schema === 'swir.hardware-catalog/0.1', 'baseline Hardware Catalog schema mismatch');
 assert(Array.isArray(baselineCatalog.entries), 'baseline Hardware Catalog entries must be an array');
 
-const allowedDriverClasses = new Set([
-  'kernel-in-tree',
-  'linux-firmware',
-  'distribution-repository',
-  'fwupd-lvfs',
-  'vendor-official-repository'
-]);
+const allowedDriverClasses = new Set(['kernel-in-tree','linux-firmware','distribution-repository','fwupd-lvfs','vendor-official-repository']);
 const catalogClasses = new Set(hardware.$defs.entry.properties.sources.items.properties.class.enum);
 const snapshotClasses = new Set(snapshot.$defs.device.properties.catalog.properties.recommendedSources.items.properties.class.enum);
 const planClasses = new Set(driverPlan.$defs.source.properties.class.enum);
@@ -82,11 +82,8 @@ for (const entry of baselineCatalog.entries) {
 const providerIds = new Set(providers.properties.provider.enum);
 const reserved = new Set(trust.reservedProviders);
 assert(providerIds.size === reserved.size && [...providerIds].every(x => reserved.has(x)), 'provider schema and trusted-sources provider lists diverge');
-
 const executionClasses = new Set(providers.properties.executionClass.enum);
-for (const required of ['swir-web', 'linux-native', 'windows-compat']) {
-  assert(executionClasses.has(required), `missing execution class ${required}`);
-}
+for (const required of ['swir-web', 'linux-native', 'windows-compat']) assert(executionClasses.has(required), `missing execution class ${required}`);
 
 assert(trust.policy?.arbitraryDriverUrls === false, 'arbitrary driver URLs must remain disabled');
 assert(trust.policy?.windowsKernelDriversAsLinuxDrivers === false, 'Windows kernel drivers must not be treated as Linux drivers');
@@ -94,11 +91,8 @@ assert(trust.policy?.signatureVerificationRequiredForRepositories === true, 'rep
 assert(trust.policy?.privilegedMutationRequiresPlan === true, 'privileged mutation must require a plan');
 assert(trust.policy?.privilegedMutationRequiresJournal === true, 'privileged mutation must require a journal');
 assert(trust.policy?.unknownHardwareMayAutoDownload === false, 'unknown hardware must not auto-download drivers');
-
 const forbidden = new Set(trust.forbiddenAutomaticDriverArtifacts.map(x => x.toLowerCase()));
-for (const ext of ['.exe', '.msi', '.sys']) {
-  assert(forbidden.has(ext), `missing forbidden automatic driver artifact ${ext}`);
-}
+for (const ext of ['.exe', '.msi', '.sys']) assert(forbidden.has(ext), `missing forbidden automatic driver artifact ${ext}`);
 
 const serviceSource = fs.readFileSync(path.join(ROOT, 'hardware', 'hardware-service.mjs'), 'utf8');
 const resolverSource = fs.readFileSync(path.join(ROOT, 'hardware', 'driver-resolver.mjs'), 'utf8');
@@ -121,14 +115,13 @@ assert(driverCenterSource.includes('FORBIDDEN_DRIVER_ARTIFACT'), 'Driver Center 
 assert(driverCenterSource.includes('VENDOR_REPOSITORY_ID_REQUIRED'), 'Driver Center must bind vendor exceptions to explicit repository IDs');
 
 const doc = fs.readFileSync(path.join(ROOT, 'SWIR-SYSTEM-EDITION-ARCHITECTURE-0.1.md'), 'utf8');
-for (const phrase of ['Wine / Proton', 'Hardware Service', 'SWIR Driver Center', 'fwupd', 'linux-firmware']) {
-  assert(doc.includes(phrase), `architecture document missing required concept: ${phrase}`);
-}
+for (const phrase of ['Wine / Proton', 'Hardware Service', 'SWIR Driver Center', 'fwupd', 'linux-firmware']) assert(doc.includes(phrase), `architecture document missing required concept: ${phrase}`);
 
 console.log('SWIR System Edition contract validation: OK');
 console.log(`Driver source classes: ${[...policyClasses].join(', ')}`);
 console.log(`Reserved providers: ${[...providerIds].join(', ')}`);
 console.log(`Hardware Catalog entries: ${baselineCatalog.entries.length}`);
+console.log('Package provider: 0.2 with native-only System Edition execution');
 console.log('Hardware snapshot: 0.2 read-only host diagnostics');
 console.log('Driver plan mode: preview/read-only/non-executable');
 console.log('Driver Center report: 0.1 diagnostics/read-only/non-mutating');
