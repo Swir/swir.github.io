@@ -98,14 +98,17 @@ export function createSystemPackageProviderLayer({ distributionStack } = {}) {
   return new SystemPackageProviderLayer({ adapters: new Map([['swir.package.system', adapter]]) });
 }
 
-export function createExperimentalSystemPackageProviderLayer({ distributionStack, flatpakAllowedRemotes = [], appImageInstallRoot = null } = {}) {
+export function createExperimentalSystemPackageProviderLayer({ distributionStack, flatpakAllowedRemotes = [], appImageInstallRoot = null, appImageTrustVerifier = null } = {}) {
   const distribution = new DistributionPackageStackAdapter(distributionStack);
   const adapters = new Map([['swir.package.system', distribution]]);
   if (Array.isArray(flatpakAllowedRemotes) && flatpakAllowedRemotes.length > 0) adapters.set('swir.package.flatpak', createFlatpakUserPackageAdapter({ allowlistedRemotes: flatpakAllowedRemotes }));
-  if (typeof appImageInstallRoot === 'string' && appImageInstallRoot.length > 0) adapters.set('swir.package.appimage', createAppImageUserPackageAdapter({ installRoot: appImageInstallRoot }));
+  const appImageRootConfigured = typeof appImageInstallRoot === 'string' && appImageInstallRoot.length > 0;
+  const appImageTrustConfigured = Boolean(appImageTrustVerifier && typeof appImageTrustVerifier.authorizeAppImage === 'function');
+  assert(appImageRootConfigured === appImageTrustConfigured, 'INVALID_APPIMAGE_COMPOSITION', 'Experimental AppImage composition requires both a managed install root and System catalog trust verifier');
+  if (appImageRootConfigured) adapters.set('swir.package.appimage', createAppImageUserPackageAdapter({ installRoot: appImageInstallRoot, trustVerifier: appImageTrustVerifier }));
   return new SystemPackageProviderLayer({ adapters });
 }
 
 export const SystemPackageProviderLayerPolicy = Object.freeze({
-  schema: 'swir.system-package-provider-layer/0.1', manifestSchema: 'swir.package-provider/0.2', executionClass: 'linux-native', knownProviders: Object.keys(LINUX_PROVIDERS), provisionedByProductionFactory: ['swir.package.system'], experimentalProviders: ['swir.package.flatpak', 'swir.package.appimage'], plannedProviders: [], arbitraryProviderRegistration: false, directCommandExecution: false, privilegedMutationDelegated: true
+  schema: 'swir.system-package-provider-layer/0.1', manifestSchema: 'swir.package-provider/0.2', executionClass: 'linux-native', knownProviders: Object.keys(LINUX_PROVIDERS), provisionedByProductionFactory: ['swir.package.system'], experimentalProviders: ['swir.package.flatpak', 'swir.package.appimage'], plannedProviders: [], arbitraryProviderRegistration: false, directCommandExecution: false, privilegedMutationDelegated: true, appImageRequiresNativeCatalogTrustVerifier: true
 });

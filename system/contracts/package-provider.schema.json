@@ -28,6 +28,7 @@
       "type": "object",
       "properties": {
         "name": { "type": "string" },
+        "version": { "type": "string", "pattern": "^[0-9][0-9A-Za-z.+_-]{0,63}$" },
         "channel": { "type": "string" },
         "architecture": { "type": "string" },
         "sourceRef": { "type": "string" },
@@ -109,10 +110,12 @@
       "then": {
         "properties": {
           "executionClass": { "const": "linux-native" },
-          "package": { "required": ["sourceRef", "nativeEntryPoint", "scope", "sha256"], "properties": { "scope": { "const": "user" } } },
+          "package": { "required": ["version", "sourceRef", "nativeEntryPoint", "scope", "sha256"], "properties": { "scope": { "const": "user" } } },
           "trust": {
+            "required": ["repositoryId"],
             "properties": {
               "sourceClass": { "const": "swir-signed" },
+              "repositoryId": { "const": "official" },
               "signatureRequired": { "const": true }
             }
           }
