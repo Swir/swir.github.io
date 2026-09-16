@@ -72,7 +72,7 @@ assert.equal(calls.length, 0);
 
 const flatpakManifest = {
   ...manifest,
-  id: 'org.example.FlatEditor',
+  id: 'org.example.flateditor',
   provider: 'swir.package.flatpak',
   package: { name: 'Flat Editor', sourceRef: 'org.example.FlatEditor', nativeEntryPoint: 'org.example.FlatEditor', remote: 'flathub', scope: 'user' },
   trust: { sourceClass: 'flatpak-remote', repositoryId: 'flathub', signatureRequired: true }
