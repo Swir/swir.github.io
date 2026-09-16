@@ -12,20 +12,20 @@ SWIR OS is designed in three editions sharing one application model and platform
 <!-- ROADMAP-PROGRESS:START -->
 <p align="center">
   <a href="https://github.com/Swir/swir.github.io/actions/workflows/system-contracts.yml"><img alt="CI" src="https://github.com/Swir/swir.github.io/actions/workflows/system-contracts.yml/badge.svg"></a>
-  <img alt="Roadmap progress" src="https://img.shields.io/badge/ROADMAP-61.1%25-2ea043?style=for-the-badge">
-  <img alt="Completed" src="https://img.shields.io/badge/DONE-33%2F54-1f6feb?style=for-the-badge">
+  <img alt="Roadmap progress" src="https://img.shields.io/badge/ROADMAP-63.0%25-2ea043?style=for-the-badge">
+  <img alt="Completed" src="https://img.shields.io/badge/DONE-34%2F54-1f6feb?style=for-the-badge">
   <img alt="Status" src="https://img.shields.io/badge/STATUS-IN%20PROGRESS-7c3aed?style=for-the-badge">
 </p>
 
 ## 📊 Overall progress
 
 ```text
-████████████░░░░░░░░ 61.1%
+█████████████░░░░░░░ 63.0%
 ```
 
 | ✅ Completed | ⏳ Remaining | 📦 Total | 🎯 Progress |
 |---:|---:|---:|---:|
-| **33** | **21** | **54** | **61.1%** |
+| **34** | **20** | **54** | **63.0%** |
 
 > **Progress rule:** the explicit `[x]/[ ]` deliverables in **Version roadmap** are the source of truth for the full Web → Desktop → System plan. Update the checklist first, then badges, numbers, percentage and the 20-segment bar. A prototype does not count as complete until the described deliverable is actually implemented and verified.
 <!-- ROADMAP-PROGRESS:END -->
@@ -357,7 +357,7 @@ The detailed foundation and machine-readable contract schemas live under `system
 
 Active direction:
 
-- [ ] lightweight native runtime
+- [x] lightweight native runtime
 - [x] native filesystem adapter
 - [x] native device/network adapters
 - [x] native account/session backend
