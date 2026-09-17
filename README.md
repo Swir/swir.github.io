@@ -5,10 +5,10 @@
 **Presentation repository only**
 
 [![Canonical Repository](https://img.shields.io/badge/CANONICAL-Swir%2FSWIR__OS-1f6feb?style=for-the-badge&logo=github)](https://github.com/Swir/SWIR_OS)
-![Roadmap](https://img.shields.io/badge/ROADMAP-76.9%25-2ea043?style=for-the-badge)
-![Completed](https://img.shields.io/badge/DONE-50%2F65-1f6feb?style=for-the-badge)
+![Roadmap](https://img.shields.io/badge/ROADMAP-78.5%25-2ea043?style=for-the-badge)
+![Completed](https://img.shields.io/badge/DONE-51%2F65-1f6feb?style=for-the-badge)
 
-<img width="100%" src="assets/readme/swir-os-progress-card.svg" alt="SWIR OS roadmap progress — 76.9%, 50 of 65 verified deliverables" />
+<img width="100%" src="assets/readme/swir-os-progress-card.svg" alt="SWIR OS roadmap progress — 78.5%, 51 of 65 verified deliverables" />
 
 </div>
 
@@ -27,16 +27,16 @@ The authoritative roadmap is [SWIR_OS/SWIR-OS-ARCHITECTURE.md](https://github.co
 | Web Edition | `1.7.13` |
 | Desktop Edition | `0.5.7-preview` |
 | System Edition | In development |
-| Overall roadmap | **50 / 65 — 76.9%** |
+| Overall roadmap | **51 / 65 — 78.5%** |
 | Release readiness | **Not ready** |
 
-The latest verified System Edition milestone closes the **native graphical Live installer VM gate**. The real GTK4 installer now drives the complete disposable UEFI test path: exact stable target selection and read-only review, deliberate rejection of a wrong destructive confirmation token, account/locale/keyboard/time-zone setup, the normal narrow privileged helper, installation to a separate blank disk, source USB detachment, then standalone graphical boot from the installed disk with persistent data.
+The latest verified System Edition work adds a **native GTK4 SWIR desktop shell** to the authenticated Wayland session and the first two first-party daily-use application foundations: **SWIR Files** and **SWIR Settings**. Both applications map real GTK4 windows on Wayland and remain unprivileged. SWIR Files currently provides read-only directory navigation; arbitrary file opening stays disabled until native Default Apps integration is ready. SWIR Settings persists a small validated per-user preference set with owner-only file permissions. The complete native daily-use application suite is still an open roadmap gate.
 
-The project also verifies the Live image as QEMU USB mass storage and keeps the target disk unchanged through idle/preview/cancel rejection paths. This is meaningful UEFI VM evidence, **not** a claim of broad physical-PC support. Physical Live USB boot/install qualification is still open, and Secure Boot plus legacy BIOS remain unclaimed until separately tested.
+The existing boot/install path remains verified in disposable UEFI VMs: the final image boots as QEMU USB mass storage, the native GTK4 installer requires exact target review and destructive confirmation, installs to a separate blank disk, and the installed system boots graphically with persistence after the source USB is removed. This is meaningful VM evidence, **not** a claim of broad physical-PC support. Physical Live USB boot/install qualification is still open, and Secure Boot plus legacy BIOS remain unclaimed until separately tested.
 
-The canonical repo now also uses deterministic **SWIR Progress SVG PRO** assets generated from the authoritative roadmap. The card shown here is a presentation snapshot using the same visual language; its source of truth remains `Swir/SWIR_OS`.
+The canonical repo uses deterministic **SWIR Progress SVG PRO** assets generated from the authoritative roadmap. The card shown here is a presentation snapshot using the same visual language; its source of truth remains `Swir/SWIR_OS`.
 
-Public progress here is updated only after the corresponding implementation is merged and verified in `Swir/SWIR_OS`. Current canonical milestone commit: [`b282e53`](https://github.com/Swir/SWIR_OS/commit/b282e53733b146e2737c4bd4d70fd1d5e97a5ed4).
+Public progress here is updated only after the corresponding implementation is merged and verified in `Swir/SWIR_OS`. Current canonical milestone commit: [`4433330`](https://github.com/Swir/SWIR_OS/commit/443333086682f9bc5db4c7701be8043b3a8db184).
 
 ## Repository role
 
