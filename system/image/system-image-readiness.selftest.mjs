@@ -8,12 +8,12 @@ function binary(provider, path) {
 const healthy = {
   schema: 'swir.system-image-host-evidence/0.1', readOnly: true, collectedAt: '2026-09-17T01:00:00Z',
   platform: 'linux', architecture: 'x64', kernelRelease: '6.14.0-test',
-  distribution: { id: 'ubuntu', versionId: '24.04', prettyName: 'Ubuntu 24.04 LTS' },
+  distribution: { id: 'debian', versionId: '13', prettyName: 'Debian GNU/Linux 13 (trixie)' },
   filesystems: { proc: { available: true }, sys: { available: true } },
   catalogState: { path: '/var/lib/swir/security/catalog-trust', available: true, trusted: true, modeOk: true },
   binaries: {
-    packageManager: binary('apt', '/usr/bin/apt-get'), serviceManager: binary('systemd', '/usr/bin/systemctl'), polkit: binary('polkit', '/usr/bin/pkcheck'),
-    networkManager: binary('NetworkManager', '/usr/bin/nmcli'), fwupd: binary('fwupd', '/usr/bin/fwupdmgr'), flatpak: binary('flatpak', '/usr/bin/flatpak'), wine: binary('wine', '/usr/bin/wine')
+    packageManager: binary('apt', '/usr/bin/apt-get'), serviceManager: binary('systemd', '/usr/bin/systemctl'), sessionManager: binary('systemd-logind', '/usr/bin/loginctl'),
+    polkit: binary('polkit', '/usr/bin/pkcheck'), networkManager: binary('NetworkManager', '/usr/bin/nmcli'), fwupd: binary('fwupd', '/usr/bin/fwupdmgr'), flatpak: binary('flatpak', '/usr/bin/flatpak'), wine: binary('wine', '/usr/bin/wine')
   }
 };
 
@@ -21,6 +21,7 @@ const ready = evaluateSystemImageReadiness(healthy);
 assert.equal(ready.summary.systemImageReadyForE2E, true);
 assert.equal(ready.summary.baseReady, true);
 assert.equal(ready.summary.securityReady, true);
+assert.equal(ready.summary.sessionReady, true);
 assert.equal(ready.summary.networkReady, true);
 assert.deepEqual(ready.summary.blockers, []);
 assert.equal(ready.summary.requiredPassed, ready.summary.requiredTotal);
@@ -35,6 +36,14 @@ assert.equal(blocked.summary.baseReady, true);
 assert.equal(blocked.summary.securityReady, false);
 assert.deepEqual(blocked.summary.blockers.sort(), ['catalog-trust-state-root', 'polkit-broker']);
 
+const missingSession = structuredClone(healthy);
+missingSession.binaries.sessionManager.selected = null;
+const noSession = evaluateSystemImageReadiness(missingSession);
+assert.equal(noSession.summary.systemImageReadyForE2E, false);
+assert.equal(noSession.summary.baseReady, true);
+assert.equal(noSession.summary.sessionReady, false);
+assert.deepEqual(noSession.summary.blockers, ['systemd-session-manager']);
+
 const optionalMissing = structuredClone(healthy);
 optionalMissing.binaries.fwupd.selected = null;
 optionalMissing.binaries.flatpak.selected = null;
@@ -46,4 +55,5 @@ assert.equal(stillCoreReady.summary.optionalPassed, 0);
 assert.throws(() => evaluateSystemImageReadiness({ ...healthy, readOnly: false }), /read-only host evidence/);
 assert.equal(SystemImageReadinessPolicy.bootableImageClaim, false);
 assert.equal(SystemImageReadinessPolicy.mutationPerformed, false);
+assert.ok(SystemImageReadinessPolicy.requiredCore.includes('systemd-session-manager'));
 console.log('System image readiness self-test: OK');
