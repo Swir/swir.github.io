@@ -96,9 +96,10 @@ if (report.readOnly !== true) throw new Error('readiness report must remain read
 if (report.distribution?.id !== 'ubuntu' || report.distribution?.versionId !== '24.04') throw new Error('reference rootfs distribution drifted');
 if (report.summary?.systemImageReadyForE2E !== true) throw new Error(`reference rootfs failed readiness gates: ${(report.summary?.blockers || []).join(',')}`);
 const gate = id => report.gates.find(item => item.id === id);
-for (const id of ['trusted-package-manager', 'systemd-service-manager', 'polkit-broker', 'networkmanager-client', 'catalog-trust-state-root']) {
+for (const id of ['trusted-package-manager', 'systemd-service-manager', 'session-identity-client', 'polkit-broker', 'networkmanager-client', 'catalog-trust-state-root']) {
   if (gate(id)?.passed !== true) throw new Error(`required gate failed: ${id}`);
 }
+if (report.summary?.sessionReady !== true) throw new Error('session identity prerequisite is not ready');
 if (gate('fwupd-discovery')?.passed !== true) throw new Error('fwupd optional capability was provisioned but not detected');
 if (gate('flatpak-runtime')?.passed !== true) throw new Error('Flatpak optional capability was provisioned but not detected');
 console.log(`Reference rootfs readiness: ${report.summary.requiredPassed}/${report.summary.requiredTotal} required gates, ${report.summary.optionalPassed}/${report.summary.optionalTotal} optional capabilities`);

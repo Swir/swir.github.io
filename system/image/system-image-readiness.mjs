@@ -12,6 +12,7 @@ const BINARY_GROUPS = Object.freeze({
     ['/usr/bin/zypper', 'zypper']
   ]),
   serviceManager: Object.freeze([['/usr/bin/systemctl', 'systemd'], ['/bin/systemctl', 'systemd']]),
+  sessionManager: Object.freeze([['/usr/bin/loginctl', 'systemd-logind']]),
   polkit: Object.freeze([['/usr/bin/pkcheck', 'polkit']]),
   networkManager: Object.freeze([['/usr/bin/nmcli', 'NetworkManager']]),
   fwupd: Object.freeze([['/usr/bin/fwupdmgr', 'fwupd']]),
@@ -122,6 +123,7 @@ export function evaluateSystemImageReadiness(evidence) {
     gate('sysfs', evidence?.filesystems?.sys?.available === true, '/sys available'),
     gate('trusted-package-manager', Boolean(selected('packageManager')?.trusted), selected('packageManager')?.provider || 'none'),
     gate('systemd-service-manager', Boolean(selected('serviceManager')?.trusted), selected('serviceManager')?.realPath || 'missing'),
+    gate('session-identity-client', Boolean(selected('sessionManager')?.trusted), selected('sessionManager')?.realPath || 'missing'),
     gate('polkit-broker', Boolean(selected('polkit')?.trusted), selected('polkit')?.realPath || 'missing'),
     gate('networkmanager-client', Boolean(selected('networkManager')?.trusted), selected('networkManager')?.realPath || 'missing'),
     gate('catalog-trust-state-root', evidence?.catalogState?.trusted === true, evidence?.catalogState?.path || TRUST_ROOT),
@@ -135,6 +137,7 @@ export function evaluateSystemImageReadiness(evidence) {
   const baseReady = required.filter(item => baseGateIds.has(item.id)).every(item => item.passed);
   const securityReady = ['polkit-broker', 'catalog-trust-state-root'].every(id => gates.find(item => item.id === id)?.passed === true);
   const networkReady = gates.find(item => item.id === 'networkmanager-client')?.passed === true;
+  const sessionReady = gates.find(item => item.id === 'session-identity-client')?.passed === true;
   return Object.freeze({
     schema: 'swir.system-image-readiness/0.1',
     readOnly: true,
@@ -151,6 +154,7 @@ export function evaluateSystemImageReadiness(evidence) {
       baseReady,
       securityReady,
       networkReady,
+      sessionReady,
       systemImageReadyForE2E: blockers.length === 0,
       blockers
     }
@@ -165,7 +169,7 @@ export const SystemImageReadinessPolicy = Object.freeze({
   schema: 'swir.system-image-readiness/0.1',
   readOnly: true,
   productionCatalogStateRoot: TRUST_ROOT,
-  requiredCore: ['linux-host', 'distribution-identity', 'kernel-visible', 'procfs', 'sysfs', 'trusted-package-manager', 'systemd-service-manager', 'polkit-broker', 'networkmanager-client', 'catalog-trust-state-root'],
+  requiredCore: ['linux-host', 'distribution-identity', 'kernel-visible', 'procfs', 'sysfs', 'trusted-package-manager', 'systemd-service-manager', 'session-identity-client', 'polkit-broker', 'networkmanager-client', 'catalog-trust-state-root'],
   optionalProviders: ['fwupd-discovery', 'flatpak-runtime', 'wine-runtime'],
   bootableImageClaim: false,
   mutationPerformed: false

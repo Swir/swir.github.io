@@ -12,7 +12,7 @@ const healthy = {
   filesystems: { proc: { available: true }, sys: { available: true } },
   catalogState: { path: '/var/lib/swir/security/catalog-trust', available: true, trusted: true, modeOk: true },
   binaries: {
-    packageManager: binary('apt', '/usr/bin/apt-get'), serviceManager: binary('systemd', '/usr/bin/systemctl'), polkit: binary('polkit', '/usr/bin/pkcheck'),
+    packageManager: binary('apt', '/usr/bin/apt-get'), serviceManager: binary('systemd', '/usr/bin/systemctl'), sessionManager: binary('systemd-logind', '/usr/bin/loginctl'), polkit: binary('polkit', '/usr/bin/pkcheck'),
     networkManager: binary('NetworkManager', '/usr/bin/nmcli'), fwupd: binary('fwupd', '/usr/bin/fwupdmgr'), flatpak: binary('flatpak', '/usr/bin/flatpak'), wine: binary('wine', '/usr/bin/wine')
   }
 };
@@ -22,6 +22,7 @@ assert.equal(ready.summary.systemImageReadyForE2E, true);
 assert.equal(ready.summary.baseReady, true);
 assert.equal(ready.summary.securityReady, true);
 assert.equal(ready.summary.networkReady, true);
+assert.equal(ready.summary.sessionReady, true);
 assert.deepEqual(ready.summary.blockers, []);
 assert.equal(ready.summary.requiredPassed, ready.summary.requiredTotal);
 assert.equal(ready.summary.optionalPassed, 3);
@@ -35,6 +36,13 @@ assert.equal(blocked.summary.baseReady, true);
 assert.equal(blocked.summary.securityReady, false);
 assert.deepEqual(blocked.summary.blockers.sort(), ['catalog-trust-state-root', 'polkit-broker']);
 
+const missingSession = structuredClone(healthy);
+missingSession.binaries.sessionManager.selected = null;
+const noSessionPrerequisite = evaluateSystemImageReadiness(missingSession);
+assert.equal(noSessionPrerequisite.summary.systemImageReadyForE2E, false);
+assert.equal(noSessionPrerequisite.summary.sessionReady, false);
+assert.deepEqual(noSessionPrerequisite.summary.blockers, ['session-identity-client']);
+
 const optionalMissing = structuredClone(healthy);
 optionalMissing.binaries.fwupd.selected = null;
 optionalMissing.binaries.flatpak.selected = null;
@@ -44,6 +52,7 @@ assert.equal(stillCoreReady.summary.systemImageReadyForE2E, true);
 assert.equal(stillCoreReady.summary.optionalPassed, 0);
 
 assert.throws(() => evaluateSystemImageReadiness({ ...healthy, readOnly: false }), /read-only host evidence/);
+assert.equal(SystemImageReadinessPolicy.requiredCore.includes('session-identity-client'), true);
 assert.equal(SystemImageReadinessPolicy.bootableImageClaim, false);
 assert.equal(SystemImageReadinessPolicy.mutationPerformed, false);
 console.log('System image readiness self-test: OK');

@@ -26,7 +26,7 @@
     },
     "summary": {
       "type": "object",
-      "required": ["requiredPassed", "requiredTotal", "optionalPassed", "optionalTotal", "baseReady", "securityReady", "networkReady", "systemImageReadyForE2E", "blockers"],
+      "required": ["requiredPassed", "requiredTotal", "optionalPassed", "optionalTotal", "baseReady", "securityReady", "networkReady", "sessionReady", "systemImageReadyForE2E", "blockers"],
       "properties": {
         "requiredPassed": { "type": "integer", "minimum": 0 },
         "requiredTotal": { "type": "integer", "minimum": 1 },
@@ -35,6 +35,7 @@
         "baseReady": { "type": "boolean" },
         "securityReady": { "type": "boolean" },
         "networkReady": { "type": "boolean" },
+        "sessionReady": { "type": "boolean" },
         "systemImageReadyForE2E": { "type": "boolean" },
         "blockers": { "type": "array", "items": { "type": "string" } }
       }
