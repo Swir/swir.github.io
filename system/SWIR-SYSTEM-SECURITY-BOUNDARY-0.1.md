@@ -1,36 +1,58 @@
-# SWIR System Package Security Boundary 0.1
+# SWIR System Security Boundary 0.1
 
 Status: **implemented foundation / base-image integration pending**
 
-This layer replaces the transaction service's placeholder authorization/trust dependencies with concrete, fail-closed System Edition adapters. It does not mark the System Edition package-manager roadmap complete yet: a bootable base image still has to install the policy files, provision real repository IDs, and pass VM/hardware end-to-end mutation/recovery tests.
+This layer provides concrete, fail-closed authorization and source-trust boundaries for privileged System Edition work. Package transactions remain the first fully composed native mutation path, while NetworkManager and fwupd/LVFS now use dedicated Polkit brokers and deliberately narrower operation sets. None of these foundations marks a System Edition roadmap deliverable complete until a maintained target image passes native E2E.
 
-## Authorization path
+## Native authorization domains
 
-`PolkitSystemAuthorizationBroker` maps only these transaction scopes:
+The System Edition authorization registry now contains three non-overlapping domains:
 
 ```text
-packages.mutate  -> org.swir.system.packages.mutate
-packages.recover -> org.swir.system.packages.recover
+packages.mutate    -> org.swir.system.packages.mutate
+packages.recover   -> org.swir.system.packages.recover
+network.activate   -> org.swir.system.network.activate
+network.deactivate -> org.swir.system.network.deactivate
+firmware.update    -> org.swir.system.firmware.update
+firmware.recover   -> org.swir.system.firmware.recover
 ```
 
-The broker invokes `/usr/bin/pkcheck` directly with `shell=false`. Before invocation it requires the binary to be a root-owned, non-symlink regular file that is not group/world writable. The authorization subject is the current System service process bound as `pid,start-time,uid`; callers cannot select another Unix subject. The request binds the Polkit check to the package ID, operation and SHA-256 plan digest through explicit Polkit details.
+The corresponding brokers are:
 
-User interaction is disabled by default. A trusted shell can request `allowUserInteraction=true`; the shipped policy still requires administrator authentication. `org.swir.system.packages.recover` deliberately uses the stronger non-cached active-session rule.
+```text
+PolkitSystemAuthorizationBroker
+PolkitNetworkAuthorizationBroker
+PolkitFirmwareAuthorizationBroker
+```
 
-`system/security/org.swir.system.packages.policy` is intended to be installed by the future immutable/base image into the distribution's PolicyKit action directory with root ownership. The source file itself grants no privilege until the System image installs it in the native policy location.
+All three pin production authorization to `/usr/bin/pkcheck`, require a root-owned non-symlink binary that is not group/world writable, execute with `shell=false` and a minimal environment, and bind the authorization subject to the current process `pid,start-time,uid`. A caller cannot substitute another Unix subject.
 
-## Repository trust path
+Every mutation domain also binds authorization to a deterministic SHA-256 plan digest plus the minimum identity needed for the operation: package ID/operation, connection UUID/interface/operation, or firmware device/release/operation. User interaction is disabled unless a trusted caller explicitly asks for it.
 
-`DistributionRepositoryTrustVerifier` requires a root-owned deployment policy using schema `swir.system-repository-trust-policy/0.1`. The policy maps a logical SWIR repository ID to:
+The policy files are intended to be installed by the future base image into the distribution PolicyKit action directory with root ownership. Source files in the repository grant no privilege on their own.
 
-- the selected native package manager,
-- a native repository identifier,
-- supported distribution IDs,
-- `distribution-repository` source class,
-- mandatory native signature verification,
-- an explicit ban on insecure repository mode.
+## Policy separation
 
-Install/update operations also perform a read-only native package-manager probe before mutation. The probes use fixed absolute binaries and argument arrays with `shell=false` and a minimal environment:
+The package and firmware actions require administrator authentication. Network 0.1 is narrower: it can only activate or deactivate an **existing saved** NetworkManager profile and therefore uses authenticated active-user policy; profile creation/modification/deletion and secret submission remain outside that broker.
+
+The validator requires the XML action set for every domain to match the action IDs exported by its broker exactly. It also rejects:
+
+- duplicate action IDs between native domains;
+- non-`org.swir.system.*` action IDs;
+- `allow_any=yes`;
+- unauthenticated `allow_inactive=yes` or `allow_active=yes`;
+- missing root PolicyKit ownership annotation;
+- a broker that enables shell execution;
+- a mutation broker that stops binding the exact plan digest;
+- arbitrary `nmcli` or `fwupdmgr` argument surfaces.
+
+This makes adding a new privileged domain an explicit registry change instead of silently placing another action file beside the existing package policy.
+
+## Package repository trust path
+
+`DistributionRepositoryTrustVerifier` requires a root-owned deployment policy using schema `swir.system-repository-trust-policy/0.1`. The policy maps a logical SWIR repository ID to the selected native package manager, native repository identifier, supported distribution IDs, `distribution-repository` source class, mandatory native signature verification and an explicit ban on insecure repository mode.
+
+Install/update operations perform a read-only native package-manager probe before mutation. The probes use fixed absolute binaries and argument arrays with `shell=false` and a minimal environment:
 
 ```text
 apt        -> apt-cache policy <package>
@@ -40,13 +62,11 @@ pacman     -> pacman -Sl <repo> <package>
 zypper     -> zypper --xmlout search --match-exact --repo <repo> <package>
 ```
 
-Remove operations do not require remote availability because they do not fetch a new package; they still require the root-owned repository policy and transaction authorization.
+Remove operations do not require remote availability because they do not fetch a new package; they still require root-owned repository policy and transaction authorization. `repository-trust-policy.example.json` intentionally uses `example.invalid`, so copying the template without real image provisioning fails closed.
 
-The repository policy is an image/deployment input, not user-controlled Store metadata. `repository-trust-policy.example.json` intentionally uses `example.invalid` so copying the template without provisioning fails closed instead of authorizing a real mirror accidentally.
+## Package composition
 
-## Composition
-
-`createSystemPackageSecurityBoundary()` composes the two adapters and exposes the repository IDs that may be passed to `SystemPackageTransactionService` as its `allowlistedRepositories` set:
+`createSystemPackageSecurityBoundary()` composes package authorization and distribution-repository trust and supplies the repository allowlist to `SystemPackageTransactionService`:
 
 ```text
 DistributionPackageProvider
@@ -66,9 +86,11 @@ SystemPackageTransactionService
        +--> guarded privileged package executor
 ```
 
-The composed boundary does not execute package mutations itself and therefore does not bypass the existing transaction journal or guarded executor.
+NetworkManager and firmware deliberately keep separate brokers rather than reusing package authorization. Their operation identities and recovery semantics are different, so sharing a broad `system.mutate` privilege would weaken the boundary.
 
 ## Machine-readable contracts
+
+Package trust remains described by:
 
 ```text
 system/contracts/system-authorization-grant.schema.json
@@ -76,31 +98,33 @@ system/contracts/repository-trust-policy.schema.json
 system/contracts/repository-trust-proof.schema.json
 ```
 
-The trust proof carries the exact logical/native repository IDs, package manager, distribution, package name, operation, policy SHA-256 and evidence class. The authorization grant carries the Polkit action, current Unix actor, package identity, operation and plan digest.
+Network and firmware surfaces additionally have their own inventory/journal contracts and dedicated integration documents. The cross-domain validator checks native PolicyKit action registration directly against the broker policy exports.
 
 ## Verification
 
-The CI suites cover:
+The System Security Boundary CI now covers the package, network and firmware authorization domains together:
 
-- exact Polkit scope/action mapping,
-- current-process subject binding including `/proc` start time,
-- actor mismatch rejection,
-- no user interaction unless explicitly requested,
-- root ownership/mode checks for `pkcheck`,
-- shell/environment isolation,
-- authorization denial,
-- repository policy fail-closed validation,
-- distribution/manager binding,
-- package availability evidence for trusted repositories,
-- root ownership checks for package-manager probe binaries,
-- composed boundary allowlist wiring,
-- JSON contract parsing,
-- policy action hardening (`allow_any=yes` is forbidden).
+- exact broker-to-PolicyKit action registration;
+- duplicate action rejection across domains;
+- PolicyKit XML parsing;
+- current-process PID/start-time/UID actor binding;
+- plan-digest and resource-identity binding;
+- no user interaction unless explicitly requested;
+- trusted `pkcheck` ownership/mode requirements;
+- shell/environment isolation;
+- authorization denial and actor mismatch paths;
+- NetworkManager no-secret/no-arbitrary-argument behavior through its service self-test;
+- firmware LVFS source binding, guarded command and reboot-aware recovery through its transaction self-test;
+- package repository fail-closed validation and composed allowlist wiring;
+- JSON contract parsing;
+- read-only host security probing.
+
+Dedicated NetworkManager and firmware workflows remain in place as narrower component gates; the security-boundary workflow is the cross-domain regression gate.
 
 ## Remaining production gates
 
-1. Provision a real `/etc/swir/repository-trust-policy.json` from the selected base distribution image build, with repository IDs tied to the exact base-image repository configuration.
-2. Install and ownership-verify the Polkit action file in a disposable System Edition VM.
-3. Add a native service identity/session broker so UI prompts can identify the active SWIR user/session while Polkit remains the privilege authority.
-4. Run real install/update/remove and rpm-ostree recovery vectors in disposable VMs with network/repository failures injected.
-5. Bind repository-policy updates to the signed System update path rather than ordinary writable application data.
+1. Provision the package, network and firmware PolicyKit action files into a disposable System Edition image with root ownership and test them against the image's real polkitd/session model.
+2. Provision a real `/etc/swir/repository-trust-policy.json` tied to the selected base distribution repositories and signed System update path.
+3. Add a native SWIR session/identity broker so UI authorization prompts map cleanly to the active desktop user while Polkit remains the privilege authority.
+4. Run real package install/update/remove/recovery vectors plus NetworkManager Ethernet/Wi-Fi reconnect vectors in disposable VMs.
+5. Run firmware mutation/reboot/reconciliation on supported physical LVFS hardware; do not infer hardware safety from software fixtures.
