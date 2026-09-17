@@ -10,6 +10,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OUTPUT="${1:-/tmp/swir-networkmanager-live-e2e.json}"
 UUID='7c3d5747-91f7-4dd6-8c41-78c9bc407e17'
 IFNAME='swir0'
+PEER_IFNAME='swir-peer'
 NM_LOG='/tmp/swir-networkmanager-live-e2e.log'
 
 for command in mount dbus-daemon ip nmcli NetworkManager node; do
@@ -40,8 +41,13 @@ DBUS_PID="$(cat /tmp/swir-dbus-pid)"
 [[ "$DBUS_PID" =~ ^[0-9]+$ ]] || { echo "invalid dbus pid" >&2; exit 5; }
 
 ip link set lo up
-ip link add "$IFNAME" type dummy
+# A veth pair presents standard Ethernet devices to NetworkManager. Ubuntu's
+# default NetworkManager policy deliberately treats synthetic dummy devices as
+# strictly unmanaged, so veth gives the isolated test a realistic managed path
+# without connecting the namespace to the host or the Internet.
+ip link add "$IFNAME" type veth peer name "$PEER_IFNAME"
 ip link set "$IFNAME" down
+ip link set "$PEER_IFNAME" down
 
 NetworkManager --no-daemon >"$NM_LOG" 2>&1 &
 NM_PID=$!
@@ -58,7 +64,7 @@ if [[ $ready -ne 1 ]]; then
 fi
 
 nmcli connection add \
-  type dummy \
+  type ethernet \
   ifname "$IFNAME" \
   con-name swir-e2e \
   connection.uuid "$UUID" \
