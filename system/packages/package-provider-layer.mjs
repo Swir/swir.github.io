@@ -3,15 +3,16 @@ import { createFlatpakUserPackageAdapter } from './flatpak-user-package-provider
 
 const OPERATIONS = new Set(['install', 'update', 'remove']);
 const LINUX_PROVIDERS = Object.freeze({
-  'swir.package.system': Object.freeze({ kind: 'distribution', status: 'implemented' }),
-  'swir.package.flatpak': Object.freeze({ kind: 'flatpak', status: 'experimental' }),
-  'swir.package.appimage': Object.freeze({ kind: 'appimage', status: 'experimental' })
+  'swir.package.system': Object.freeze({ kind: 'distribution', status: 'implemented', productionProvisionable: true }),
+  'swir.package.flatpak': Object.freeze({ kind: 'flatpak', status: 'implemented', productionProvisionable: true }),
+  'swir.package.appimage': Object.freeze({ kind: 'appimage', status: 'implemented', productionProvisionable: true })
 });
 
 function clone(value) { return value == null ? value : JSON.parse(JSON.stringify(value)); }
 function fail(code, message) { const error = new Error(message); error.name = 'SystemPackageProviderLayerError'; error.code = code; throw error; }
 function assert(condition, code, message) { if (!condition) fail(code, message); }
 function validateOperation(operation) { assert(OPERATIONS.has(operation), 'UNSUPPORTED_OPERATION', 'Unsupported package provider operation'); return operation; }
+function uniqueStrings(values) { return [...new Set((Array.isArray(values) ? values : []).filter(value => typeof value === 'string' && value.length > 0))]; }
 
 function validateManifest(manifest) {
   assert(manifest && typeof manifest === 'object' && !Array.isArray(manifest), 'INVALID_MANIFEST', 'Package manifest must be an object');
@@ -28,6 +29,21 @@ function validateAdapter(providerId, adapter) {
   assert(typeof adapter.plan === 'function', 'INVALID_ADAPTER', `${providerId} adapter must implement plan()`);
   assert(typeof adapter.execute === 'function', 'INVALID_ADAPTER', `${providerId} adapter must implement execute()`);
   return adapter;
+}
+
+function composeProductionAdapters({ distributionStack, flatpakAllowedRemotes = [], appImageInstallRoot = null, appImageTrustVerifier = null } = {}) {
+  const distribution = new DistributionPackageStackAdapter(distributionStack);
+  const adapters = new Map([['swir.package.system', distribution]]);
+
+  const remotes = uniqueStrings(flatpakAllowedRemotes);
+  if (remotes.length > 0) adapters.set('swir.package.flatpak', createFlatpakUserPackageAdapter({ allowlistedRemotes: remotes }));
+
+  const appImageRootConfigured = typeof appImageInstallRoot === 'string' && appImageInstallRoot.length > 0;
+  const appImageTrustConfigured = Boolean(appImageTrustVerifier && typeof appImageTrustVerifier.authorizeAppImage === 'function');
+  assert(appImageRootConfigured === appImageTrustConfigured, 'INVALID_APPIMAGE_COMPOSITION', 'AppImage production composition requires both a managed install root and System catalog trust verifier');
+  if (appImageRootConfigured) adapters.set('swir.package.appimage', createAppImageUserPackageAdapter({ installRoot: appImageInstallRoot, trustVerifier: appImageTrustVerifier }));
+
+  return adapters;
 }
 
 export class DistributionPackageStackAdapter {
@@ -58,14 +74,14 @@ export class SystemPackageProviderLayer {
   describe() {
     const providers = Object.entries(LINUX_PROVIDERS).map(([id, metadata]) => {
       const adapter = this.#adapters.get(id);
-      return { id, kind: metadata.kind, roadmapStatus: metadata.status, available: Boolean(adapter), state: adapter ? 'ready' : 'not-provisioned', adapter: adapter && typeof adapter.describe === 'function' ? clone(adapter.describe()) : null };
+      return { id, kind: metadata.kind, roadmapStatus: metadata.status, productionProvisionable: metadata.productionProvisionable, available: Boolean(adapter), state: adapter ? 'ready' : 'not-provisioned', adapter: adapter && typeof adapter.describe === 'function' ? clone(adapter.describe()) : null };
     });
     return Object.freeze({ schema: 'swir.system-package-provider-layer/0.1', executionClass: 'linux-native', providers, arbitraryProviderRegistration: false, directCommandExecution: false, privilegedMutationDelegated: true });
   }
   providerState(providerId) {
     assert(Object.prototype.hasOwnProperty.call(LINUX_PROVIDERS, providerId), 'UNSUPPORTED_PROVIDER', 'Unsupported Linux package provider');
     const adapter = this.#adapters.get(providerId);
-    return Object.freeze({ provider: providerId, kind: LINUX_PROVIDERS[providerId].kind, available: Boolean(adapter), state: adapter ? 'ready' : 'not-provisioned' });
+    return Object.freeze({ provider: providerId, kind: LINUX_PROVIDERS[providerId].kind, productionProvisionable: LINUX_PROVIDERS[providerId].productionProvisionable, available: Boolean(adapter), state: adapter ? 'ready' : 'not-provisioned' });
   }
   plan(operation, manifest) {
     const providerId = validateManifest(manifest);
@@ -93,22 +109,30 @@ export class SystemPackageProviderLayer {
   #requireAdapter(providerId) { const adapter = this.#adapters.get(providerId); assert(adapter, 'PROVIDER_NOT_PROVISIONED', `${providerId} is recognized but not provisioned on this System Edition build`); return adapter; }
 }
 
-export function createSystemPackageProviderLayer({ distributionStack } = {}) {
-  const adapter = new DistributionPackageStackAdapter(distributionStack);
-  return new SystemPackageProviderLayer({ adapters: new Map([['swir.package.system', adapter]]) });
+export function createSystemPackageProviderLayer(options = {}) {
+  return new SystemPackageProviderLayer({ adapters: composeProductionAdapters(options) });
 }
 
-export function createExperimentalSystemPackageProviderLayer({ distributionStack, flatpakAllowedRemotes = [], appImageInstallRoot = null, appImageTrustVerifier = null } = {}) {
-  const distribution = new DistributionPackageStackAdapter(distributionStack);
-  const adapters = new Map([['swir.package.system', distribution]]);
-  if (Array.isArray(flatpakAllowedRemotes) && flatpakAllowedRemotes.length > 0) adapters.set('swir.package.flatpak', createFlatpakUserPackageAdapter({ allowlistedRemotes: flatpakAllowedRemotes }));
-  const appImageRootConfigured = typeof appImageInstallRoot === 'string' && appImageInstallRoot.length > 0;
-  const appImageTrustConfigured = Boolean(appImageTrustVerifier && typeof appImageTrustVerifier.authorizeAppImage === 'function');
-  assert(appImageRootConfigured === appImageTrustConfigured, 'INVALID_APPIMAGE_COMPOSITION', 'Experimental AppImage composition requires both a managed install root and System catalog trust verifier');
-  if (appImageRootConfigured) adapters.set('swir.package.appimage', createAppImageUserPackageAdapter({ installRoot: appImageInstallRoot, trustVerifier: appImageTrustVerifier }));
-  return new SystemPackageProviderLayer({ adapters });
+// Backward-compatible alias retained for callers created while Flatpak/AppImage were experimental.
+// It now applies the same production composition rules and does not weaken trust requirements.
+export function createExperimentalSystemPackageProviderLayer(options = {}) {
+  return createSystemPackageProviderLayer(options);
 }
 
 export const SystemPackageProviderLayerPolicy = Object.freeze({
-  schema: 'swir.system-package-provider-layer/0.1', manifestSchema: 'swir.package-provider/0.2', executionClass: 'linux-native', knownProviders: Object.keys(LINUX_PROVIDERS), provisionedByProductionFactory: ['swir.package.system'], experimentalProviders: ['swir.package.flatpak', 'swir.package.appimage'], plannedProviders: [], arbitraryProviderRegistration: false, directCommandExecution: false, privilegedMutationDelegated: true, appImageRequiresNativeCatalogTrustVerifier: true
+  schema: 'swir.system-package-provider-layer/0.1',
+  manifestSchema: 'swir.package-provider/0.2',
+  executionClass: 'linux-native',
+  knownProviders: Object.keys(LINUX_PROVIDERS),
+  defaultProvisionedProviders: ['swir.package.system'],
+  productionProvisionableProviders: Object.entries(LINUX_PROVIDERS).filter(([, metadata]) => metadata.productionProvisionable).map(([id]) => id),
+  productionOptionalProviders: ['swir.package.flatpak', 'swir.package.appimage'],
+  experimentalProviders: [],
+  plannedProviders: [],
+  arbitraryProviderRegistration: false,
+  directCommandExecution: false,
+  privilegedMutationDelegated: true,
+  flatpakRequiresAllowlistedPreconfiguredRemote: true,
+  appImageRequiresNativeCatalogTrustVerifier: true,
+  appImageRequiresManagedInstallRoot: true
 });
