@@ -65,6 +65,9 @@ for (const token of forbiddenBuilderTokens) {
 for (const token of [
   'https://deb.debian.org/debian',
   'https://security.debian.org/debian-security',
+  '/usr/share/keyrings/debian-archive-keyring.gpg',
+  '--keyring="$HOST_KEYRING"',
+  'bootstrapKeyringSha256',
   "Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg",
   'mmdebstrap',
   '--variant=minbase',
@@ -79,5 +82,7 @@ for (const token of [
 assert.match(builder, /\[\[ "\$ROOTFS" != "\/" \]\]/);
 assert.match(builder, /rootfs directory must be empty/);
 assert.match(builder, /only the verified amd64 builder is enabled in 0\.1/);
+assert.match(builder, /Debian archive keyring must be root-owned/);
+assert.match(builder, /Debian archive keyring must not be group\/world writable/);
 
 console.log('SWIR Debian 13 base profile self-test OK');
