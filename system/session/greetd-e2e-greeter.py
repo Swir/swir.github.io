@@ -90,7 +90,7 @@ with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as conn:
             "XDG_SESSION_DESKTOP=swir",
             "SWIR_SESSION_E2E=1",
             "SWIR_WESTON_BACKEND=headless",
-            "SWIR_WESTON_SHELL=kiosk",
+            "SWIR_WESTON_SHELL=kiosk-shell.so",
             "WAYLAND_DISPLAY=wayland-swir",
         ],
     }
