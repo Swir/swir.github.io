@@ -1,8 +1,8 @@
 {
   "schema": "swir.public-status/1.0",
-  "generatedAt": "2026-09-17T15:44:00Z",
+  "generatedAt": "2026-09-17T16:03:00Z",
   "canonicalRepository": "https://github.com/Swir/SWIR_OS",
-  "canonicalCommit": "a1a0962c520ceedecf62f21f303716ee04a1ad9c",
+  "canonicalCommit": "2fa61bd3035841c30882ba05d3d30a5b7a7119c1",
   "roadmap": {
     "completed": 44,
     "remaining": 16,
@@ -14,5 +14,6 @@
     "desktop": "0.5.7-preview",
     "system": "in-development"
   },
+  "latestMilestone": "Fail-closed interrupted APT transaction reconciliation is verified in a disposable Debian 13 System Edition image; cross-domain driver/firmware/package recovery remains open.",
   "repositoryRole": "presentation-status-only"
 }
