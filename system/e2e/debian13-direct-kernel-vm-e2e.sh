@@ -19,6 +19,7 @@ MOUNT_DIR="$WORK_ROOT/disk-mount"
 SERIAL_LOG="$ARTIFACT_DIR/serial.log"
 READINESS_OUT="$ARTIFACT_DIR/readiness.json"
 COMPAT_OUT="$ARTIFACT_DIR/compat-runtime-inventory.json"
+HARDWARE_OUT="$ARTIFACT_DIR/hardware-live-e2e.json"
 BOOT_EVIDENCE_OUT="$ARTIFACT_DIR/direct-kernel-boot-evidence.json"
 PROVISION_OUT="$ARTIFACT_DIR/provisioning.json"
 PEER_PROVISION_OUT="$ARTIFACT_DIR/peer-authorization-provisioning.json"
@@ -94,16 +95,29 @@ process.stdout.write(`${JSON.stringify(report)}\n`);
 if (!report.ready || report.bootableImageClaim !== false || report.runtimeKeyEmbeddedInImage !== false) process.exit(2);
 NODE
 
-install -d -m 0755 "$ROOTFS/opt/swir/system/image" "$ROOTFS/opt/swir/system/runtime" "$ROOTFS/usr/local/lib/swir" "$ROOTFS/var/lib/swir/vm-e2e"
+install -d -m 0755 \
+  "$ROOTFS/opt/swir/system/image" \
+  "$ROOTFS/opt/swir/system/runtime" \
+  "$ROOTFS/opt/swir/system/hardware" \
+  "$ROOTFS/opt/swir/system/contracts" \
+  "$ROOTFS/usr/local/lib/swir" \
+  "$ROOTFS/var/lib/swir/vm-e2e"
 install -m 0644 "$REPO_ROOT/system/image/system-image-readiness.mjs" "$ROOTFS/opt/swir/system/image/system-image-readiness.mjs"
 install -m 0755 "$REPO_ROOT/system/image/system-image-readiness-probe.mjs" "$ROOTFS/opt/swir/system/image/system-image-readiness-probe.mjs"
 install -m 0644 "$REPO_ROOT/system/runtime/windows-compat-runtime-registry.mjs" "$ROOTFS/opt/swir/system/runtime/windows-compat-runtime-registry.mjs"
+install -m 0644 "$REPO_ROOT/system/hardware/hardware-service.mjs" "$ROOTFS/opt/swir/system/hardware/hardware-service.mjs"
+install -m 0644 "$REPO_ROOT/system/hardware/driver-resolver.mjs" "$ROOTFS/opt/swir/system/hardware/driver-resolver.mjs"
+install -m 0644 "$REPO_ROOT/system/hardware/driver-center-service.mjs" "$ROOTFS/opt/swir/system/hardware/driver-center-service.mjs"
+install -m 0644 "$REPO_ROOT/system/hardware/hardware-live-e2e.mjs" "$ROOTFS/opt/swir/system/hardware/hardware-live-e2e.mjs"
+install -m 0644 "$REPO_ROOT/system/hardware/hardware-catalog.json" "$ROOTFS/opt/swir/system/hardware/hardware-catalog.json"
+install -m 0644 "$REPO_ROOT/system/contracts/trusted-sources.json" "$ROOTFS/opt/swir/system/contracts/trusted-sources.json"
 
 cat > "$ROOTFS/usr/local/lib/swir/vm-e2e-run" <<'GUEST'
 #!/bin/sh
 set -eu
 OUT=/var/lib/swir/vm-e2e/readiness.json
 COMPAT=/var/lib/swir/vm-e2e/compat-runtime-inventory.json
+HARDWARE=/var/lib/swir/vm-e2e/hardware-live-e2e.json
 STATUS=/var/lib/swir/vm-e2e/status.txt
 KERNEL=/var/lib/swir/vm-e2e/kernel-release.txt
 serial() { printf '%s\n' "$*" > /dev/ttyS0; }
@@ -111,7 +125,7 @@ diag() {
   serial "SWIR_VM_DIAGNOSTICS_BEGIN reason=$1"
   systemctl --no-pager --full status dbus.service systemd-logind.service NetworkManager.service swir-peer-authorization.socket > /dev/ttyS0 2>&1 || true
   journalctl -b --no-pager -n 180 -u dbus.service -u systemd-logind.service -u NetworkManager.service -u swir-peer-authorization.socket > /dev/ttyS0 2>&1 || true
-  ls -ld / /run/dbus /run/swir /run/swir/peer-authorization.sock > /dev/ttyS0 2>&1 || true
+  ls -ld / /run/dbus /run/swir /run/swir/peer-authorization.sock /sys/bus/pci/devices > /dev/ttyS0 2>&1 || true
   serial "SWIR_VM_DIAGNOSTICS_END"
 }
 fail() { printf 'FAIL:%s\n' "$1" > "$STATUS"; diag "$1"; serial "SWIR_VM_E2E_FAIL $1"; sync; systemctl --no-block poweroff; exit 1; }
@@ -135,9 +149,11 @@ const wine = registry.select('swir.compat.wine');
 if (!wine.healthy || wine.provider !== 'swir.compat.wine' || wine.trust?.rootOwned !== true || wine.trust?.writableByGroupOrWorld !== false || typeof wine.version !== 'string' || wine.version.length === 0) process.exit(2);
 process.stdout.write(`${JSON.stringify(inventory)}\n`);
 NODE
+node /opt/swir/system/hardware/hardware-live-e2e.mjs --output "$HARDWARE" >/dev/null || fail hardware-service-live
+node -e "const e=require(process.argv[1]); if(e.schema!=='swir.hardware-live-e2e/0.1'||e.passed!==true||e.readOnly!==true||e.devices?.pci<1||e.devices?.loadedDrivers<1||e.driverCenterViolations!==0||e.hardwareQualificationClaim!==false) process.exit(2)" "$HARDWARE" || fail hardware-service-evidence
 uname -r > "$KERNEL"
 printf 'PASS\n' > "$STATUS"
-serial 'SWIR_VM_E2E_PASS debian=13 direct-kernel=true network=disabled wine-registry=true'
+serial 'SWIR_VM_E2E_PASS debian=13 direct-kernel=true network=disabled wine-registry=true hardware-service=true'
 sync
 systemctl --no-block poweroff
 GUEST
@@ -202,7 +218,7 @@ if [[ $qemu_status -ne 0 && $qemu_status -ne 124 ]]; then
   echo "QEMU exited unexpectedly: $qemu_status" >&2
   exit 8
 fi
-grep -F 'SWIR_VM_E2E_PASS debian=13 direct-kernel=true network=disabled wine-registry=true' "$SERIAL_LOG" >/dev/null || {
+grep -F 'SWIR_VM_E2E_PASS debian=13 direct-kernel=true network=disabled wine-registry=true hardware-service=true' "$SERIAL_LOG" >/dev/null || {
   echo "guest did not emit SWIR_VM_E2E_PASS" >&2
   tail -n 240 "$SERIAL_LOG" >&2 || true
   exit 9
@@ -212,20 +228,23 @@ mount -o loop,ro "$DISK" "$MOUNT_DIR"
 mounted=1
 cp "$MOUNT_DIR/var/lib/swir/vm-e2e/readiness.json" "$READINESS_OUT"
 cp "$MOUNT_DIR/var/lib/swir/vm-e2e/compat-runtime-inventory.json" "$COMPAT_OUT"
+cp "$MOUNT_DIR/var/lib/swir/vm-e2e/hardware-live-e2e.json" "$HARDWARE_OUT"
 cp "$MOUNT_DIR/var/lib/swir/vm-e2e/status.txt" "$ARTIFACT_DIR/status.txt"
 cp "$MOUNT_DIR/var/lib/swir/vm-e2e/kernel-release.txt" "$ARTIFACT_DIR/kernel-release.txt"
 umount "$MOUNT_DIR"
 mounted=0
 
 grep -Fx 'PASS' "$ARTIFACT_DIR/status.txt" >/dev/null
-"$NODE_BIN" - "$READINESS_OUT" "$COMPAT_OUT" "$ARTIFACT_DIR/kernel-release.txt" "$BOOT_EVIDENCE_OUT" <<'NODE'
+"$NODE_BIN" - "$READINESS_OUT" "$COMPAT_OUT" "$HARDWARE_OUT" "$ARTIFACT_DIR/kernel-release.txt" "$BOOT_EVIDENCE_OUT" <<'NODE'
 const fs = require('fs');
-const [readinessPath, compatPath, kernelPath, outputPath] = process.argv.slice(2);
+const [readinessPath, compatPath, hardwarePath, kernelPath, outputPath] = process.argv.slice(2);
 const r = JSON.parse(fs.readFileSync(readinessPath, 'utf8'));
 const compat = JSON.parse(fs.readFileSync(compatPath, 'utf8'));
+const hardware = JSON.parse(fs.readFileSync(hardwarePath, 'utf8'));
 if (r.distribution?.id !== 'debian' || r.distribution?.versionId !== '13' || !r.summary?.systemImageReadyForE2E || !r.summary?.sessionReady) process.exit(2);
 const wine = compat.runtimes?.find(runtime => runtime.provider === 'swir.compat.wine' && runtime.healthy === true && runtime.trust?.rootOwned === true && runtime.trust?.writableByGroupOrWorld === false);
 if (!wine || typeof wine.version !== 'string' || wine.version.length === 0) process.exit(3);
+if (hardware.schema !== 'swir.hardware-live-e2e/0.1' || hardware.passed !== true || hardware.readOnly !== true || hardware.inventoryProvider !== 'linux-sysfs' || hardware.devices?.pci < 1 || hardware.devices?.loadedDrivers < 1 || hardware.driverCenterViolations !== 0 || hardware.hardwareQualificationClaim !== false) process.exit(4);
 const report = {
   schema: 'swir.system-direct-kernel-boot-e2e/0.1',
   generatedAt: new Date().toISOString(),
@@ -242,6 +261,10 @@ const report = {
   wineRuntimeRegistryPassed: true,
   wineRuntimeProvider: wine.provider,
   wineRuntimeVersion: wine.version,
+  hardwareServicePassed: true,
+  hardwareInventoryProvider: hardware.inventoryProvider,
+  hardwareDevicesObserved: hardware.devices.total,
+  hardwareLoadedDriversObserved: hardware.devices.loadedDrivers,
   bootableImageClaim: false,
   bootloaderE2EClaim: false,
   secureBootClaim: false,
@@ -253,4 +276,5 @@ NODE
 
 echo "[SWIR] Debian 13 direct-kernel VM E2E: PASS"
 echo "[SWIR] Managed Wine runtime registry: PASS"
+echo "[SWIR] Production Hardware Service against guest kernel sysfs: PASS"
 echo "[SWIR] Bootloader/UEFI, Secure Boot, installer/recovery and physical hardware qualification remain open."
