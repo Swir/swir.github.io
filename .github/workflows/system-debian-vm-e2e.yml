@@ -1,0 +1,92 @@
+name: System Debian 13 VM E2E
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'system/e2e/debian13-direct-kernel-vm-e2e.sh'
+      - 'system/image/debian13-base-image-profile.json'
+      - 'system/image/validate-debian13-base-image-profile.mjs'
+      - 'system/image/system-image-readiness*'
+      - 'system/image/system-image-provisioning*'
+      - 'system/image/system-peer-authorization-provisioning.mjs'
+      - 'system/ipc/**'
+      - 'system/security/org.swir.system.*.policy'
+      - 'system/contracts/system-base-image-profile.schema.json'
+      - 'system/SWIR-DEBIAN-VM-E2E-0.1.md'
+      - '.github/workflows/system-debian-vm-e2e.yml'
+  pull_request:
+    paths:
+      - 'system/e2e/debian13-direct-kernel-vm-e2e.sh'
+      - 'system/image/debian13-base-image-profile.json'
+      - 'system/image/validate-debian13-base-image-profile.mjs'
+      - 'system/image/system-image-readiness*'
+      - 'system/image/system-image-provisioning*'
+      - 'system/image/system-peer-authorization-provisioning.mjs'
+      - 'system/ipc/**'
+      - 'system/security/org.swir.system.*.policy'
+      - 'system/contracts/system-base-image-profile.schema.json'
+      - 'system/SWIR-DEBIAN-VM-E2E-0.1.md'
+      - '.github/workflows/system-debian-vm-e2e.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: system-debian-vm-e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate profile and harness syntax
+        run: |
+          node --check system/image/validate-debian13-base-image-profile.mjs
+          node system/image/validate-debian13-base-image-profile.mjs
+          node -e "JSON.parse(require('fs').readFileSync('system/image/debian13-base-image-profile.json','utf8')); JSON.parse(require('fs').readFileSync('system/contracts/system-base-image-profile.schema.json','utf8')); console.log('Debian base contracts: OK')"
+          bash -n system/e2e/debian13-direct-kernel-vm-e2e.sh
+      - name: Guard base-image security policy
+        shell: bash
+        run: |
+          grep -F 'https://deb.debian.org/debian' system/image/debian13-base-image-profile.json >/dev/null
+          grep -F 'https://security.debian.org/debian-security' system/image/debian13-base-image-profile.json >/dev/null
+          ! grep -E '"(allowUnsignedRepositories|allowThirdPartyRepositories|allowRandomBinaryDrivers|windowsKernelDriversAsLinuxDrivers)"[[:space:]]*:[[:space:]]*true' system/image/debian13-base-image-profile.json
+          grep -F '"bootableImageClaim": false' system/image/debian13-base-image-profile.json >/dev/null
+          grep -F '"bootloaderE2EClaim": false' system/image/debian13-base-image-profile.json >/dev/null
+          ! grep -E 'qemu-system-x86_64.*-net (nic|user|tap|bridge)|curl |wget ' system/e2e/debian13-direct-kernel-vm-e2e.sh
+
+  boot-e2e:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install controlled build and VM dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends debootstrap debian-archive-keyring qemu-system-x86 qemu-utils e2fsprogs rsync
+      - name: Boot disposable Debian 13 System foundation
+        env:
+          SWIR_VM_WORK_ROOT: ${{ runner.temp }}/swir-debian13-vm
+          SWIR_VM_ARTIFACT_DIR: ${{ runner.temp }}/swir-debian13-vm-artifacts
+        run: sudo --preserve-env=SWIR_VM_WORK_ROOT,SWIR_VM_ARTIFACT_DIR bash system/e2e/debian13-direct-kernel-vm-e2e.sh
+      - name: Export readable diagnostics
+        if: always()
+        run: sudo chown -R "$USER:$USER" "${{ runner.temp }}/swir-debian13-vm-artifacts" 2>/dev/null || true
+      - name: Upload compact VM evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: swir-debian13-vm-e2e-${{ github.run_id }}
+          path: ${{ runner.temp }}/swir-debian13-vm-artifacts
+          if-no-files-found: warn
+          retention-days: 7
