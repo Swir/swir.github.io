@@ -27,9 +27,11 @@ The authoritative roadmap is [SWIR_OS/SWIR-OS-ARCHITECTURE.md](https://github.co
 | System Edition | In development |
 | Overall roadmap | **44 / 60 — 73.3%** |
 
-Latest verified System Edition milestone: the **dependency-aware System package manager/updater** now resolves the APT dependency closure read-only before authorization, binds that closure into the durable transaction plan, and has a real disposable Debian 13 image E2E that performs and verifies a journaled APT installation plus update/remove planning. Interrupted-update recovery remains a separate open milestone.
+Latest verified System Edition milestone: the **dependency-aware APT package transaction path now has fail-closed interrupted-transaction reconciliation**. A real disposable Debian 13 image E2E performs a package mutation, deliberately loses the acknowledgement after APT succeeds, verifies the durable `failed-needs-recovery` state, then reconciles it only after a fresh recovery authorization, exact live package-state verification, `dpkg --audit`, `apt-get check`, and native package health. Recovery does **not** perform an automatic inverse package mutation.
 
-Public progress here is updated only after the corresponding implementation is merged and verified in `Swir/SWIR_OS`. Current canonical milestone commit: [`a1a0962`](https://github.com/Swir/SWIR_OS/commit/a1a0962c520ceedecf62f21f303716ee04a1ad9c).
+The wider roadmap item for journaled **driver + firmware + package** transactions remains open until the driver/firmware mutation and recovery paths are implemented and verified too, so the public roadmap stays truthfully at **44 / 60 — 73.3%**.
+
+Public progress here is updated only after the corresponding implementation is merged and verified in `Swir/SWIR_OS`. Current canonical milestone commit: [`2fa61bd`](https://github.com/Swir/SWIR_OS/commit/2fa61bd3035841c30882ba05d3d30a5b7a7119c1).
 
 ## Repository role
 
