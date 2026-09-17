@@ -1,0 +1,18 @@
+{
+  "schema": "swir.public-status/1.0",
+  "generatedAt": "2026-09-17T14:04:00Z",
+  "canonicalRepository": "https://github.com/Swir/SWIR_OS",
+  "canonicalCommit": "4784942af5a56e4d629d3c95f5f6d356ce6e9e69",
+  "roadmap": {
+    "completed": 42,
+    "remaining": 18,
+    "total": 60,
+    "percent": 70.0
+  },
+  "editions": {
+    "web": "1.7.13",
+    "desktop": "0.5.7-preview",
+    "system": "in-development"
+  },
+  "repositoryRole": "presentation-status-only"
+}
