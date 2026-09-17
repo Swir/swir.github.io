@@ -42,6 +42,47 @@ safe_target() {
   printf '%s\n' "$dest"
 }
 
+verify_trusted_regular_file() {
+  local rel="$1" require_exec="${2:-no}" target file_mode
+  target="$(safe_target "$rel")"
+  [[ -f "$target" && ! -L "$target" ]] || { echo "required trusted file missing: $rel" >&2; exit 69; }
+  [[ "$(stat -c '%u' "$target")" = 0 ]] || { echo "required trusted file must be root-owned: $rel" >&2; exit 78; }
+  file_mode="$(stat -c '%a' "$target")"
+  (( (8#$file_mode & 8#022) == 0 )) || { echo "required trusted file writable by group/world: $rel" >&2; exit 78; }
+  if [[ "$require_exec" == yes && ! -x "$target" ]]; then
+    echo "required trusted executable is not executable: $rel" >&2
+    exit 69
+  fi
+}
+
+# System packages are allowed to pre-create well-known systemd symlinks. Do not
+# weaken safe_target for that case: accept only an exact, audited link name and
+# exact target. The optional third argument is used only for a known previous
+# systemd default target that this provisioner intentionally replaces.
+ensure_exact_symlink() {
+  local rel="$1" expected="$2" replaceable="${3:-}" parent dest current
+  parent="$(dirname "$rel")"
+  safe_target "$parent" >/dev/null
+  dest="$ROOTFS$rel"
+
+  if [[ -L "$dest" ]]; then
+    current="$(readlink "$dest")"
+    if [[ "$current" == "$expected" ]]; then
+      return 0
+    fi
+    case "|$replaceable|" in
+      *"|$current|"*) rm -- "$dest" ;;
+      *) echo "refusing unexpected managed symlink $rel -> $current" >&2; exit 73 ;;
+    esac
+  elif [[ -e "$dest" ]]; then
+    echo "refusing to replace non-symlink managed path: $rel" >&2
+    exit 73
+  fi
+
+  ln -s -- "$expected" "$dest"
+  [[ -L "$dest" && "$(readlink "$dest")" == "$expected" ]] || { echo "failed to install trusted symlink: $rel" >&2; exit 70; }
+}
+
 for pkg in greetd weston plymouth plymouth-themes wayland-utils dbus-user-session; do
   chroot "$ROOTFS" dpkg-query -W -f='${db:Status-Abbrev}' "$pkg" 2>/dev/null | grep -qx 'ii ' || {
     echo "required graphical package is not installed: $pkg" >&2
@@ -49,12 +90,10 @@ for pkg in greetd weston plymouth plymouth-themes wayland-utils dbus-user-sessio
   }
 done
 for file in /usr/sbin/greetd /usr/sbin/agreety /usr/bin/weston /usr/bin/wayland-info /usr/bin/plymouth /usr/sbin/plymouth-set-default-theme; do
-  target="$(safe_target "$file")"
-  [[ -f "$target" && ! -L "$target" && -x "$target" ]] || { echo "required trusted executable missing: $file" >&2; exit 69; }
-  [[ "$(stat -c '%u' "$target")" = 0 ]] || { echo "required executable must be root-owned: $file" >&2; exit 78; }
-  file_mode="$(stat -c '%a' "$target")"
-  (( (8#$file_mode & 8#022) == 0 )) || { echo "required executable writable by group/world: $file" >&2; exit 78; }
+  verify_trusted_regular_file "$file" yes
 done
+verify_trusted_regular_file /usr/lib/systemd/system/greetd.service no
+verify_trusted_regular_file /usr/lib/systemd/system/graphical.target no
 
 install -d -m 0755 \
   "$(safe_target /etc/greetd)" \
@@ -108,9 +147,9 @@ EOF
 fi
 chmod 0644 "$(safe_target /etc/greetd/config.toml)"
 
-ln -sfn /usr/lib/systemd/system/greetd.service "$(safe_target /etc/systemd/system/display-manager.service)"
-ln -sfn /usr/lib/systemd/system/greetd.service "$(safe_target /etc/systemd/system/graphical.target.wants/greetd.service)"
-ln -sfn /usr/lib/systemd/system/graphical.target "$(safe_target /etc/systemd/system/default.target)"
+ensure_exact_symlink /etc/systemd/system/display-manager.service /usr/lib/systemd/system/greetd.service
+ensure_exact_symlink /etc/systemd/system/graphical.target.wants/greetd.service /usr/lib/systemd/system/greetd.service
+ensure_exact_symlink /etc/systemd/system/default.target /usr/lib/systemd/system/graphical.target "/lib/systemd/system/graphical.target|/usr/lib/systemd/system/multi-user.target|/lib/systemd/system/multi-user.target"
 
 # Install the SWIR theme into initramfs using Debian's packaged tooling.
 chroot "$ROOTFS" /usr/sbin/plymouth-set-default-theme swir
