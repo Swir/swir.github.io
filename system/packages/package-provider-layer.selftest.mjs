@@ -57,13 +57,25 @@ const flatpakManifest = {
 };
 assert.throws(() => layer.plan('install', flatpakManifest), error => error?.code === 'PROVIDER_NOT_PROVISIONED');
 const flatpakCalls = [];
-const flatpakExecutor = new GuardedFlatpakUserExecutor({ allowlistedRemotes: ['flathub'], runner(binary, args, options) { flatpakCalls.push([binary, args, options.shell]); return { status: 0, stdout: '', stderr: '' }; } });
+const flatpakExecutor = new GuardedFlatpakUserExecutor({
+  allowlistedRemotes: ['flathub'],
+  fileProbe: () => ({ isFile: true, isSymbolicLink: false, uid: 0, mode: 0o100755, realpath: '/usr/bin/flatpak' }),
+  runner(binary, args, options) {
+    flatpakCalls.push([binary, args, options.shell]);
+    if (args[0] === '--user' && args[1] === 'remotes') return { status: 0, stdout: 'flathub\ttrue\n', stderr: '' };
+    return { status: 0, stdout: '', stderr: '' };
+  }
+});
 const flatpakAdapter = new FlatpakUserPackageAdapter({ allowlistedRemotes: ['flathub'], executor: flatpakExecutor });
 const mixed = new SystemPackageProviderLayer({ adapters: new Map([['swir.package.system', new DistributionPackageStackAdapter(stack)], ['swir.package.flatpak', flatpakAdapter]]) });
 const flatpakResult = await mixed.execute('install', flatpakManifest, { subject: 'session:1000' });
 assert.equal(flatpakResult.result.state, 'committed');
+assert.equal(flatpakResult.result.runtimeTrust.gpgVerify, true);
+assert.equal(flatpakCalls.length, 2);
 assert.equal(flatpakCalls[0][0], '/usr/bin/flatpak');
+assert.deepEqual(flatpakCalls[0][1], ['--user', 'remotes', '--columns=name,gpg-verify']);
 assert.equal(flatpakCalls[0][2], false);
+assert.deepEqual(flatpakCalls[1][1], ['--user', '--noninteractive', 'install', '--or-update', 'flathub', 'org.example.FlatEditor']);
 
 const tempRoot = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'swir-provider-layer-'));
 const appImageInstallRoot = path.join(tempRoot, 'appimages');
