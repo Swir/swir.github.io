@@ -57,6 +57,8 @@ debootstrap \
   --keyring=/usr/share/keyrings/debian-archive-keyring.gpg \
   trixie "$ROOTFS" https://deb.debian.org/debian
 
+install -d -o root -g root -m 0755 "$ROOTFS/etc/apt/sources.list.d"
+find "$ROOTFS/etc/apt/sources.list.d" -mindepth 1 -maxdepth 1 -type f -delete
 cat > "$ROOTFS/etc/apt/sources.list" <<'SOURCES'
 deb [signed-by=/usr/share/keyrings/debian-archive-keyring.gpg] https://deb.debian.org/debian trixie main non-free-firmware
 deb [signed-by=/usr/share/keyrings/debian-archive-keyring.gpg] https://deb.debian.org/debian trixie-updates main non-free-firmware

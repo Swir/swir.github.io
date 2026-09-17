@@ -22,6 +22,9 @@ const repositories = new Map(profile.repositories.map(repo => [repo.id, repo]));
 assert(repositories.size === 2, 'base image must expose exactly the two approved Debian repositories');
 assert(repositories.get('debian-main')?.uri === 'https://deb.debian.org/debian', 'Debian main mirror must use deb.debian.org over HTTPS');
 assert(repositories.get('debian-security')?.uri === 'https://security.debian.org/debian-security', 'Debian security mirror must use security.debian.org over HTTPS');
+assert(JSON.stringify(repositories.get('debian-main')?.suites) === JSON.stringify(['trixie', 'trixie-updates']), 'Debian main suites must be exactly trixie and trixie-updates');
+assert(JSON.stringify(repositories.get('debian-security')?.suites) === JSON.stringify(['trixie-security']), 'Debian security suite must be exactly trixie-security');
+for (const repo of repositories.values()) assert(JSON.stringify(repo.components) === JSON.stringify(['main', 'non-free-firmware']), `repository ${repo.id} components must be exactly main and non-free-firmware`);
 for (const repo of repositories.values()) {
   assert(repo.uri.startsWith('https://'), `repository ${repo.id} must use HTTPS`);
   assert(repo.signedBy === '/usr/share/keyrings/debian-archive-keyring.gpg', `repository ${repo.id} must use Debian archive keyring`);

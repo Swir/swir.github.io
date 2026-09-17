@@ -39,6 +39,16 @@ if [[ "$actual_sources" != "$expected_sources" ]]; then
   exit 5
 fi
 
+if [[ -d "$ROOTFS/etc/apt/sources.list.d" ]]; then
+  while IFS= read -r -d '' source_fragment; do
+    if grep -Ev '^[[:space:]]*(#|$)' "$source_fragment" | grep -q .; then
+      echo "unapproved active apt source fragment: $source_fragment" >&2
+      cat "$source_fragment" >&2
+      exit 5
+    fi
+  done < <(find "$ROOTFS/etc/apt/sources.list.d" -mindepth 1 -maxdepth 1 -type f -print0)
+fi
+
 for policy in org.swir.system.packages.policy org.swir.system.network.policy org.swir.system.firmware.policy; do
   file="$ROOTFS/usr/share/polkit-1/actions/$policy"
   [[ -f "$file" && ! -L "$file" ]] || { echo "Polkit policy missing or symlinked: $policy" >&2; exit 6; }
