@@ -1,0 +1,58 @@
+name: System Session Identity Contract
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'system/session/**'
+      - 'system/contracts/system-session-inventory.schema.json'
+      - 'system/SWIR-SYSTEM-SESSION-IDENTITY-0.1.md'
+      - '.github/workflows/system-session-identity-contract.yml'
+  pull_request:
+    paths:
+      - 'system/session/**'
+      - 'system/contracts/system-session-inventory.schema.json'
+      - 'system/SWIR-SYSTEM-SESSION-IDENTITY-0.1.md'
+      - '.github/workflows/system-session-identity-contract.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Check session identity syntax
+        run: |
+          node --check system/session/system-session-identity-service.mjs
+          node --check system/session/system-session-identity-service.selftest.mjs
+          node --check system/session/system-session-probe.mjs
+
+      - name: Run session identity self-tests
+        run: node system/session/system-session-identity-service.selftest.mjs
+
+      - name: Parse session inventory contract
+        run: |
+          node -e "const s=JSON.parse(require('fs').readFileSync('system/contracts/system-session-inventory.schema.json','utf8')); if(s.properties?.schema?.const!=='swir.system-session-inventory/0.1'||s.properties?.readOnly?.const!==true||s.properties?.mutationCapable?.const!==false||s.properties?.arbitrarySessionOverride?.const!==false||s.properties?.secretsExposed?.const!==false) process.exit(1); console.log('Session inventory schema OK')"
+
+      - name: Probe CI host session state read-only
+        shell: bash
+        run: |
+          node system/session/system-session-probe.mjs --compact > "$RUNNER_TEMP/swir-session.json"
+          node -e "const r=JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')); if(r.schema!=='swir.system-session-inventory/0.1'||r.readOnly!==true||r.mutationCapable!==false||r.arbitrarySessionOverride!==false||r.secretsExposed!==false||!Array.isArray(r.sessions)) process.exit(1); if(r.activeActor&&(r.activeActor.local!==true||r.activeActor.active!==true||!/^uid:[1-9][0-9]*$/.test(r.activeActor.actorId))) process.exit(1); console.log('Session probe:', 'available=', r.available, 'sessions=', r.sessions.length, 'actor=', r.activeActor?.actorId || 'none')" "$RUNNER_TEMP/swir-session.json"
+
+      - name: Guard read-only session boundary
+        shell: bash
+        run: |
+          ! grep -nE 'shell:[[:space:]]*true|execSync\(|spawnSync\(|[^A-Za-z]exec\(' system/session/system-session-identity-service.mjs
+          grep -q "\['list-sessions', '--no-legend', '--no-pager'\]" system/session/system-session-identity-service.mjs
+          grep -q "\['show-session', id" system/session/system-session-identity-service.mjs

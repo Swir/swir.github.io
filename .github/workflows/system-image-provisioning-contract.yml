@@ -1,0 +1,110 @@
+name: System Image Provisioning Contract
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'system/image/system-image-provisioning*'
+      - 'system/security/org.swir.system.*.policy'
+      - 'system/contracts/system-image-provisioning-report.schema.json'
+      - 'system/SWIR-SYSTEM-IMAGE-PROVISIONING-0.1.md'
+      - '.github/workflows/system-image-provisioning-contract.yml'
+  pull_request:
+    paths:
+      - 'system/image/system-image-provisioning*'
+      - 'system/security/org.swir.system.*.policy'
+      - 'system/contracts/system-image-provisioning-report.schema.json'
+      - 'system/SWIR-SYSTEM-IMAGE-PROVISIONING-0.1.md'
+      - '.github/workflows/system-image-provisioning-contract.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Check image provisioning syntax
+        run: |
+          node --check system/image/system-image-provisioning.mjs
+          node --check system/image/system-image-provisioning.selftest.mjs
+          node --check system/image/system-image-provisioning-cli.mjs
+
+      - name: Parse image manifest and report contract
+        run: |
+          node -e "const m=JSON.parse(require('fs').readFileSync('system/image/system-image-provisioning.json','utf8')); if(m.schema!=='swir.system-image-provisioning-manifest/0.1'||m.policy?.allowRealRootTarget!==false||m.policy?.allowSymlinkDestinations!==false||m.policy?.allowArbitraryUrls!==false||m.policy?.allowExampleRepositoryPolicy!==false||m.policy?.productionRequiresRoot!==true||m.policy?.repositorySignatureVerificationRequired!==true) process.exit(1); console.log('Image manifest: OK')"
+          node -e "const s=JSON.parse(require('fs').readFileSync('system/contracts/system-image-provisioning-report.schema.json','utf8')); if(s.properties?.schema?.const!=='swir.system-image-provisioning-report/0.1'||s.properties?.readOnlyVerification?.const!==true||s.properties?.bootableImageClaim?.const!==false) process.exit(1); console.log('Provisioning report schema: OK')"
+
+      - name: Run unprivileged rootfs self-tests
+        run: node system/image/system-image-provisioning.selftest.mjs
+
+      - name: Run root-owned production staging E2E
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOTFS="$RUNNER_TEMP/swir-system-rootfs"
+          POLICY="$RUNNER_TEMP/repository-trust-policy.json"
+          NODE_BIN="$(command -v node)"
+          sudo mkdir -p "$ROOTFS"
+          sudo chmod 0755 "$ROOTFS"
+          cat > "$POLICY" <<'JSON'
+          {
+            "schema": "swir.system-repository-trust-policy/0.1",
+            "defaultRepositoryId": "ubuntu-noble-main",
+            "repositories": [
+              {
+                "id": "ubuntu-noble-main",
+                "manager": "apt",
+                "nativeId": "ubuntu:noble:main",
+                "sourceClass": "distribution-repository",
+                "distributions": ["ubuntu"],
+                "signatureVerification": "native-required",
+                "allowInsecure": false,
+                "enabled": true
+              }
+            ]
+          }
+          JSON
+          sudo "$NODE_BIN" system/image/system-image-provisioning-cli.mjs stage \
+            --rootfs "$ROOTFS" \
+            --source-root "$GITHUB_WORKSPACE" \
+            --repository-policy "$POLICY" \
+            --production --compact > "$RUNNER_TEMP/stage.json"
+          sudo "$NODE_BIN" system/image/system-image-provisioning-cli.mjs verify \
+            --rootfs "$ROOTFS" --production --compact > "$RUNNER_TEMP/verify.json"
+          node -e "for(const f of process.argv.slice(1)){const r=JSON.parse(require('fs').readFileSync(f,'utf8')); if(r.schema!=='swir.system-image-provisioning-report/0.1'||r.ready!==true||r.production!==true||r.bootableImageClaim!==false||r.blockers.length) process.exit(1)} console.log('Production rootfs stage/verify: OK')" "$RUNNER_TEMP/stage.json" "$RUNNER_TEMP/verify.json"
+          test "$(sudo stat -c '%u:%a' "$ROOTFS/var/lib/swir/security/catalog-trust")" = '0:700'
+          test "$(sudo stat -c '%u:%a' "$ROOTFS/etc/swir/repository-trust-policy.json")" = '0:600'
+          test "$(sudo stat -c '%u:%a' "$ROOTFS/usr/share/polkit-1/actions/org.swir.system.packages.policy")" = '0:644'
+
+      - name: Verify production tamper detection
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOTFS="$RUNNER_TEMP/swir-system-rootfs"
+          NODE_BIN="$(command -v node)"
+          sudo sh -c "printf '\n<!-- CI tamper -->\n' >> '$ROOTFS/usr/share/polkit-1/actions/org.swir.system.network.policy'"
+          set +e
+          sudo "$NODE_BIN" system/image/system-image-provisioning-cli.mjs verify --rootfs "$ROOTFS" --production --compact > "$RUNNER_TEMP/tampered.json"
+          status=$?
+          set -e
+          test "$status" -eq 2
+          node -e "const r=JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')); if(r.ready!==false||!r.blockers.includes('file:polkit-network')) process.exit(1); console.log('Tamper detection: OK')" "$RUNNER_TEMP/tampered.json"
+
+      - name: Guard provisioning security invariants
+        shell: bash
+        run: |
+          ! grep -nE 'shell:[[:space:]]*true|execSync\(|spawnSync\(|[^A-Za-z]exec\(' system/image/system-image-provisioning.mjs system/image/system-image-provisioning-cli.mjs
+          ! grep -n 'example.invalid' system/image/system-image-provisioning.json
+          grep -q '"allowRealRootTarget": false' system/image/system-image-provisioning.json
+          grep -q '"allowSymlinkDestinations": false' system/image/system-image-provisioning.json
+          grep -q '"repositorySignatureVerificationRequired": true' system/image/system-image-provisioning.json
