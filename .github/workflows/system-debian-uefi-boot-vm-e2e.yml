@@ -1,0 +1,116 @@
+name: System Debian UEFI Bootable Image E2E
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'system/e2e/debian13-uefi-vm-e2e.sh'
+      - 'system/image/system-base-debian-trixie.json'
+      - 'system/image/debian-trixie-repository-trust-policy.json'
+      - 'system/image/build-debian-trixie-rootfs.sh'
+      - 'system/image/system-image-readiness*'
+      - 'system/image/system-image-provisioning*'
+      - 'system/image/system-peer-authorization-provisioning*'
+      - 'system/image/validate-bootable-image-evidence.mjs'
+      - 'system/contracts/system-image-readiness.schema.json'
+      - 'system/contracts/system-bootable-image-e2e.schema.json'
+      - 'system/runtime/windows-compat-runtime-registry.mjs'
+      - 'system/runtime/native-package-execution-service.mjs'
+      - 'system/runtime/native-app-supervisor.mjs'
+      - 'system/runtime/native-app-launcher.mjs'
+      - 'system/ipc/swir-peer-authorization*'
+      - 'system/ipc/90-swir-peer-authorization.preset'
+      - 'system/security/org.swir.system.*.policy'
+      - 'system/SWIR-DEBIAN-UEFI-BOOT-E2E-0.1.md'
+      - 'SWIR-OS-ARCHITECTURE.md'
+      - '.github/workflows/system-debian-uefi-boot-vm-e2e.yml'
+  pull_request:
+    paths:
+      - 'system/e2e/debian13-uefi-vm-e2e.sh'
+      - 'system/image/system-base-debian-trixie.json'
+      - 'system/image/debian-trixie-repository-trust-policy.json'
+      - 'system/image/build-debian-trixie-rootfs.sh'
+      - 'system/image/system-image-readiness*'
+      - 'system/image/system-image-provisioning*'
+      - 'system/image/system-peer-authorization-provisioning*'
+      - 'system/image/validate-bootable-image-evidence.mjs'
+      - 'system/contracts/system-image-readiness.schema.json'
+      - 'system/contracts/system-bootable-image-e2e.schema.json'
+      - 'system/runtime/windows-compat-runtime-registry.mjs'
+      - 'system/runtime/native-package-execution-service.mjs'
+      - 'system/runtime/native-app-supervisor.mjs'
+      - 'system/runtime/native-app-launcher.mjs'
+      - 'system/ipc/swir-peer-authorization*'
+      - 'system/ipc/90-swir-peer-authorization.preset'
+      - 'system/security/org.swir.system.*.policy'
+      - 'system/SWIR-DEBIAN-UEFI-BOOT-E2E-0.1.md'
+      - 'SWIR-OS-ARCHITECTURE.md'
+      - '.github/workflows/system-debian-uefi-boot-vm-e2e.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: system-debian-uefi-boot-vm-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate bootable-image contracts and security guards
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check system/image/validate-bootable-image-evidence.mjs
+          node --check system/runtime/native-package-execution-service.mjs
+          node --check system/runtime/native-app-supervisor.mjs
+          node --check system/runtime/native-app-launcher.mjs
+          python3 -m json.tool system/contracts/system-bootable-image-e2e.schema.json >/dev/null
+          bash -n system/e2e/debian13-uefi-vm-e2e.sh
+          node scripts/validate-roadmap-progress.mjs
+          grep -F "bootPath: 'uefi-systemd-boot'" system/e2e/debian13-uefi-vm-e2e.sh >/dev/null
+          grep -F 'bootableImageClaim: true' system/e2e/debian13-uefi-vm-e2e.sh >/dev/null
+          grep -F 'nativeLinuxExecutionPassed: true' system/e2e/debian13-uefi-vm-e2e.sh >/dev/null
+          grep -F 'secureBootClaim: false' system/e2e/debian13-uefi-vm-e2e.sh >/dev/null
+          ! grep -E 'curl |wget |--no-check-gpg|AllowUnauthenticated|trusted=yes|shell: *true' system/e2e/debian13-uefi-vm-e2e.sh
+
+  boot-e2e:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install controlled image and VM dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends mmdebstrap debian-archive-keyring qemu-system-x86 qemu-utils ovmf e2fsprogs dosfstools rsync parted util-linux udev
+      - name: Build and boot Debian 13 UEFI SWIR image
+        env:
+          SWIR_VM_WORK_ROOT: ${{ runner.temp }}/swir-debian13-uefi-vm
+          SWIR_VM_ARTIFACT_DIR: ${{ runner.temp }}/swir-debian13-uefi-vm-artifacts
+        run: sudo --preserve-env=SWIR_VM_WORK_ROOT,SWIR_VM_ARTIFACT_DIR bash system/e2e/debian13-uefi-vm-e2e.sh
+      - name: Export readable diagnostics
+        if: always()
+        run: sudo chown -R "$USER:$USER" "${{ runner.temp }}/swir-debian13-uefi-vm-artifacts" 2>/dev/null || true
+      - name: Validate emitted boot evidence
+        if: success()
+        run: node system/image/validate-bootable-image-evidence.mjs "${{ runner.temp }}/swir-debian13-uefi-vm-artifacts/bootable-image-evidence.json"
+      - name: Upload compact UEFI evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: swir-debian13-uefi-vm-e2e-${{ github.run_id }}
+          path: ${{ runner.temp }}/swir-debian13-uefi-vm-artifacts
+          if-no-files-found: warn
+          retention-days: 7
