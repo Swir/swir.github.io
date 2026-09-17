@@ -1,8 +1,8 @@
 {
   "schema": "swir.public-status/1.0",
-  "generatedAt": "2026-09-17T22:36:56Z",
+  "generatedAt": "2026-09-17T23:57:44Z",
   "canonicalRepository": "https://github.com/Swir/SWIR_OS",
-  "canonicalCommit": "26e28bc584b55141f2bac15874218e3d9de174c8",
+  "canonicalCommit": "f41f68aa58a68f6d1b014e05c7f00812d5242834",
   "roadmap": {
     "completed": 51,
     "remaining": 14,
@@ -16,7 +16,7 @@
   },
   "systemEdition": {
     "nativeShell": "verified-gtk4-wayland",
-    "nativeCoreApps": "files-settings-notes-system-monitor-foundations-verified",
+    "nativeCoreApps": "files-settings-notes-system-monitor-terminal-network-center-foundations-verified",
     "liveUsbVm": "verified-uefi-usb-mass-storage",
     "graphicalInstallerVm": "verified-full-gtk4-path",
     "detachedInstalledBootVm": "verified-graphical-with-persistence",
@@ -24,6 +24,6 @@
     "secureBootQualification": "not-claimed",
     "legacyBiosQualification": "not-claimed"
   },
-  "latestMilestone": "The authenticated System Edition now ships verified first-party GTK4 foundations for SWIR Files, SWIR Settings, SWIR Notes and SWIR System Monitor. Notes uses bounded owner-only atomic per-user persistence, System Monitor provides bounded read-only /proc telemetry, all four applications map real GTK4 windows on Wayland, and the integration head passed graphical-session, Live USB install and full graphical-installer E2E. The complete native daily-use application suite and physical Live USB qualification remain open.",
+  "latestMilestone": "The authenticated System Edition now also ships verified first-party GTK4 foundations for SWIR Terminal and SWIR Network Center. Terminal uses a real VTE PTY with the logged-in user's normal shell and no built-in privilege shortcut; its launch path is compatible with the VTE 0.76 GI ABI used by Ubuntu CI and the newer Debian 13 binding. Network Center performs bounded read-only NetworkManager queries through the fixed /usr/bin/nmcli path and exposes no connection mutation controls. The final integration head passed native-app Wayland, graphical-session UEFI, Live USB install and full graphical-installer E2E. The complete native daily-use application suite and physical Live USB qualification remain open.",
   "repositoryRole": "presentation-status-only"
 }
