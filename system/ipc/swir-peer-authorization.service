@@ -1,0 +1,26 @@
+[Unit]
+Description=SWIR SO_PEERCRED Polkit authorization broker
+Requires=swir-peer-authorization.socket
+After=systemd-logind.service polkit.service
+
+[Service]
+Type=simple
+ExecStart=/usr/libexec/swir/swir-peer-authorization-broker
+User=root
+Group=root
+UMask=0077
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_UNIX
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+ReadWritePaths=/run/swir
+
+[Install]
+WantedBy=multi-user.target

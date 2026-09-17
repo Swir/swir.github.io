@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://swir.example/contracts/peer-authorization-envelope.schema.json",
+  "title": "SWIR peer authorization envelope 0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "payload", "mac"],
+  "properties": {
+    "schema": { "const": "swir.peer-authorization-envelope/0.1" },
+    "mac": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "payload": {
+      "type": "object",
+      "required": ["schema", "issuer", "audience", "grantId", "authorized", "scope", "actionId", "planDigest", "operation", "actorId", "subject", "session", "interactive", "issuedAtMs", "expiresAtMs"],
+      "properties": {
+        "schema": { "const": "swir.peer-authorization-grant/0.1" },
+        "issuer": { "const": "swir-peer-authorization-broker" },
+        "audience": { "const": "swir-system-privileged-services" },
+        "grantId": { "type": "string", "minLength": 20, "maxLength": 200, "pattern": "^[A-Za-z0-9_-]+$" },
+        "authorized": { "const": true },
+        "scope": { "enum": ["packages.mutate", "packages.recover", "network.activate", "network.deactivate", "firmware.update", "firmware.recover"] },
+        "actionId": { "type": "string", "pattern": "^org\\.swir\\.system\\.(packages|network|firmware)\\.[A-Za-z0-9._-]+$" },
+        "planDigest": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "operation": { "type": "string", "minLength": 1, "maxLength": 32 },
+        "actorId": { "type": "string", "pattern": "^uid:[1-9][0-9]*$" },
+        "interactive": { "type": "boolean" },
+        "issuedAtMs": { "type": "integer", "minimum": 0 },
+        "expiresAtMs": { "type": "integer", "minimum": 1 },
+        "packageId": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$" },
+        "connectionUuid": { "type": "string", "format": "uuid" },
+        "ifname": { "type": ["string", "null"], "maxLength": 64 },
+        "deviceId": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$" },
+        "releaseId": { "type": ["string", "null"], "maxLength": 128 },
+        "subject": { "type": "object", "additionalProperties": false, "required": ["pid", "uid", "gid", "startTime"], "properties": { "pid": { "type": "integer", "minimum": 1 }, "uid": { "type": "integer", "minimum": 1 }, "gid": { "type": "integer", "minimum": 0 }, "startTime": { "type": "string", "pattern": "^[0-9]+$" } } },
+        "session": { "type": "object", "additionalProperties": false, "required": ["id", "uid", "username", "seat", "type", "local", "active"], "properties": { "id": { "type": "string", "minLength": 1, "maxLength": 128 }, "uid": { "type": "integer", "minimum": 1 }, "username": { "type": "string", "minLength": 1, "maxLength": 128 }, "seat": { "type": ["string", "null"], "maxLength": 128 }, "type": { "enum": ["wayland", "x11"] }, "local": { "const": true }, "active": { "const": true } } }
+      }
+    }
+  }
+}

@@ -1,0 +1,14 @@
+[Unit]
+Description=SWIR peer-credential authorization socket
+After=systemd-tmpfiles-setup.service
+Requires=systemd-tmpfiles-setup.service
+
+[Socket]
+ListenStream=/run/swir/peer-authorization.sock
+SocketMode=0666
+RemoveOnStop=yes
+Accept=no
+MaxConnections=64
+
+[Install]
+WantedBy=sockets.target
