@@ -12,20 +12,20 @@ SWIR OS is designed in three editions sharing one application model and platform
 <!-- ROADMAP-PROGRESS:START -->
 <p align="center">
   <a href="https://github.com/Swir/swir.github.io/actions/workflows/system-contracts.yml"><img alt="CI" src="https://github.com/Swir/swir.github.io/actions/workflows/system-contracts.yml/badge.svg"></a>
-  <img alt="Roadmap progress" src="https://img.shields.io/badge/ROADMAP-66.7%25-2ea043?style=for-the-badge">
-  <img alt="Completed" src="https://img.shields.io/badge/DONE-36%2F54-1f6feb?style=for-the-badge">
+  <img alt="Roadmap progress" src="https://img.shields.io/badge/ROADMAP-70.4%25-2ea043?style=for-the-badge">
+  <img alt="Completed" src="https://img.shields.io/badge/DONE-38%2F54-1f6feb?style=for-the-badge">
   <img alt="Status" src="https://img.shields.io/badge/STATUS-IN%20PROGRESS-7c3aed?style=for-the-badge">
 </p>
 
 ## 📊 Overall progress
 
 ```text
-█████████████░░░░░░░ 66.7%
+██████████████░░░░░░ 70.4%
 ```
 
 | ✅ Completed | ⏳ Remaining | 📦 Total | 🎯 Progress |
 |---:|---:|---:|---:|
-| **36** | **18** | **54** | **66.7%** |
+| **38** | **16** | **54** | **70.4%** |
 
 > **Progress rule:** the explicit `[x]/[ ]` deliverables in **Version roadmap** are the source of truth for the full Web → Desktop → System plan. Update the checklist first, then badges, numbers, percentage and the 20-segment bar. A prototype does not count as complete until the described deliverable is actually implemented and verified.
 <!-- ROADMAP-PROGRESS:END -->
@@ -392,11 +392,11 @@ Active direction:
 
 Planned:
 
-- [ ] maintained Linux base/kernel and bootable image
+- [x] maintained Linux base/kernel and bootable image
 - [ ] SWIR boot splash and login/session manager
 - [ ] SWIR desktop shell
 - [ ] NetworkManager integration
-- [ ] native Linux application execution
+- [x] native Linux application execution
 - [ ] common Package Provider layer for distribution packages and later Flatpak/AppImage
 - [ ] managed Wine/Proton compatibility service for Windows user applications
 - [ ] Hardware Service with PCI/USB inventory
