@@ -1,19 +1,19 @@
 {
   "schema": "swir.public-status/1.0",
-  "generatedAt": "2026-09-17T16:03:00Z",
+  "generatedAt": "2026-09-17T17:38:58Z",
   "canonicalRepository": "https://github.com/Swir/SWIR_OS",
-  "canonicalCommit": "2fa61bd3035841c30882ba05d3d30a5b7a7119c1",
+  "canonicalCommit": "b5569bd629f87b9499a9a64e07576306ce727ce8",
   "roadmap": {
-    "completed": 44,
-    "remaining": 16,
+    "completed": 46,
+    "remaining": 14,
     "total": 60,
-    "percent": 73.3
+    "percent": 76.7
   },
   "editions": {
     "web": "1.7.13",
     "desktop": "0.5.7-preview",
     "system": "in-development"
   },
-  "latestMilestone": "Fail-closed interrupted APT transaction reconciliation is verified in a disposable Debian 13 System Edition image; cross-domain driver/firmware/package recovery remains open.",
+  "latestMilestone": "System Edition now has a verified dedicated read-only UEFI recovery mode and a journaled Driver Center coordinator that binds exact package/fwupd preview operations to existing guarded child transactions; direct kernel-module mutation and arbitrary driver downloads remain disabled, while live supported-device fwupd/LVFS qualification remains open.",
   "repositoryRole": "presentation-status-only"
 }
