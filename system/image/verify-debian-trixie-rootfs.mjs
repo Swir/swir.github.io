@@ -32,15 +32,26 @@ async function safeRoot(rootfs) {
   assert(await fsp.realpath(root) === root, 'ROOTFS_SYMLINKED', 'rootfs must resolve exactly to the requested directory');
   return root;
 }
-async function regular(root, imagePath, { executable = false, production = false } = {}) {
+async function trustedBinary(root, imagePath, { production = false } = {}) {
   const target = inside(root, imagePath);
-  const stat = await fsp.lstat(target).catch(() => null);
-  if (!stat || !stat.isFile() || stat.isSymbolicLink()) return { ok: false, reason: 'missing-or-not-regular' };
-  if (await fsp.realpath(target) !== target) return { ok: false, reason: 'symlinked' };
-  if (production && typeof stat.uid === 'number' && stat.uid !== 0) return { ok: false, reason: 'owner-not-root', uid: stat.uid };
-  if ((stat.mode & 0o022) !== 0) return { ok: false, reason: 'group-or-world-writable', mode: stat.mode & 0o777 };
-  if (executable && (stat.mode & 0o111) === 0) return { ok: false, reason: 'not-executable', mode: stat.mode & 0o777 };
-  return { ok: true, mode: stat.mode & 0o777, uid: typeof stat.uid === 'number' ? stat.uid : null };
+  const linkStat = await fsp.lstat(target).catch(() => null);
+  if (!linkStat) return { ok: false, reason: 'missing' };
+  let resolved;
+  try { resolved = await fsp.realpath(target); } catch { return { ok: false, reason: 'unresolvable' }; }
+  const withinRoot = resolved.startsWith(`${root}${path.sep}`);
+  if (!withinRoot) return { ok: false, reason: 'symlink-escape', resolved };
+  const stat = await fsp.stat(resolved).catch(() => null);
+  if (!stat?.isFile()) return { ok: false, reason: 'resolved-target-not-regular', resolved };
+  if (production && typeof stat.uid === 'number' && stat.uid !== 0) return { ok: false, reason: 'owner-not-root', uid: stat.uid, resolved };
+  if ((stat.mode & 0o022) !== 0) return { ok: false, reason: 'group-or-world-writable', mode: stat.mode & 0o777, resolved };
+  if ((stat.mode & 0o111) === 0) return { ok: false, reason: 'not-executable', mode: stat.mode & 0o777, resolved };
+  return {
+    ok: true,
+    mode: stat.mode & 0o777,
+    uid: typeof stat.uid === 'number' ? stat.uid : null,
+    symlink: linkStat.isSymbolicLink(),
+    resolved: path.relative(root, resolved).split(path.sep).join('/')
+  };
 }
 function parseDpkgStatus(text) {
   const installed = new Map();
@@ -93,7 +104,7 @@ export async function verifyDebianTrixieRootfs({ rootfs, profilePath, production
   for (const packageName of REQUIRED_PACKAGES) add(`package:${packageName}`, installed.has(packageName), { version: installed.get(packageName) ?? null });
 
   for (const binary of REQUIRED_BINARIES) {
-    const evidence = await regular(root, binary, { executable: true, production });
+    const evidence = await trustedBinary(root, binary, { production });
     add(`binary:${binary}`, evidence.ok, evidence);
   }
 
