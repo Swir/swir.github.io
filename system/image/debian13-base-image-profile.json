@@ -1,0 +1,60 @@
+{
+  "schema": "swir.system-base-image-profile/0.1",
+  "status": "candidate",
+  "distribution": {
+    "id": "debian",
+    "majorVersion": 13,
+    "codename": "trixie",
+    "channel": "stable",
+    "verifiedAsOf": "2026-09-17"
+  },
+  "architectures": ["amd64", "arm64"],
+  "packageManager": "apt",
+  "repositories": [
+    {
+      "id": "debian-main",
+      "uri": "https://deb.debian.org/debian",
+      "suites": ["trixie", "trixie-updates"],
+      "components": ["main", "non-free-firmware"],
+      "signedBy": "/usr/share/keyrings/debian-archive-keyring.gpg"
+    },
+    {
+      "id": "debian-security",
+      "uri": "https://security.debian.org/debian-security",
+      "suites": ["trixie-security"],
+      "components": ["main", "non-free-firmware"],
+      "signedBy": "/usr/share/keyrings/debian-archive-keyring.gpg"
+    }
+  ],
+  "kernelPackages": {
+    "amd64": "linux-image-amd64",
+    "arm64": "linux-image-arm64"
+  },
+  "requiredPackages": [
+    "systemd-sysv",
+    "dbus",
+    "polkitd",
+    "pkexec",
+    "network-manager",
+    "ca-certificates",
+    "nodejs"
+  ],
+  "hybridFoundationPackages": [
+    "fwupd",
+    "flatpak",
+    "wine",
+    "wine64",
+    "firmware-linux-free"
+  ],
+  "securityPolicy": {
+    "allowUnsignedRepositories": false,
+    "allowThirdPartyRepositories": false,
+    "allowRandomBinaryDrivers": false,
+    "windowsKernelDriversAsLinuxDrivers": false,
+    "repositorySignatureVerificationRequired": true
+  },
+  "bootableImageClaim": false,
+  "rootfsE2EClaim": true,
+  "directKernelVmE2EClaim": true,
+  "bootloaderE2EClaim": false
+}
