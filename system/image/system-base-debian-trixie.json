@@ -47,7 +47,7 @@
   ],
   "optionalPackages": [
     "flatpak",
-    "wine64"
+    "wine"
   ],
   "policy": {
     "officialRepositoriesOnly": true,
