@@ -72,8 +72,8 @@ fi
 PROFILE_SHA256="$(sha256sum "$PROFILE" | awk '{print $1}')"
 INCLUDE="linux-image-amd64,systemd-sysv,dbus,polkitd,network-manager,fwupd,python3,ca-certificates,debian-archive-keyring"
 
-# mmdebstrap performs Debian's native apt signature verification. We deliberately do not use
-# --no-check-gpg, trusted=yes, unauthenticated packages, arbitrary mirrors, or third-party repos.
+# Keep Debian's native archive-key signature verification enabled. The builder has no caller-
+# supplied mirror, insecure APT option, arbitrary package source, or third-party repository input.
 mmdebstrap \
   --variant=minbase \
   --architectures="$ARCH" \
