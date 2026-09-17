@@ -1,0 +1,107 @@
+name: System Windows Compatibility Live E2E
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'system/runtime/windows-compatibility-service.mjs'
+      - 'system/runtime/windows-compat-runtime-registry.mjs'
+      - 'system/runtime/managed-windows-compatibility-stack.mjs'
+      - 'system/runtime/windows-compat-live-e2e.mjs'
+      - 'system/contracts/windows-compat-live-e2e.schema.json'
+      - 'system/SWIR-WINDOWS-COMPAT-LIVE-E2E-0.1.md'
+      - 'SWIR-OS-ARCHITECTURE.md'
+      - '.github/workflows/system-windows-compat-live-e2e.yml'
+  pull_request:
+    paths:
+      - 'system/runtime/windows-compatibility-service.mjs'
+      - 'system/runtime/windows-compat-runtime-registry.mjs'
+      - 'system/runtime/managed-windows-compatibility-stack.mjs'
+      - 'system/runtime/windows-compat-live-e2e.mjs'
+      - 'system/contracts/windows-compat-live-e2e.schema.json'
+      - 'system/SWIR-WINDOWS-COMPAT-LIVE-E2E-0.1.md'
+      - 'SWIR-OS-ARCHITECTURE.md'
+      - '.github/workflows/system-windows-compat-live-e2e.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: system-windows-compat-live-e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  wine-live-e2e:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install distro Wine and MinGW fixture compiler
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends wine64 gcc-mingw-w64-x86-64
+      - name: Validate compatibility contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check system/runtime/windows-compatibility-service.mjs
+          node --check system/runtime/windows-compat-runtime-registry.mjs
+          node --check system/runtime/managed-windows-compatibility-stack.mjs
+          node --check system/runtime/windows-compat-live-e2e.mjs
+          python3 -m json.tool system/contracts/windows-compat-live-e2e.schema.json >/dev/null
+          node system/runtime/windows-compatibility-service.selftest.mjs
+          node system/runtime/windows-compat-runtime-registry.selftest.mjs
+          node system/runtime/managed-windows-compatibility-stack.selftest.mjs
+          node scripts/validate-roadmap-progress.mjs
+          ! grep -E 'curl |wget |shell: *true|\.sys' system/runtime/windows-compat-live-e2e.mjs
+      - name: Build deterministic Windows fixture
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/swir-wine-e2e.c" <<'C'
+          #include <stdio.h>
+          int main(void) {
+            FILE *file = fopen("swir-wine-e2e.marker", "wb");
+            if (!file) return 11;
+            if (fputs("SWIR_WINE_E2E_OK\n", file) < 0) { fclose(file); return 12; }
+            if (fclose(file) != 0) return 13;
+            return 0;
+          }
+          C
+          x86_64-w64-mingw32-gcc -Os -s -o "$RUNNER_TEMP/swir-wine-e2e.exe" "$RUNNER_TEMP/swir-wine-e2e.c"
+          test -s "$RUNNER_TEMP/swir-wine-e2e.exe"
+      - name: Launch a real Windows application through managed Wine
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/swir-wine-live"
+          node system/runtime/windows-compat-live-e2e.mjs \
+            --executable "$RUNNER_TEMP/swir-wine-e2e.exe" \
+            --work-root "$RUNNER_TEMP/swir-wine-live" \
+            --output "$RUNNER_TEMP/windows-compat-live-e2e.json" \
+            --compact
+          node - "$RUNNER_TEMP/windows-compat-live-e2e.json" <<'NODE'
+          const fs = require('fs');
+          const e = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+          if (e.schema !== 'swir.windows-compat-live-e2e/0.1' || e.passed !== true) process.exit(2);
+          if (!e.runtimeHealthy || !e.runtimeRootOwned || e.runtimeWritableByGroupOrWorld) process.exit(3);
+          if (!e.prefixContained || !e.metadataBound || e.prefixPolicy !== 'per-app') process.exit(4);
+          if (!e.trustVerified || !e.signatureRequired || !e.brokerRequired || e.shellExecution) process.exit(5);
+          if (!e.processStarted || !e.processExited || e.exitCode !== 0 || !e.realWineExecution) process.exit(6);
+          if (!e.markerProduced || e.markerContent !== 'SWIR_WINE_E2E_OK') process.exit(7);
+          if (e.arbitraryRuntimeDownloadAllowed || e.windowsKernelDriverSupport) process.exit(8);
+          NODE
+      - name: Upload Windows compatibility evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: swir-windows-compat-live-e2e-${{ github.run_id }}
+          path: ${{ runner.temp }}/windows-compat-live-e2e.json
+          if-no-files-found: warn
+          retention-days: 7
