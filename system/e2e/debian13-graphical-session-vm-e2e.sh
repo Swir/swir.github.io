@@ -115,6 +115,7 @@ Wants=plymouth-start.service
 
 [Service]
 Type=oneshot
+RemainAfterExit=yes
 ExecStart=/usr/local/lib/swir/plymouth-e2e-proof
 
 [Install]
