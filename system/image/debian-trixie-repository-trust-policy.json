@@ -1,0 +1,26 @@
+{
+  "schema": "swir.system-repository-trust-policy/0.1",
+  "defaultRepositoryId": "debian-main",
+  "repositories": [
+    {
+      "id": "debian-main",
+      "manager": "apt",
+      "nativeId": "deb.debian.org/debian",
+      "sourceClass": "distribution-repository",
+      "distributions": ["debian"],
+      "signatureVerification": "native-required",
+      "allowInsecure": false,
+      "enabled": true
+    },
+    {
+      "id": "debian-security",
+      "manager": "apt",
+      "nativeId": "security.debian.org/debian-security",
+      "sourceClass": "distribution-repository",
+      "distributions": ["debian"],
+      "signatureVerification": "native-required",
+      "allowInsecure": false,
+      "enabled": true
+    }
+  ]
+}
