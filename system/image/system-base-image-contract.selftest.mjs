@@ -15,9 +15,10 @@ assert.equal(profile.distribution.codename, 'trixie');
 assert.equal(profile.bootableImageClaim, false);
 assert.equal(profile.rootfsE2EClaim, true);
 
-for (const packageName of ['systemd-sysv', 'policykit-1', 'network-manager', 'fwupd', 'flatpak', 'wine', 'wine64', 'firmware-linux-free']) {
+for (const packageName of ['systemd-sysv', 'polkitd', 'pkexec', 'network-manager', 'fwupd', 'flatpak', 'wine', 'wine64', 'firmware-linux-free']) {
   assert(allPackages.has(packageName), `base image package set does not satisfy current System foundation: ${packageName}`);
 }
+assert(!allPackages.has('policykit-1'), 'Debian 13 foundation must not depend on the obsolete policykit-1 binary package');
 assert(SystemImageReadinessPolicy.requiredCore.includes('systemd-service-manager'));
 assert(SystemImageReadinessPolicy.requiredCore.includes('systemd-logind-client'));
 assert(SystemImageReadinessPolicy.requiredCore.includes('polkit-broker'));

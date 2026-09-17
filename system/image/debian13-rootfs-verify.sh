@@ -59,10 +59,10 @@ done
 [[ -f "$ROOTFS/usr/share/keyrings/debian-archive-keyring.gpg" ]] || { echo "Debian archive keyring missing" >&2; exit 9; }
 compgen -G "$ROOTFS/boot/vmlinuz-*" >/dev/null || { echo "Debian kernel image missing" >&2; exit 10; }
 
-for package in systemd-sysv dbus policykit-1 network-manager fwupd flatpak wine wine64 firmware-linux-free; do
+for package in systemd-sysv dbus polkitd pkexec network-manager fwupd flatpak wine wine64 firmware-linux-free; do
   chroot "$ROOTFS" dpkg-query -W -f='${db:Status-Abbrev}\n' "$package" | grep -q '^ii ' || { echo "package not installed: $package" >&2; exit 11; }
 done
-for binary in /usr/bin/systemctl /usr/bin/pkcheck /usr/bin/nmcli /usr/bin/fwupdmgr /usr/bin/flatpak; do
+for binary in /usr/bin/systemctl /usr/bin/loginctl /usr/bin/pkcheck /usr/bin/pkexec /usr/bin/nmcli /usr/bin/fwupdmgr /usr/bin/flatpak; do
   [[ -x "$ROOTFS$binary" ]] || { echo "required trusted binary missing: $binary" >&2; exit 12; }
   [[ ! -L "$ROOTFS$binary" || "$(readlink -f "$ROOTFS$binary")" == "$ROOTFS/usr/"* ]] || { echo "binary symlink escapes /usr: $binary" >&2; exit 13; }
 done

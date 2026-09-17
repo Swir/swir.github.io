@@ -33,7 +33,8 @@
   "requiredPackages": [
     "systemd-sysv",
     "dbus",
-    "policykit-1",
+    "polkitd",
+    "pkexec",
     "network-manager",
     "ca-certificates",
     "nodejs"

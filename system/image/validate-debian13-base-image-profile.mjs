@@ -31,9 +31,10 @@ for (const repo of repositories.values()) {
   assert(repo.components.every(component => ['main', 'non-free-firmware'].includes(component)), `repository ${repo.id} exposes an unapproved component`);
 }
 
-for (const required of ['systemd-sysv', 'dbus', 'policykit-1', 'network-manager', 'ca-certificates', 'nodejs']) {
+for (const required of ['systemd-sysv', 'dbus', 'polkitd', 'pkexec', 'network-manager', 'ca-certificates', 'nodejs']) {
   assert(profile.requiredPackages.includes(required), `required base package missing: ${required}`);
 }
+assert(!profile.requiredPackages.includes('policykit-1'), 'Debian 13 must use the split polkitd/pkexec packages instead of the obsolete policykit-1 binary package');
 for (const required of ['fwupd', 'flatpak', 'wine', 'wine64', 'firmware-linux-free']) {
   assert(profile.hybridFoundationPackages.includes(required), `hybrid foundation package missing: ${required}`);
 }

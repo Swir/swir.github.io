@@ -29,7 +29,8 @@ Both are configured with `/usr/share/keyrings/debian-archive-keyring.gpg`. Unsig
 linux-image-amd64
 systemd-sysv
 dbus
-policykit-1
+polkitd
+pkexec
 network-manager
 fwupd
 flatpak
@@ -39,6 +40,8 @@ firmware-linux-free
 ca-certificates
 nodejs
 ```
+
+Debian 13 splits the former PolicyKit binary package surface: `polkitd` supplies the policy service/supporting tools and `pkexec` is packaged separately. SWIR pins both rather than depending on the obsolete `policykit-1` binary package name.
 
 The builder provisions the three SWIR Polkit policy domains with root ownership, private package/firmware/catalog state directories and the existing System Image Readiness probe. `/proc`, `/sys` and `/dev` are mounted only for the disposable rootfs validation pass and are cleaned up on exit. Service auto-start is blocked during package installation.
 
