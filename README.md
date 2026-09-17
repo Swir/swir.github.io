@@ -5,8 +5,8 @@
 **Presentation repository only**
 
 [![Canonical Repository](https://img.shields.io/badge/CANONICAL-Swir%2FSWIR__OS-1f6feb?style=for-the-badge&logo=github)](https://github.com/Swir/SWIR_OS)
-![Roadmap](https://img.shields.io/badge/ROADMAP-73.3%25-2ea043?style=for-the-badge)
-![Completed](https://img.shields.io/badge/DONE-44%2F60-1f6feb?style=for-the-badge)
+![Roadmap](https://img.shields.io/badge/ROADMAP-76.7%25-2ea043?style=for-the-badge)
+![Completed](https://img.shields.io/badge/DONE-46%2F60-1f6feb?style=for-the-badge)
 
 </div>
 
@@ -25,13 +25,13 @@ The authoritative roadmap is [SWIR_OS/SWIR-OS-ARCHITECTURE.md](https://github.co
 | Web Edition | `1.7.13` |
 | Desktop Edition | `0.5.7-preview` |
 | System Edition | In development |
-| Overall roadmap | **44 / 60 — 73.3%** |
+| Overall roadmap | **46 / 60 — 76.7%** |
 
-Latest verified System Edition milestone: the **dependency-aware APT package transaction path now has fail-closed interrupted-transaction reconciliation**. A real disposable Debian 13 image E2E performs a package mutation, deliberately loses the acknowledgement after APT succeeds, verifies the durable `failed-needs-recovery` state, then reconciles it only after a fresh recovery authorization, exact live package-state verification, `dpkg --audit`, `apt-get check`, and native package health. Recovery does **not** perform an automatic inverse package mutation.
+Latest verified System Edition milestones now cover two connected recovery/safety layers. A dedicated **UEFI recovery entry** boots a hardened SWIR recovery target with the System root mounted read-only, normal fstab automounting disabled, no guest network interface and no automatic filesystem/package/firmware mutation. In addition, the **Driver Center mutation coordinator** now writes a private parent journal before delegating an exact selected `review-package` or trusted `review-fwupd` preview operation to the existing guarded package/firmware transaction service. It records child transaction identity and fail-closed recovery state instead of silently retrying or inventing rollback.
 
-The wider roadmap item for journaled **driver + firmware + package** transactions remains open until the driver/firmware mutation and recovery paths are implemented and verified too, so the public roadmap stays truthfully at **44 / 60 — 73.3%**.
+Direct kernel-module mutation remains disabled, Windows kernel drivers are not treated as Linux drivers, and arbitrary driver downloads remain forbidden. Real supported-device `fwupd`/LVFS mutation qualification and exceptional official-vendor repository policy are still open roadmap gates, so this status does not claim broad physical-hardware qualification.
 
-Public progress here is updated only after the corresponding implementation is merged and verified in `Swir/SWIR_OS`. Current canonical milestone commit: [`2fa61bd`](https://github.com/Swir/SWIR_OS/commit/2fa61bd3035841c30882ba05d3d30a5b7a7119c1).
+Public progress here is updated only after the corresponding implementation is merged and verified in `Swir/SWIR_OS`. Current canonical milestone commit: [`b5569bd`](https://github.com/Swir/SWIR_OS/commit/b5569bd629f87b9499a9a64e07576306ce727ce8).
 
 ## Repository role
 
