@@ -27,7 +27,7 @@ permissions:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -46,4 +46,28 @@ jobs:
         run: node system/packages/package-provider-layer.selftest.mjs
       - name: Enforce Flatpak execution boundary
         run: |
-          node -e "const fs=require('fs');const s=fs.readFileSync('system/packages/flatpak-user-package-provider.mjs','utf8');for(const required of [\"const FLATPAK_BINARY = '/usr/bin/flatpak'\",'shell: false','arbitraryRemoteUrls: false','preconfiguredAllowlistedRemoteRequired: true','versionAwareRollbackImplemented: false'])if(!s.includes(required))throw new Error('Flatpak security invariant missing: '+required);if(/execSync\(|execFileSync\(|\bexec\(/.test(s))throw new Error('Flatpak provider must not use shell-style execution');console.log('Flatpak execution boundary: OK')"
+          node -e "const fs=require('fs');const s=fs.readFileSync('system/packages/flatpak-user-package-provider.mjs','utf8');for(const required of [\"const FLATPAK_BINARY = '/usr/bin/flatpak'\",'shell: false','arbitraryRemoteUrls: false','preconfiguredAllowlistedRemoteRequired: true','runtimeRemoteGpgVerificationRequired: true','ociRemotesAllowed: false','disabledRemotesAllowed: false',\"--columns=name,options\",'versionAwareRollbackImplemented: false'])if(!s.includes(required))throw new Error('Flatpak security invariant missing: '+required);if(/execSync\(|execFileSync\(|\bexec\(/.test(s))throw new Error('Flatpak provider must not use shell-style execution');console.log('Flatpak execution boundary: OK')"
+      - name: Install distribution Flatpak for read-only CLI contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends flatpak
+          test -x /usr/bin/flatpak
+          /usr/bin/flatpak --version
+      - name: Verify production runtime probe with real Flatpak CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+          /usr/bin/flatpak --user remotes --columns=name,options >/tmp/swir-flatpak-remotes.tsv
+          node --input-type=module <<'NODE'
+          import { GuardedFlatpakUserExecutor } from './system/packages/flatpak-user-package-provider.mjs';
+          const executor = new GuardedFlatpakUserExecutor({ allowlistedRemotes: ['swir-ci-unconfigured'] });
+          try {
+            executor.probe('swir-ci-unconfigured');
+            throw new Error('Unconfigured real Flatpak remote unexpectedly passed trust verification');
+          } catch (error) {
+            if (error?.code !== 'FLATPAK_REMOTE_NOT_CONFIGURED') throw error;
+          }
+          console.log('Real Flatpak CLI binary/options probe: OK (fail-closed unconfigured remote)');
+          NODE
