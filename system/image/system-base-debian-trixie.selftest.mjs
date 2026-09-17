@@ -27,7 +27,7 @@ assert.equal(profile.policy.secureBootClaim, false);
 assert.equal(profile.policy.hardwareQualificationClaim, false);
 
 const required = new Set(profile.requiredPackages);
-for (const name of ['linux-image-amd64', 'firmware-linux', 'systemd-sysv', 'dbus', 'polkitd', 'network-manager', 'fwupd', 'python3', 'ca-certificates', 'debian-archive-keyring']) {
+for (const name of ['linux-image-amd64', 'firmware-linux', 'systemd-sysv', 'dbus', 'polkitd', 'network-manager', 'fwupd', 'python3', 'ca-certificates', 'debian-archive-keyring', 'cog']) {
   assert.ok(required.has(name), `required package missing from base profile: ${name}`);
 }
 
@@ -52,38 +52,15 @@ for (const repo of trust.repositories) {
   assert.equal(repo.enabled, true);
 }
 
-const forbiddenBuilderTokens = [
-  '--no-check-gpg',
-  'AllowUnauthenticated=true',
-  'APT::Get::AllowUnauthenticated',
-  'trusted=yes',
-  'curl | sh',
-  'wget | sh'
-];
-for (const token of forbiddenBuilderTokens) {
-  assert.equal(builder.includes(token), false, `builder contains forbidden trust bypass token: ${token}`);
-}
+const forbiddenBuilderTokens = ['--no-check-gpg', 'AllowUnauthenticated=true', 'APT::Get::AllowUnauthenticated', 'trusted=yes', 'curl | sh', 'wget | sh'];
+for (const token of forbiddenBuilderTokens) assert.equal(builder.includes(token), false, `builder contains forbidden trust bypass token: ${token}`);
 for (const token of [
-  'https://deb.debian.org/debian',
-  'https://security.debian.org/debian-security',
-  '/usr/share/keyrings/debian-archive-keyring.gpg',
-  '--keyring="$HOST_KEYRING"',
-  'bootstrapKeyringSha256',
-  "Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg",
-  'mmdebstrap',
-  '--variant=minbase',
-  'linux-image-amd64',
-  'firmware-linux',
-  'firmwareMetaPackageVersion',
-  "'primaryDriverSourceClass': 'kernel-in-tree'",
-  "'primaryFirmwareSourceClass': 'linux-firmware'",
-  'network-manager',
-  'fwupd',
-  'bootableImageClaim',
-  'secureBootClaim'
-]) {
-  assert.ok(builder.includes(token), `builder is missing required invariant: ${token}`);
-}
+  'https://deb.debian.org/debian', 'https://security.debian.org/debian-security', '/usr/share/keyrings/debian-archive-keyring.gpg',
+  '--keyring="$HOST_KEYRING"', 'bootstrapKeyringSha256', "Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg",
+  'mmdebstrap', '--variant=minbase', 'linux-image-amd64', 'firmware-linux', 'firmwareMetaPackageVersion',
+  "'primaryDriverSourceClass': 'kernel-in-tree'", "'primaryFirmwareSourceClass': 'linux-firmware'", 'network-manager', 'fwupd',
+  'cog', 'desktopRuntimePackage', "'sourceClass': 'distribution-repository'", 'bootableImageClaim', 'secureBootClaim'
+]) assert.ok(builder.includes(token), `builder is missing required invariant: ${token}`);
 assert.match(builder, /\[\[ "\$ROOTFS" != "\/" \]\]/);
 assert.match(builder, /rootfs directory must be empty/);
 assert.match(builder, /only the verified amd64 builder is enabled in 0\.1/);

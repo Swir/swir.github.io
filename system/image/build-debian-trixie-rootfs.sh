@@ -9,13 +9,13 @@ MIRROR="https://deb.debian.org/debian"
 HOST_KEYRING="/usr/share/keyrings/debian-archive-keyring.gpg"
 
 usage() {
-  cat <<'EOF'
+  cat <<'USAGE'
 Usage: build-debian-trixie-rootfs.sh --rootfs <absolute-path> [--profile <json>] [--arch amd64]
 
 Builds a disposable SWIR System Edition foundation rootfs from official Debian 13 (trixie)
 repositories using mmdebstrap. This creates a rootfs foundation only; it does not claim a
 bootable SWIR OS image, Secure Boot qualification, hardware qualification, or installer readiness.
-EOF
+USAGE
 }
 
 while (($#)); do
@@ -62,7 +62,7 @@ assert policy.get('randomDriverDownloadsAllowed') is False
 assert policy.get('windowsKernelDriversSupported') is False
 assert policy.get('bootableImageClaim') is False
 required = set(p.get('requiredPackages', []))
-for package in ('linux-image-amd64', 'firmware-linux', 'systemd-sysv', 'dbus', 'polkitd', 'network-manager', 'fwupd', 'python3', 'ca-certificates', 'debian-archive-keyring'):
+for package in ('linux-image-amd64', 'firmware-linux', 'systemd-sysv', 'dbus', 'polkitd', 'network-manager', 'fwupd', 'python3', 'ca-certificates', 'debian-archive-keyring', 'cog'):
     assert package in required, f'required base package missing from profile: {package}'
 for repo in repos:
     assert repo.get('uri', '').startswith('https://'), 'repositories must use HTTPS'
@@ -84,12 +84,14 @@ fi
 
 PROFILE_SHA256="$(sha256sum "$PROFILE" | awk '{print $1}')"
 KEYRING_SHA256="$(sha256sum "$HOST_KEYRING" | awk '{print $1}')"
-INCLUDE="linux-image-amd64,firmware-linux,systemd-sysv,dbus,polkitd,network-manager,fwupd,python3,ca-certificates,debian-archive-keyring"
+INCLUDE="linux-image-amd64,firmware-linux,systemd-sysv,dbus,polkitd,network-manager,fwupd,python3,ca-certificates,debian-archive-keyring,cog"
 
 # Keep Debian's native archive-key signature verification enabled. The builder has no caller-
 # supplied mirror, insecure APT option, arbitrary package source, or third-party repository input.
 # Debian's firmware-linux metapackage is resolved only from the signed non-free-firmware component
 # and pulls the distro-maintained free/non-free firmware sets used by in-tree Linux drivers.
+# Cog is installed from the same signed Debian repositories as the lightweight WPE WebKit runtime
+# used by the SWIR System Edition desktop shell; no browser binary is downloaded out-of-band.
 mmdebstrap \
   --variant=minbase \
   --architectures="$ARCH" \
@@ -99,7 +101,7 @@ mmdebstrap \
   trixie "$ROOTFS" "$MIRROR"
 
 install -d -m 0755 "$ROOTFS/etc/apt/sources.list.d"
-cat > "$ROOTFS/etc/apt/sources.list.d/swir-debian.sources" <<'EOF'
+cat > "$ROOTFS/etc/apt/sources.list.d/swir-debian.sources" <<'EOF_SOURCES'
 Types: deb
 URIs: https://deb.debian.org/debian
 Suites: trixie trixie-updates
@@ -111,13 +113,13 @@ URIs: https://security.debian.org/debian-security
 Suites: trixie-security
 Components: main non-free-firmware
 Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
-EOF
+EOF_SOURCES
 chmod 0644 "$ROOTFS/etc/apt/sources.list.d/swir-debian.sources"
 rm -f "$ROOTFS/etc/apt/sources.list"
 
 install -d -m 0700 "$ROOTFS/var/lib/swir/image"
 PACKAGE_LIST="$(chroot "$ROOTFS" dpkg-query -W -f='${Package}\t${Version}\n' | LC_ALL=C sort)"
-for package in linux-image-amd64 firmware-linux firmware-linux-free firmware-linux-nonfree systemd-sysv dbus polkitd network-manager fwupd python3 ca-certificates debian-archive-keyring; do
+for package in linux-image-amd64 firmware-linux firmware-linux-free firmware-linux-nonfree systemd-sysv dbus polkitd network-manager fwupd python3 ca-certificates debian-archive-keyring cog; do
   chroot "$ROOTFS" dpkg-query -W -f='${db:Status-Abbrev}' "$package" | grep -qx 'ii ' || {
     echo "required package is not installed: $package" >&2
     exit 70
@@ -127,12 +129,13 @@ done
 KERNEL_VERSION="$(chroot "$ROOTFS" dpkg-query -W -f='${Version}' linux-image-amd64)"
 FIRMWARE_VERSION="$(chroot "$ROOTFS" dpkg-query -W -f='${Version}' firmware-linux)"
 SYSTEMD_VERSION="$(chroot "$ROOTFS" dpkg-query -W -f='${Version}' systemd)"
+COG_VERSION="$(chroot "$ROOTFS" dpkg-query -W -f='${Version}' cog)"
 PACKAGE_SET_SHA256="$(printf '%s\n' "$PACKAGE_LIST" | sha256sum | awk '{print $1}')"
 BUILT_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
-python3 - "$ROOTFS/var/lib/swir/image/base-build-state.json" "$PROFILE_SHA256" "$KEYRING_SHA256" "$PACKAGE_SET_SHA256" "$ARCH" "$KERNEL_VERSION" "$FIRMWARE_VERSION" "$SYSTEMD_VERSION" "$BUILT_AT" <<'PY'
+python3 - "$ROOTFS/var/lib/swir/image/base-build-state.json" "$PROFILE_SHA256" "$KEYRING_SHA256" "$PACKAGE_SET_SHA256" "$ARCH" "$KERNEL_VERSION" "$FIRMWARE_VERSION" "$SYSTEMD_VERSION" "$COG_VERSION" "$BUILT_AT" <<'PY'
 import json, pathlib, sys
-path, profile_sha, keyring_sha, package_sha, arch, kernel, firmware, systemd, built_at = sys.argv[1:]
+path, profile_sha, keyring_sha, package_sha, arch, kernel, firmware, systemd, cog, built_at = sys.argv[1:]
 state = {
   'schema': 'swir.system-base-build-state/0.1',
   'profile': 'debian-13-trixie',
@@ -144,6 +147,7 @@ state = {
   'kernelMetaPackageVersion': kernel,
   'firmwareMetaPackageVersion': firmware,
   'systemdVersion': systemd,
+  'desktopRuntimePackage': {'name': 'cog', 'version': cog, 'sourceClass': 'distribution-repository'},
   'builtAt': built_at,
   'nativeAptSignatureVerification': True,
   'officialRepositoriesOnly': True,
@@ -165,5 +169,6 @@ echo "SWIR Debian 13 rootfs foundation built successfully at $ROOTFS"
 echo "Kernel meta-package: $KERNEL_VERSION"
 echo "Firmware meta-package: $FIRMWARE_VERSION"
 echo "systemd: $SYSTEMD_VERSION"
+echo "Desktop runtime cog: $COG_VERSION"
 echo "Bootstrap keyring SHA-256: $KEYRING_SHA256"
 echo "Package-set SHA-256: $PACKAGE_SET_SHA256"

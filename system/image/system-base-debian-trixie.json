@@ -44,7 +44,8 @@
     "fwupd",
     "python3",
     "ca-certificates",
-    "debian-archive-keyring"
+    "debian-archive-keyring",
+    "cog"
   ],
   "optionalPackages": [
     "flatpak",

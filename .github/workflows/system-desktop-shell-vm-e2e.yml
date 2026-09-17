@@ -1,0 +1,129 @@
+name: System Desktop Shell UEFI E2E
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'swir-*.html'
+      - 'swir-*.js'
+      - 'swir-*.css'
+      - 'swir-icon.svg'
+      - 'manifest.webmanifest'
+      - 'system/session/swir-session-launcher.sh'
+      - 'system/session/provision-graphical-session.sh'
+      - 'system/e2e/debian13-graphical-session-vm-e2e.sh'
+      - 'system/e2e/debian13-system-shell-vm-e2e.sh'
+      - 'system/contracts/system-desktop-shell-e2e.schema.json'
+      - 'system/image/system-base-debian-trixie.json'
+      - 'system/image/system-base-debian-trixie.selftest.mjs'
+      - 'system/image/build-debian-trixie-rootfs.sh'
+      - 'system/SWIR-SYSTEM-DESKTOP-SHELL-E2E-0.1.md'
+      - 'SWIR-OS-ARCHITECTURE.md'
+      - '.github/workflows/system-desktop-shell-vm-e2e.yml'
+  pull_request:
+    paths:
+      - 'swir-*.html'
+      - 'swir-*.js'
+      - 'swir-*.css'
+      - 'swir-icon.svg'
+      - 'manifest.webmanifest'
+      - 'system/session/swir-session-launcher.sh'
+      - 'system/session/provision-graphical-session.sh'
+      - 'system/e2e/debian13-graphical-session-vm-e2e.sh'
+      - 'system/e2e/debian13-system-shell-vm-e2e.sh'
+      - 'system/contracts/system-desktop-shell-e2e.schema.json'
+      - 'system/image/system-base-debian-trixie.json'
+      - 'system/image/system-base-debian-trixie.selftest.mjs'
+      - 'system/image/build-debian-trixie-rootfs.sh'
+      - 'system/SWIR-SYSTEM-DESKTOP-SHELL-E2E-0.1.md'
+      - 'SWIR-OS-ARCHITECTURE.md'
+      - '.github/workflows/system-desktop-shell-vm-e2e.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: system-desktop-shell-vm-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate desktop shell contracts and trust invariants
+        shell: bash
+        run: |
+          set -euo pipefail
+          dash -n system/session/swir-session-launcher.sh
+          bash -n system/session/provision-graphical-session.sh
+          bash -n system/e2e/debian13-system-shell-vm-e2e.sh
+          bash -n system/image/build-debian-trixie-rootfs.sh
+          python3 -m json.tool system/contracts/system-desktop-shell-e2e.schema.json >/dev/null
+          python3 -m json.tool system/image/system-base-debian-trixie.json >/dev/null
+          node --check system/image/system-base-debian-trixie.selftest.mjs
+          node system/image/system-base-debian-trixie.selftest.mjs
+          node scripts/validate-roadmap-progress.mjs
+          grep -F '"cog"' system/image/system-base-debian-trixie.json >/dev/null
+          grep -F 'file:///usr/share/swir-shell/swir-desktop.html' system/session/swir-session-launcher.sh >/dev/null
+          grep -F 'sha256sum -c --strict .swir-integrity.sha256' system/session/swir-session-launcher.sh >/dev/null
+          grep -F "'desktopShellClaim': False" system/session/swir-session-launcher.sh >/dev/null
+          grep -F 'remoteShellUrlRequired' system/contracts/system-desktop-shell-e2e.schema.json >/dev/null
+          ! grep -E 'curl |wget |--no-check-gpg|AllowUnauthenticated|trusted=yes|shell: *true' system/session/swir-session-launcher.sh system/session/provision-graphical-session.sh system/e2e/debian13-system-shell-vm-e2e.sh system/image/build-debian-trixie-rootfs.sh
+
+  system-shell-e2e:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install controlled image and VM dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends mmdebstrap debian-archive-keyring qemu-system-x86 qemu-utils ovmf e2fsprogs dosfstools rsync parted util-linux udev
+      - name: Build, boot and verify authenticated SWIR desktop shell
+        env:
+          SWIR_SYSTEM_SHELL_VM_WORK_ROOT: ${{ runner.temp }}/swir-debian13-system-shell-vm
+          SWIR_SYSTEM_SHELL_VM_ARTIFACT_DIR: ${{ runner.temp }}/swir-debian13-system-shell-vm-artifacts
+        run: |
+          sudo --preserve-env=SWIR_SYSTEM_SHELL_VM_WORK_ROOT,SWIR_SYSTEM_SHELL_VM_ARTIFACT_DIR bash system/e2e/debian13-system-shell-vm-e2e.sh
+      - name: Export readable diagnostics
+        if: always()
+        run: sudo chown -R "$USER:$USER" "${{ runner.temp }}/swir-debian13-system-shell-vm-artifacts" 2>/dev/null || true
+      - name: Validate emitted desktop shell evidence
+        if: success()
+        shell: bash
+        run: |
+          set -euo pipefail
+          E="${{ runner.temp }}/swir-debian13-system-shell-vm-artifacts/system-desktop-shell-evidence.json"
+          python3 - "$E" <<'PY'
+          import json, sys
+          e = json.load(open(sys.argv[1], encoding='utf-8'))
+          assert e['schema'] == 'swir.system-desktop-shell-e2e/0.1' and e['passed'] is True
+          assert e['sessionService'] == 'greetd' and e['remoteSession'] is False
+          assert e['waylandCompositor'] == 'weston' and e['waylandBackend'] == 'headless'
+          assert e['runtime'] == 'cog-wpe-webkit' and e['runtimePackage'] == 'cog'
+          assert e['runtimeUidMatchesSession'] is True and e['webProcessObserved'] is True
+          assert e['shellEntry'] == '/usr/share/swir-shell/swir-desktop.html'
+          assert e['shellAssetCount'] >= 20 and e['shellIntegrityVerified'] is True
+          assert e['localFileOrigin'] is True and e['remoteShellUrlRequired'] is False
+          assert e['authenticatedGraphicalSession'] is True
+          assert e['secureBootClaim'] is False and e['hardwareQualificationClaim'] is False
+          PY
+      - name: Upload compact desktop shell evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: swir-system-desktop-shell-e2e-${{ github.run_id }}
+          path: ${{ runner.temp }}/swir-debian13-system-shell-vm-artifacts
+          if-no-files-found: warn
+          retention-days: 7
