@@ -1,0 +1,62 @@
+{
+  "schema": "swir.system-image-provisioning-manifest/0.1",
+  "profile": "system-foundation",
+  "target": "linux-rootfs",
+  "productionOwnerUid": 0,
+  "directories": [
+    { "path": "/etc/swir", "mode": "0755" },
+    { "path": "/var/lib/swir/image", "mode": "0700" },
+    { "path": "/var/lib/swir/security/catalog-trust", "mode": "0700" },
+    { "path": "/var/lib/swir/package-transactions", "mode": "0700" },
+    { "path": "/var/lib/swir/transactions/firmware", "mode": "0700" },
+    { "path": "/var/lib/swir/compat/prefixes", "mode": "0750" },
+    { "path": "/usr/share/polkit-1/actions", "mode": "0755" }
+  ],
+  "files": [
+    {
+      "id": "polkit-packages",
+      "source": "system/security/org.swir.system.packages.policy",
+      "path": "/usr/share/polkit-1/actions/org.swir.system.packages.policy",
+      "mode": "0644",
+      "kind": "repository-source",
+      "requiredActionIds": ["org.swir.system.packages.mutate", "org.swir.system.packages.recover"]
+    },
+    {
+      "id": "polkit-network",
+      "source": "system/security/org.swir.system.network.policy",
+      "path": "/usr/share/polkit-1/actions/org.swir.system.network.policy",
+      "mode": "0644",
+      "kind": "repository-source",
+      "requiredActionIds": ["org.swir.system.network.activate", "org.swir.system.network.deactivate"]
+    },
+    {
+      "id": "polkit-firmware",
+      "source": "system/security/org.swir.system.firmware.policy",
+      "path": "/usr/share/polkit-1/actions/org.swir.system.firmware.policy",
+      "mode": "0644",
+      "kind": "repository-source",
+      "requiredActionIds": ["org.swir.system.firmware.update", "org.swir.system.firmware.recover"]
+    },
+    {
+      "id": "repository-trust-policy",
+      "input": "repositoryTrustPolicy",
+      "path": "/etc/swir/repository-trust-policy.json",
+      "mode": "0600",
+      "kind": "deployment-input"
+    }
+  ],
+  "generatedState": {
+    "path": "/var/lib/swir/image/provisioning-state.json",
+    "mode": "0600",
+    "schema": "swir.system-image-provisioning-state/0.1"
+  },
+  "policy": {
+    "allowRealRootTarget": false,
+    "allowSymlinkDestinations": false,
+    "allowArbitraryUrls": false,
+    "allowExampleRepositoryPolicy": false,
+    "shellExecution": false,
+    "productionRequiresRoot": true,
+    "repositorySignatureVerificationRequired": true
+  }
+}
