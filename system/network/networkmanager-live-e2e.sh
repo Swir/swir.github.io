@@ -16,7 +16,7 @@ NM_CONFIG='/tmp/swir-NetworkManager.conf'
 NM_CONFIG_DIR='/tmp/swir-networkmanager-conf.d'
 NM_SYSTEM_CONFIG_DIR='/tmp/swir-networkmanager-system-conf.d'
 
-for command in mount dbus-daemon ip nmcli NetworkManager node; do
+for command in mount umount dbus-daemon ip nmcli NetworkManager node; do
   command -v "$command" >/dev/null || { echo "missing required command: $command" >&2; exit 3; }
 done
 
@@ -31,6 +31,13 @@ mount -t tmpfs -o mode=0755,nosuid,nodev tmpfs /run
 install -d -m 0755 /run/dbus /run/NetworkManager
 mount -t tmpfs -o mode=0700,nosuid,nodev tmpfs /var/lib/NetworkManager
 mount -t tmpfs -o mode=0700,nosuid,nodev tmpfs /etc/NetworkManager/system-connections
+
+# A sysfs mount can retain the parent network namespace's device view after
+# CLONE_NEWNET. Remount it inside this private mount namespace so NetworkManager
+# and its udev/platform integration see the same namespace-local interfaces as
+# netlink. This affects only the test mount namespace.
+umount -l /sys 2>/dev/null || true
+mount -t sysfs -o ro,nosuid,nodev,noexec sysfs /sys
 
 cleanup() {
   set +e
@@ -95,10 +102,13 @@ if [[ $ready -ne 1 ]]; then
 fi
 
 # Make the managed state observable before creating the profile. If policy still
-# marks the device strictly unmanaged, fail here with diagnostics rather than
-# weakening the production service or touching host networking.
-if ! nmcli --terse --fields GENERAL.MANAGED device show "$IFNAME" | grep -Eq '(^|:)yes$'; then
+# marks the device unmanaged, try NetworkManager's explicit D-Bus managed switch
+# once; if the device is strictly unmanaged this will not bypass that policy and
+# the subsequent check fails closed.
+nmcli device set "$IFNAME" managed yes >/dev/null 2>&1 || true
+if ! nmcli --terse --fields GENERAL.NM-MANAGED device show "$IFNAME" | grep -Eq '(^|:)yes$'; then
   echo "isolated E2E interface is not managed by NetworkManager" >&2
+  nmcli --terse --fields GENERAL.DEVICE,GENERAL.TYPE,GENERAL.NM-MANAGED,GENERAL.STATE,GENERAL.REASON device show "$IFNAME" >&2 || true
   nmcli --terse device status >&2 || true
   NetworkManager --print-config --config "$NM_CONFIG" --config-dir "$NM_CONFIG_DIR" --system-config-dir "$NM_SYSTEM_CONFIG_DIR" >&2 || true
   tail -n 120 "$NM_LOG" >&2 || true
