@@ -1,0 +1,58 @@
+name: System Debian 13 Rootfs E2E
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'system/image/**'
+      - 'system/security/org.swir.system.*.policy'
+      - 'system/contracts/system-base-image-profile.schema.json'
+      - 'system/SWIR-DEBIAN-BASE-IMAGE-0.1.md'
+      - '.github/workflows/system-debian-rootfs-contract.yml'
+  pull_request:
+    paths:
+      - 'system/image/**'
+      - 'system/security/org.swir.system.*.policy'
+      - 'system/contracts/system-base-image-profile.schema.json'
+      - 'system/SWIR-DEBIAN-BASE-IMAGE-0.1.md'
+      - '.github/workflows/system-debian-rootfs-contract.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  debian13-rootfs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate base image profile and scripts
+        run: |
+          node --check system/image/validate-debian13-base-image-profile.mjs
+          node system/image/validate-debian13-base-image-profile.mjs
+          bash -n system/image/debian13-rootfs-build.sh
+          bash -n system/image/debian13-rootfs-verify.sh
+          node -e "JSON.parse(require('fs').readFileSync('system/contracts/system-base-image-profile.schema.json','utf8')); JSON.parse(require('fs').readFileSync('system/image/debian13-base-image-profile.json','utf8')); console.log('base image JSON OK')"
+      - name: Install controlled rootfs build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends debootstrap debian-archive-keyring
+      - name: Build disposable Debian 13 SWIR rootfs
+        run: sudo system/image/debian13-rootfs-build.sh "$RUNNER_TEMP/swir-rootfs"
+      - name: Verify rootfs readiness and trust boundaries
+        run: sudo system/image/debian13-rootfs-verify.sh "$RUNNER_TEMP/swir-rootfs"
+      - name: Export compact rootfs evidence
+        run: |
+          sudo cp "$RUNNER_TEMP/swir-rootfs/var/lib/swir/system-image-readiness.json" "$RUNNER_TEMP/system-image-readiness.json"
+          sudo chown "$USER:$USER" "$RUNNER_TEMP/system-image-readiness.json"
+          node -e "const r=JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')); console.log(JSON.stringify({distribution:r.distribution,architecture:r.architecture,kernelRelease:r.kernelRelease,summary:r.summary},null,2))" "$RUNNER_TEMP/system-image-readiness.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: swir-debian13-rootfs-evidence
+          path: ${{ runner.temp }}/system-image-readiness.json
+          if-no-files-found: error
+          retention-days: 14

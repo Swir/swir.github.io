@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://swir.github.io/system/contracts/system-base-image-profile.schema.json",
+  "title": "SWIR System Base Image Profile 0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "status", "distribution", "architectures", "packageManager", "repositories", "kernelPackages", "requiredPackages", "hybridFoundationPackages", "securityPolicy", "bootableImageClaim", "rootfsE2EClaim"],
+  "properties": {
+    "schema": { "const": "swir.system-base-image-profile/0.1" },
+    "status": { "enum": ["candidate", "production"] },
+    "distribution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "majorVersion", "codename", "channel", "verifiedAsOf"],
+      "properties": {
+        "id": { "const": "debian" },
+        "majorVersion": { "const": 13 },
+        "codename": { "const": "trixie" },
+        "channel": { "const": "stable" },
+        "verifiedAsOf": { "type": "string", "format": "date" }
+      }
+    },
+    "architectures": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "enum": ["amd64", "arm64"] }
+    },
+    "packageManager": { "const": "apt" },
+    "repositories": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "uri", "suites", "components", "signedBy"],
+        "properties": {
+          "id": { "enum": ["debian-main", "debian-security"] },
+          "uri": { "type": "string", "pattern": "^https://(deb\\.debian\\.org/debian|security\\.debian\\.org/debian-security)$" },
+          "suites": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "enum": ["trixie", "trixie-updates", "trixie-security"] } },
+          "components": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "enum": ["main", "non-free-firmware"] } },
+          "signedBy": { "const": "/usr/share/keyrings/debian-archive-keyring.gpg" }
+        }
+      }
+    },
+    "kernelPackages": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["amd64", "arm64"],
+      "properties": {
+        "amd64": { "const": "linux-image-amd64" },
+        "arm64": { "const": "linux-image-arm64" }
+      }
+    },
+    "requiredPackages": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "pattern": "^[a-z0-9][a-z0-9+.-]*$" } },
+    "hybridFoundationPackages": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "pattern": "^[a-z0-9][a-z0-9+.-]*$" } },
+    "securityPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allowUnsignedRepositories", "allowThirdPartyRepositories", "allowRandomBinaryDrivers", "windowsKernelDriversAsLinuxDrivers", "repositorySignatureVerificationRequired"],
+      "properties": {
+        "allowUnsignedRepositories": { "const": false },
+        "allowThirdPartyRepositories": { "const": false },
+        "allowRandomBinaryDrivers": { "const": false },
+        "windowsKernelDriversAsLinuxDrivers": { "const": false },
+        "repositorySignatureVerificationRequired": { "const": true }
+      }
+    },
+    "bootableImageClaim": { "const": false },
+    "rootfsE2EClaim": { "const": true }
+  }
+}
