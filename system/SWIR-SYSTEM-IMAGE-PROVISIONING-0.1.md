@@ -1,14 +1,46 @@
 # SWIR System Image Provisioning 0.1
 
-Status: **implemented build foundation / bootable image and installer pending**
+Status: **implemented Debian 13 rootfs foundation / bootable image and installer pending**
 
-This layer turns several already-implemented System Edition security boundaries into an explicit Linux rootfs layout. It does not select a final base distribution and it does not claim that SWIR OS is bootable.
+This layer turns the implemented System Edition security boundaries into an explicit Linux rootfs layout. The first controlled base foundation is now **Debian 13 `trixie`**, while bootability, installer readiness, Secure Boot and broad hardware qualification remain open production gates.
 
-## What is provisioned
+## Selected base foundation
 
-`system/image/system-image-provisioning.json` defines the first controlled rootfs layout for the repository trust policy, package/network/firmware PolicyKit actions and persistent SWIR transaction/security state.
+`system/image/system-base-debian-trixie.json` pins the current System Edition foundation policy to Debian 13 `trixie`. The selection is intentionally conservative: Debian 13 is the upstream stable release, has a multi-year support window, provides the kernel/systemd/Polkit/NetworkManager/fwupd stack needed by the current SWIR contracts, and keeps the initial hardware path on native Linux drivers and distribution-controlled firmware.
 
-The package/network/firmware PolicyKit definitions come only from repository-controlled source files. The distribution repository trust policy is intentionally a deployment input: the checked-in `example.invalid` template is rejected by the provisioner and cannot accidentally become production trust configuration.
+The 0.1 image builder is enabled only for `amd64`. `arm64` remains planned rather than implied as tested. The base profile explicitly keeps these claims false until later gates pass:
+
+- bootable SWIR OS image;
+- Secure Boot qualification;
+- hardware qualification;
+- third-party repository enablement;
+- Windows kernel-driver support.
+
+The deployment trust policy is checked in as `system/image/debian-trixie-repository-trust-policy.json` and allows only Debian distribution/security repositories with native APT signature verification required.
+
+## Real rootfs builder
+
+`system/image/build-debian-trixie-rootfs.sh` builds a disposable Debian 13 rootfs using `mmdebstrap` and the official Debian archive. It installs the current minimum System Edition host foundation:
+
+- `linux-image-amd64`;
+- `systemd-sysv` and D-Bus;
+- `polkitd`;
+- `network-manager`;
+- `fwupd`;
+- Python 3;
+- CA certificates and the Debian archive keyring.
+
+The builder rejects `/`, non-absolute targets, non-empty targets, symlink targets, unsupported architectures and non-root production execution. It does not expose an arbitrary mirror argument. It does not use `--no-check-gpg`, unauthenticated APT, `trusted=yes`, curl-to-shell or third-party package sources.
+
+After the rootfs is created, the builder writes `/var/lib/swir/image/base-build-state.json` with the profile SHA-256, installed package-set SHA-256, kernel meta-package version and systemd version. This is build provenance, not a boot-success assertion.
+
+`System Debian Rootfs Contract` builds this rootfs from the real Debian archive in CI, verifies package installation and APT sources, performs an authenticated `apt-get update`, applies the SWIR production foundation with the selected Debian trust policy, and verifies required host-facing binaries inside the target rootfs.
+
+## What SWIR provisioning adds
+
+`system/image/system-image-provisioning.json` defines the controlled rootfs layout for the repository trust policy, package/network/firmware PolicyKit actions and persistent SWIR transaction/security state.
+
+The package/network/firmware PolicyKit definitions come only from repository-controlled source files. The selected Debian repository trust policy is now used by CI rather than an unrelated synthetic Ubuntu policy.
 
 ### Peer-authorization runtime supplement
 
@@ -18,21 +50,25 @@ The supplement deliberately does not put `/run/swir/peer-authorization.key` into
 
 ## Safety boundary
 
-Both provisioning layers require an explicit rootfs directory and refuse `/`. The rootfs itself and every managed destination must be non-symlink paths. Destination paths are fixed by code/manifest and cannot escape the rootfs. Production mode additionally requires Unix UID 0 and applies root ownership. There is no shell command surface and no URL/download surface in either layer.
+Both SWIR provisioning layers require an explicit rootfs directory and refuse `/`. The rootfs itself and every managed destination must be non-symlink paths. Destination paths are fixed by code/manifest and cannot escape the rootfs. Production mode additionally requires Unix UID 0 and applies root ownership. There is no shell command surface and no URL/download surface in either SWIR provisioning layer.
+
+The Debian rootfs builder has a separate, narrower network boundary: it may contact only the selected official Debian mirrors needed to assemble and update the base rootfs. Package authenticity remains delegated to Debian's archive keyring and native APT verification.
 
 ## Provenance and verification
 
-The main provisioner writes `swir.system-image-provisioning-state/0.1`. The peer supplement writes its own state with SHA-256, size and expected mode for each installed runtime artifact. Verification covers exact file/directory type/mode/owner, symlink ancestry, policy/content requirements, digest/size binding and proof that the peer HMAC runtime key is not embedded into the image. Post-provision tampering fails closed.
+The base builder writes `swir.system-base-build-state/0.1`. The main provisioner writes `swir.system-image-provisioning-state/0.1`. The peer supplement writes its own state with SHA-256, size and expected mode for each installed runtime artifact. Verification covers exact file/directory type/mode/owner, symlink ancestry, policy/content requirements, digest/size binding and proof that the peer HMAC runtime key is not embedded into the image. Post-provision tampering fails closed.
 
 ## Why this matters for System Edition
 
-The main image foundation defines where privileged policy and persistent state live. The peer supplement now defines the executable/socket boundary needed for a root service to attribute requests to the real active desktop user through `SO_PEERCRED` instead of impersonating the session user.
+The project now has a concrete maintained Linux family, kernel meta-package, system service foundation and reproducible rootfs construction path instead of only an abstract future-distribution slot. The same real rootfs receives the existing SWIR repository trust, transaction state, Polkit actions and peer-authorization layout in CI.
+
+This still does **not** complete the roadmap item `maintained Linux base/kernel and bootable image`: a rootfs build is not equivalent to a booted disk image. That checkbox remains open until a generated image boots under the supported VM/hardware path and passes the required service/session/update/recovery checks.
 
 ## Remaining production gates
 
-1. Select and pin a maintained base distribution after installer/update/Secure Boot/hardware test evidence.
-2. Add an actual image builder that installs the selected distro kernel, systemd, Polkit, NetworkManager, fwupd, Python 3 and required SWIR runtime packages before applying these layouts.
-3. Run both provisioners in a disposable root-owned VM/disk image and verify ownership/modes against the mounted filesystem.
-4. Boot that image, verify polkitd loads all three policy domains, systemd activates the peer-authorization socket, and a real desktop user receives a kernel-bound grant.
-5. Run package/network mutation E2E using the peer-bound authorization path.
-6. Add installer, bootloader/Secure Boot strategy, login/session integration and recovery environment.
+1. Turn the verified Debian rootfs into a partitioned disk image with bootloader, initramfs, filesystem labels and machine identity initialization.
+2. Boot the disposable image under QEMU and verify systemd reaches the intended target, then collect machine-readable evidence from inside the guest.
+3. Verify `polkitd`, D-Bus, NetworkManager, fwupd and the SWIR peer-authorization socket under the booted guest rather than only the mounted rootfs.
+4. Add a real SWIR graphical login/session path and desktop shell startup.
+5. Run package/network/firmware/Wine/Flatpak/AppImage mutation and recovery E2E through the peer-bound privileged path.
+6. Define installer/update image publication, bootloader/Secure Boot strategy, recovery environment and hardware qualification matrix.
