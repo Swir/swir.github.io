@@ -19,10 +19,12 @@ ESP_MOUNT="$ROOT_MOUNT/boot/efi"
 SERIAL_LOG="$ARTIFACT_DIR/serial.log"
 READINESS_OUT="$ARTIFACT_DIR/readiness.json"
 COMPAT_OUT="$ARTIFACT_DIR/compat-runtime-inventory.json"
+WINDOWS_COMPAT_OUT="$ARTIFACT_DIR/windows-compat-execution.json"
 NATIVE_OUT="$ARTIFACT_DIR/native-linux-execution.json"
 BOOT_EVIDENCE_OUT="$ARTIFACT_DIR/bootable-image-evidence.json"
 PROVISION_OUT="$ARTIFACT_DIR/provisioning.json"
 PEER_PROVISION_OUT="$ARTIFACT_DIR/peer-authorization-provisioning.json"
+WINDOWS_FIXTURE="$WORK_ROOT/swir-windows-e2e.exe"
 OVMF_CODE="/usr/share/OVMF/OVMF_CODE_4M.fd"
 OVMF_VARS_TEMPLATE="/usr/share/OVMF/OVMF_VARS_4M.fd"
 OVMF_VARS="$WORK_ROOT/OVMF_VARS_4M.fd"
@@ -32,7 +34,7 @@ case "$(readlink -m "$WORK_ROOT")" in
     echo "refusing unsafe work root: $WORK_ROOT" >&2; exit 3 ;;
 esac
 
-for command in chroot mount umount node qemu-system-x86_64 mkfs.ext4 mkfs.vfat rsync timeout grep install sha256sum stat losetup parted partprobe udevadm; do
+for command in chroot mount umount node qemu-system-x86_64 mkfs.ext4 mkfs.vfat rsync timeout grep install sha256sum stat losetup parted partprobe udevadm x86_64-w64-mingw32-gcc; do
   command -v "$command" >/dev/null || { echo "missing required host command: $command" >&2; exit 4; }
 done
 [[ -f "$PROFILE" && ! -L "$PROFILE" ]] || { echo "selected Debian profile missing" >&2; exit 5; }
@@ -55,6 +57,13 @@ NODE
 
 rm -rf "$WORK_ROOT"
 install -d -m 0700 "$WORK_ROOT" "$ARTIFACT_DIR" "$ROOTFS" "$ROOT_MOUNT"
+cat > "$WORK_ROOT/swir-windows-e2e.c" <<'C'
+int main(void) { return 0; }
+C
+x86_64-w64-mingw32-gcc -Os -s -Wl,--nxcompat -Wl,--dynamicbase -o "$WINDOWS_FIXTURE" "$WORK_ROOT/swir-windows-e2e.c"
+[[ "$(head -c 2 "$WINDOWS_FIXTURE")" == 'MZ' ]] || { echo "controlled Windows fixture is not PE/MZ" >&2; exit 6; }
+WINDOWS_FIXTURE_SHA256="$(sha256sum "$WINDOWS_FIXTURE" | awk '{print $1}')"
+
 loop_dev=""
 root_mounted=0
 esp_mounted=0
@@ -89,8 +98,9 @@ exit 101
 POLICY
 chmod 0755 "$ROOTFS/usr/sbin/policy-rc.d"
 chroot "$ROOTFS" /usr/bin/env DEBIAN_FRONTEND=noninteractive apt-get update
-chroot "$ROOTFS" /usr/bin/env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends nodejs systemd-boot-efi "${OPTIONAL_PACKAGES[@]}"
+chroot "$ROOTFS" /usr/bin/env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends nodejs systemd-boot-efi passwd util-linux "${OPTIONAL_PACKAGES[@]}"
 chroot "$ROOTFS" /usr/bin/systemd-machine-id-setup
+chroot "$ROOTFS" /usr/sbin/useradd --create-home --user-group --shell /bin/bash swir-e2e
 
 EFI_SOURCE="$ROOTFS/usr/lib/systemd/boot/efi/systemd-bootx64.efi"
 [[ -f "$EFI_SOURCE" && ! -L "$EFI_SOURCE" ]] || { echo "Debian systemd-boot EFI binary missing" >&2; exit 7; }
@@ -111,19 +121,25 @@ process.stdout.write(`${JSON.stringify(report)}\n`);
 if (!report.ready || report.bootableImageClaim !== false || report.runtimeKeyEmbeddedInImage !== false) process.exit(2);
 NODE
 
-install -d -m 0755 "$ROOTFS/opt/swir/system/image" "$ROOTFS/opt/swir/system/runtime" "$ROOTFS/usr/local/lib/swir" "$ROOTFS/var/lib/swir/vm-e2e"
+install -d -m 0755 "$ROOTFS/opt/swir/system/image" "$ROOTFS/opt/swir/system/runtime" "$ROOTFS/opt/swir/e2e" "$ROOTFS/usr/local/lib/swir" "$ROOTFS/var/lib/swir/vm-e2e"
 install -m 0644 "$REPO_ROOT/system/image/system-image-readiness.mjs" "$ROOTFS/opt/swir/system/image/system-image-readiness.mjs"
 install -m 0755 "$REPO_ROOT/system/image/system-image-readiness-probe.mjs" "$ROOTFS/opt/swir/system/image/system-image-readiness-probe.mjs"
 install -m 0644 "$REPO_ROOT/system/runtime/windows-compat-runtime-registry.mjs" "$ROOTFS/opt/swir/system/runtime/windows-compat-runtime-registry.mjs"
+install -m 0644 "$REPO_ROOT/system/runtime/windows-compatibility-service.mjs" "$ROOTFS/opt/swir/system/runtime/windows-compatibility-service.mjs"
+install -m 0644 "$REPO_ROOT/system/runtime/managed-windows-compatibility-stack.mjs" "$ROOTFS/opt/swir/system/runtime/managed-windows-compatibility-stack.mjs"
+install -m 0644 "$REPO_ROOT/system/runtime/windows-compat-live-e2e.mjs" "$ROOTFS/opt/swir/system/runtime/windows-compat-live-e2e.mjs"
 install -m 0644 "$REPO_ROOT/system/runtime/native-package-execution-service.mjs" "$ROOTFS/opt/swir/system/runtime/native-package-execution-service.mjs"
 install -m 0644 "$REPO_ROOT/system/runtime/native-app-supervisor.mjs" "$ROOTFS/opt/swir/system/runtime/native-app-supervisor.mjs"
 install -m 0644 "$REPO_ROOT/system/runtime/native-app-launcher.mjs" "$ROOTFS/opt/swir/system/runtime/native-app-launcher.mjs"
+install -m 0644 "$WINDOWS_FIXTURE" "$ROOTFS/opt/swir/e2e/swir-windows-e2e.exe"
 
 cat > "$ROOTFS/usr/local/lib/swir/vm-e2e-run" <<'GUEST'
 #!/bin/sh
 set -eu
 OUT=/var/lib/swir/vm-e2e/readiness.json
 COMPAT=/var/lib/swir/vm-e2e/compat-runtime-inventory.json
+WINDOWS_COMPAT=/var/lib/swir/vm-e2e/windows-compat-execution.json
+WINDOWS_USER_OUT=/home/swir-e2e/windows-compat-execution.json
 NATIVE=/var/lib/swir/vm-e2e/native-linux-execution.json
 STATUS=/var/lib/swir/vm-e2e/status.txt
 KERNEL=/var/lib/swir/vm-e2e/kernel-release.txt
@@ -153,6 +169,14 @@ const wine = registry.select('swir.compat.wine');
 if (!wine.healthy || wine.provider !== 'swir.compat.wine' || wine.trust?.rootOwned !== true || wine.trust?.writableByGroupOrWorld !== false || typeof wine.version !== 'string' || wine.version.length === 0) process.exit(2);
 process.stdout.write(`${JSON.stringify(inventory)}\n`);
 NODE
+/usr/sbin/runuser -u swir-e2e -- /usr/bin/env \
+  HOME=/home/swir-e2e USER=swir-e2e LOGNAME=swir-e2e PATH=/usr/bin:/bin LANG=C.UTF-8 LC_ALL=C.UTF-8 \
+  /usr/bin/node /opt/swir/system/runtime/windows-compat-live-e2e.mjs \
+  --fixture /opt/swir/e2e/swir-windows-e2e.exe \
+  --prefix-root /home/swir-e2e/.local/share/swir/compat/prefixes \
+  --output "$WINDOWS_USER_OUT" --timeout-ms 90000 >/dev/null || fail windows-compat-user-app
+node -e "const e=require(process.argv[1]); if(e.schema!=='swir.windows-compat-live-e2e/0.1'||!e.passed||e.processExitCode!==0||!e.perAppPrefix||!e.trustVerified||e.shellExecution||e.windowsKernelDriverSupport) process.exit(2)" "$WINDOWS_USER_OUT" || fail windows-compat-evidence
+install -m 0600 -o root -g root "$WINDOWS_USER_OUT" "$WINDOWS_COMPAT" || fail windows-compat-evidence-copy
 node --input-type=module > "$NATIVE" <<'NODE' || fail native-linux-execution
 import { once } from 'node:events';
 import { NativePackageExecutionService } from 'file:///opt/swir/system/runtime/native-package-execution-service.mjs';
@@ -178,7 +202,7 @@ process.stdout.write(`${JSON.stringify({ schema: 'swir.native-linux-boot-e2e/0.1
 NODE
 uname -r > "$KERNEL"
 printf 'PASS\n' > "$STATUS"
-serial 'SWIR_UEFI_VM_E2E_PASS debian=13 uefi=systemd-boot network=disabled native-linux=true wine-registry=true'
+serial 'SWIR_UEFI_VM_E2E_PASS debian=13 uefi=systemd-boot network=disabled native-linux=true wine-registry=true windows-user-app=true'
 sync
 systemctl --no-block poweroff
 GUEST
@@ -194,7 +218,7 @@ ConditionPathExists=/opt/swir/system/image/system-image-readiness-probe.mjs
 [Service]
 Type=oneshot
 ExecStart=/usr/local/lib/swir/vm-e2e-run
-TimeoutStartSec=120
+TimeoutStartSec=180
 
 [Install]
 WantedBy=multi-user.target
@@ -264,7 +288,7 @@ loop_dev=""
 cp "$OVMF_VARS_TEMPLATE" "$OVMF_VARS"
 chmod 0600 "$OVMF_VARS"
 set +e
-timeout --signal=TERM --kill-after=15s 240s qemu-system-x86_64 \
+timeout --signal=TERM --kill-after=15s 300s qemu-system-x86_64 \
   -machine q35,accel=tcg -cpu max -smp 2 -m 2048 \
   -nographic -no-reboot -nodefaults \
   -serial stdio \
@@ -278,7 +302,7 @@ if [[ $qemu_status -ne 0 && $qemu_status -ne 124 ]]; then
   echo "QEMU exited unexpectedly: $qemu_status" >&2
   exit 9
 fi
-grep -F 'SWIR_UEFI_VM_E2E_PASS debian=13 uefi=systemd-boot network=disabled native-linux=true wine-registry=true' "$SERIAL_LOG" >/dev/null || {
+grep -F 'SWIR_UEFI_VM_E2E_PASS debian=13 uefi=systemd-boot network=disabled native-linux=true wine-registry=true windows-user-app=true' "$SERIAL_LOG" >/dev/null || {
   echo "guest did not emit SWIR_UEFI_VM_E2E_PASS" >&2
   tail -n 240 "$SERIAL_LOG" >&2 || true
   exit 10
@@ -291,6 +315,7 @@ mount -o ro "$ROOT_PART" "$ROOT_MOUNT"
 root_mounted=1
 cp "$ROOT_MOUNT/var/lib/swir/vm-e2e/readiness.json" "$READINESS_OUT"
 cp "$ROOT_MOUNT/var/lib/swir/vm-e2e/compat-runtime-inventory.json" "$COMPAT_OUT"
+cp "$ROOT_MOUNT/var/lib/swir/vm-e2e/windows-compat-execution.json" "$WINDOWS_COMPAT_OUT"
 cp "$ROOT_MOUNT/var/lib/swir/vm-e2e/native-linux-execution.json" "$NATIVE_OUT"
 cp "$ROOT_MOUNT/var/lib/swir/vm-e2e/status.txt" "$ARTIFACT_DIR/status.txt"
 cp "$ROOT_MOUNT/var/lib/swir/vm-e2e/kernel-release.txt" "$ARTIFACT_DIR/kernel-release.txt"
@@ -302,16 +327,19 @@ loop_dev=""
 grep -Fx 'PASS' "$ARTIFACT_DIR/status.txt" >/dev/null
 IMAGE_SHA256="$(sha256sum "$DISK" | awk '{print $1}')"
 OVMF_SHA256="$(sha256sum "$OVMF_CODE" | awk '{print $1}')"
-"$NODE_BIN" - "$READINESS_OUT" "$COMPAT_OUT" "$NATIVE_OUT" "$ARTIFACT_DIR/kernel-release.txt" "$BOOT_EVIDENCE_OUT" "$EFI_SHA256" "$IMAGE_SHA256" "$OVMF_SHA256" <<'NODE'
+"$NODE_BIN" - "$READINESS_OUT" "$COMPAT_OUT" "$WINDOWS_COMPAT_OUT" "$NATIVE_OUT" "$ARTIFACT_DIR/kernel-release.txt" "$BOOT_EVIDENCE_OUT" "$EFI_SHA256" "$IMAGE_SHA256" "$OVMF_SHA256" "$WINDOWS_FIXTURE_SHA256" <<'NODE'
 const fs = require('fs');
-const [readinessPath, compatPath, nativePath, kernelPath, outputPath, efiSha256, imageSha256, ovmfSha256] = process.argv.slice(2);
+const [readinessPath, compatPath, windowsCompatPath, nativePath, kernelPath, outputPath, efiSha256, imageSha256, ovmfSha256, fixtureSha256] = process.argv.slice(2);
 const r = JSON.parse(fs.readFileSync(readinessPath, 'utf8'));
 const compat = JSON.parse(fs.readFileSync(compatPath, 'utf8'));
+const windowsCompat = JSON.parse(fs.readFileSync(windowsCompatPath, 'utf8'));
 const native = JSON.parse(fs.readFileSync(nativePath, 'utf8'));
 if (r.distribution?.id !== 'debian' || r.distribution?.versionId !== '13' || !r.summary?.systemImageReadyForE2E || !r.summary?.sessionReady) process.exit(2);
 const wine = compat.runtimes?.find(runtime => runtime.provider === 'swir.compat.wine' && runtime.healthy === true && runtime.trust?.rootOwned === true && runtime.trust?.writableByGroupOrWorld === false);
 if (!wine || typeof wine.version !== 'string' || wine.version.length === 0) process.exit(3);
 if (native?.schema !== 'swir.native-linux-boot-e2e/0.1' || native.provider !== 'swir.package.system' || native.exitCode !== 0 || native.supervised !== true || native.shellExecution !== false) process.exit(4);
+if (windowsCompat?.schema !== 'swir.windows-compat-live-e2e/0.1' || windowsCompat.provider !== 'swir.compat.wine' || windowsCompat.passed !== true || windowsCompat.processExitCode !== 0 || windowsCompat.processSignal !== null) process.exit(5);
+if (windowsCompat.fixtureSha256 !== fixtureSha256 || windowsCompat.perAppPrefix !== true || windowsCompat.prefixInsideManagedRoot !== true || windowsCompat.trustVerified !== true || windowsCompat.signatureRequired !== true || windowsCompat.brokerRequired !== true || windowsCompat.shellExecution !== false || windowsCompat.windowsKernelDriverSupport !== false) process.exit(6);
 const report = {
   schema: 'swir.system-bootable-image-e2e/0.1',
   generatedAt: new Date().toISOString(),
@@ -341,6 +369,15 @@ const report = {
   wineRuntimeRegistryPassed: true,
   wineRuntimeProvider: wine.provider,
   wineRuntimeVersion: wine.version,
+  windowsCompatibilityExecutionPassed: true,
+  windowsCompatibilityProvider: windowsCompat.provider,
+  windowsCompatibilityUserMode: true,
+  windowsCompatibilityUnprivilegedUser: true,
+  windowsCompatibilityPerAppPrefix: windowsCompat.perAppPrefix,
+  windowsCompatibilityTrustVerified: windowsCompat.trustVerified,
+  windowsCompatibilityShellExecution: windowsCompat.shellExecution,
+  windowsCompatibilityProcessExitCode: windowsCompat.processExitCode,
+  windowsCompatibilityFixtureSha256: windowsCompat.fixtureSha256,
   nativeLinuxExecutionPassed: true,
   nativeLinuxExecutionProvider: native.provider,
   nativeLinuxExecutable: native.executable,
@@ -353,6 +390,6 @@ fs.writeFileSync(outputPath, `${JSON.stringify(report, null, 2)}\n`);
 NODE
 "$NODE_BIN" "$REPO_ROOT/system/image/validate-bootable-image-evidence.mjs" "$BOOT_EVIDENCE_OUT"
 sha256sum "$DISK" > "$ARTIFACT_DIR/bootable-image.sha256"
-rm -f "$DISK" "$OVMF_VARS"
+rm -f "$DISK" "$OVMF_VARS" "$WINDOWS_FIXTURE" "$WORK_ROOT/swir-windows-e2e.c"
 
 echo "SWIR Debian 13 UEFI bootable-image E2E passed"

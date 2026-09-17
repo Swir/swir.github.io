@@ -14,7 +14,11 @@ on:
       - 'system/image/validate-bootable-image-evidence.mjs'
       - 'system/contracts/system-image-readiness.schema.json'
       - 'system/contracts/system-bootable-image-e2e.schema.json'
+      - 'system/contracts/windows-compat-live-e2e.schema.json'
       - 'system/runtime/windows-compat-runtime-registry.mjs'
+      - 'system/runtime/windows-compatibility-service.mjs'
+      - 'system/runtime/managed-windows-compatibility-stack.mjs'
+      - 'system/runtime/windows-compat-live-e2e.mjs'
       - 'system/runtime/native-package-execution-service.mjs'
       - 'system/runtime/native-app-supervisor.mjs'
       - 'system/runtime/native-app-launcher.mjs'
@@ -22,6 +26,7 @@ on:
       - 'system/ipc/90-swir-peer-authorization.preset'
       - 'system/security/org.swir.system.*.policy'
       - 'system/SWIR-DEBIAN-UEFI-BOOT-E2E-0.1.md'
+      - 'system/SWIR-WINDOWS-COMPAT-LIVE-E2E-0.1.md'
       - 'SWIR-OS-ARCHITECTURE.md'
       - '.github/workflows/system-debian-uefi-boot-vm-e2e.yml'
   pull_request:
@@ -36,7 +41,11 @@ on:
       - 'system/image/validate-bootable-image-evidence.mjs'
       - 'system/contracts/system-image-readiness.schema.json'
       - 'system/contracts/system-bootable-image-e2e.schema.json'
+      - 'system/contracts/windows-compat-live-e2e.schema.json'
       - 'system/runtime/windows-compat-runtime-registry.mjs'
+      - 'system/runtime/windows-compatibility-service.mjs'
+      - 'system/runtime/managed-windows-compatibility-stack.mjs'
+      - 'system/runtime/windows-compat-live-e2e.mjs'
       - 'system/runtime/native-package-execution-service.mjs'
       - 'system/runtime/native-app-supervisor.mjs'
       - 'system/runtime/native-app-launcher.mjs'
@@ -44,6 +53,7 @@ on:
       - 'system/ipc/90-swir-peer-authorization.preset'
       - 'system/security/org.swir.system.*.policy'
       - 'system/SWIR-DEBIAN-UEFI-BOOT-E2E-0.1.md'
+      - 'system/SWIR-WINDOWS-COMPAT-LIVE-E2E-0.1.md'
       - 'SWIR-OS-ARCHITECTURE.md'
       - '.github/workflows/system-debian-uefi-boot-vm-e2e.yml'
   workflow_dispatch:
@@ -69,15 +79,21 @@ jobs:
         run: |
           set -euo pipefail
           node --check system/image/validate-bootable-image-evidence.mjs
+          node --check system/runtime/windows-compat-live-e2e.mjs
+          node --check system/runtime/managed-windows-compatibility-stack.mjs
+          node --check system/runtime/windows-compatibility-service.mjs
           node --check system/runtime/native-package-execution-service.mjs
           node --check system/runtime/native-app-supervisor.mjs
           node --check system/runtime/native-app-launcher.mjs
           python3 -m json.tool system/contracts/system-bootable-image-e2e.schema.json >/dev/null
+          python3 -m json.tool system/contracts/windows-compat-live-e2e.schema.json >/dev/null
           bash -n system/e2e/debian13-uefi-vm-e2e.sh
           node scripts/validate-roadmap-progress.mjs
           grep -F "bootPath: 'uefi-systemd-boot'" system/e2e/debian13-uefi-vm-e2e.sh >/dev/null
           grep -F 'bootableImageClaim: true' system/e2e/debian13-uefi-vm-e2e.sh >/dev/null
           grep -F 'nativeLinuxExecutionPassed: true' system/e2e/debian13-uefi-vm-e2e.sh >/dev/null
+          grep -F 'windowsCompatibilityExecutionPassed: true' system/e2e/debian13-uefi-vm-e2e.sh >/dev/null
+          grep -F 'windowsCompatibilityUnprivilegedUser: true' system/e2e/debian13-uefi-vm-e2e.sh >/dev/null
           grep -F 'secureBootClaim: false' system/e2e/debian13-uefi-vm-e2e.sh >/dev/null
           ! grep -E 'curl |wget |--no-check-gpg|AllowUnauthenticated|trusted=yes|shell: *true' system/e2e/debian13-uefi-vm-e2e.sh
 
@@ -89,12 +105,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Install controlled image and VM dependencies
+      - name: Install controlled image, VM and Windows-fixture dependencies
         shell: bash
         run: |
           set -euo pipefail
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends mmdebstrap debian-archive-keyring qemu-system-x86 qemu-utils ovmf e2fsprogs dosfstools rsync parted util-linux udev
+          sudo apt-get install -y --no-install-recommends mmdebstrap debian-archive-keyring qemu-system-x86 qemu-utils ovmf e2fsprogs dosfstools rsync parted util-linux udev gcc-mingw-w64-x86-64
       - name: Build and boot Debian 13 UEFI SWIR image
         env:
           SWIR_VM_WORK_ROOT: ${{ runner.temp }}/swir-debian13-uefi-vm

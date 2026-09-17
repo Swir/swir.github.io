@@ -4,8 +4,18 @@ import fs from 'node:fs';
 const path = process.argv[2];
 if (!path || process.argv.length !== 3) throw new Error('Usage: validate-bootable-image-evidence.mjs <evidence.json>');
 const report = JSON.parse(fs.readFileSync(path, 'utf8'));
-const requiredTrue = ['uefiBootClaim', 'bootableImageClaim', 'bootloaderE2EClaim', 'guestNetworkDisabled', 'systemdBooted', 'logindActive', 'networkManagerActive', 'peerAuthorizationSocketActive', 'readinessPassed', 'wineRuntimeRegistryPassed', 'nativeLinuxExecutionPassed'];
-const requiredFalse = ['directKernelBoot', 'secureBootClaim', 'hardwareQualificationClaim', 'installerClaim', 'recoveryModeClaim'];
+const requiredTrue = [
+  'uefiBootClaim', 'bootableImageClaim', 'bootloaderE2EClaim', 'guestNetworkDisabled',
+  'systemdBooted', 'logindActive', 'networkManagerActive', 'peerAuthorizationSocketActive',
+  'readinessPassed', 'wineRuntimeRegistryPassed', 'windowsCompatibilityExecutionPassed',
+  'windowsCompatibilityUserMode', 'windowsCompatibilityUnprivilegedUser',
+  'windowsCompatibilityPerAppPrefix', 'windowsCompatibilityTrustVerified',
+  'nativeLinuxExecutionPassed'
+];
+const requiredFalse = [
+  'directKernelBoot', 'windowsCompatibilityShellExecution', 'secureBootClaim',
+  'hardwareQualificationClaim', 'installerClaim', 'recoveryModeClaim'
+];
 const sha256 = /^[0-9a-f]{64}$/;
 if (report?.schema !== 'swir.system-bootable-image-e2e/0.1') throw new Error('unexpected boot evidence schema');
 if (report?.distribution !== 'debian-13-trixie' || report?.architecture !== 'amd64') throw new Error('unexpected boot target');
@@ -14,6 +24,9 @@ if (report?.rootFilesystem !== 'ext4' || report?.rootFilesystemLabel !== 'SWIR_R
 if (report?.espFilesystem !== 'fat32' || report?.espFilesystemLabel !== 'SWIR_ESP') throw new Error('unexpected EFI system partition');
 if (report?.bootloaderPackage !== 'systemd-boot-efi') throw new Error('unexpected bootloader package');
 if (report?.wineRuntimeProvider !== 'swir.compat.wine') throw new Error('managed Wine provider was not proven');
+if (report?.windowsCompatibilityProvider !== 'swir.compat.wine') throw new Error('Windows user-application compatibility provider was not proven');
+if (report?.windowsCompatibilityProcessExitCode !== 0) throw new Error('Windows user application did not exit successfully');
+if (!sha256.test(report?.windowsCompatibilityFixtureSha256 || '')) throw new Error('Windows compatibility fixture must be bound by SHA-256');
 if (report?.nativeLinuxExecutionProvider !== 'swir.package.system') throw new Error('native Linux package provider was not proven');
 if (typeof report?.nativeLinuxExecutable !== 'string' || !report.nativeLinuxExecutable.startsWith('/usr/bin/')) throw new Error('native Linux executable evidence is invalid');
 if (typeof report?.kernelRelease !== 'string' || report.kernelRelease.length < 1 || report.kernelRelease.length > 256) throw new Error('invalid kernel release');
