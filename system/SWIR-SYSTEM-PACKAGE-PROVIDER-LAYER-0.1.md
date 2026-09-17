@@ -20,7 +20,7 @@ SystemPackageProviderLayer
         +--> swir.package.flatpak  -> optional user-scope adapter
         |                             -> explicit allowlisted remote IDs only
         |                             -> trusted /usr/bin/flatpak
-        |                             -> configured remote + GPG verification rechecked
+        |                             -> configured remote + GPG policy rechecked
         |                             -> fixed argv, shell=false
         |
         +--> swir.package.appimage -> optional managed-import adapter
@@ -49,15 +49,18 @@ The router independently checks provider and operation identity returned by a pr
 
 ## Flatpak runtime trust boundary
 
-A manifest allowlist alone is not sufficient for a production mutation. Immediately before every Flatpak operation the guarded executor now verifies both the executable and the configured remote:
+A manifest allowlist alone is not sufficient for a production mutation. Immediately before every Flatpak operation the guarded executor verifies both the executable and the configured remote:
 
 1. `/usr/bin/flatpak` must be a regular non-symlink file.
 2. It must be root-owned, executable and not group/world writable.
 3. Its real path must remain exactly `/usr/bin/flatpak`.
 4. The selected remote must be one of the image-provisioned allowlisted remote IDs.
-5. A read-only `flatpak --user remotes --columns=name,gpg-verify` probe must prove that the remote is actually configured for the current user.
-6. That runtime remote must report GPG verification enabled.
-7. The mutation argv is regenerated/revalidated against the reviewed operation template and runs with `shell=false`, a bounded timeout/output buffer and a fixed environment.
+5. A read-only `flatpak --user remotes --columns=name,options` probe must prove that the remote is actually configured for the current user.
+6. The remote must not be disabled and must not advertise `no-gpg-verify`.
+7. OCI remotes are rejected by this provider version because its trust contract explicitly requires the OSTree/GPG model rather than silently accepting different signing semantics.
+8. The mutation argv is regenerated/revalidated against the reviewed operation template and runs with `shell=false`, a bounded timeout/output buffer and a fixed environment.
+
+The Flatpak CLI exposes GPG verification opt-out through the supported `options` column (`no-gpg-verify`); there is no supported `gpg-verify` output column in the current `flatpak remotes --columns` contract. The parser also preserves empty trailing option columns so a normal remote with no special options is not mistaken for a missing remote.
 
 No remote URL is accepted by the package manifest or operation plan. The provider does not add or edit remotes. Flatpak remains user scoped in 0.1 and relies on Flatpak/OSTree atomicity; SWIR does not yet claim a separate version-aware committed rollback API for Flatpak.
 
@@ -88,7 +91,7 @@ AppImage remains explicitly non-sandboxed at the format level. Execution must co
 
 `package-provider-layer.selftest.mjs` covers default fail-closed behavior plus production composition of all three reviewed providers using a real ephemeral Ed25519 catalog authorization for AppImage.
 
-`flatpak-user-package-provider.selftest.mjs` covers manifest/argv enforcement, untrusted Flatpak binary rejection, missing remote rejection, disabled remote GPG verification, failed trust probe, fixed environment, `shell=false` and mutation failure behavior.
+`flatpak-user-package-provider.selftest.mjs` covers manifest/argv enforcement, untrusted Flatpak binary rejection, missing/disabled remote rejection, `no-gpg-verify` and OCI rejection, empty-options parsing, failed trust probe, fixed environment, `shell=false` and mutation failure behavior.
 
 `appimage-user-package-provider.selftest.mjs` covers cryptographic trust, anti-rollback, digest binding, install/update/remove, forged-authorization rejection and malicious-journal path rejection. `system/e2e/appimage-native-execution.selftest.mjs` verifies signed catalog authorization followed by managed install and trusted native launch on Linux.
 
