@@ -1,0 +1,59 @@
+name: System Reference VM E2E
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'system/e2e/reference-vm-e2e.sh'
+      - 'system/image/reference-image-profile.json'
+      - 'system/image/reference-image-profile.mjs'
+      - 'system/image/system-image-readiness.mjs'
+      - 'system/image/system-image-readiness-probe.mjs'
+      - 'system/contracts/system-reference-image-profile.schema.json'
+      - 'system/SWIR-SYSTEM-REFERENCE-IMAGE-0.1.md'
+      - '.github/workflows/system-reference-vm-e2e.yml'
+  pull_request:
+    paths:
+      - 'system/e2e/reference-vm-e2e.sh'
+      - 'system/image/reference-image-profile.json'
+      - 'system/image/reference-image-profile.mjs'
+      - 'system/image/system-image-readiness.mjs'
+      - 'system/image/system-image-readiness-probe.mjs'
+      - 'system/contracts/system-reference-image-profile.schema.json'
+      - 'system/SWIR-SYSTEM-REFERENCE-IMAGE-0.1.md'
+      - '.github/workflows/system-reference-vm-e2e.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  boot-e2e:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install trusted VM test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends qemu-system-x86 qemu-utils cloud-image-utils ubuntu-keyring gpgv openssh-client curl
+      - name: Verify harness syntax and reference profile
+        run: |
+          bash -n system/e2e/reference-vm-e2e.sh
+          node system/image/reference-image-profile.mjs --validate
+          test "$(node system/image/reference-image-profile.mjs --vm-base-url)" = 'https://cloud-images.ubuntu.com/releases/noble/release'
+          test "$(node system/image/reference-image-profile.mjs --vm-keyring)" = '/usr/share/keyrings/ubuntu-cloudimage-keyring.gpg'
+      - name: Boot signed reference image and validate System prerequisites
+        env:
+          SWIR_VM_ARTIFACT_DIR: ${{ runner.temp }}/swir-vm-e2e-artifacts
+        run: bash system/e2e/reference-vm-e2e.sh
+      - name: Upload VM diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: swir-reference-vm-e2e-${{ github.run_id }}
+          path: ${{ runner.temp }}/swir-vm-e2e-artifacts
+          if-no-files-found: warn
+          retention-days: 7

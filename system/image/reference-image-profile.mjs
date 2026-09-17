@@ -6,6 +6,11 @@ import { fileURLToPath } from 'node:url';
 const PROFILE_SCHEMA = 'swir.system-reference-image-profile/0.1';
 const OFFICIAL_MIRROR = 'https://archive.ubuntu.com/ubuntu';
 const OFFICIAL_SECURITY_MIRROR = 'https://security.ubuntu.com/ubuntu';
+const OFFICIAL_VM_BASE = 'https://cloud-images.ubuntu.com/releases/noble/release';
+const OFFICIAL_VM_FILE = 'ubuntu-24.04-server-cloudimg-amd64.img';
+const OFFICIAL_VM_CHECKSUMS = 'SHA256SUMS';
+const OFFICIAL_VM_SIGNATURE = 'SHA256SUMS.gpg';
+const OFFICIAL_VM_KEYRING = '/usr/share/keyrings/ubuntu-cloudimage-keyring.gpg';
 const SAFE_TOKEN = /^[a-z0-9][a-z0-9+.-]{0,127}$/;
 const REQUIRED_E2E_PACKAGES = Object.freeze([
   'ca-certificates',
@@ -55,7 +60,7 @@ export function validateReferenceImageProfile(profile) {
   assert(isObject(profile), 'INVALID_PROFILE', 'reference image profile must be an object');
   assert(profile.schema === PROFILE_SCHEMA, 'INVALID_PROFILE_SCHEMA', `profile schema must be ${PROFILE_SCHEMA}`);
   assert(profile.id === 'ubuntu-24.04-amd64', 'UNSUPPORTED_REFERENCE_PROFILE', '0.1 supports only the Ubuntu 24.04 amd64 reference profile');
-  assert(profile.status === 'reference-e2e', 'INVALID_PROFILE_STATUS', 'reference profile must stay in reference-e2e status until boot E2E exists');
+  assert(profile.status === 'reference-e2e', 'INVALID_PROFILE_STATUS', 'reference profile must stay in reference-e2e status until SWIR-built boot E2E exists');
 
   const distro = profile.distribution;
   assert(isObject(distro), 'INVALID_DISTRIBUTION', 'distribution section is required');
@@ -64,6 +69,14 @@ export function validateReferenceImageProfile(profile) {
   assert(distro.mirror === OFFICIAL_MIRROR, 'UNTRUSTED_REFERENCE_MIRROR', 'reference image mirror must be the pinned official Ubuntu archive');
   assert(distro.securityMirror === OFFICIAL_SECURITY_MIRROR, 'UNTRUSTED_SECURITY_MIRROR', 'reference security mirror must be the pinned official Ubuntu security archive');
   assert(Array.isArray(distro.components) && distro.components.length === 2 && distro.components[0] === 'main' && distro.components[1] === 'universe', 'UNSUPPORTED_ARCHIVE_COMPONENTS', 'reference profile must use only Ubuntu main and universe components');
+
+  const vmImage = profile.vmImage;
+  assert(isObject(vmImage), 'INVALID_VM_IMAGE_POLICY', 'vmImage policy is required');
+  assert(vmImage.baseUrl === OFFICIAL_VM_BASE, 'UNTRUSTED_VM_IMAGE_SOURCE', 'VM E2E must use the pinned official Ubuntu cloud-image release endpoint');
+  assert(vmImage.file === OFFICIAL_VM_FILE, 'UNTRUSTED_VM_IMAGE_NAME', 'VM E2E image filename is not allowlisted');
+  assert(vmImage.checksums === OFFICIAL_VM_CHECKSUMS && vmImage.signature === OFFICIAL_VM_SIGNATURE, 'INVALID_VM_IMAGE_SIGNATURE_METADATA', 'VM image checksum/signature metadata must use the official Ubuntu release files');
+  assert(vmImage.keyring === OFFICIAL_VM_KEYRING, 'UNTRUSTED_VM_IMAGE_KEYRING', 'VM image signature must be verified with the distro Ubuntu cloud-image keyring');
+  assert(vmImage.signatureRequired === true, 'VM_IMAGE_SIGNATURE_REQUIRED', 'VM image signature verification cannot be disabled');
 
   const sourcePolicy = profile.sourcePolicy;
   assert(isObject(sourcePolicy), 'INVALID_SOURCE_POLICY', 'sourcePolicy is required');
@@ -107,7 +120,7 @@ export function validateReferenceImageProfile(profile) {
   assert(runtimes.every(runtime => ALLOWED_WINDOWS_RUNTIMES.has(runtime)), 'UNSUPPORTED_WINDOWS_RUNTIME', 'only Wine/Proton runtime classes are supported by the reference profile');
   assert(windows.windowsKernelDriversAsLinuxDrivers === false, 'WINDOWS_KERNEL_DRIVERS_FORBIDDEN', 'Windows kernel drivers are not a Linux hardware-driver strategy');
 
-  assert(profile.bootableImageClaim === false, 'PREMATURE_BOOTABLE_CLAIM', 'reference rootfs profile cannot claim bootability before VM boot E2E passes');
+  assert(profile.bootableImageClaim === false, 'PREMATURE_BOOTABLE_CLAIM', 'reference base profile cannot claim a bootable SWIR image before SWIR-built VM boot E2E passes');
   return profile;
 }
 
@@ -123,9 +136,11 @@ export const SystemReferenceImagePolicy = Object.freeze({
   referenceArchitecture: 'amd64',
   officialMirror: OFFICIAL_MIRROR,
   officialSecurityMirror: OFFICIAL_SECURITY_MIRROR,
+  officialVmImageBase: OFFICIAL_VM_BASE,
   arbitraryMirrors: false,
   thirdPartyRepositories: false,
   packageSignaturesRequired: true,
+  vmImageSignatureRequired: true,
   randomFirmwareDownloads: false,
   windowsKernelDriversAsLinuxDrivers: false,
   bootableImageClaim: false
@@ -133,7 +148,7 @@ export const SystemReferenceImagePolicy = Object.freeze({
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const args = process.argv.slice(2);
-  const known = new Set(['--validate', '--json', '--mirror', '--security-mirror', '--suite', '--architecture', '--components', '--e2e-packages']);
+  const known = new Set(['--validate', '--json', '--mirror', '--security-mirror', '--suite', '--architecture', '--components', '--e2e-packages', '--vm-base-url', '--vm-image', '--vm-checksums', '--vm-signature', '--vm-keyring']);
   for (const arg of args) assert(known.has(arg), 'UNKNOWN_ARGUMENT', `Unknown argument: ${arg}`);
   const profile = loadReferenceImageProfile();
   if (args.includes('--mirror')) process.stdout.write(`${profile.distribution.mirror}\n`);
@@ -142,6 +157,11 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   else if (args.includes('--suite')) process.stdout.write(`${profile.distribution.suite}\n`);
   else if (args.includes('--architecture')) process.stdout.write(`${profile.distribution.architecture}\n`);
   else if (args.includes('--e2e-packages')) process.stdout.write(`${profile.packages.e2e.join(',')}\n`);
+  else if (args.includes('--vm-base-url')) process.stdout.write(`${profile.vmImage.baseUrl}\n`);
+  else if (args.includes('--vm-image')) process.stdout.write(`${profile.vmImage.file}\n`);
+  else if (args.includes('--vm-checksums')) process.stdout.write(`${profile.vmImage.checksums}\n`);
+  else if (args.includes('--vm-signature')) process.stdout.write(`${profile.vmImage.signature}\n`);
+  else if (args.includes('--vm-keyring')) process.stdout.write(`${profile.vmImage.keyring}\n`);
   else if (args.includes('--json')) process.stdout.write(`${JSON.stringify(profile)}\n`);
   else process.stdout.write(`Reference image profile OK: ${profile.id}\n`);
 }

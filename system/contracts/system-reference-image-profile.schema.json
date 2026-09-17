@@ -9,6 +9,7 @@
     "id",
     "status",
     "distribution",
+    "vmImage",
     "sourcePolicy",
     "packages",
     "kernel",
@@ -17,186 +18,104 @@
     "bootableImageClaim"
   ],
   "properties": {
-    "schema": {
-      "const": "swir.system-reference-image-profile/0.1"
-    },
-    "id": {
-      "const": "ubuntu-24.04-amd64"
-    },
-    "status": {
-      "const": "reference-e2e"
-    },
+    "schema": { "const": "swir.system-reference-image-profile/0.1" },
+    "id": { "const": "ubuntu-24.04-amd64" },
+    "status": { "const": "reference-e2e" },
     "distribution": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "id",
-        "versionId",
-        "suite",
-        "architecture",
-        "mirror",
-        "securityMirror",
-        "components"
-      ],
+      "required": ["id", "versionId", "suite", "architecture", "mirror", "securityMirror", "components"],
       "properties": {
-        "id": {
-          "const": "ubuntu"
-        },
-        "versionId": {
-          "const": "24.04"
-        },
-        "suite": {
-          "const": "noble"
-        },
-        "architecture": {
-          "const": "amd64"
-        },
-        "mirror": {
-          "const": "https://archive.ubuntu.com/ubuntu"
-        },
-        "securityMirror": {
-          "const": "https://security.ubuntu.com/ubuntu"
-        },
-        "components": {
-          "const": [
-            "main",
-            "universe"
-          ]
-        }
+        "id": { "const": "ubuntu" },
+        "versionId": { "const": "24.04" },
+        "suite": { "const": "noble" },
+        "architecture": { "const": "amd64" },
+        "mirror": { "const": "https://archive.ubuntu.com/ubuntu" },
+        "securityMirror": { "const": "https://security.ubuntu.com/ubuntu" },
+        "components": { "const": ["main", "universe"] }
+      }
+    },
+    "vmImage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["baseUrl", "file", "checksums", "signature", "keyring", "signatureRequired"],
+      "properties": {
+        "baseUrl": { "const": "https://cloud-images.ubuntu.com/releases/noble/release" },
+        "file": { "const": "ubuntu-24.04-server-cloudimg-amd64.img" },
+        "checksums": { "const": "SHA256SUMS" },
+        "signature": { "const": "SHA256SUMS.gpg" },
+        "keyring": { "const": "/usr/share/keyrings/ubuntu-cloudimage-keyring.gpg" },
+        "signatureRequired": { "const": true }
       }
     },
     "sourcePolicy": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "allowedMirrors",
-        "allowArbitraryMirrors",
-        "packageSignaturesRequired",
-        "thirdPartyRepositoriesAllowed"
-      ],
+      "required": ["allowedMirrors", "allowArbitraryMirrors", "packageSignaturesRequired", "thirdPartyRepositoriesAllowed"],
       "properties": {
-        "allowedMirrors": {
-          "const": [
-            "https://archive.ubuntu.com/ubuntu",
-            "https://security.ubuntu.com/ubuntu"
-          ]
-        },
-        "allowArbitraryMirrors": {
-          "const": false
-        },
-        "packageSignaturesRequired": {
-          "const": true
-        },
-        "thirdPartyRepositoriesAllowed": {
-          "const": false
-        }
+        "allowedMirrors": { "const": ["https://archive.ubuntu.com/ubuntu", "https://security.ubuntu.com/ubuntu"] },
+        "allowArbitraryMirrors": { "const": false },
+        "packageSignaturesRequired": { "const": true },
+        "thirdPartyRepositoriesAllowed": { "const": false }
       }
     },
     "packages": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "readiness",
-        "firmware",
-        "optionalProviders",
-        "e2e"
-      ],
+      "required": ["readiness", "firmware", "optionalProviders", "e2e"],
       "properties": {
-        "readiness": {
-          "$ref": "#/$defs/packageList"
-        },
-        "firmware": {
-          "$ref": "#/$defs/packageList"
-        },
-        "optionalProviders": {
-          "$ref": "#/$defs/packageList"
-        },
-        "e2e": {
-          "$ref": "#/$defs/packageList"
-        }
+        "readiness": { "$ref": "#/$defs/packageList" },
+        "firmware": { "$ref": "#/$defs/packageList" },
+        "optionalProviders": { "$ref": "#/$defs/packageList" },
+        "e2e": { "$ref": "#/$defs/packageList" }
       }
     },
     "kernel": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "sourceClass",
-        "metaPackage",
-        "inTreeDriversPreferred"
-      ],
+      "required": ["sourceClass", "metaPackage", "inTreeDriversPreferred"],
       "properties": {
-        "sourceClass": {
-          "const": "distribution-repository"
-        },
-        "metaPackage": {
-          "const": "linux-generic"
-        },
-        "inTreeDriversPreferred": {
-          "const": true
-        }
+        "sourceClass": { "const": "distribution-repository" },
+        "metaPackage": { "const": "linux-generic" },
+        "inTreeDriversPreferred": { "const": true }
       }
     },
     "firmware": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "sourceClasses",
-        "randomBinaryDownloadsAllowed"
-      ],
+      "required": ["sourceClasses", "randomBinaryDownloadsAllowed"],
       "properties": {
         "sourceClasses": {
           "type": "array",
           "minItems": 2,
           "uniqueItems": true,
-          "items": {
-            "enum": [
-              "linux-firmware",
-              "fwupd-lvfs"
-            ]
-          }
+          "items": { "enum": ["linux-firmware", "fwupd-lvfs"] }
         },
-        "randomBinaryDownloadsAllowed": {
-          "const": false
-        }
+        "randomBinaryDownloadsAllowed": { "const": false }
       }
     },
     "windowsCompatibility": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "runtimeClasses",
-        "windowsKernelDriversAsLinuxDrivers"
-      ],
+      "required": ["runtimeClasses", "windowsKernelDriversAsLinuxDrivers"],
       "properties": {
         "runtimeClasses": {
           "type": "array",
           "minItems": 2,
           "uniqueItems": true,
-          "items": {
-            "enum": [
-              "wine",
-              "proton"
-            ]
-          }
+          "items": { "enum": ["wine", "proton"] }
         },
-        "windowsKernelDriversAsLinuxDrivers": {
-          "const": false
-        }
+        "windowsKernelDriversAsLinuxDrivers": { "const": false }
       }
     },
-    "bootableImageClaim": {
-      "const": false
-    }
+    "bootableImageClaim": { "const": false }
   },
   "$defs": {
     "packageList": {
       "type": "array",
       "minItems": 1,
       "uniqueItems": true,
-      "items": {
-        "type": "string",
-        "pattern": "^[a-z0-9][a-z0-9+.-]{0,127}$"
-      }
+      "items": { "type": "string", "pattern": "^[a-z0-9][a-z0-9+.-]{0,127}$" }
     }
   }
 }
