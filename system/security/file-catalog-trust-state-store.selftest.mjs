@@ -77,6 +77,14 @@ await assert.rejects(() => restartedStore.read(), error => error?.code === 'STAT
 await fs.promises.rm(path.join(stateRoot, forgedName));
 assert.equal((await restartedStore.read()).sequence, 8);
 
+// A symlink disguised as a state entry is not ignored; it fails closed.
+const symlinkDigest = 'e'.repeat(64);
+const symlinkName = `seq-${String(9).padStart(16, '0')}-${symlinkDigest}.json`;
+await fs.promises.symlink(path.join(stateRoot, files7[0]), path.join(stateRoot, symlinkName));
+await assert.rejects(() => restartedStore.read(), error => error?.code === 'UNSAFE_STATE_ENTRY');
+await fs.promises.rm(path.join(stateRoot, symlinkName));
+assert.equal((await restartedStore.read()).sequence, 8);
+
 // State roots that can be modified by other users are rejected.
 await fs.promises.chmod(stateRoot, 0o777);
 await assert.rejects(() => restartedStore.read(), error => error?.code === 'UNSAFE_STATE_ROOT_MODE');

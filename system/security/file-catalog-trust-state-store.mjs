@@ -139,8 +139,11 @@ export class FileCatalogTrustStateStore {
   async read() {
     await this.#assertRoot();
     const entries = await fsp.readdir(this.#root, { withFileTypes: true });
-    const candidates = entries
-      .filter(entry => entry.isFile() && STATE_FILE.test(entry.name))
+    const stateEntries = entries.filter(entry => STATE_FILE.test(entry.name));
+    for (const entry of stateEntries) {
+      assert(entry.isFile(), 'UNSAFE_STATE_ENTRY', 'Catalog trust state entries must be regular files, never symlinks or directories');
+    }
+    const candidates = stateEntries
       .map(entry => ({ name: entry.name, match: entry.name.match(STATE_FILE) }))
       .map(entry => ({ name: entry.name, sequence: Number(entry.match[1]), digest: entry.match[2] }))
       .filter(entry => Number.isSafeInteger(entry.sequence) && entry.sequence > 0);
@@ -177,13 +180,10 @@ export class FileCatalogTrustStateStore {
     } finally {
       if (handle) await handle.close();
     }
-    await fsp.chmod(filePath, 0o600);
-
     const accepted = await this.read();
-    assert(accepted && accepted.sequence >= state.sequence, 'STATE_PERSISTENCE_FAILED', 'Catalog trust state high-water mark was not persisted');
-    if (accepted.sequence === state.sequence) {
-      assert(sameSignedState(accepted, state), 'STATE_EQUIVOCATION_DETECTED', 'Concurrent catalog state acceptance detected equivocation');
-    }
+    assert(accepted, 'STATE_PERSISTENCE_FAILED', 'Catalog trust state high-water mark was not persisted');
+    assert(accepted.sequence === state.sequence, 'STATE_STALE_ACCEPTANCE', 'A newer catalog sequence won concurrently; refusing authorization based on stale metadata');
+    assert(sameSignedState(accepted, state), 'STATE_EQUIVOCATION_DETECTED', 'Concurrent catalog state acceptance detected equivocation');
     return clone(accepted);
   }
 }
