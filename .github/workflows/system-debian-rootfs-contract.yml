@@ -59,13 +59,15 @@ jobs:
           python3 -m json.tool system/image/debian-trixie-repository-trust-policy.json >/dev/null
           bash -n system/image/build-debian-trixie-rootfs.sh
 
-      - name: Install rootfs builder
+      - name: Install rootfs builder and Debian bootstrap keyring
         shell: bash
         run: |
           set -euo pipefail
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends mmdebstrap
+          sudo apt-get install -y --no-install-recommends mmdebstrap debian-archive-keyring
           mmdebstrap --version
+          test -f /usr/share/keyrings/debian-archive-keyring.gpg
+          test "$(stat -c '%u' /usr/share/keyrings/debian-archive-keyring.gpg)" = '0'
 
       - name: Build Debian 13 trixie rootfs from official archive
         shell: bash
