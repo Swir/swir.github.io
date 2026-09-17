@@ -21,7 +21,10 @@ const driverPlan = readJson('driver-plan.schema.json');
 const driverCenter = readJson('driver-center-report.schema.json');
 const providers = readJson('package-provider.schema.json');
 const trust = readJson('trusted-sources.json');
+const baseImageSchema = readJson('system-base-image-profile.schema.json');
+const imageReadinessSchema = readJson('system-image-readiness.schema.json');
 const baselineCatalog = JSON.parse(fs.readFileSync(path.join(ROOT, 'hardware', 'hardware-catalog.json'), 'utf8'));
+const baseImageProfile = JSON.parse(fs.readFileSync(path.join(ROOT, 'image', 'debian13-base-image-profile.json'), 'utf8'));
 
 assert(hardware.$schema?.includes('2020-12'), 'hardware schema must use JSON Schema 2020-12');
 assert(hardware.properties?.schema?.const === 'swir.hardware-catalog/0.1', 'hardware schema ID mismatch');
@@ -94,6 +97,26 @@ assert(trust.policy?.unknownHardwareMayAutoDownload === false, 'unknown hardware
 const forbidden = new Set(trust.forbiddenAutomaticDriverArtifacts.map(x => x.toLowerCase()));
 for (const ext of ['.exe', '.msi', '.sys']) assert(forbidden.has(ext), `missing forbidden automatic driver artifact ${ext}`);
 
+assert(baseImageSchema.$schema?.includes('2020-12'), 'System base image profile schema must use JSON Schema 2020-12');
+assert(baseImageSchema.properties?.schema?.const === 'swir.system-base-image-profile/0.1', 'System base image profile schema ID mismatch');
+assert(baseImageProfile.schema === 'swir.system-base-image-profile/0.1', 'System base image profile ID mismatch');
+assert(baseImageProfile.status === 'candidate', 'Debian base must remain candidate before bootloader/desktop E2E');
+assert(baseImageProfile.distribution?.id === 'debian' && baseImageProfile.distribution?.majorVersion === 13 && baseImageProfile.distribution?.codename === 'trixie', 'System base must stay pinned to Debian 13 trixie');
+assert(baseImageProfile.packageManager === 'apt', 'Debian System base must use apt');
+assert(baseImageProfile.bootableImageClaim === false, 'direct-kernel VM E2E must not claim final bootable image completion');
+assert(baseImageProfile.directKernelVmE2EClaim === true, 'System base profile must declare direct-kernel VM E2E scope');
+assert(baseImageProfile.bootloaderE2EClaim === false, 'System base profile must keep bootloader E2E pending');
+assert(baseImageProfile.securityPolicy?.allowUnsignedRepositories === false, 'System base must prohibit unsigned repositories');
+assert(baseImageProfile.securityPolicy?.allowThirdPartyRepositories === false, 'System base must prohibit third-party repositories by default');
+assert(baseImageProfile.securityPolicy?.allowRandomBinaryDrivers === false, 'System base must prohibit random binary driver downloads');
+assert(baseImageProfile.securityPolicy?.windowsKernelDriversAsLinuxDrivers === false, 'System base must reject Windows kernel drivers as Linux drivers');
+assert(baseImageProfile.securityPolicy?.repositorySignatureVerificationRequired === true, 'System base must require repository signatures');
+const systemBaseRepoUris = new Set(baseImageProfile.repositories.map(repo => repo.uri));
+assert(systemBaseRepoUris.size === 2 && systemBaseRepoUris.has('https://deb.debian.org/debian') && systemBaseRepoUris.has('https://security.debian.org/debian-security'), 'System base repositories must be exactly the approved Debian distribution/security endpoints');
+for (const repo of baseImageProfile.repositories) assert(repo.signedBy === '/usr/share/keyrings/debian-archive-keyring.gpg', `System base repository ${repo.id} must use Debian archive keyring`);
+assert(imageReadinessSchema.properties?.schema?.const === 'swir.system-image-readiness/0.1', 'System image readiness schema ID mismatch');
+assert(imageReadinessSchema.properties?.summary?.required?.includes('sessionReady'), 'System image readiness must expose required session readiness');
+
 const serviceSource = fs.readFileSync(path.join(ROOT, 'hardware', 'hardware-service.mjs'), 'utf8');
 const resolverSource = fs.readFileSync(path.join(ROOT, 'hardware', 'driver-resolver.mjs'), 'utf8');
 const driverCenterSource = fs.readFileSync(path.join(ROOT, 'hardware', 'driver-center-service.mjs'), 'utf8');
@@ -121,6 +144,7 @@ console.log('SWIR System Edition contract validation: OK');
 console.log(`Driver source classes: ${[...policyClasses].join(', ')}`);
 console.log(`Reserved providers: ${[...providerIds].join(', ')}`);
 console.log(`Hardware Catalog entries: ${baselineCatalog.entries.length}`);
+console.log(`System base candidate: ${baseImageProfile.distribution.id}-${baseImageProfile.distribution.majorVersion}/${baseImageProfile.distribution.codename} direct-kernel-vm-e2e`);
 console.log('Package provider: 0.2 with native-only System Edition execution');
 console.log('Hardware snapshot: 0.2 read-only host diagnostics');
 console.log('Driver plan mode: preview/read-only/non-executable');
