@@ -1,0 +1,202 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://swir.github.io/contracts/system-reference-image-profile.schema.json",
+  "title": "SWIR System reference image profile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "id",
+    "status",
+    "distribution",
+    "sourcePolicy",
+    "packages",
+    "kernel",
+    "firmware",
+    "windowsCompatibility",
+    "bootableImageClaim"
+  ],
+  "properties": {
+    "schema": {
+      "const": "swir.system-reference-image-profile/0.1"
+    },
+    "id": {
+      "const": "ubuntu-24.04-amd64"
+    },
+    "status": {
+      "const": "reference-e2e"
+    },
+    "distribution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "versionId",
+        "suite",
+        "architecture",
+        "mirror",
+        "securityMirror",
+        "components"
+      ],
+      "properties": {
+        "id": {
+          "const": "ubuntu"
+        },
+        "versionId": {
+          "const": "24.04"
+        },
+        "suite": {
+          "const": "noble"
+        },
+        "architecture": {
+          "const": "amd64"
+        },
+        "mirror": {
+          "const": "https://archive.ubuntu.com/ubuntu"
+        },
+        "securityMirror": {
+          "const": "https://security.ubuntu.com/ubuntu"
+        },
+        "components": {
+          "const": [
+            "main",
+            "universe"
+          ]
+        }
+      }
+    },
+    "sourcePolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "allowedMirrors",
+        "allowArbitraryMirrors",
+        "packageSignaturesRequired",
+        "thirdPartyRepositoriesAllowed"
+      ],
+      "properties": {
+        "allowedMirrors": {
+          "const": [
+            "https://archive.ubuntu.com/ubuntu",
+            "https://security.ubuntu.com/ubuntu"
+          ]
+        },
+        "allowArbitraryMirrors": {
+          "const": false
+        },
+        "packageSignaturesRequired": {
+          "const": true
+        },
+        "thirdPartyRepositoriesAllowed": {
+          "const": false
+        }
+      }
+    },
+    "packages": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "readiness",
+        "firmware",
+        "optionalProviders",
+        "e2e"
+      ],
+      "properties": {
+        "readiness": {
+          "$ref": "#/$defs/packageList"
+        },
+        "firmware": {
+          "$ref": "#/$defs/packageList"
+        },
+        "optionalProviders": {
+          "$ref": "#/$defs/packageList"
+        },
+        "e2e": {
+          "$ref": "#/$defs/packageList"
+        }
+      }
+    },
+    "kernel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sourceClass",
+        "metaPackage",
+        "inTreeDriversPreferred"
+      ],
+      "properties": {
+        "sourceClass": {
+          "const": "distribution-repository"
+        },
+        "metaPackage": {
+          "const": "linux-generic"
+        },
+        "inTreeDriversPreferred": {
+          "const": true
+        }
+      }
+    },
+    "firmware": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sourceClasses",
+        "randomBinaryDownloadsAllowed"
+      ],
+      "properties": {
+        "sourceClasses": {
+          "type": "array",
+          "minItems": 2,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "linux-firmware",
+              "fwupd-lvfs"
+            ]
+          }
+        },
+        "randomBinaryDownloadsAllowed": {
+          "const": false
+        }
+      }
+    },
+    "windowsCompatibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "runtimeClasses",
+        "windowsKernelDriversAsLinuxDrivers"
+      ],
+      "properties": {
+        "runtimeClasses": {
+          "type": "array",
+          "minItems": 2,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "wine",
+              "proton"
+            ]
+          }
+        },
+        "windowsKernelDriversAsLinuxDrivers": {
+          "const": false
+        }
+      }
+    },
+    "bootableImageClaim": {
+      "const": false
+    }
+  },
+  "$defs": {
+    "packageList": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9][a-z0-9+.-]{0,127}$"
+      }
+    }
+  }
+}

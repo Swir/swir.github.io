@@ -1,0 +1,72 @@
+{
+  "schema": "swir.system-reference-image-profile/0.1",
+  "id": "ubuntu-24.04-amd64",
+  "status": "reference-e2e",
+  "distribution": {
+    "id": "ubuntu",
+    "versionId": "24.04",
+    "suite": "noble",
+    "architecture": "amd64",
+    "mirror": "https://archive.ubuntu.com/ubuntu",
+    "securityMirror": "https://security.ubuntu.com/ubuntu",
+    "components": [
+      "main",
+      "universe"
+    ]
+  },
+  "sourcePolicy": {
+    "allowedMirrors": [
+      "https://archive.ubuntu.com/ubuntu",
+      "https://security.ubuntu.com/ubuntu"
+    ],
+    "allowArbitraryMirrors": false,
+    "packageSignaturesRequired": true,
+    "thirdPartyRepositoriesAllowed": false
+  },
+  "packages": {
+    "readiness": [
+      "ca-certificates",
+      "systemd",
+      "policykit-1",
+      "network-manager",
+      "nodejs"
+    ],
+    "firmware": [
+      "linux-firmware",
+      "fwupd"
+    ],
+    "optionalProviders": [
+      "flatpak",
+      "wine64"
+    ],
+    "e2e": [
+      "ca-certificates",
+      "systemd",
+      "policykit-1",
+      "network-manager",
+      "nodejs",
+      "fwupd",
+      "flatpak"
+    ]
+  },
+  "kernel": {
+    "sourceClass": "distribution-repository",
+    "metaPackage": "linux-generic",
+    "inTreeDriversPreferred": true
+  },
+  "firmware": {
+    "sourceClasses": [
+      "linux-firmware",
+      "fwupd-lvfs"
+    ],
+    "randomBinaryDownloadsAllowed": false
+  },
+  "windowsCompatibility": {
+    "runtimeClasses": [
+      "wine",
+      "proton"
+    ],
+    "windowsKernelDriversAsLinuxDrivers": false
+  },
+  "bootableImageClaim": false
+}

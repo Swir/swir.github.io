@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://swir.github.io/contracts/system-session-identity.schema.json",
+  "title": "SWIR System session identity",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "provider", "readOnly", "actorId", "uid", "userName", "sessionId", "seat", "type", "display", "locked", "remote", "graphical"],
+  "properties": {
+    "schema": { "const": "swir.system-session-identity/0.1" },
+    "provider": { "const": "systemd-logind" },
+    "readOnly": { "const": true },
+    "actorId": { "type": "string", "pattern": "^uid:[0-9]+$" },
+    "uid": { "type": "integer", "minimum": 0 },
+    "userName": { "type": ["string", "null"], "maxLength": 128 },
+    "sessionId": { "type": "string", "pattern": "^[A-Za-z0-9_.:-]{1,64}$" },
+    "seat": { "type": ["string", "null"], "pattern": "^[A-Za-z0-9_.:-]{1,64}$" },
+    "type": { "type": "string", "maxLength": 32 },
+    "display": { "type": ["string", "null"], "maxLength": 128 },
+    "locked": { "type": "boolean" },
+    "remote": { "const": false },
+    "graphical": { "type": "boolean" }
+  }
+}

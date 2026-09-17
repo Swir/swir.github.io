@@ -1,0 +1,67 @@
+name: System Reference Image Contract
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'system/image/reference-image-profile.json'
+      - 'system/image/reference-image-profile.mjs'
+      - 'system/image/reference-image-profile.selftest.mjs'
+      - 'system/image/reference-rootfs-e2e.sh'
+      - 'system/image/system-image-readiness.mjs'
+      - 'system/image/system-image-readiness-probe.mjs'
+      - 'system/contracts/system-reference-image-profile.schema.json'
+      - 'system/SWIR-SYSTEM-REFERENCE-IMAGE-0.1.md'
+      - '.github/workflows/system-reference-image-contract.yml'
+  pull_request:
+    paths:
+      - 'system/image/reference-image-profile.json'
+      - 'system/image/reference-image-profile.mjs'
+      - 'system/image/reference-image-profile.selftest.mjs'
+      - 'system/image/reference-rootfs-e2e.sh'
+      - 'system/image/system-image-readiness.mjs'
+      - 'system/image/system-image-readiness-probe.mjs'
+      - 'system/contracts/system-reference-image-profile.schema.json'
+      - 'system/SWIR-SYSTEM-REFERENCE-IMAGE-0.1.md'
+      - '.github/workflows/system-reference-image-contract.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  profile:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate syntax and profile schema
+        run: |
+          node --check system/image/reference-image-profile.mjs
+          node --check system/image/reference-image-profile.selftest.mjs
+          node system/image/reference-image-profile.mjs --validate
+          node system/image/reference-image-profile.selftest.mjs
+          node -e "JSON.parse(require('fs').readFileSync('system/image/reference-image-profile.json','utf8'))"
+          node -e "JSON.parse(require('fs').readFileSync('system/contracts/system-reference-image-profile.schema.json','utf8'))"
+      - name: Guard source-policy regressions
+        shell: bash
+        run: |
+          grep -F 'https://archive.ubuntu.com/ubuntu' system/image/reference-image-profile.json >/dev/null
+          ! grep -R --line-number -E 'allowArbitraryMirrors["[:space:]]*:[[:space:]]*true|thirdPartyRepositoriesAllowed["[:space:]]*:[[:space:]]*true|randomBinaryDownloadsAllowed["[:space:]]*:[[:space:]]*true|windowsKernelDriversAsLinuxDrivers["[:space:]]*:[[:space:]]*true|bootableImageClaim["[:space:]]*:[[:space:]]*true' system/image/reference-image-profile.json
+
+  rootfs-e2e:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install rootfs builder
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends debootstrap
+      - name: Build disposable reference rootfs and run readiness E2E
+        run: bash system/image/reference-rootfs-e2e.sh

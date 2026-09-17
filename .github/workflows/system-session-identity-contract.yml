@@ -1,0 +1,46 @@
+name: System Session Identity Contract
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'system/session/**'
+      - 'system/contracts/system-session-identity.schema.json'
+      - 'system/SWIR-SYSTEM-SESSION-IDENTITY-0.1.md'
+      - '.github/workflows/system-session-identity-contract.yml'
+  pull_request:
+    paths:
+      - 'system/session/**'
+      - 'system/contracts/system-session-identity.schema.json'
+      - 'system/SWIR-SYSTEM-SESSION-IDENTITY-0.1.md'
+      - '.github/workflows/system-session-identity-contract.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check syntax and contracts
+        run: |
+          node --check system/session/system-session-identity-service.mjs
+          node --check system/session/system-session-identity-service.selftest.mjs
+          node --check system/session/system-session-host-probe.mjs
+          node -e "JSON.parse(require('fs').readFileSync('system/contracts/system-session-identity.schema.json','utf8'))"
+      - name: Run session identity self-tests
+        run: node system/session/system-session-identity-service.selftest.mjs
+      - name: Probe CI logind boundary read-only
+        shell: bash
+        run: |
+          node system/session/system-session-host-probe.mjs --compact > "$RUNNER_TEMP/swir-session-host.json"
+          node -e "const r=JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')); if(r.schema!=='swir.system-session-host-probe/0.1'||r.readOnly!==true||r.mutationPerformed!==false||r.authenticationPerformed!==false||r.privilegeGranted!==false||!r.probe) process.exit(1); if(r.activeSession && (r.activeSession.remote!==false||r.activeSession.readOnly!==true)) process.exit(1); console.log('Session host probe:', 'loginctl=', r.probe.available, 'sessions=', r.inventory?.sessionCount ?? 'n/a', 'active=', r.activeSession?.actorId ?? r.diagnosis?.code ?? 'none')" "$RUNNER_TEMP/swir-session-host.json"
+      - name: Guard mutation and secret regressions
+        shell: bash
+        run: |
+          ! grep -R --line-number -E 'shell:[[:space:]]*true|loginctl.*(terminate|kill|lock-session|unlock-session|activate|enable-linger|disable-linger)' system/session
