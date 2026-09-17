@@ -1,8 +1,0 @@
-[Plymouth Theme]
-Name=SWIR OS
-Description=SWIR OS System Edition boot splash
-ModuleName=script
-
-[script]
-ImageDir=/usr/share/plymouth/themes/swir
-ScriptFile=/usr/share/plymouth/themes/swir/swir.script
