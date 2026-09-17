@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://swir.dev/schemas/firmware-transaction-journal-0.1.json",
+  "title": "SWIR Firmware Transaction Journal 0.1",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema",
+    "transactionId",
+    "status",
+    "createdAt",
+    "updatedAt",
+    "plan",
+    "planDigest",
+    "before",
+    "recovery"
+  ],
+  "properties": {
+    "schema": { "const": "swir.firmware-transaction-journal/0.1" },
+    "transactionId": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{7,159}$" },
+    "status": { "enum": ["planned", "authorized", "executing", "committed", "committed-after-reboot", "staged-reboot-required", "verification-failed", "failed-needs-recovery"] },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "updatedAt": { "type": "string", "format": "date-time" },
+    "planDigest": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "actorId": { "type": ["string", "null"], "maxLength": 160 },
+    "plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "operation", "provider", "remoteId", "source", "deviceId", "releaseId", "currentVersion", "targetVersion", "checksums", "requiresReboot", "command", "digest"],
+      "properties": {
+        "schema": { "const": "swir.firmware-update-plan/0.1" },
+        "operation": { "const": "update" },
+        "provider": { "const": "fwupd-lvfs" },
+        "remoteId": { "const": "lvfs" },
+        "deviceId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "releaseId": { "type": ["string", "null"], "maxLength": 128 },
+        "currentVersion": { "type": ["string", "null"], "maxLength": 128 },
+        "targetVersion": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "checksums": { "type": "array", "items": { "type": "string", "pattern": "^[A-Fa-f0-9]{32,128}$" }, "uniqueItems": true },
+        "requiresReboot": { "type": "boolean" },
+        "command": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "prefixItems": [
+            { "const": "--assume-yes" },
+            { "const": "--no-reboot-check" },
+            { "const": "update" },
+            { "type": "string", "minLength": 1, "maxLength": 128 }
+          ]
+        },
+        "digest": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["class", "repositoryId", "ref"],
+          "properties": {
+            "class": { "const": "fwupd-lvfs" },
+            "repositoryId": { "const": "lvfs" },
+            "ref": { "type": ["string", "null"], "maxLength": 256 }
+          }
+        }
+      }
+    },
+    "before": {
+      "type": "object",
+      "required": ["deviceId", "version"],
+      "properties": {
+        "deviceId": { "type": "string" },
+        "version": { "type": ["string", "null"] }
+      }
+    },
+    "recovery": {
+      "type": "object",
+      "required": ["automaticRollback", "safeToAutoRetry", "rebootRequired", "operatorReviewRequired", "bootIdBefore"],
+      "properties": {
+        "automaticRollback": { "const": false },
+        "rebootRequired": { "type": "boolean" },
+        "operatorReviewRequired": { "type": "boolean" },
+        "safeToAutoRetry": { "const": false },
+        "bootIdBefore": { "type": "string", "pattern": "^[A-Fa-f0-9]{8}-[A-Fa-f0-9-]{20,64}$" },
+        "bootIdAfter": { "type": "string", "pattern": "^[A-Fa-f0-9]{8}-[A-Fa-f0-9-]{20,64}$" }
+      }
+    }
+  }
+}
