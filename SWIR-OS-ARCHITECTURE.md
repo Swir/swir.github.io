@@ -12,20 +12,20 @@ SWIR OS is designed in three editions sharing one application model and platform
 <!-- ROADMAP-PROGRESS:START -->
 <p align="center">
   <a href="https://github.com/Swir/swir.github.io/actions/workflows/system-contracts.yml"><img alt="CI" src="https://github.com/Swir/swir.github.io/actions/workflows/system-contracts.yml/badge.svg"></a>
-  <img alt="Roadmap progress" src="https://img.shields.io/badge/ROADMAP-77.8%25-2ea043?style=for-the-badge">
-  <img alt="Completed" src="https://img.shields.io/badge/DONE-42%2F54-1f6feb?style=for-the-badge">
+  <img alt="Roadmap progress" src="https://img.shields.io/badge/ROADMAP-81.5%25-2ea043?style=for-the-badge">
+  <img alt="Completed" src="https://img.shields.io/badge/DONE-44%2F54-1f6feb?style=for-the-badge">
   <img alt="Status" src="https://img.shields.io/badge/STATUS-IN%20PROGRESS-7c3aed?style=for-the-badge">
 </p>
 
 ## 📊 Overall progress
 
 ```text
-████████████████░░░░ 77.8%
+████████████████░░░░ 81.5%
 ```
 
 | ✅ Completed | ⏳ Remaining | 📦 Total | 🎯 Progress |
 |---:|---:|---:|---:|
-| **42** | **12** | **54** | **77.8%** |
+| **44** | **10** | **54** | **81.5%** |
 
 > **Progress rule:** the explicit `[x]/[ ]` deliverables in **Version roadmap** are the source of truth for the full Web → Desktop → System plan. Update the checklist first, then badges, numbers, percentage and the 20-segment bar. A prototype does not count as complete until the described deliverable is actually implemented and verified.
 <!-- ROADMAP-PROGRESS:END -->
@@ -393,7 +393,7 @@ Active direction:
 Planned:
 
 - [x] maintained Linux base/kernel and bootable image
-- [ ] SWIR boot splash and login/session manager
+- [x] SWIR boot splash and login/session manager
 - [ ] SWIR desktop shell
 - [x] NetworkManager integration
 - [x] native Linux application execution
@@ -401,7 +401,7 @@ Planned:
 - [x] managed Wine/Proton compatibility service for Windows user applications
 - [x] Hardware Service with PCI/USB inventory
 - [x] SWIR Driver Center / Hardware Catalog
-- [ ] in-tree Linux drivers + linux-firmware as primary hardware path
+- [x] in-tree Linux drivers + linux-firmware as primary hardware path
 - [ ] fwupd/LVFS firmware updates where supported
 - [ ] allowlisted official vendor repositories for exceptional proprietary components
 - [ ] dependency-aware system package manager/updater
