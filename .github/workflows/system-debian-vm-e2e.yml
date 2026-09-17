@@ -7,12 +7,14 @@ on:
       - 'system/e2e/debian13-direct-kernel-vm-e2e.sh'
       - 'system/image/debian13-base-image-profile.json'
       - 'system/image/validate-debian13-base-image-profile.mjs'
+      - 'system/image/system-base-vm-contract.selftest.mjs'
       - 'system/image/system-image-readiness*'
       - 'system/image/system-image-provisioning*'
       - 'system/image/system-peer-authorization-provisioning.mjs'
       - 'system/ipc/**'
       - 'system/security/org.swir.system.*.policy'
       - 'system/contracts/system-base-image-profile.schema.json'
+      - 'system/contracts/system-image-readiness.schema.json'
       - 'system/SWIR-DEBIAN-VM-E2E-0.1.md'
       - '.github/workflows/system-debian-vm-e2e.yml'
   pull_request:
@@ -20,12 +22,14 @@ on:
       - 'system/e2e/debian13-direct-kernel-vm-e2e.sh'
       - 'system/image/debian13-base-image-profile.json'
       - 'system/image/validate-debian13-base-image-profile.mjs'
+      - 'system/image/system-base-vm-contract.selftest.mjs'
       - 'system/image/system-image-readiness*'
       - 'system/image/system-image-provisioning*'
       - 'system/image/system-peer-authorization-provisioning.mjs'
       - 'system/ipc/**'
       - 'system/security/org.swir.system.*.policy'
       - 'system/contracts/system-base-image-profile.schema.json'
+      - 'system/contracts/system-image-readiness.schema.json'
       - 'system/SWIR-DEBIAN-VM-E2E-0.1.md'
       - '.github/workflows/system-debian-vm-e2e.yml'
   workflow_dispatch:
@@ -46,11 +50,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Validate profile and harness syntax
+      - name: Validate profile and composition contracts
         run: |
           node --check system/image/validate-debian13-base-image-profile.mjs
+          node --check system/image/system-base-vm-contract.selftest.mjs
+          node --check system/image/system-image-readiness.mjs
+          node --check system/image/system-image-readiness.selftest.mjs
           node system/image/validate-debian13-base-image-profile.mjs
-          node -e "JSON.parse(require('fs').readFileSync('system/image/debian13-base-image-profile.json','utf8')); JSON.parse(require('fs').readFileSync('system/contracts/system-base-image-profile.schema.json','utf8')); console.log('Debian base contracts: OK')"
+          node system/image/system-base-vm-contract.selftest.mjs
+          node system/image/system-image-readiness.selftest.mjs
+          node -e "for(const p of ['system/image/debian13-base-image-profile.json','system/contracts/system-base-image-profile.schema.json','system/contracts/system-image-readiness.schema.json']) JSON.parse(require('fs').readFileSync(p,'utf8')); console.log('Debian/System image contracts: OK')"
           bash -n system/e2e/debian13-direct-kernel-vm-e2e.sh
       - name: Guard base-image security policy
         shell: bash
@@ -60,6 +69,7 @@ jobs:
           ! grep -E '"(allowUnsignedRepositories|allowThirdPartyRepositories|allowRandomBinaryDrivers|windowsKernelDriversAsLinuxDrivers)"[[:space:]]*:[[:space:]]*true' system/image/debian13-base-image-profile.json
           grep -F '"bootableImageClaim": false' system/image/debian13-base-image-profile.json >/dev/null
           grep -F '"bootloaderE2EClaim": false' system/image/debian13-base-image-profile.json >/dev/null
+          grep -F "'systemd-session-manager'" system/image/system-image-readiness.mjs >/dev/null
           ! grep -E 'qemu-system-x86_64.*-net (nic|user|tap|bridge)|curl |wget ' system/e2e/debian13-direct-kernel-vm-e2e.sh
 
   boot-e2e:
