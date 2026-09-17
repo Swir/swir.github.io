@@ -6,6 +6,7 @@ ROOTFS=""
 PROFILE="$PROFILE_DEFAULT"
 ARCH="amd64"
 MIRROR="https://deb.debian.org/debian"
+HOST_KEYRING="/usr/share/keyrings/debian-archive-keyring.gpg"
 
 usage() {
   cat <<'EOF'
@@ -36,6 +37,11 @@ done
 command -v mmdebstrap >/dev/null || { echo "mmdebstrap is required" >&2; exit 69; }
 command -v python3 >/dev/null || { echo "python3 is required" >&2; exit 69; }
 command -v sha256sum >/dev/null || { echo "sha256sum is required" >&2; exit 69; }
+command -v stat >/dev/null || { echo "stat is required" >&2; exit 69; }
+[[ -f "$HOST_KEYRING" && ! -L "$HOST_KEYRING" ]] || { echo "trusted Debian archive keyring is required at $HOST_KEYRING" >&2; exit 69; }
+[[ "$(stat -c '%u' "$HOST_KEYRING")" == "0" ]] || { echo "Debian archive keyring must be root-owned" >&2; exit 78; }
+KEYRING_MODE="$(stat -c '%a' "$HOST_KEYRING")"
+(( (8#$KEYRING_MODE & 8#022) == 0 )) || { echo "Debian archive keyring must not be group/world writable" >&2; exit 78; }
 
 python3 - "$PROFILE" "$ARCH" "$MIRROR" <<'PY'
 import json, pathlib, sys
@@ -70,6 +76,7 @@ else
 fi
 
 PROFILE_SHA256="$(sha256sum "$PROFILE" | awk '{print $1}')"
+KEYRING_SHA256="$(sha256sum "$HOST_KEYRING" | awk '{print $1}')"
 INCLUDE="linux-image-amd64,systemd-sysv,dbus,polkitd,network-manager,fwupd,python3,ca-certificates,debian-archive-keyring"
 
 # Keep Debian's native archive-key signature verification enabled. The builder has no caller-
@@ -78,6 +85,7 @@ mmdebstrap \
   --variant=minbase \
   --architectures="$ARCH" \
   --components='main non-free-firmware' \
+  --keyring="$HOST_KEYRING" \
   --include="$INCLUDE" \
   trixie "$ROOTFS" "$MIRROR"
 
@@ -112,15 +120,16 @@ SYSTEMD_VERSION="$(chroot "$ROOTFS" dpkg-query -W -f='${Version}' systemd)"
 PACKAGE_SET_SHA256="$(printf '%s\n' "$PACKAGE_LIST" | sha256sum | awk '{print $1}')"
 BUILT_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
-python3 - "$ROOTFS/var/lib/swir/image/base-build-state.json" "$PROFILE_SHA256" "$PACKAGE_SET_SHA256" "$ARCH" "$KERNEL_VERSION" "$SYSTEMD_VERSION" "$BUILT_AT" <<'PY'
+python3 - "$ROOTFS/var/lib/swir/image/base-build-state.json" "$PROFILE_SHA256" "$KEYRING_SHA256" "$PACKAGE_SET_SHA256" "$ARCH" "$KERNEL_VERSION" "$SYSTEMD_VERSION" "$BUILT_AT" <<'PY'
 import json, pathlib, sys
-path, profile_sha, package_sha, arch, kernel, systemd, built_at = sys.argv[1:]
+path, profile_sha, keyring_sha, package_sha, arch, kernel, systemd, built_at = sys.argv[1:]
 state = {
   'schema': 'swir.system-base-build-state/0.1',
   'profile': 'debian-13-trixie',
   'suite': 'trixie',
   'architecture': arch,
   'profileSha256': profile_sha,
+  'bootstrapKeyringSha256': keyring_sha,
   'packageSetSha256': package_sha,
   'kernelMetaPackageVersion': kernel,
   'systemdVersion': systemd,
@@ -138,4 +147,5 @@ chmod 0600 "$ROOTFS/var/lib/swir/image/base-build-state.json"
 echo "SWIR Debian 13 rootfs foundation built successfully at $ROOTFS"
 echo "Kernel meta-package: $KERNEL_VERSION"
 echo "systemd: $SYSTEMD_VERSION"
+echo "Bootstrap keyring SHA-256: $KEYRING_SHA256"
 echo "Package-set SHA-256: $PACKAGE_SET_SHA256"
