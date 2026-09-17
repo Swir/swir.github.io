@@ -9,8 +9,11 @@ on:
       - 'system/image/build-debian-trixie-rootfs.sh'
       - 'system/image/system-base-debian-trixie.selftest.mjs'
       - 'system/image/system-image-provisioning*'
+      - 'system/image/system-peer-authorization-provisioning*'
+      - 'system/ipc/swir-peer-authorization*'
+      - 'system/ipc/90-swir-peer-authorization.preset'
       - 'system/security/org.swir.system.*.policy'
-      - 'system/SWIR-DEBIAN-ROOTFS-FOUNDATION-0.1.md'
+      - 'system/SWIR-SYSTEM-IMAGE-PROVISIONING-0.1.md'
       - '.github/workflows/system-debian-rootfs-contract.yml'
   pull_request:
     paths:
@@ -19,8 +22,11 @@ on:
       - 'system/image/build-debian-trixie-rootfs.sh'
       - 'system/image/system-base-debian-trixie.selftest.mjs'
       - 'system/image/system-image-provisioning*'
+      - 'system/image/system-peer-authorization-provisioning*'
+      - 'system/ipc/swir-peer-authorization*'
+      - 'system/ipc/90-swir-peer-authorization.preset'
       - 'system/security/org.swir.system.*.policy'
-      - 'system/SWIR-DEBIAN-ROOTFS-FOUNDATION-0.1.md'
+      - 'system/SWIR-SYSTEM-IMAGE-PROVISIONING-0.1.md'
       - '.github/workflows/system-debian-rootfs-contract.yml'
   workflow_dispatch:
 
@@ -117,6 +123,24 @@ jobs:
             "$RUNNER_TEMP/swir-stage.json" "$RUNNER_TEMP/swir-verify.json"
           test "$(sudo stat -c '%u:%a' "$ROOTFS/etc/swir/repository-trust-policy.json")" = '0:600'
           test "$(sudo stat -c '%u:%a' "$ROOTFS/var/lib/swir/security/catalog-trust")" = '0:700'
+
+      - name: Apply peer authorization systemd foundation to real Debian rootfs
+        shell: bash
+        run: |
+          set -euo pipefail
+          NODE_BIN="$(command -v node)"
+          sudo env ROOTFS="$ROOTFS" SOURCE_ROOT="$GITHUB_WORKSPACE" "$NODE_BIN" --input-type=module -e "
+            import { stagePeerAuthorizationFoundation, verifyPeerAuthorizationFoundation } from './system/image/system-peer-authorization-provisioning.mjs';
+            const staged = await stagePeerAuthorizationFoundation({rootfs: process.env.ROOTFS, sourceRoot: process.env.SOURCE_ROOT, production: true});
+            if (!staged.ready || staged.bootableImageClaim !== false || staged.runtimeKeyEmbeddedInImage !== false) process.exit(1);
+            const verified = await verifyPeerAuthorizationFoundation({rootfs: process.env.ROOTFS, production: true});
+            if (!verified.ready || verified.blockers.length) process.exit(1);
+            console.log('Peer authorization foundation on real Debian rootfs: OK');
+          "
+          test "$(sudo stat -c '%u:%a' "$ROOTFS/usr/libexec/swir/swir-peer-authorization-broker")" = '0:755'
+          test "$(sudo stat -c '%u:%a' "$ROOTFS/usr/lib/systemd/system/swir-peer-authorization.socket")" = '0:644'
+          test ! -e "$ROOTFS/run/swir/peer-authorization.key"
+          sudo systemd-analyze --root="$ROOTFS" verify swir-peer-authorization.socket swir-peer-authorization.service
 
       - name: Verify required host-facing binaries exist in target rootfs
         shell: bash
