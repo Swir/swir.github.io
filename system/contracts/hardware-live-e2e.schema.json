@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://swir.example/contracts/hardware-live-e2e.schema.json",
+  "title": "SWIR Hardware Service Live E2E Evidence 0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "generatedAt", "platform", "architecture", "kernelRelease", "distribution",
+    "inventoryProvider", "sysfsRoot", "readOnly", "devices", "packageManagers",
+    "driverPlanOperations", "driverCenterViolations", "unknownHardwareAutoDownload",
+    "arbitraryDriverUrls", "windowsKernelDriversAsLinuxDrivers", "hardwareQualificationClaim", "passed"
+  ],
+  "properties": {
+    "schema": { "const": "swir.hardware-live-e2e/0.1" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "platform": { "const": "linux" },
+    "architecture": { "type": "string", "minLength": 1, "maxLength": 64 },
+    "kernelRelease": { "type": "string", "minLength": 1, "maxLength": 256 },
+    "distribution": {
+      "type": "object",
+      "required": ["id", "versionId", "prettyName", "family"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "versionId": { "type": ["string", "null"], "maxLength": 128 },
+        "prettyName": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "family": { "type": "string", "minLength": 1, "maxLength": 64 }
+      },
+      "additionalProperties": false
+    },
+    "inventoryProvider": { "const": "linux-sysfs" },
+    "sysfsRoot": { "const": "/sys" },
+    "readOnly": { "const": true },
+    "devices": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total", "pci", "usb", "loadedDrivers", "unbound", "catalogMatched"],
+      "properties": {
+        "total": { "type": "integer", "minimum": 1 },
+        "pci": { "type": "integer", "minimum": 1 },
+        "usb": { "type": "integer", "minimum": 0 },
+        "loadedDrivers": { "type": "integer", "minimum": 1 },
+        "unbound": { "type": "integer", "minimum": 0 },
+        "catalogMatched": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "packageManagers": {
+      "type": "array",
+      "items": { "type": "string", "enum": ["apt", "dnf", "rpm-ostree", "pacman", "zypper"] },
+      "uniqueItems": true
+    },
+    "driverPlanOperations": { "type": "integer", "minimum": 0 },
+    "driverCenterViolations": { "const": 0 },
+    "unknownHardwareAutoDownload": { "const": false },
+    "arbitraryDriverUrls": { "const": false },
+    "windowsKernelDriversAsLinuxDrivers": { "const": false },
+    "hardwareQualificationClaim": { "const": false },
+    "passed": { "const": true }
+  }
+}

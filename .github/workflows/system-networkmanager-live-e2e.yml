@@ -1,0 +1,81 @@
+name: System NetworkManager Live E2E
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'system/network/**'
+      - 'system/security/polkit-network-authorization-broker.mjs'
+      - 'system/security/org.swir.system.network.policy'
+      - 'system/contracts/networkmanager-live-e2e.schema.json'
+      - 'system/SWIR-NETWORKMANAGER-LIVE-E2E-0.1.md'
+      - 'SWIR-OS-ARCHITECTURE.md'
+      - '.github/workflows/system-networkmanager-live-e2e.yml'
+  pull_request:
+    paths:
+      - 'system/network/**'
+      - 'system/security/polkit-network-authorization-broker.mjs'
+      - 'system/security/org.swir.system.network.policy'
+      - 'system/contracts/networkmanager-live-e2e.schema.json'
+      - 'system/SWIR-NETWORKMANAGER-LIVE-E2E-0.1.md'
+      - 'SWIR-OS-ARCHITECTURE.md'
+      - '.github/workflows/system-networkmanager-live-e2e.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: system-networkmanager-live-e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  live-networkmanager:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install isolated NetworkManager test dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends network-manager dbus iproute2 util-linux
+      - name: Validate NetworkManager contracts and isolation harness
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check system/network/networkmanager-service.mjs
+          node --check system/network/networkmanager-live-e2e.mjs
+          bash -n system/network/networkmanager-live-e2e.sh
+          python3 -m json.tool system/contracts/networkmanager-live-e2e.schema.json >/dev/null
+          node system/network/networkmanager-service.selftest.mjs
+          node scripts/validate-roadmap-progress.mjs
+          ! grep -E 'curl |wget |--show-secrets|shell: *true' system/network/networkmanager-live-e2e.mjs system/network/networkmanager-live-e2e.sh
+      - name: Exercise real NetworkManager in an isolated network namespace
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo unshare --net --mount --pid --fork --mount-proc \
+            bash system/network/networkmanager-live-e2e.sh "$RUNNER_TEMP/networkmanager-live-e2e.json"
+          sudo chown "$USER:$USER" "$RUNNER_TEMP/networkmanager-live-e2e.json"
+          node - "$RUNNER_TEMP/networkmanager-live-e2e.json" <<'NODE'
+          const fs = require('fs');
+          const e = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+          if (e.schema !== 'swir.networkmanager-live-e2e/0.1' || e.passed !== true) process.exit(2);
+          if (!e.binaryTrusted || e.binaryOwnerUid !== 0 || !e.realNmcliExecution) process.exit(3);
+          if (!e.activationVerified || !e.deactivationVerified || !e.authorizationPlanDigestBound) process.exit(4);
+          if (e.secretsExposed || e.rawArgumentsExposed || e.arbitraryProfileCreationExposed) process.exit(5);
+          if (e.externalNetworkRequired || e.hostNetworkMutationClaim) process.exit(6);
+          NODE
+      - name: Upload NetworkManager evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: swir-networkmanager-live-e2e-${{ github.run_id }}
+          path: ${{ runner.temp }}/networkmanager-live-e2e.json
+          if-no-files-found: warn
+          retention-days: 7
