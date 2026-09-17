@@ -1,0 +1,20 @@
+[Unit]
+Description=SWIR System Edition disposable QEMU boot smoke probe
+Documentation=https://github.com/Swir/swir.github.io
+After=dbus.service systemd-logind.service NetworkManager.service swir-peer-authorization.socket
+Wants=dbus.service systemd-logind.service NetworkManager.service swir-peer-authorization.socket
+ConditionPathExists=/usr/libexec/swir/swir-qemu-boot-smoke
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /usr/libexec/swir/swir-qemu-boot-smoke
+TimeoutStartSec=45s
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectHome=yes
+ProtectSystem=strict
+ReadWritePaths=/run/swir
+RestrictAddressFamilies=AF_UNIX AF_NETLINK
+
+[Install]
+WantedBy=multi-user.target
