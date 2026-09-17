@@ -11,6 +11,7 @@ on:
       - 'system/image/system-image-readiness*'
       - 'system/image/system-image-provisioning*'
       - 'system/image/system-peer-authorization-provisioning.mjs'
+      - 'system/validate-system-contracts.mjs'
       - 'system/ipc/**'
       - 'system/security/org.swir.system.*.policy'
       - 'system/contracts/system-base-image-profile.schema.json'
@@ -26,6 +27,7 @@ on:
       - 'system/image/system-image-readiness*'
       - 'system/image/system-image-provisioning*'
       - 'system/image/system-peer-authorization-provisioning.mjs'
+      - 'system/validate-system-contracts.mjs'
       - 'system/ipc/**'
       - 'system/security/org.swir.system.*.policy'
       - 'system/contracts/system-base-image-profile.schema.json'
@@ -56,12 +58,14 @@ jobs:
           node --check system/image/system-base-vm-contract.selftest.mjs
           node --check system/image/system-image-readiness.mjs
           node --check system/image/system-image-readiness.selftest.mjs
+          node --check system/validate-system-contracts.mjs
           node system/image/validate-debian13-base-image-profile.mjs
           node system/image/system-base-vm-contract.selftest.mjs
           node system/image/system-image-readiness.selftest.mjs
+          node system/validate-system-contracts.mjs
           node -e "for(const p of ['system/image/debian13-base-image-profile.json','system/contracts/system-base-image-profile.schema.json','system/contracts/system-image-readiness.schema.json']) JSON.parse(require('fs').readFileSync(p,'utf8')); console.log('Debian/System image contracts: OK')"
           bash -n system/e2e/debian13-direct-kernel-vm-e2e.sh
-      - name: Guard base-image security policy
+      - name: Guard base-image security and runtime policy
         shell: bash
         run: |
           grep -F 'https://deb.debian.org/debian' system/image/debian13-base-image-profile.json >/dev/null
@@ -70,6 +74,8 @@ jobs:
           grep -F '"bootableImageClaim": false' system/image/debian13-base-image-profile.json >/dev/null
           grep -F '"bootloaderE2EClaim": false' system/image/debian13-base-image-profile.json >/dev/null
           grep -F "'systemd-session-manager'" system/image/system-image-readiness.mjs >/dev/null
+          grep -F 'chmod 0755 "$MOUNT_DIR"' system/e2e/debian13-direct-kernel-vm-e2e.sh >/dev/null
+          grep -F "'0:0:755'" system/e2e/debian13-direct-kernel-vm-e2e.sh >/dev/null
           ! grep -E 'qemu-system-x86_64.*-net (nic|user|tap|bridge)|curl |wget ' system/e2e/debian13-direct-kernel-vm-e2e.sh
 
   boot-e2e:
