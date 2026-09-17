@@ -33,6 +33,18 @@ done
 [[ -f "$REPO_POLICY" && ! -L "$REPO_POLICY" ]] || { echo "repository trust policy missing" >&2; exit 5; }
 [[ "$(dpkg --print-architecture)" == "amd64" ]] || { echo "current VM lane is native amd64 only" >&2; exit 6; }
 
+mapfile -t OPTIONAL_PACKAGES < <(node - "$PROFILE" <<'NODE'
+const fs = require('fs');
+const profile = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+if (profile?.schema !== 'swir.system-base-profile/0.1' || profile?.id !== 'debian-13-trixie') process.exit(2);
+for (const name of profile.optionalPackages || []) {
+  if (typeof name !== 'string' || !/^[a-z0-9][a-z0-9+.-]*$/.test(name)) process.exit(3);
+  process.stdout.write(`${name}\n`);
+}
+NODE
+)
+[[ ${#OPTIONAL_PACKAGES[@]} -gt 0 ]] || { echo "selected Debian profile has no validated optional packages" >&2; exit 6; }
+
 rm -rf "$WORK_ROOT"
 install -d -m 0700 "$WORK_ROOT" "$ARTIFACT_DIR" "$ROOTFS" "$MOUNT_DIR"
 mounted=0
@@ -65,7 +77,7 @@ exit 101
 POLICY
 chmod 0755 "$ROOTFS/usr/sbin/policy-rc.d"
 chroot "$ROOTFS" /usr/bin/env DEBIAN_FRONTEND=noninteractive apt-get update
-chroot "$ROOTFS" /usr/bin/env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends nodejs flatpak wine64
+chroot "$ROOTFS" /usr/bin/env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends nodejs "${OPTIONAL_PACKAGES[@]}"
 chroot "$ROOTFS" /usr/bin/systemd-machine-id-setup
 
 NODE_BIN="$(command -v node)"
@@ -110,7 +122,7 @@ systemctl is-active --quiet swir-peer-authorization.socket || fail peer-authoriz
 /usr/bin/nmcli -t general status >/dev/null || fail nmcli
 [ -x /usr/bin/fwupdmgr ] || fail fwupd-binary
 [ -x /usr/bin/flatpak ] || fail flatpak-binary
-([ -x /usr/bin/wine ] || [ -x /usr/bin/wine64 ]) || fail wine-binary
+[ -x /usr/bin/wine ] || fail wine-binary
 uname -r > "$KERNEL"
 printf 'PASS\n' > "$STATUS"
 serial 'SWIR_VM_E2E_PASS debian=13 direct-kernel=true network=disabled'
