@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This gate verifies the System Edition `NetworkManagerService` against a real distro NetworkManager daemon and the production `/usr/bin/nmcli` client. The daemon is started inside a private Linux network + mount + PID namespace with a dummy interface and tmpfs-backed runtime/state directories, so the test does not alter the CI host network or require external connectivity.
+This gate verifies the System Edition `NetworkManagerService` against a real distro NetworkManager daemon and the production `/usr/bin/nmcli` client. The daemon is started inside a private Linux network + mount + PID namespace with an isolated veth pair and tmpfs-backed runtime/state directories, so the test does not alter the CI host network or require external connectivity.
 
 The integration remains deliberately narrower than exposing `nmcli` directly. Applications receive normalized inventory and can only request activation/deactivation of an already saved profile through a structured, digest-bound plan and authorization boundary.
 
@@ -13,7 +13,7 @@ private Linux network namespace
         |
         +--> private /run + D-Bus system bus
         +--> private NetworkManager state
-        +--> dummy interface swir0
+        +--> isolated veth interface swir0
         +--> saved test profile
         |
         v
@@ -39,7 +39,7 @@ SWIR NetworkManagerService
 
 - The workflow creates a private network namespace; no physical or host interface is modified.
 - `/run`, `/var/lib/NetworkManager` and `/etc/NetworkManager/system-connections` are tmpfs mounts visible only inside the mount namespace.
-- The test profile uses a dummy interface, has no IPv4/IPv6 addressing, and requires no external network.
+- The test profile uses one side of a veth pair, has no IPv4/IPv6 addressing, and requires no external network. The peer stays inside the same private namespace.
 - The production service remains pinned to `/usr/bin/nmcli`, requires a trusted root-owned executable, uses `execFile` with `shell=false`, bounded output and a restricted environment.
 - The service does not expose raw nmcli arguments, secret display, arbitrary profile creation or arbitrary connection UUIDs outside the structured operation.
 - Mutations are bound to the exact plan digest. Production Polkit/session authorization is tested by the existing security-boundary and peer-authorization suites; this lane isolates and proves the real NetworkManager execution/postcondition side of that boundary.
