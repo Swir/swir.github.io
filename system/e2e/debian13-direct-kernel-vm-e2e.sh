@@ -36,8 +36,15 @@ node "$REPO_ROOT/system/image/validate-debian13-base-image-profile.mjs"
 rm -rf "$WORK_ROOT"
 install -d -m 0700 "$WORK_ROOT" "$ARTIFACT_DIR" "$ROOTFS" "$MOUNT_DIR"
 mounted=0
+rootfs_mounts=0
 cleanup() {
   set +e
+  if [[ $rootfs_mounts -eq 1 ]]; then
+    umount -R "$ROOTFS/dev" 2>/dev/null || true
+    umount -R "$ROOTFS/sys" 2>/dev/null || true
+    umount "$ROOTFS/proc" 2>/dev/null || true
+    rootfs_mounts=0
+  fi
   if [[ $mounted -eq 1 ]]; then umount "$MOUNT_DIR" 2>/dev/null || true; fi
 }
 trap cleanup EXIT
@@ -64,19 +71,9 @@ mount --make-rslave "$ROOTFS/sys"
 mount --rbind /dev "$ROOTFS/dev"
 mount --make-rslave "$ROOTFS/dev"
 rootfs_mounts=1
-cleanup_rootfs_mounts() {
-  set +e
-  if [[ ${rootfs_mounts:-0} -eq 1 ]]; then
-    umount -R "$ROOTFS/dev" 2>/dev/null || true
-    umount -R "$ROOTFS/sys" 2>/dev/null || true
-    umount "$ROOTFS/proc" 2>/dev/null || true
-    rootfs_mounts=0
-  fi
-}
-trap 'cleanup_rootfs_mounts; cleanup' EXIT
 
 mapfile -t PACKAGES < <(node -e "const p=require(process.argv[1]); for (const x of [...p.requiredPackages,...p.hybridFoundationPackages,p.kernelPackages.amd64]) console.log(x)" "$PROFILE")
-PACKAGES+=(debian-archive-keyring openssh-client python3)
+PACKAGES+=(debian-archive-keyring python3)
 chroot "$ROOTFS" /usr/bin/env DEBIAN_FRONTEND=noninteractive apt-get update
 chroot "$ROOTFS" /usr/bin/env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends "${PACKAGES[@]}"
 
@@ -147,14 +144,15 @@ TimeoutStartSec=90
 [Install]
 WantedBy=multi-user.target
 EOF
-install -d -m 0755 "$ROOTFS/etc/systemd/system/multi-user.target.wants"
+install -d -m 0755 "$ROOTFS/etc/systemd/system/multi-user.target.wants" "$ROOTFS/etc/systemd/system/sockets.target.wants"
 ln -sf ../swir-vm-e2e.service "$ROOTFS/etc/systemd/system/multi-user.target.wants/swir-vm-e2e.service"
-ln -sf /usr/lib/systemd/system/swir-peer-authorization.socket "$ROOTFS/etc/systemd/system/sockets.target.wants/swir-peer-authorization.socket" || true
+ln -sf /usr/lib/systemd/system/swir-peer-authorization.socket "$ROOTFS/etc/systemd/system/sockets.target.wants/swir-peer-authorization.socket"
 printf '/dev/vda / ext4 defaults 0 1\n' > "$ROOTFS/etc/fstab"
 echo swir-e2e > "$ROOTFS/etc/hostname"
 rm -f "$ROOTFS/usr/sbin/policy-rc.d"
 chroot "$ROOTFS" apt-get clean
-cleanup_rootfs_mounts
+cleanup
+trap cleanup EXIT
 
 KERNEL="$(find "$ROOTFS/boot" -maxdepth 1 -type f -name 'vmlinuz-*' | sort -V | tail -n1)"
 INITRD="$(find "$ROOTFS/boot" -maxdepth 1 -type f -name 'initrd.img-*' | sort -V | tail -n1)"
