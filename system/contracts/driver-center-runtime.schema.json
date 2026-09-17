@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://swir.example/contracts/driver-center-runtime.schema.json",
+  "title": "SWIR Driver Center Runtime 0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "generatedAt", "mode", "readOnly", "autoMutation", "hardware", "driverPlan", "firmware", "policy", "devices", "operations", "violations", "passed"],
+  "properties": {
+    "schema": { "const": "swir.driver-center-runtime/0.1" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "mode": { "const": "diagnostics" },
+    "readOnly": { "const": true },
+    "autoMutation": { "const": false },
+    "hardware": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["inventoryProvider", "platform", "architecture", "kernelRelease", "distribution", "total", "pci", "usb", "loadedDrivers", "unboundDrivers", "catalogMatched", "healthy", "attention", "unknown"],
+      "properties": {
+        "inventoryProvider": { "const": "linux-sysfs" },
+        "platform": { "type": ["string", "null"] },
+        "architecture": { "type": ["string", "null"] },
+        "kernelRelease": { "type": ["string", "null"] },
+        "distribution": { "type": ["object", "null"] },
+        "total": { "type": "integer", "minimum": 0 },
+        "pci": { "type": "integer", "minimum": 0 },
+        "usb": { "type": "integer", "minimum": 0 },
+        "loadedDrivers": { "type": "integer", "minimum": 0 },
+        "unboundDrivers": { "type": "integer", "minimum": 0 },
+        "catalogMatched": { "type": "integer", "minimum": 0 },
+        "healthy": { "type": "integer", "minimum": 0 },
+        "attention": { "type": "integer", "minimum": 0 },
+        "unknown": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "driverPlan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "readOnly", "autoExecutable", "operations", "privilegedOperations", "sourceSupportedRollback", "requiredBeforeApplyRollback"],
+      "properties": {
+        "mode": { "const": "preview" },
+        "readOnly": { "const": true },
+        "autoExecutable": { "const": false },
+        "operations": { "type": "integer", "minimum": 0 },
+        "privilegedOperations": { "type": "integer", "minimum": 0 },
+        "sourceSupportedRollback": { "type": "integer", "minimum": 0 },
+        "requiredBeforeApplyRollback": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "firmware": {
+      "type": "object",
+      "required": ["provider", "available", "binaryTrusted", "inventoryReady", "candidates", "ignoredNonLvfsCandidates", "mutationAuthorized"],
+      "properties": {
+        "provider": { "const": "fwupd-lvfs" },
+        "available": { "type": "boolean" },
+        "binaryTrusted": { "type": "boolean" },
+        "inventoryReady": { "type": "boolean" },
+        "candidates": { "type": "integer", "minimum": 0 },
+        "ignoredNonLvfsCandidates": { "type": "integer", "minimum": 0 },
+        "updates": { "type": "array" },
+        "errorCode": { "type": ["string", "null"] },
+        "mutationAuthorized": { "const": false }
+      },
+      "additionalProperties": false
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["unknownHardwareAutoDownload", "arbitraryDriverUrls", "windowsKernelDriversAsLinuxDrivers", "signatureVerificationRequiredForRepositories", "privilegedMutationRequiresPlan", "privilegedMutationRequiresJournal"],
+      "properties": {
+        "unknownHardwareAutoDownload": { "const": false },
+        "arbitraryDriverUrls": { "const": false },
+        "windowsKernelDriversAsLinuxDrivers": { "const": false },
+        "signatureVerificationRequiredForRepositories": { "const": true },
+        "privilegedMutationRequiresPlan": { "const": true },
+        "privilegedMutationRequiresJournal": { "const": true }
+      }
+    },
+    "devices": { "type": "array" },
+    "operations": { "type": "array" },
+    "violations": { "type": "array", "maxItems": 0 },
+    "passed": { "const": true }
+  }
+}

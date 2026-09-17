@@ -1,6 +1,6 @@
 {
   "schema": "swir.hardware-catalog/0.1",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "entries": [
     {
       "id": "usb.logitech.receiver.c534",
@@ -70,6 +70,25 @@
       ]
     },
     {
+      "id": "pci.virtio.block",
+      "match": {
+        "bus": "pci",
+        "ids": ["pci:1af4:1001", "pci:1af4:1042"]
+      },
+      "support": {
+        "kernelModules": ["virtio-pci", "virtio_pci", "virtio_blk"],
+        "firmware": [],
+        "packages": []
+      },
+      "sources": [
+        {
+          "class": "kernel-in-tree",
+          "ref": "linux:drivers/block/virtio_blk",
+          "rollback": false
+        }
+      ]
+    },
+    {
       "id": "pci.nvidia.2684",
       "match": {
         "bus": "pci",
@@ -89,6 +108,7 @@
         {
           "class": "vendor-official-repository",
           "ref": "vendor:nvidia-linux-driver-repository",
+          "repositoryId": "nvidia-official-linux-driver",
           "rollback": true
         }
       ]
