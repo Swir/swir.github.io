@@ -82,9 +82,9 @@ jobs:
           sudo "$NODE_BIN" system/image/system-image-provisioning-cli.mjs verify \
             --rootfs "$ROOTFS" --production --compact > "$RUNNER_TEMP/verify.json"
           node -e "for(const f of process.argv.slice(1)){const r=JSON.parse(require('fs').readFileSync(f,'utf8')); if(r.schema!=='swir.system-image-provisioning-report/0.1'||r.ready!==true||r.production!==true||r.bootableImageClaim!==false||r.blockers.length) process.exit(1)} console.log('Production rootfs stage/verify: OK')" "$RUNNER_TEMP/stage.json" "$RUNNER_TEMP/verify.json"
-          test "$(stat -c '%u:%a' "$ROOTFS/var/lib/swir/security/catalog-trust")" = '0:700'
-          test "$(stat -c '%u:%a' "$ROOTFS/etc/swir/repository-trust-policy.json")" = '0:600'
-          test "$(stat -c '%u:%a' "$ROOTFS/usr/share/polkit-1/actions/org.swir.system.packages.policy")" = '0:644'
+          test "$(sudo stat -c '%u:%a' "$ROOTFS/var/lib/swir/security/catalog-trust")" = '0:700'
+          test "$(sudo stat -c '%u:%a' "$ROOTFS/etc/swir/repository-trust-policy.json")" = '0:600'
+          test "$(sudo stat -c '%u:%a' "$ROOTFS/usr/share/polkit-1/actions/org.swir.system.packages.policy")" = '0:644'
 
       - name: Verify production tamper detection
         shell: bash
