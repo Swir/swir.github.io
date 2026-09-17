@@ -14,6 +14,7 @@ on:
       - 'system/image/validate-direct-kernel-boot-evidence.mjs'
       - 'system/contracts/system-image-readiness.schema.json'
       - 'system/contracts/system-direct-kernel-boot-e2e.schema.json'
+      - 'system/runtime/windows-compat-runtime-registry.mjs'
       - 'system/ipc/swir-peer-authorization*'
       - 'system/ipc/90-swir-peer-authorization.preset'
       - 'system/security/org.swir.system.*.policy'
@@ -31,6 +32,7 @@ on:
       - 'system/image/validate-direct-kernel-boot-evidence.mjs'
       - 'system/contracts/system-image-readiness.schema.json'
       - 'system/contracts/system-direct-kernel-boot-e2e.schema.json'
+      - 'system/runtime/windows-compat-runtime-registry.mjs'
       - 'system/ipc/swir-peer-authorization*'
       - 'system/ipc/90-swir-peer-authorization.preset'
       - 'system/security/org.swir.system.*.policy'
@@ -61,11 +63,13 @@ jobs:
           node --check system/image/system-image-readiness.mjs
           node --check system/image/system-image-readiness.selftest.mjs
           node --check system/image/validate-direct-kernel-boot-evidence.mjs
+          node --check system/runtime/windows-compat-runtime-registry.mjs
           node system/image/system-image-readiness.selftest.mjs
           python3 -m json.tool system/contracts/system-image-readiness.schema.json >/dev/null
           python3 -m json.tool system/contracts/system-direct-kernel-boot-e2e.schema.json >/dev/null
           bash -n system/e2e/debian13-direct-kernel-vm-e2e.sh
           grep -F "'systemd-session-manager'" system/image/system-image-readiness.mjs >/dev/null
+          grep -F 'wineRuntimeRegistryPassed' system/image/validate-direct-kernel-boot-evidence.mjs >/dev/null
           grep -F 'bootableImageClaim: false' system/e2e/debian13-direct-kernel-vm-e2e.sh >/dev/null
           grep -F 'bootloaderE2EClaim: false' system/e2e/debian13-direct-kernel-vm-e2e.sh >/dev/null
           ! grep -E 'qemu-system-x86_64.*-net (nic|user|tap|bridge)|curl |wget |--no-check-gpg|AllowUnauthenticated|trusted=yes' system/e2e/debian13-direct-kernel-vm-e2e.sh

@@ -12,11 +12,13 @@ PROFILE="$REPO_ROOT/system/image/system-base-debian-trixie.json"
 REPO_POLICY="$REPO_ROOT/system/image/debian-trixie-repository-trust-policy.json"
 WORK_ROOT="${SWIR_VM_WORK_ROOT:-/tmp/swir-debian13-direct-kernel-e2e}"
 ARTIFACT_DIR="${SWIR_VM_ARTIFACT_DIR:-$WORK_ROOT/artifacts}"
+BOOT_DIR="$WORK_ROOT/boot"
 ROOTFS="$WORK_ROOT/rootfs"
 DISK="$WORK_ROOT/swir-system-e2e.ext4"
 MOUNT_DIR="$WORK_ROOT/disk-mount"
 SERIAL_LOG="$ARTIFACT_DIR/serial.log"
 READINESS_OUT="$ARTIFACT_DIR/readiness.json"
+COMPAT_OUT="$ARTIFACT_DIR/compat-runtime-inventory.json"
 BOOT_EVIDENCE_OUT="$ARTIFACT_DIR/direct-kernel-boot-evidence.json"
 PROVISION_OUT="$ARTIFACT_DIR/provisioning.json"
 PEER_PROVISION_OUT="$ARTIFACT_DIR/peer-authorization-provisioning.json"
@@ -46,7 +48,7 @@ NODE
 [[ ${#OPTIONAL_PACKAGES[@]} -gt 0 ]] || { echo "selected Debian profile has no validated optional packages" >&2; exit 6; }
 
 rm -rf "$WORK_ROOT"
-install -d -m 0700 "$WORK_ROOT" "$ARTIFACT_DIR" "$ROOTFS" "$MOUNT_DIR"
+install -d -m 0700 "$WORK_ROOT" "$ARTIFACT_DIR" "$BOOT_DIR" "$ROOTFS" "$MOUNT_DIR"
 mounted=0
 rootfs_mounts=0
 cleanup() {
@@ -92,14 +94,16 @@ process.stdout.write(`${JSON.stringify(report)}\n`);
 if (!report.ready || report.bootableImageClaim !== false || report.runtimeKeyEmbeddedInImage !== false) process.exit(2);
 NODE
 
-install -d -m 0755 "$ROOTFS/opt/swir/system/image" "$ROOTFS/usr/local/lib/swir" "$ROOTFS/var/lib/swir/vm-e2e"
+install -d -m 0755 "$ROOTFS/opt/swir/system/image" "$ROOTFS/opt/swir/system/runtime" "$ROOTFS/usr/local/lib/swir" "$ROOTFS/var/lib/swir/vm-e2e"
 install -m 0644 "$REPO_ROOT/system/image/system-image-readiness.mjs" "$ROOTFS/opt/swir/system/image/system-image-readiness.mjs"
 install -m 0755 "$REPO_ROOT/system/image/system-image-readiness-probe.mjs" "$ROOTFS/opt/swir/system/image/system-image-readiness-probe.mjs"
+install -m 0644 "$REPO_ROOT/system/runtime/windows-compat-runtime-registry.mjs" "$ROOTFS/opt/swir/system/runtime/windows-compat-runtime-registry.mjs"
 
 cat > "$ROOTFS/usr/local/lib/swir/vm-e2e-run" <<'GUEST'
 #!/bin/sh
 set -eu
 OUT=/var/lib/swir/vm-e2e/readiness.json
+COMPAT=/var/lib/swir/vm-e2e/compat-runtime-inventory.json
 STATUS=/var/lib/swir/vm-e2e/status.txt
 KERNEL=/var/lib/swir/vm-e2e/kernel-release.txt
 serial() { printf '%s\n' "$*" > /dev/ttyS0; }
@@ -123,9 +127,17 @@ systemctl is-active --quiet swir-peer-authorization.socket || fail peer-authoriz
 [ -x /usr/bin/fwupdmgr ] || fail fwupd-binary
 [ -x /usr/bin/flatpak ] || fail flatpak-binary
 [ -x /usr/bin/wine ] || fail wine-binary
+node --input-type=module > "$COMPAT" <<'NODE' || fail wine-runtime-registry
+import { WindowsCompatibilityRuntimeRegistry } from 'file:///opt/swir/system/runtime/windows-compat-runtime-registry.mjs';
+const registry = new WindowsCompatibilityRuntimeRegistry();
+const inventory = registry.discover();
+const wine = registry.select('swir.compat.wine');
+if (!wine.healthy || wine.provider !== 'swir.compat.wine' || wine.trust?.rootOwned !== true || wine.trust?.writableByGroupOrWorld !== false || typeof wine.version !== 'string' || wine.version.length === 0) process.exit(2);
+process.stdout.write(`${JSON.stringify(inventory)}\n`);
+NODE
 uname -r > "$KERNEL"
 printf 'PASS\n' > "$STATUS"
-serial 'SWIR_VM_E2E_PASS debian=13 direct-kernel=true network=disabled'
+serial 'SWIR_VM_E2E_PASS debian=13 direct-kernel=true network=disabled wine-registry=true'
 sync
 systemctl --no-block poweroff
 GUEST
@@ -159,9 +171,9 @@ trap cleanup EXIT
 KERNEL="$(find "$ROOTFS/boot" -maxdepth 1 -type f -name 'vmlinuz-*' | sort -V | tail -n1)"
 INITRD="$(find "$ROOTFS/boot" -maxdepth 1 -type f -name 'initrd.img-*' | sort -V | tail -n1)"
 [[ -n "$KERNEL" && -n "$INITRD" ]] || { echo "kernel/initrd missing from composed rootfs" >&2; exit 7; }
-cp "$KERNEL" "$ARTIFACT_DIR/vmlinuz"
-cp "$INITRD" "$ARTIFACT_DIR/initrd.img"
-sha256sum "$ARTIFACT_DIR/vmlinuz" "$ARTIFACT_DIR/initrd.img" > "$ARTIFACT_DIR/kernel-initrd.sha256"
+cp "$KERNEL" "$BOOT_DIR/vmlinuz"
+cp "$INITRD" "$BOOT_DIR/initrd.img"
+sha256sum "$BOOT_DIR/vmlinuz" "$BOOT_DIR/initrd.img" > "$ARTIFACT_DIR/kernel-initrd.sha256"
 
 truncate -s 6G "$DISK"
 mkfs.ext4 -q -F -L SWIR_E2E "$DISK"
@@ -181,7 +193,7 @@ timeout --signal=TERM --kill-after=15s 240s qemu-system-x86_64 \
   -nographic -no-reboot -nodefaults \
   -serial stdio \
   -drive "file=$DISK,format=raw,if=virtio,cache=unsafe" \
-  -kernel "$ARTIFACT_DIR/vmlinuz" -initrd "$ARTIFACT_DIR/initrd.img" \
+  -kernel "$BOOT_DIR/vmlinuz" -initrd "$BOOT_DIR/initrd.img" \
   -append 'root=/dev/vda rw console=ttyS0,115200n8 systemd.unit=multi-user.target net.ifnames=0' \
   2>&1 | tee "$SERIAL_LOG"
 qemu_status=${PIPESTATUS[0]}
@@ -190,7 +202,7 @@ if [[ $qemu_status -ne 0 && $qemu_status -ne 124 ]]; then
   echo "QEMU exited unexpectedly: $qemu_status" >&2
   exit 8
 fi
-grep -F 'SWIR_VM_E2E_PASS debian=13 direct-kernel=true network=disabled' "$SERIAL_LOG" >/dev/null || {
+grep -F 'SWIR_VM_E2E_PASS debian=13 direct-kernel=true network=disabled wine-registry=true' "$SERIAL_LOG" >/dev/null || {
   echo "guest did not emit SWIR_VM_E2E_PASS" >&2
   tail -n 240 "$SERIAL_LOG" >&2 || true
   exit 9
@@ -199,17 +211,21 @@ grep -F 'SWIR_VM_E2E_PASS debian=13 direct-kernel=true network=disabled' "$SERIA
 mount -o loop,ro "$DISK" "$MOUNT_DIR"
 mounted=1
 cp "$MOUNT_DIR/var/lib/swir/vm-e2e/readiness.json" "$READINESS_OUT"
+cp "$MOUNT_DIR/var/lib/swir/vm-e2e/compat-runtime-inventory.json" "$COMPAT_OUT"
 cp "$MOUNT_DIR/var/lib/swir/vm-e2e/status.txt" "$ARTIFACT_DIR/status.txt"
 cp "$MOUNT_DIR/var/lib/swir/vm-e2e/kernel-release.txt" "$ARTIFACT_DIR/kernel-release.txt"
 umount "$MOUNT_DIR"
 mounted=0
 
 grep -Fx 'PASS' "$ARTIFACT_DIR/status.txt" >/dev/null
-"$NODE_BIN" - "$READINESS_OUT" "$ARTIFACT_DIR/kernel-release.txt" "$BOOT_EVIDENCE_OUT" <<'NODE'
+"$NODE_BIN" - "$READINESS_OUT" "$COMPAT_OUT" "$ARTIFACT_DIR/kernel-release.txt" "$BOOT_EVIDENCE_OUT" <<'NODE'
 const fs = require('fs');
-const [readinessPath, kernelPath, outputPath] = process.argv.slice(2);
+const [readinessPath, compatPath, kernelPath, outputPath] = process.argv.slice(2);
 const r = JSON.parse(fs.readFileSync(readinessPath, 'utf8'));
+const compat = JSON.parse(fs.readFileSync(compatPath, 'utf8'));
 if (r.distribution?.id !== 'debian' || r.distribution?.versionId !== '13' || !r.summary?.systemImageReadyForE2E || !r.summary?.sessionReady) process.exit(2);
+const wine = compat.runtimes?.find(runtime => runtime.provider === 'swir.compat.wine' && runtime.healthy === true && runtime.trust?.rootOwned === true && runtime.trust?.writableByGroupOrWorld === false);
+if (!wine || typeof wine.version !== 'string' || wine.version.length === 0) process.exit(3);
 const report = {
   schema: 'swir.system-direct-kernel-boot-e2e/0.1',
   generatedAt: new Date().toISOString(),
@@ -223,6 +239,9 @@ const report = {
   networkManagerActive: true,
   peerAuthorizationSocketActive: true,
   readinessPassed: true,
+  wineRuntimeRegistryPassed: true,
+  wineRuntimeProvider: wine.provider,
+  wineRuntimeVersion: wine.version,
   bootableImageClaim: false,
   bootloaderE2EClaim: false,
   secureBootClaim: false,
@@ -233,4 +252,5 @@ NODE
 "$NODE_BIN" "$REPO_ROOT/system/image/validate-direct-kernel-boot-evidence.mjs" "$BOOT_EVIDENCE_OUT"
 
 echo "[SWIR] Debian 13 direct-kernel VM E2E: PASS"
+echo "[SWIR] Managed Wine runtime registry: PASS"
 echo "[SWIR] Bootloader/UEFI, Secure Boot, installer/recovery and physical hardware qualification remain open."
