@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - 'system/security/**'
+      - 'system/network/networkmanager-service.selftest.mjs'
+      - 'system/firmware/fwupd-firmware-transaction-service.selftest.mjs'
       - 'system/contracts/system-authorization-grant.schema.json'
       - 'system/contracts/repository-trust-policy.schema.json'
       - 'system/contracts/repository-trust-proof.schema.json'
@@ -12,6 +14,8 @@ on:
   pull_request:
     paths:
       - 'system/security/**'
+      - 'system/network/networkmanager-service.selftest.mjs'
+      - 'system/firmware/fwupd-firmware-transaction-service.selftest.mjs'
       - 'system/contracts/system-authorization-grant.schema.json'
       - 'system/contracts/repository-trust-policy.schema.json'
       - 'system/contracts/repository-trust-proof.schema.json'
@@ -23,7 +27,7 @@ permissions:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -36,6 +40,8 @@ jobs:
       - name: Check security boundary syntax
         run: |
           node --check system/security/polkit-authorization-broker.mjs
+          node --check system/security/polkit-network-authorization-broker.mjs
+          node --check system/security/polkit-firmware-authorization-broker.mjs
           node --check system/security/polkit-authorization-broker.selftest.mjs
           node --check system/security/distribution-repository-trust.mjs
           node --check system/security/distribution-repository-trust.selftest.mjs
@@ -43,17 +49,38 @@ jobs:
           node --check system/security/system-package-security-boundary.selftest.mjs
           node --check system/security/validate-system-security-boundary.mjs
           node --check system/security/system-security-host-probe.mjs
+          node --check system/network/networkmanager-service.selftest.mjs
+          node --check system/firmware/fwupd-firmware-transaction-service.selftest.mjs
 
-      - name: Validate policy and contracts
+      - name: Parse all native Polkit policy XML
+        run: |
+          python - <<'PY'
+          import xml.etree.ElementTree as ET
+          for file in (
+              'system/security/org.swir.system.packages.policy',
+              'system/security/org.swir.system.network.policy',
+              'system/security/org.swir.system.firmware.policy',
+          ):
+              ET.parse(file)
+              print('XML OK:', file)
+          PY
+
+      - name: Validate cross-domain policy and contracts
         run: node system/security/validate-system-security-boundary.mjs
 
-      - name: Run Polkit broker self-tests
+      - name: Run package Polkit broker self-tests
         run: node system/security/polkit-authorization-broker.selftest.mjs
+
+      - name: Run network Polkit binding self-tests
+        run: node system/network/networkmanager-service.selftest.mjs
+
+      - name: Run firmware Polkit and recovery self-tests
+        run: node system/firmware/fwupd-firmware-transaction-service.selftest.mjs
 
       - name: Run distribution repository trust self-tests
         run: node system/security/distribution-repository-trust.selftest.mjs
 
-      - name: Run composed security boundary self-tests
+      - name: Run composed package security boundary self-tests
         run: node system/security/system-package-security-boundary.selftest.mjs
 
       - name: Probe CI host security assumptions read-only
@@ -68,3 +95,9 @@ jobs:
           node -e "JSON.parse(require('fs').readFileSync('system/contracts/repository-trust-policy.schema.json','utf8'))"
           node -e "JSON.parse(require('fs').readFileSync('system/contracts/repository-trust-proof.schema.json','utf8'))"
           node -e "JSON.parse(require('fs').readFileSync('system/security/repository-trust-policy.example.json','utf8'))"
+
+      - name: Guard privileged broker regressions
+        shell: bash
+        run: |
+          ! grep -R --line-number -E 'shell:[[:space:]]*true' system/security/polkit-authorization-broker.mjs system/security/polkit-network-authorization-broker.mjs system/security/polkit-firmware-authorization-broker.mjs
+          ! grep -R --line-number -E '<allow_(any|inactive|active)>[[:space:]]*yes[[:space:]]*</allow_' system/security/org.swir.system.*.policy
