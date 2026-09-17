@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import { spawnSync } from 'node:child_process';
 
 const OPERATIONS = new Set(['install', 'update', 'remove']);
@@ -38,6 +39,52 @@ function validateAppId(value) {
 function validateRemoteId(value) {
   assert(typeof value === 'string' && REMOTE_ID.test(value), 'INVALID_REMOTE_ID', 'Flatpak remote identifier is invalid');
   return value;
+}
+
+function defaultFileProbe(filePath) {
+  const stat = fs.lstatSync(filePath);
+  return {
+    isFile: stat.isFile(),
+    isSymbolicLink: stat.isSymbolicLink(),
+    uid: stat.uid,
+    mode: stat.mode,
+    realpath: fs.realpathSync(filePath)
+  };
+}
+
+function runtimeOptions(timeoutMs) {
+  return {
+    shell: false,
+    encoding: 'utf8',
+    timeout: timeoutMs,
+    maxBuffer: MAX_OUTPUT_BYTES,
+    env: Object.freeze({ PATH: '/usr/bin:/bin', LANG: 'C.UTF-8', LC_ALL: 'C.UTF-8' })
+  };
+}
+
+function verifyFlatpakBinary(fileProbe) {
+  let state;
+  try {
+    state = fileProbe(FLATPAK_BINARY);
+  } catch (error) {
+    fail('FLATPAK_BINARY_UNAVAILABLE', `Trusted Flatpak executable is unavailable: ${error?.message || 'unknown error'}`);
+  }
+  assert(state && state.isFile === true && state.isSymbolicLink !== true, 'FLATPAK_BINARY_UNTRUSTED', 'Flatpak executable must be a regular non-symlink file');
+  assert(state.uid === 0, 'FLATPAK_BINARY_UNTRUSTED', 'Flatpak executable must be root-owned');
+  assert(Number.isInteger(state.mode) && (state.mode & 0o111) !== 0 && (state.mode & 0o022) === 0, 'FLATPAK_BINARY_UNTRUSTED', 'Flatpak executable permissions are unsafe');
+  assert(state.realpath === FLATPAK_BINARY, 'FLATPAK_BINARY_UNTRUSTED', 'Flatpak executable must resolve to the approved system path');
+  return true;
+}
+
+function parseRemoteTrust(stdout, remote) {
+  const wanted = validateRemoteId(remote);
+  for (const line of String(stdout || '').split(/\r?\n/)) {
+    const fields = line.trim().split(/\t+/);
+    if (fields.length < 2 || fields[0] !== wanted) continue;
+    const gpgVerify = String(fields[1] || '').trim().toLowerCase();
+    return { configured: true, gpgVerify: gpgVerify === 'true' || gpgVerify === 'yes' || gpgVerify === '1' };
+  }
+  return { configured: false, gpgVerify: false };
 }
 
 export function validateFlatpakManifest(manifest, { allowlistedRemotes = [] } = {}) {
@@ -85,6 +132,7 @@ export function buildFlatpakUserPlan(operation, manifest, { allowlistedRemotes =
       repositoryId: remote,
       signatureVerificationRequired: true,
       preconfiguredRemoteRequired: true,
+      runtimeRemoteGpgVerificationRequired: true,
       arbitraryRemoteUrlAllowed: false
     }),
     transaction: Object.freeze({
@@ -115,6 +163,8 @@ export function validateFlatpakUserPlan(plan, { allowlistedRemotes = [] } = {}) 
   assert(plan.package?.scope === 'user', 'INVALID_PLAN_SCOPE', 'Flatpak plan must remain user scoped');
   assert(new Set(uniqueStrings(allowlistedRemotes)).has(remote), 'REMOTE_NOT_ALLOWLISTED', 'Flatpak plan remote is not allowlisted');
   assert(plan.trust?.signatureVerificationRequired === true, 'SIGNATURE_REQUIRED', 'Flatpak plan must require signature verification');
+  assert(plan.trust?.preconfiguredRemoteRequired === true, 'REMOTE_CONFIGURATION_REQUIRED', 'Flatpak plan must require a preconfigured remote');
+  assert(plan.trust?.runtimeRemoteGpgVerificationRequired === true, 'REMOTE_GPG_POLICY_REQUIRED', 'Flatpak plan must require runtime remote GPG verification');
   assert(plan.trust?.arbitraryRemoteUrlAllowed === false, 'REMOTE_URL_POLICY_VIOLATION', 'Flatpak plan cannot allow arbitrary remote URLs');
   assert(plan.transaction?.requiresPrivilege === false, 'PRIVILEGE_POLICY_VIOLATION', 'Flatpak user plan cannot request privilege');
   assert(plan.transaction?.shellAllowed === false, 'SHELL_POLICY_VIOLATION', 'Flatpak user plan cannot enable shell execution');
@@ -127,26 +177,38 @@ export function validateFlatpakUserPlan(plan, { allowlistedRemotes = [] } = {}) 
 
 export class GuardedFlatpakUserExecutor {
   #runner;
+  #fileProbe;
   #allowlistedRemotes;
   #timeoutMs;
 
-  constructor({ runner = spawnSync, allowlistedRemotes = [], timeoutMs = 120000 } = {}) {
+  constructor({ runner = spawnSync, fileProbe = defaultFileProbe, allowlistedRemotes = [], timeoutMs = 120000 } = {}) {
     assert(typeof runner === 'function', 'INVALID_RUNNER', 'Flatpak executor runner must be a function');
+    assert(typeof fileProbe === 'function', 'INVALID_FILE_PROBE', 'Flatpak fileProbe must be a function');
     assert(Number.isInteger(timeoutMs) && timeoutMs >= 1000 && timeoutMs <= 900000, 'INVALID_TIMEOUT', 'Flatpak executor timeout is outside the allowed range');
     this.#runner = runner;
+    this.#fileProbe = fileProbe;
     this.#allowlistedRemotes = uniqueStrings(allowlistedRemotes);
     this.#timeoutMs = timeoutMs;
   }
 
+  probe(remote) {
+    const remoteId = validateRemoteId(remote);
+    assert(this.#allowlistedRemotes.includes(remoteId), 'REMOTE_NOT_ALLOWLISTED', 'Flatpak remote is not allowlisted');
+    verifyFlatpakBinary(this.#fileProbe);
+    const args = ['--user', 'remotes', '--columns=name,gpg-verify'];
+    const result = this.#runner(FLATPAK_BINARY, args, runtimeOptions(Math.min(this.#timeoutMs, 20000)));
+    if (result?.error) fail('FLATPAK_REMOTE_PROBE_FAILED', `Flatpak remote probe failed: ${result.error.message || 'unknown error'}`);
+    assert(Number.isInteger(result?.status) && result.status === 0, 'FLATPAK_REMOTE_PROBE_FAILED', 'Flatpak remote probe did not complete successfully');
+    const trust = parseRemoteTrust(result.stdout, remoteId);
+    assert(trust.configured, 'FLATPAK_REMOTE_NOT_CONFIGURED', 'Allowlisted Flatpak remote is not configured for the current user');
+    assert(trust.gpgVerify, 'FLATPAK_REMOTE_GPG_REQUIRED', 'Configured Flatpak remote does not enforce GPG verification');
+    return Object.freeze({ schema: 'swir.flatpak-runtime-trust/0.1', binary: FLATPAK_BINARY, trustedBinary: true, remote: remoteId, configured: true, gpgVerify: true });
+  }
+
   execute(plan) {
     validateFlatpakUserPlan(plan, { allowlistedRemotes: this.#allowlistedRemotes });
-    const result = this.#runner(FLATPAK_BINARY, [...plan.command.args], {
-      shell: false,
-      encoding: 'utf8',
-      timeout: this.#timeoutMs,
-      maxBuffer: MAX_OUTPUT_BYTES,
-      env: Object.freeze({ PATH: '/usr/bin:/bin', LANG: 'C.UTF-8', LC_ALL: 'C.UTF-8' })
-    });
+    const runtimeTrust = this.probe(plan.package.remote);
+    const result = this.#runner(FLATPAK_BINARY, [...plan.command.args], runtimeOptions(this.#timeoutMs));
     if (result?.error) fail('FLATPAK_EXECUTION_ERROR', `Flatpak execution failed: ${result.error.message || 'unknown error'}`);
     assert(Number.isInteger(result?.status), 'FLATPAK_NO_STATUS', 'Flatpak execution did not return an exit status');
     assert(result.status === 0, 'FLATPAK_COMMAND_FAILED', `Flatpak operation failed with exit status ${result.status}`);
@@ -159,7 +221,8 @@ export class GuardedFlatpakUserExecutor {
       remote: plan.package.remote,
       scope: 'user',
       state: 'committed',
-      exitStatus: result.status
+      exitStatus: result.status,
+      runtimeTrust
     });
   }
 }
@@ -184,6 +247,8 @@ export class FlatpakUserPackageAdapter {
       scope: 'user',
       privilegedMutation: false,
       allowlistedRemotes: [...this.#allowlistedRemotes],
+      remoteTrustVerification: 'preconfigured-gpg-verified-at-execution',
+      binaryTrustVerification: 'root-owned-fixed-path-at-execution',
       arbitraryRemoteUrlAllowed: false,
       shellAllowed: false
     });
@@ -216,6 +281,8 @@ export const FlatpakUserPackagePolicy = Object.freeze({
   arbitraryRemoteUrls: false,
   preconfiguredAllowlistedRemoteRequired: true,
   signatureVerificationRequired: true,
+  runtimeRemoteGpgVerificationRequired: true,
+  binaryTrustRequired: true,
   shellAllowed: false,
   privilegedMutation: false,
   swirJournalRequired: false,
