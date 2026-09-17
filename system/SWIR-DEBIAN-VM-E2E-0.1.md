@@ -14,14 +14,19 @@ The machine-readable source of truth is `system/image/debian13-base-image-profil
 
 The composed rootfs therefore contains the real SWIR Polkit policies, persistent trust/journal directories, peer authorization socket/service, and the current System Image Readiness probe. Before boot, the harness creates a plain ext4 disk image and copies the rootfs into it.
 
+The privileged staging directory intentionally remains `root:root 0700`. That mode must **not** become the runtime filesystem root: non-root system daemons require traversal of `/`. The disk composition boundary therefore normalizes the deployed `/` to `root:root 0755` and verifies that invariant both before and after boot. This regression was found by the first real VM boot attempt when D-Bus correctly failed with systemd `200/CHDIR` against a copied `0700` root.
+
+The disposable test VM also initializes a unique machine ID for that one VM instance so D-Bus/logind exercise their real boot path. This is not a golden-image policy: a future reusable release image must reset machine identity before distribution and generate a unique identity on first boot.
+
 QEMU then boots the **Debian distribution kernel and initramfs directly** with the ext4 image as `/dev/vda`. The guest is deliberately started without a network device. A one-shot systemd gate requires:
 
+- runtime `/` to be `root:root 0755`;
 - the System Image Readiness report to pass every required core gate;
 - D-Bus, `systemd-logind`, NetworkManager and the SWIR peer-authorization socket to be active;
 - `loginctl` and `nmcli` to work against the booted services;
 - fwupd, Flatpak and Wine binaries to exist from the approved distribution packages.
 
-The guest writes a machine-readable readiness report, emits a unique serial PASS sentinel, syncs and powers itself off. CI remounts the image read-only and verifies both the report and guest status. Serial output, readiness evidence and provisioning reports are retained briefly as diagnostics.
+The guest writes a machine-readable readiness report, emits a unique serial PASS sentinel, syncs and powers itself off. CI remounts the image read-only and verifies both the report and guest status. On failure, compact systemd/journal diagnostics are written to the serial log. Serial output, readiness evidence and provisioning reports are retained briefly as diagnostics.
 
 ## Supply-chain and privilege boundary
 
