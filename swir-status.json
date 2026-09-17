@@ -1,8 +1,8 @@
 {
   "schema": "swir.public-status/1.0",
-  "generatedAt": "2026-09-17T22:08:12Z",
+  "generatedAt": "2026-09-17T22:36:56Z",
   "canonicalRepository": "https://github.com/Swir/SWIR_OS",
-  "canonicalCommit": "443333086682f9bc5db4c7701be8043b3a8db184",
+  "canonicalCommit": "26e28bc584b55141f2bac15874218e3d9de174c8",
   "roadmap": {
     "completed": 51,
     "remaining": 14,
@@ -16,7 +16,7 @@
   },
   "systemEdition": {
     "nativeShell": "verified-gtk4-wayland",
-    "nativeCoreApps": "files-settings-foundations-verified",
+    "nativeCoreApps": "files-settings-notes-system-monitor-foundations-verified",
     "liveUsbVm": "verified-uefi-usb-mass-storage",
     "graphicalInstallerVm": "verified-full-gtk4-path",
     "detachedInstalledBootVm": "verified-graphical-with-persistence",
@@ -24,6 +24,6 @@
     "secureBootQualification": "not-claimed",
     "legacyBiosQualification": "not-claimed"
   },
-  "latestMilestone": "The authenticated System Edition now launches the verified native GTK4 SWIR desktop shell and includes first-party SWIR Files and SWIR Settings foundations. Both applications map real GTK4 windows on Wayland, remain unprivileged, and the final integration head passed graphical-session, Live USB install and full graphical-installer E2E. The complete native daily-use application suite and physical Live USB qualification remain open.",
+  "latestMilestone": "The authenticated System Edition now ships verified first-party GTK4 foundations for SWIR Files, SWIR Settings, SWIR Notes and SWIR System Monitor. Notes uses bounded owner-only atomic per-user persistence, System Monitor provides bounded read-only /proc telemetry, all four applications map real GTK4 windows on Wayland, and the integration head passed graphical-session, Live USB install and full graphical-installer E2E. The complete native daily-use application suite and physical Live USB qualification remain open.",
   "repositoryRole": "presentation-status-only"
 }
