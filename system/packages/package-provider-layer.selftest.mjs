@@ -62,7 +62,7 @@ const flatpakExecutor = new GuardedFlatpakUserExecutor({
   fileProbe: () => ({ isFile: true, isSymbolicLink: false, uid: 0, mode: 0o100755, realpath: '/usr/bin/flatpak' }),
   runner(binary, args, options) {
     flatpakCalls.push([binary, args, options.shell]);
-    if (args[0] === '--user' && args[1] === 'remotes') return { status: 0, stdout: 'flathub\ttrue\n', stderr: '' };
+    if (args[0] === '--user' && args[1] === 'remotes') return { status: 0, stdout: 'flathub\tuser\n', stderr: '' };
     return { status: 0, stdout: '', stderr: '' };
   }
 });
@@ -73,7 +73,7 @@ assert.equal(flatpakResult.result.state, 'committed');
 assert.equal(flatpakResult.result.runtimeTrust.gpgVerify, true);
 assert.equal(flatpakCalls.length, 2);
 assert.equal(flatpakCalls[0][0], '/usr/bin/flatpak');
-assert.deepEqual(flatpakCalls[0][1], ['--user', 'remotes', '--columns=name,gpg-verify']);
+assert.deepEqual(flatpakCalls[0][1], ['--user', 'remotes', '--columns=name,options']);
 assert.equal(flatpakCalls[0][2], false);
 assert.deepEqual(flatpakCalls[1][1], ['--user', '--noninteractive', 'install', '--or-update', 'flathub', 'org.example.FlatEditor']);
 
