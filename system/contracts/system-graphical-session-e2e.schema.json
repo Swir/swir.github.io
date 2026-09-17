@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://swir.github.io/contracts/system-graphical-session-e2e.schema.json",
+  "title": "SWIR System graphical session E2E evidence 0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "passed",
+    "base",
+    "bootSplash",
+    "loginManager",
+    "session",
+    "productionDefaults",
+    "desktopShellClaim",
+    "secureBootClaim",
+    "hardwareQualificationClaim"
+  ],
+  "properties": {
+    "schema": { "const": "swir.system-graphical-session-e2e/0.1" },
+    "passed": { "const": true },
+    "base": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["distribution", "majorVersion", "bootPath"],
+      "properties": {
+        "distribution": { "const": "debian" },
+        "majorVersion": { "const": 13 },
+        "bootPath": { "const": "uefi-systemd-boot" }
+      }
+    },
+    "bootSplash": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider", "version", "theme", "themeEmbeddedInInitramfs", "activeDuringBoot", "quietSplashKernelCommandLine"],
+      "properties": {
+        "provider": { "const": "plymouth" },
+        "version": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "theme": { "const": "swir" },
+        "themeEmbeddedInInitramfs": { "const": true },
+        "activeDuringBoot": { "const": true },
+        "quietSplashKernelCommandLine": { "const": true }
+      }
+    },
+    "loginManager": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider", "version", "pamPolicyInstalled", "interactivePamAuthenticationPassed", "autologinUsed", "sessionService", "remoteSession"],
+      "properties": {
+        "provider": { "const": "greetd" },
+        "version": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "pamPolicyInstalled": { "const": true },
+        "interactivePamAuthenticationPassed": { "const": true },
+        "autologinUsed": { "const": false },
+        "sessionService": { "const": "greetd" },
+        "remoteSession": { "const": false }
+      }
+    },
+    "session": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["user", "uid", "logindSessionId", "waylandCompositor", "westonVersion", "backend", "waylandSocketObserved", "waylandClientHandshakePassed"],
+      "properties": {
+        "user": { "const": "swir-e2e" },
+        "uid": { "type": "integer", "minimum": 1000 },
+        "logindSessionId": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "waylandCompositor": { "const": "weston" },
+        "westonVersion": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "backend": { "const": "headless" },
+        "waylandSocketObserved": { "const": true },
+        "waylandClientHandshakePassed": { "const": true }
+      }
+    },
+    "productionDefaults": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["greeter", "sessionCommand", "testCredentialEmbeddedInProductionImage"],
+      "properties": {
+        "greeter": { "const": "agreety" },
+        "sessionCommand": { "const": "/usr/local/bin/swir-session" },
+        "testCredentialEmbeddedInProductionImage": { "const": false }
+      }
+    },
+    "desktopShellClaim": { "const": false },
+    "secureBootClaim": { "const": false },
+    "hardwareQualificationClaim": { "const": false }
+  }
+}
