@@ -11,7 +11,7 @@ export XDG_CURRENT_DESKTOP=SWIR
 export XDG_SESSION_DESKTOP=swir
 export WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-wayland-swir}"
 BACKEND="${SWIR_WESTON_BACKEND:-drm}"
-SHELL_MODE="${SWIR_WESTON_SHELL:-kiosk}"
+SHELL_MODE="${SWIR_WESTON_SHELL:-kiosk-shell.so}"
 WESTON_LOG="$XDG_RUNTIME_DIR/swir-weston.log"
 
 [ -d "$XDG_RUNTIME_DIR" ] || { echo "missing XDG_RUNTIME_DIR: $XDG_RUNTIME_DIR" >&2; exit 70; }
@@ -24,8 +24,10 @@ if [ "${SWIR_SESSION_E2E:-0}" = "1" ]; then
   rm -f "$EVIDENCE" "$WAYLAND_INFO" "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY"
 
   /usr/bin/weston \
+    --no-config \
     --backend="$BACKEND" \
     --shell="$SHELL_MODE" \
+    --renderer=pixman \
     --socket="$WAYLAND_DISPLAY" \
     --idle-time=0 \
     --log="$WESTON_LOG" &
@@ -111,6 +113,7 @@ PY
 fi
 
 exec /usr/bin/weston \
+  --no-config \
   --backend="$BACKEND" \
   --shell="$SHELL_MODE" \
   --socket="$WAYLAND_DISPLAY" \
