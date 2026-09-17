@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://swir.github.io/system/contracts/windows-compat-live-e2e.schema.json",
+  "title": "SWIR Windows Compatibility Live E2E 0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "generatedAt", "provider", "runtimeFamily", "runtimeVersion", "runtimeExecutable",
+    "runtimeRootOwned", "runtimeWritableByGroupOrWorld", "actualPortableExecutable", "managedPrefix",
+    "perAppPrefix", "prefixMetadataVerified", "trustVerified", "signatureRequired", "shellExecution",
+    "arbitraryRuntimeDownloadAllowed", "childPidObserved", "exitCode", "protonContractSupported",
+    "protonLiveE2E", "windowsKernelDriverSupport", "passed"
+  ],
+  "properties": {
+    "schema": { "const": "swir.windows-compat-live-e2e/0.1" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "provider": { "const": "swir.compat.wine" },
+    "runtimeFamily": { "const": "wine" },
+    "runtimeVersion": { "type": "string", "minLength": 1 },
+    "runtimeExecutable": { "type": "string", "pattern": "^/" },
+    "runtimeRootOwned": { "const": true },
+    "runtimeWritableByGroupOrWorld": { "const": false },
+    "actualPortableExecutable": { "const": true },
+    "managedPrefix": { "const": true },
+    "perAppPrefix": { "const": true },
+    "prefixMetadataVerified": { "const": true },
+    "trustVerified": { "const": true },
+    "signatureRequired": { "const": true },
+    "shellExecution": { "const": false },
+    "arbitraryRuntimeDownloadAllowed": { "const": false },
+    "childPidObserved": { "const": true },
+    "exitCode": { "const": 0 },
+    "protonContractSupported": { "const": true },
+    "protonLiveE2E": { "const": false },
+    "windowsKernelDriverSupport": { "const": false },
+    "passed": { "const": true }
+  }
+}
