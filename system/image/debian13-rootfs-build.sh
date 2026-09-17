@@ -15,7 +15,7 @@ if [[ ${EUID:-$(id -u)} -ne 0 ]]; then
   echo "debian13-rootfs-build.sh must run as root" >&2
   exit 3
 fi
-for command in debootstrap chroot mount umount node install cp; do
+for command in debootstrap chroot mount umount mountpoint node install cp find; do
   command -v "$command" >/dev/null || { echo "missing required host command: $command" >&2; exit 4; }
 done
 [[ -f /usr/share/keyrings/debian-archive-keyring.gpg ]] || { echo "host Debian archive keyring is missing" >&2; exit 5; }
@@ -37,6 +37,20 @@ mapfile -t BASE_PACKAGES < <(node -e "const p=require(process.argv[1]); for (con
 [[ -n "$KERNEL_PACKAGE" ]] || { echo "kernel package missing for $ARCH" >&2; exit 8; }
 BASE_PACKAGES+=("$KERNEL_PACKAGE" "debian-archive-keyring")
 
+case "$ROOTFS" in
+  /|/bin|/boot|/dev|/etc|/home|/lib|/lib64|/opt|/proc|/root|/run|/sbin|/srv|/sys|/tmp|/usr|/var)
+    echo "refusing destructive rootfs target: $ROOTFS" >&2
+    exit 9
+    ;;
+esac
+if mountpoint -q "$ROOTFS" 2>/dev/null; then
+  echo "refusing to replace mounted rootfs target: $ROOTFS" >&2
+  exit 10
+fi
+if [[ -e "$ROOTFS" && ! -f "$ROOTFS/.swir-disposable-rootfs" ]]; then
+  echo "existing rootfs target is not marked as SWIR-disposable: $ROOTFS" >&2
+  exit 11
+fi
 rm -rf "$ROOTFS"
 mkdir -p "$ROOTFS"
 device_cleanup=0
@@ -56,6 +70,7 @@ debootstrap \
   --arch="$ARCH" \
   --keyring=/usr/share/keyrings/debian-archive-keyring.gpg \
   trixie "$ROOTFS" https://deb.debian.org/debian
+: > "$ROOTFS/.swir-disposable-rootfs"
 
 install -d -o root -g root -m 0755 "$ROOTFS/etc/apt/sources.list.d"
 find "$ROOTFS/etc/apt/sources.list.d" -mindepth 1 -maxdepth 1 -type f -delete
