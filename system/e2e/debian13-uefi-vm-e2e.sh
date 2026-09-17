@@ -101,6 +101,8 @@ chroot "$ROOTFS" /usr/bin/env DEBIAN_FRONTEND=noninteractive apt-get update
 chroot "$ROOTFS" /usr/bin/env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends nodejs systemd-boot-efi passwd util-linux "${OPTIONAL_PACKAGES[@]}"
 chroot "$ROOTFS" /usr/bin/systemd-machine-id-setup
 chroot "$ROOTFS" /usr/sbin/useradd --create-home --user-group --shell /bin/bash swir-e2e
+chroot "$ROOTFS" /usr/bin/chown -R swir-e2e:swir-e2e /home/swir-e2e
+chroot "$ROOTFS" /usr/bin/chmod 0700 /home/swir-e2e
 
 EFI_SOURCE="$ROOTFS/usr/lib/systemd/boot/efi/systemd-bootx64.efi"
 [[ -f "$EFI_SOURCE" && ! -L "$EFI_SOURCE" ]] || { echo "Debian systemd-boot EFI binary missing" >&2; exit 7; }
@@ -152,6 +154,7 @@ diag() {
 }
 fail() { printf 'FAIL:%s\n' "$1" > "$STATUS"; diag "$1"; serial "SWIR_UEFI_VM_E2E_FAIL $1"; sync; systemctl --no-block poweroff; exit 1; }
 [ "$(stat -c '%u:%g:%a' /)" = '0:0:755' ] || fail runtime-root-mode
+[ "$(stat -c '%U:%G:%a' /home/swir-e2e)" = 'swir-e2e:swir-e2e:700' ] || fail swir-e2e-home
 node /opt/swir/system/image/system-image-readiness-probe.mjs --compact > "$OUT" || fail readiness-probe
 node -e "const r=require(process.argv[1]); if(!r.summary?.systemImageReadyForE2E||!r.summary?.sessionReady) process.exit(2)" "$OUT" || fail readiness-gates
 systemctl is-active --quiet dbus.service || fail dbus
