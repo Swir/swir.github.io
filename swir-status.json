@@ -1,19 +1,27 @@
 {
   "schema": "swir.public-status/1.0",
-  "generatedAt": "2026-09-17T17:38:58Z",
+  "generatedAt": "2026-09-17T21:08:41Z",
   "canonicalRepository": "https://github.com/Swir/SWIR_OS",
-  "canonicalCommit": "b5569bd629f87b9499a9a64e07576306ce727ce8",
+  "canonicalCommit": "b282e53733b146e2737c4bd4d70fd1d5e97a5ed4",
   "roadmap": {
-    "completed": 46,
-    "remaining": 14,
-    "total": 60,
-    "percent": 76.7
+    "completed": 50,
+    "remaining": 15,
+    "total": 65,
+    "percent": 76.9
   },
   "editions": {
     "web": "1.7.13",
     "desktop": "0.5.7-preview",
     "system": "in-development"
   },
-  "latestMilestone": "System Edition now has a verified dedicated read-only UEFI recovery mode and a journaled Driver Center coordinator that binds exact package/fwupd preview operations to existing guarded child transactions; direct kernel-module mutation and arbitrary driver downloads remain disabled, while live supported-device fwupd/LVFS qualification remains open.",
+  "systemEdition": {
+    "liveUsbVm": "verified-uefi-usb-mass-storage",
+    "graphicalInstallerVm": "verified-full-gtk4-path",
+    "detachedInstalledBootVm": "verified-graphical-with-persistence",
+    "physicalUsbQualification": "pending",
+    "secureBootQualification": "not-claimed",
+    "legacyBiosQualification": "not-claimed"
+  },
+  "latestMilestone": "The native GTK4 SWIR OS Live installer now drives the complete disposable UEFI VM path: exact target review, deliberate wrong-token rejection, account/locale/keyboard/time-zone setup, guarded separate-disk installation, source USB detachment, standalone installed-system graphical boot and persistence. Physical Live USB/hardware qualification remains open. SWIR Progress SVG PRO is now generated and checked from the canonical roadmap.",
   "repositoryRole": "presentation-status-only"
 }
