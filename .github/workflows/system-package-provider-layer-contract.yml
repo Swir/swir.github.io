@@ -6,14 +6,24 @@ on:
     paths:
       - 'system/packages/package-provider-layer.mjs'
       - 'system/packages/package-provider-layer.selftest.mjs'
+      - 'system/packages/flatpak-user-package-provider.mjs'
+      - 'system/packages/flatpak-user-package-provider.selftest.mjs'
+      - 'system/packages/appimage-user-package-provider.mjs'
+      - 'system/packages/appimage-user-package-provider.selftest.mjs'
       - 'system/packages/system-package-stack.mjs'
+      - 'system/security/system-catalog-authorization.mjs'
       - 'system/SWIR-SYSTEM-PACKAGE-PROVIDER-LAYER-0.1.md'
       - '.github/workflows/system-package-provider-layer-contract.yml'
   pull_request:
     paths:
       - 'system/packages/package-provider-layer.mjs'
       - 'system/packages/package-provider-layer.selftest.mjs'
+      - 'system/packages/flatpak-user-package-provider.mjs'
+      - 'system/packages/flatpak-user-package-provider.selftest.mjs'
+      - 'system/packages/appimage-user-package-provider.mjs'
+      - 'system/packages/appimage-user-package-provider.selftest.mjs'
       - 'system/packages/system-package-stack.mjs'
+      - 'system/security/system-catalog-authorization.mjs'
       - 'system/SWIR-SYSTEM-PACKAGE-PROVIDER-LAYER-0.1.md'
       - '.github/workflows/system-package-provider-layer-contract.yml'
 
@@ -23,7 +33,7 @@ permissions:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -37,13 +47,37 @@ jobs:
         run: |
           node --check system/packages/package-provider-layer.mjs
           node --check system/packages/package-provider-layer.selftest.mjs
+          node --check system/packages/flatpak-user-package-provider.mjs
+          node --check system/packages/appimage-user-package-provider.mjs
 
       - name: Enforce common layer security boundary
         run: |
-          node -e "const fs=require('fs');const s=fs.readFileSync('system/packages/package-provider-layer.mjs','utf8');if(/node:child_process|\bspawn\s*\(|\bexec\s*\(/.test(s))throw new Error('Common provider layer must not execute commands');if(!s.includes('createSystemPackageProviderLayer({ distributionStack } = {})'))throw new Error('Production factory must remain distribution-stack only');if(!s.includes('PROVIDER_NOT_PROVISIONED'))throw new Error('Future providers must fail closed');console.log('Package provider layer security boundary: OK')"
+          node - <<'NODE'
+          const fs = require('fs');
+          const s = fs.readFileSync('system/packages/package-provider-layer.mjs', 'utf8');
+          if (/node:child_process|\bspawn\s*\(|\bexec\s*\(/.test(s)) throw new Error('Common provider layer must not execute commands');
+          for (const token of [
+            'composeProductionAdapters',
+            "productionProvisionableProviders",
+            "productionOptionalProviders",
+            "flatpakRequiresAllowlistedPreconfiguredRemote: true",
+            "appImageRequiresNativeCatalogTrustVerifier: true",
+            "appImageRequiresManagedInstallRoot: true",
+            "arbitraryProviderRegistration: false",
+            "directCommandExecution: false",
+            "PROVIDER_NOT_PROVISIONED",
+            "INVALID_APPIMAGE_COMPOSITION"
+          ]) if (!s.includes(token)) throw new Error(`Common provider layer missing production invariant: ${token}`);
+          console.log('Package provider layer production boundary: OK');
+          NODE
 
-      - name: Run common Package Provider self-test
+      - name: Run common Package Provider production self-test
         run: node system/packages/package-provider-layer.selftest.mjs
+
+      - name: Re-run provider-specific contracts
+        run: |
+          node system/packages/flatpak-user-package-provider.selftest.mjs
+          node system/packages/appimage-user-package-provider.selftest.mjs
 
       - name: Re-run production distribution stack integration
         run: node system/packages/system-package-stack.selftest.mjs
