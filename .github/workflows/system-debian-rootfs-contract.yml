@@ -8,6 +8,7 @@ on:
       - 'system/image/debian-trixie-repository-trust-policy.json'
       - 'system/image/build-debian-trixie-rootfs.sh'
       - 'system/image/system-base-debian-trixie.selftest.mjs'
+      - 'system/image/verify-debian-trixie-rootfs.mjs'
       - 'system/image/system-image-provisioning*'
       - 'system/image/system-peer-authorization-provisioning*'
       - 'system/ipc/swir-peer-authorization*'
@@ -21,6 +22,7 @@ on:
       - 'system/image/debian-trixie-repository-trust-policy.json'
       - 'system/image/build-debian-trixie-rootfs.sh'
       - 'system/image/system-base-debian-trixie.selftest.mjs'
+      - 'system/image/verify-debian-trixie-rootfs.mjs'
       - 'system/image/system-image-provisioning*'
       - 'system/image/system-peer-authorization-provisioning*'
       - 'system/ipc/swir-peer-authorization*'
@@ -51,6 +53,7 @@ jobs:
       - name: Validate selected base profile
         run: |
           node --check system/image/system-base-debian-trixie.selftest.mjs
+          node --check system/image/verify-debian-trixie-rootfs.mjs
           node system/image/system-base-debian-trixie.selftest.mjs
           python3 -m json.tool system/image/system-base-debian-trixie.json >/dev/null
           python3 -m json.tool system/image/debian-trixie-repository-trust-policy.json >/dev/null
@@ -81,31 +84,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test -f "$ROOTFS/etc/debian_version"
-          grep -q '^13' "$ROOTFS/etc/debian_version"
-          grep -F 'URIs: https://deb.debian.org/debian' "$ROOTFS/etc/apt/sources.list.d/swir-debian.sources"
-          grep -F 'URIs: https://security.debian.org/debian-security' "$ROOTFS/etc/apt/sources.list.d/swir-debian.sources"
-          grep -F 'Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg' "$ROOTFS/etc/apt/sources.list.d/swir-debian.sources"
-          test ! -e "$ROOTFS/etc/apt/sources.list"
-          for p in linux-image-amd64 systemd-sysv dbus polkitd network-manager fwupd python3 ca-certificates debian-archive-keyring; do
-            sudo chroot "$ROOTFS" dpkg-query -W -f='${db:Status-Abbrev}' "$p" | grep -qx 'ii '
-          done
           sudo chroot "$ROOTFS" apt-get update
           sudo chroot "$ROOTFS" apt-cache policy systemd network-manager fwupd | tee "$RUNNER_TEMP/apt-policy.txt"
-          ! grep -E 'http://|trusted=yes|\[trusted=yes\]' "$ROOTFS/etc/apt/sources.list.d/swir-debian.sources"
-          sudo python3 - "$ROOTFS/var/lib/swir/image/base-build-state.json" <<'PY'
-          import json, pathlib, sys
-          p=json.loads(pathlib.Path(sys.argv[1]).read_text())
-          assert p['schema']=='swir.system-base-build-state/0.1'
-          assert p['profile']=='debian-13-trixie'
-          assert p['architecture']=='amd64'
-          assert p['nativeAptSignatureVerification'] is True
-          assert p['officialRepositoriesOnly'] is True
-          assert p['bootableImageClaim'] is False
-          assert p['secureBootClaim'] is False
-          assert len(p['profileSha256'])==64 and len(p['packageSetSha256'])==64
-          print('Real Debian rootfs state: OK')
-          PY
+          NODE_BIN="$(command -v node)"
+          sudo "$NODE_BIN" system/image/verify-debian-trixie-rootfs.mjs \
+            --rootfs "$ROOTFS" \
+            --profile "$GITHUB_WORKSPACE/system/image/system-base-debian-trixie.json" \
+            --production > "$RUNNER_TEMP/base-verify.json"
+          node -e "const r=JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')); if(r.schema!=='swir.system-base-rootfs-verification/0.1'||r.ready!==true||r.production!==true||r.bootableImageClaim!==false||r.secureBootClaim!==false||r.blockers.length) process.exit(1); console.log('Read-only Debian rootfs verification: OK')" "$RUNNER_TEMP/base-verify.json"
 
       - name: Apply SWIR production foundation to real Debian rootfs
         shell: bash
@@ -141,16 +127,6 @@ jobs:
           test "$(sudo stat -c '%u:%a' "$ROOTFS/usr/lib/systemd/system/swir-peer-authorization.socket")" = '0:644'
           test ! -e "$ROOTFS/run/swir/peer-authorization.key"
           sudo systemd-analyze --root="$ROOTFS" verify swir-peer-authorization.socket swir-peer-authorization.service
-
-      - name: Verify required host-facing binaries exist in target rootfs
-        shell: bash
-        run: |
-          set -euo pipefail
-          for f in /usr/bin/systemctl /usr/bin/loginctl /usr/bin/pkcheck /usr/bin/nmcli /usr/bin/fwupdmgr /usr/bin/python3 /usr/bin/apt-get /usr/bin/apt-cache; do
-            test -x "$ROOTFS$f" || { echo "missing required binary in rootfs: $f" >&2; exit 1; }
-          done
-          test -e "$ROOTFS/boot/vmlinuz" || find "$ROOTFS/boot" -maxdepth 1 -type f -name 'vmlinuz-*' -print -quit | grep -q .
-          test -d "$ROOTFS/usr/lib/firmware" || test -d "$ROOTFS/lib/firmware"
 
       - name: Guard honest completion claims
         shell: bash
