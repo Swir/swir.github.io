@@ -78,13 +78,20 @@ function verifyFlatpakBinary(fileProbe) {
 
 function parseRemoteTrust(stdout, remote) {
   const wanted = validateRemoteId(remote);
-  for (const line of String(stdout || '').split(/\r?\n/)) {
-    const fields = line.trim().split(/\t+/);
-    if (fields.length < 2 || fields[0] !== wanted) continue;
-    const gpgVerify = String(fields[1] || '').trim().toLowerCase();
-    return { configured: true, gpgVerify: gpgVerify === 'true' || gpgVerify === 'yes' || gpgVerify === '1' };
+  for (const rawLine of String(stdout || '').split(/\r?\n/)) {
+    const line = rawLine.replace(/\r$/, '');
+    if (!line) continue;
+    const fields = line.split('\t');
+    const name = String(fields[0] || '').trim();
+    if (name !== wanted) continue;
+    const optionText = fields.slice(1).join('\t').trim().toLowerCase();
+    const options = optionText ? [...new Set(optionText.split(/[,\s]+/).filter(Boolean))].sort() : [];
+    const disabled = options.includes('disabled');
+    const oci = options.includes('oci');
+    const gpgVerify = !options.includes('no-gpg-verify') && !oci;
+    return { configured: true, disabled, oci, gpgVerify, options };
   }
-  return { configured: false, gpgVerify: false };
+  return { configured: false, disabled: false, oci: false, gpgVerify: false, options: [] };
 }
 
 export function validateFlatpakManifest(manifest, { allowlistedRemotes = [] } = {}) {
@@ -121,12 +128,7 @@ export function buildFlatpakUserPlan(operation, manifest, { allowlistedRemotes =
     provider: 'swir.package.flatpak',
     executionClass: 'linux-native',
     operation,
-    package: Object.freeze({
-      id: manifest.id,
-      sourceRef: appId,
-      remote,
-      scope: 'user'
-    }),
+    package: Object.freeze({ id: manifest.id, sourceRef: appId, remote, scope: 'user' }),
     trust: Object.freeze({
       sourceClass: 'flatpak-remote',
       repositoryId: remote,
@@ -142,10 +144,7 @@ export function buildFlatpakUserPlan(operation, manifest, { allowlistedRemotes =
       nativeAtomicity: 'flatpak-ostree',
       rollback: Object.freeze({ supported: false, mechanism: null, note: 'Version-aware SWIR rollback metadata is not implemented for Flatpak 0.1.' })
     }),
-    command: Object.freeze({
-      executable: FLATPAK_BINARY,
-      args: Object.freeze(buildArgs(operation, appId, remote))
-    })
+    command: Object.freeze({ executable: FLATPAK_BINARY, args: Object.freeze(buildArgs(operation, appId, remote)) })
   });
 }
 
@@ -195,14 +194,26 @@ export class GuardedFlatpakUserExecutor {
     const remoteId = validateRemoteId(remote);
     assert(this.#allowlistedRemotes.includes(remoteId), 'REMOTE_NOT_ALLOWLISTED', 'Flatpak remote is not allowlisted');
     verifyFlatpakBinary(this.#fileProbe);
-    const args = ['--user', 'remotes', '--columns=name,gpg-verify'];
+    const args = ['--user', 'remotes', '--columns=name,options'];
     const result = this.#runner(FLATPAK_BINARY, args, runtimeOptions(Math.min(this.#timeoutMs, 20000)));
     if (result?.error) fail('FLATPAK_REMOTE_PROBE_FAILED', `Flatpak remote probe failed: ${result.error.message || 'unknown error'}`);
     assert(Number.isInteger(result?.status) && result.status === 0, 'FLATPAK_REMOTE_PROBE_FAILED', 'Flatpak remote probe did not complete successfully');
     const trust = parseRemoteTrust(result.stdout, remoteId);
     assert(trust.configured, 'FLATPAK_REMOTE_NOT_CONFIGURED', 'Allowlisted Flatpak remote is not configured for the current user');
-    assert(trust.gpgVerify, 'FLATPAK_REMOTE_GPG_REQUIRED', 'Configured Flatpak remote does not enforce GPG verification');
-    return Object.freeze({ schema: 'swir.flatpak-runtime-trust/0.1', binary: FLATPAK_BINARY, trustedBinary: true, remote: remoteId, configured: true, gpgVerify: true });
+    assert(!trust.disabled, 'FLATPAK_REMOTE_DISABLED', 'Configured Flatpak remote is disabled');
+    assert(!trust.oci, 'FLATPAK_REMOTE_GPG_REQUIRED', 'OCI Flatpak remotes are outside the GPG-verified provider policy');
+    assert(trust.gpgVerify, 'FLATPAK_REMOTE_GPG_REQUIRED', 'Configured Flatpak remote disables GPG verification');
+    return Object.freeze({
+      schema: 'swir.flatpak-runtime-trust/0.1',
+      binary: FLATPAK_BINARY,
+      trustedBinary: true,
+      remote: remoteId,
+      configured: true,
+      disabled: false,
+      oci: false,
+      gpgVerify: true,
+      options: Object.freeze([...trust.options])
+    });
   }
 
   execute(plan) {
@@ -282,6 +293,8 @@ export const FlatpakUserPackagePolicy = Object.freeze({
   preconfiguredAllowlistedRemoteRequired: true,
   signatureVerificationRequired: true,
   runtimeRemoteGpgVerificationRequired: true,
+  ociRemotesAllowed: false,
+  disabledRemotesAllowed: false,
   binaryTrustRequired: true,
   shellAllowed: false,
   privilegedMutation: false,
