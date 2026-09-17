@@ -1,0 +1,45 @@
+name: System Session Identity Contract
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'system/session/**'
+      - 'system/contracts/system-session-identity.schema.json'
+      - 'system/SWIR-SYSTEM-SESSION-IDENTITY-0.1.md'
+      - '.github/workflows/system-session-identity-contract.yml'
+  pull_request:
+    paths:
+      - 'system/session/**'
+      - 'system/contracts/system-session-identity.schema.json'
+      - 'system/SWIR-SYSTEM-SESSION-IDENTITY-0.1.md'
+      - '.github/workflows/system-session-identity-contract.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax check
+        run: |
+          node --check system/session/system-session-identity-service.mjs
+          node --check system/session/system-session-identity-service.selftest.mjs
+      - name: Parse contract JSON
+        run: node -e "const s=JSON.parse(require('fs').readFileSync('system/contracts/system-session-identity.schema.json','utf8')); if(s.properties?.schema?.const!=='swir.system-session-attestation/0.1'||s.properties?.active?.const!==true||s.properties?.remote?.const!==false) process.exit(1); console.log('session attestation schema OK')"
+      - name: Run session identity self-test
+        run: node system/session/system-session-identity-service.selftest.mjs
+      - name: Guard read-only boundary
+        shell: bash
+        run: |
+          ! grep -R --line-number -E 'shell:[[:space:]]*true' system/session
+          ! grep -R --line-number -E "terminate-session|kill-user|lock-session|unlock-session|enable-linger|disable-linger" system/session/system-session-identity-service.mjs
+          grep -q "arbitraryUidOverride: false" system/session/system-session-identity-service.mjs
+          grep -q "authorizationAuthority: 'polkit-separate'" system/session/system-session-identity-service.mjs

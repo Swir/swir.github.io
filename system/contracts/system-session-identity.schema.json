@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://swir.github.io/system/contracts/system-session-identity.schema.json",
+  "title": "SWIR System Session Attestation 0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "actorId", "sessionActorId", "sessionId", "uid", "username",
+    "seat", "type", "class", "state", "active", "remote", "leader",
+    "processSubject", "sessionDigest", "attestedAt", "authority", "authorizationAuthority"
+  ],
+  "properties": {
+    "schema": { "const": "swir.system-session-attestation/0.1" },
+    "actorId": { "type": "string", "pattern": "^uid:[0-9]+$" },
+    "sessionActorId": { "type": "string", "pattern": "^session:[A-Za-z0-9][A-Za-z0-9_.:-]{0,63}:uid:[0-9]+$" },
+    "sessionId": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,63}$" },
+    "uid": { "type": "integer", "minimum": 0 },
+    "username": { "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_.-]{0,63}$" },
+    "seat": { "type": ["string", "null"], "maxLength": 64 },
+    "type": { "enum": ["wayland", "x11"] },
+    "class": { "enum": ["user", "user-early"] },
+    "state": { "type": "string", "minLength": 1, "maxLength": 32 },
+    "active": { "const": true },
+    "remote": { "const": false },
+    "leader": { "type": ["integer", "null"], "minimum": 1 },
+    "processSubject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pid", "uid", "startTime"],
+      "properties": {
+        "pid": { "type": "integer", "minimum": 1 },
+        "uid": { "type": "integer", "minimum": 0 },
+        "startTime": { "type": "string", "pattern": "^[0-9]+$" }
+      }
+    },
+    "sessionDigest": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "attestedAt": { "type": "string", "format": "date-time" },
+    "authority": { "const": "systemd-logind-read-only" },
+    "authorizationAuthority": { "const": "polkit-separate" }
+  }
+}
