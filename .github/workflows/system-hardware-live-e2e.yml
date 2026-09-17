@@ -1,0 +1,76 @@
+name: System Hardware Live E2E
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'system/hardware/**'
+      - 'system/contracts/hardware-*.schema.json'
+      - 'system/contracts/trusted-sources.json'
+      - 'system/SWIR-HARDWARE-LIVE-E2E-0.1.md'
+      - 'SWIR-OS-ARCHITECTURE.md'
+      - '.github/workflows/system-hardware-live-e2e.yml'
+  pull_request:
+    paths:
+      - 'system/hardware/**'
+      - 'system/contracts/hardware-*.schema.json'
+      - 'system/contracts/trusted-sources.json'
+      - 'system/SWIR-HARDWARE-LIVE-E2E-0.1.md'
+      - 'SWIR-OS-ARCHITECTURE.md'
+      - '.github/workflows/system-hardware-live-e2e.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: system-hardware-live-e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  live-hardware:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate Hardware Service contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check system/hardware/hardware-service.mjs
+          node --check system/hardware/driver-resolver.mjs
+          node --check system/hardware/driver-center-service.mjs
+          node --check system/hardware/hardware-live-e2e.mjs
+          python3 -m json.tool system/contracts/hardware-live-e2e.schema.json >/dev/null
+          node system/hardware/hardware-service.selftest.mjs
+          node system/hardware/hardware-catalog.selftest.mjs
+          node system/hardware/driver-resolver.selftest.mjs
+          node system/hardware/driver-center-service.selftest.mjs
+          node scripts/validate-roadmap-progress.mjs
+          ! grep -E 'exec\(|execSync\(|spawn\(|spawnSync\(|curl |wget |shell: *true' system/hardware/hardware-live-e2e.mjs
+      - name: Probe runner kernel sysfs with the production Hardware Service
+        shell: bash
+        run: |
+          set -euo pipefail
+          node system/hardware/hardware-live-e2e.mjs --output "$RUNNER_TEMP/hardware-live-e2e.json"
+          node - "$RUNNER_TEMP/hardware-live-e2e.json" <<'NODE'
+          const fs = require('fs');
+          const evidence = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+          if (evidence.schema !== 'swir.hardware-live-e2e/0.1') process.exit(2);
+          if (evidence.passed !== true || evidence.readOnly !== true) process.exit(3);
+          if (evidence.devices?.total < 1 || evidence.devices?.pci < 1 || evidence.devices?.loadedDrivers < 1) process.exit(4);
+          if (evidence.driverCenterViolations !== 0) process.exit(5);
+          if (evidence.unknownHardwareAutoDownload || evidence.arbitraryDriverUrls || evidence.windowsKernelDriversAsLinuxDrivers) process.exit(6);
+          if (evidence.hardwareQualificationClaim !== false) process.exit(7);
+          NODE
+      - name: Upload live hardware evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: swir-hardware-live-e2e-${{ github.run_id }}
+          path: ${{ runner.temp }}/hardware-live-e2e.json
+          if-no-files-found: warn
+          retention-days: 7
