@@ -36,6 +36,7 @@
   ],
   "requiredPackages": [
     "linux-image-amd64",
+    "firmware-linux",
     "systemd-sysv",
     "dbus",
     "polkitd",

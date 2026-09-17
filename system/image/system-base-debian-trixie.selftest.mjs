@@ -27,7 +27,7 @@ assert.equal(profile.policy.secureBootClaim, false);
 assert.equal(profile.policy.hardwareQualificationClaim, false);
 
 const required = new Set(profile.requiredPackages);
-for (const name of ['linux-image-amd64', 'systemd-sysv', 'dbus', 'polkitd', 'network-manager', 'fwupd', 'python3', 'ca-certificates', 'debian-archive-keyring']) {
+for (const name of ['linux-image-amd64', 'firmware-linux', 'systemd-sysv', 'dbus', 'polkitd', 'network-manager', 'fwupd', 'python3', 'ca-certificates', 'debian-archive-keyring']) {
   assert.ok(required.has(name), `required package missing from base profile: ${name}`);
 }
 
@@ -38,6 +38,7 @@ for (const repo of profile.repositories) {
   assert.equal(repo.signedBy, '/usr/share/keyrings/debian-archive-keyring.gpg');
   assert.equal(repo.sourceClass, 'distribution-repository');
 }
+assert.ok(profile.repositories.some(repo => repo.components.includes('non-free-firmware')), 'non-free-firmware component must remain enabled for distro firmware');
 
 assert.equal(trust.schema, 'swir.system-repository-trust-policy/0.1');
 assert.equal(trust.defaultRepositoryId, 'debian-main');
@@ -72,6 +73,10 @@ for (const token of [
   'mmdebstrap',
   '--variant=minbase',
   'linux-image-amd64',
+  'firmware-linux',
+  'firmwareMetaPackageVersion',
+  "'primaryDriverSourceClass': 'kernel-in-tree'",
+  "'primaryFirmwareSourceClass': 'linux-firmware'",
   'network-manager',
   'fwupd',
   'bootableImageClaim',

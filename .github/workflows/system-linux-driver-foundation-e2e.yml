@@ -1,0 +1,96 @@
+name: System Linux Driver Foundation E2E
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'system/image/system-base-debian-trixie.json'
+      - 'system/image/build-debian-trixie-rootfs.sh'
+      - 'system/hardware/linux-driver-foundation-e2e.mjs'
+      - 'system/contracts/linux-driver-foundation-e2e.schema.json'
+      - 'system/SWIR-LINUX-DRIVER-FOUNDATION-E2E-0.1.md'
+      - 'SWIR-OS-ARCHITECTURE.md'
+      - '.github/workflows/system-linux-driver-foundation-e2e.yml'
+  pull_request:
+    paths:
+      - 'system/image/system-base-debian-trixie.json'
+      - 'system/image/build-debian-trixie-rootfs.sh'
+      - 'system/hardware/linux-driver-foundation-e2e.mjs'
+      - 'system/contracts/linux-driver-foundation-e2e.schema.json'
+      - 'system/SWIR-LINUX-DRIVER-FOUNDATION-E2E-0.1.md'
+      - 'SWIR-OS-ARCHITECTURE.md'
+      - '.github/workflows/system-linux-driver-foundation-e2e.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: system-linux-driver-foundation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  driver-foundation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install controlled Debian rootfs tooling
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends mmdebstrap debian-archive-keyring
+      - name: Validate driver-foundation contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check system/hardware/linux-driver-foundation-e2e.mjs
+          bash -n system/image/build-debian-trixie-rootfs.sh
+          python3 -m json.tool system/image/system-base-debian-trixie.json >/dev/null
+          python3 -m json.tool system/contracts/linux-driver-foundation-e2e.schema.json >/dev/null
+          node system/image/system-base-debian-trixie.selftest.mjs
+          node scripts/validate-roadmap-progress.mjs
+          grep -F '"firmware-linux"' system/image/system-base-debian-trixie.json >/dev/null
+          grep -F "primaryDriverSourceClass': 'kernel-in-tree'" system/image/build-debian-trixie-rootfs.sh >/dev/null
+          grep -F "primaryFirmwareSourceClass': 'linux-firmware'" system/image/build-debian-trixie-rootfs.sh >/dev/null
+          ! grep -E 'curl |wget |--no-check-gpg|AllowUnauthenticated|trusted=yes|shell: *true' system/image/build-debian-trixie-rootfs.sh system/hardware/linux-driver-foundation-e2e.mjs
+      - name: Build selected Debian 13 base with distro firmware
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOTFS="$RUNNER_TEMP/swir-driver-rootfs"
+          NODE_BIN="$(command -v node)"
+          sudo bash system/image/build-debian-trixie-rootfs.sh \
+            --rootfs "$ROOTFS" \
+            --profile "$GITHUB_WORKSPACE/system/image/system-base-debian-trixie.json" \
+            --arch amd64
+          sudo "$NODE_BIN" system/hardware/linux-driver-foundation-e2e.mjs \
+            --rootfs "$ROOTFS" \
+            --profile "$GITHUB_WORKSPACE/system/image/system-base-debian-trixie.json" \
+            --output "$RUNNER_TEMP/linux-driver-foundation-e2e.json"
+          sudo chown "$USER:$USER" "$RUNNER_TEMP/linux-driver-foundation-e2e.json"
+      - name: Validate emitted driver evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - "$RUNNER_TEMP/linux-driver-foundation-e2e.json" <<'NODE'
+          const fs = require('fs');
+          const e = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+          if (e.schema !== 'swir.linux-driver-foundation-e2e/0.1' || e.passed !== true) process.exit(2);
+          if (e.primaryDriverSourceClass !== 'kernel-in-tree' || e.primaryFirmwareSourceClass !== 'linux-firmware') process.exit(3);
+          if (!e.kernelModuleTreePresent || !e.firmwareTreePresent || e.liveKernelBoundDevices < 1 || e.liveKernelModules.length < 1) process.exit(4);
+          if (!e.distributionRepositoryOnly || !e.repositorySignatureVerificationRequired) process.exit(5);
+          if (e.arbitraryDriverDownloadsAllowed || e.windowsKernelDriversSupported || e.hardwareQualificationClaim) process.exit(6);
+          NODE
+      - name: Upload driver-foundation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: swir-linux-driver-foundation-${{ github.run_id }}
+          path: ${{ runner.temp }}/linux-driver-foundation-e2e.json
+          if-no-files-found: warn
+          retention-days: 7
