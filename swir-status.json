@@ -1,13 +1,13 @@
 {
   "schema": "swir.public-status/1.0",
-  "generatedAt": "2026-09-17T21:08:41Z",
+  "generatedAt": "2026-09-17T22:08:12Z",
   "canonicalRepository": "https://github.com/Swir/SWIR_OS",
-  "canonicalCommit": "b282e53733b146e2737c4bd4d70fd1d5e97a5ed4",
+  "canonicalCommit": "443333086682f9bc5db4c7701be8043b3a8db184",
   "roadmap": {
-    "completed": 50,
-    "remaining": 15,
+    "completed": 51,
+    "remaining": 14,
     "total": 65,
-    "percent": 76.9
+    "percent": 78.5
   },
   "editions": {
     "web": "1.7.13",
@@ -15,6 +15,8 @@
     "system": "in-development"
   },
   "systemEdition": {
+    "nativeShell": "verified-gtk4-wayland",
+    "nativeCoreApps": "files-settings-foundations-verified",
     "liveUsbVm": "verified-uefi-usb-mass-storage",
     "graphicalInstallerVm": "verified-full-gtk4-path",
     "detachedInstalledBootVm": "verified-graphical-with-persistence",
@@ -22,6 +24,6 @@
     "secureBootQualification": "not-claimed",
     "legacyBiosQualification": "not-claimed"
   },
-  "latestMilestone": "The native GTK4 SWIR OS Live installer now drives the complete disposable UEFI VM path: exact target review, deliberate wrong-token rejection, account/locale/keyboard/time-zone setup, guarded separate-disk installation, source USB detachment, standalone installed-system graphical boot and persistence. Physical Live USB/hardware qualification remains open. SWIR Progress SVG PRO is now generated and checked from the canonical roadmap.",
+  "latestMilestone": "The authenticated System Edition now launches the verified native GTK4 SWIR desktop shell and includes first-party SWIR Files and SWIR Settings foundations. Both applications map real GTK4 windows on Wayland, remain unprivileged, and the final integration head passed graphical-session, Live USB install and full graphical-installer E2E. The complete native daily-use application suite and physical Live USB qualification remain open.",
   "repositoryRole": "presentation-status-only"
 }
