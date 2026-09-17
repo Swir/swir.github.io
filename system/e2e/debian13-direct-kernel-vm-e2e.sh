@@ -119,14 +119,16 @@ STATUS=/var/lib/swir/vm-e2e/status.txt
 serial() { printf '%s\n' "$*" > /dev/ttyS0; }
 diag() {
   serial "SWIR_VM_DIAGNOSTICS_BEGIN reason=$1"
-  systemctl --no-pager --full status dbus.service systemd-logind.service NetworkManager.service swir-peer-authorization.socket 2>&1 > /dev/ttyS0 || true
-  journalctl -b --no-pager -n 160 -u dbus.service -u systemd-logind.service -u NetworkManager.service -u swir-peer-authorization.socket 2>&1 > /dev/ttyS0 || true
+  systemctl --no-pager --full status dbus.service systemd-logind.service NetworkManager.service swir-peer-authorization.socket > /dev/ttyS0 2>&1 || true
+  journalctl -b --no-pager -n 160 -u dbus.service -u systemd-logind.service -u NetworkManager.service -u swir-peer-authorization.socket > /dev/ttyS0 2>&1 || true
+  { printf 'runtime-root='; stat -c '%u:%g:%a' / 2>/dev/null || true; } > /dev/ttyS0
   { printf 'machine-id='; cat /etc/machine-id 2>/dev/null || true; } > /dev/ttyS0
-  ls -ld /run/dbus /run/swir /run/swir/peer-authorization.sock 2>&1 > /dev/ttyS0 || true
-  getent passwd messagebus 2>&1 > /dev/ttyS0 || true
+  ls -ld / /run/dbus /run/swir /run/swir/peer-authorization.sock > /dev/ttyS0 2>&1 || true
+  getent passwd messagebus > /dev/ttyS0 2>&1 || true
   serial "SWIR_VM_DIAGNOSTICS_END"
 }
 fail() { printf 'FAIL:%s\n' "$1" > "$STATUS"; diag "$1"; serial "SWIR_VM_E2E_FAIL $1"; sync; systemctl --no-block poweroff; exit 1; }
+[ "$(stat -c '%u:%g:%a' /)" = '0:0:755' ] || fail runtime-root-mode
 node /opt/swir/system/image/system-image-readiness-probe.mjs --compact > "$OUT" || fail readiness-probe
 node -e "const r=require(process.argv[1]); if(!r.summary?.systemImageReadyForE2E) process.exit(2)" "$OUT" || fail readiness-gates
 systemctl is-active --quiet dbus.service || fail dbus
@@ -176,14 +178,18 @@ INITRD="$(find "$ROOTFS/boot" -maxdepth 1 -type f -name 'initrd.img-*' | sort -V
 cp "$KERNEL" "$ARTIFACT_DIR/vmlinuz"
 cp "$INITRD" "$ARTIFACT_DIR/initrd.img"
 
-# A plain ext4 disk proves the composed userspace can boot under the distribution
-# kernel. It deliberately bypasses a bootloader, so the final bootable-image
-# roadmap item remains open.
+# The staging root stays 0700 so privileged provisioning cannot leak through a
+# shared build path. The deployed Linux filesystem root must instead be the
+# conventional root:root 0755; copying the staging directory mode into `/`
+# prevents non-root daemons (for example messagebus) from starting.
 truncate -s 6G "$DISK"
 mkfs.ext4 -q -F -L SWIR_E2E "$DISK"
 mount -o loop "$DISK" "$MOUNT_DIR"
 mounted=1
 rsync -aHAX --numeric-ids "$ROOTFS/" "$MOUNT_DIR/"
+chown 0:0 "$MOUNT_DIR"
+chmod 0755 "$MOUNT_DIR"
+[[ "$(stat -c '%u:%g:%a' "$MOUNT_DIR")" == '0:0:755' ]] || { echo 'runtime filesystem root mode is unsafe/incompatible' >&2; exit 7; }
 sync
 umount "$MOUNT_DIR"
 mounted=0
