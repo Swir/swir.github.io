@@ -77,6 +77,12 @@ PACKAGES+=(debian-archive-keyring python3)
 chroot "$ROOTFS" /usr/bin/env DEBIAN_FRONTEND=noninteractive apt-get update
 chroot "$ROOTFS" /usr/bin/env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends "${PACKAGES[@]}"
 
+# This is a fresh disposable VM instance, not a distributable golden image.
+# Give only this test instance a valid machine identity so D-Bus/logind exercise
+# their real boot path. A future reusable image builder must reset machine-id
+# before distribution and regenerate it on first boot.
+chroot "$ROOTFS" /usr/bin/systemd-machine-id-setup
+
 REPO_POLICY="$WORK_ROOT/repository-trust-policy.json"
 cat > "$REPO_POLICY" <<'EOF'
 {
@@ -110,7 +116,17 @@ cat > "$ROOTFS/usr/local/lib/swir/vm-e2e-run" <<'EOF'
 set -eu
 OUT=/var/lib/swir/vm-e2e/readiness.json
 STATUS=/var/lib/swir/vm-e2e/status.txt
-fail() { printf 'FAIL:%s\n' "$1" > "$STATUS"; printf 'SWIR_VM_E2E_FAIL %s\n' "$1" > /dev/ttyS0; systemctl --no-block poweroff; exit 1; }
+serial() { printf '%s\n' "$*" > /dev/ttyS0; }
+diag() {
+  serial "SWIR_VM_DIAGNOSTICS_BEGIN reason=$1"
+  systemctl --no-pager --full status dbus.service systemd-logind.service NetworkManager.service swir-peer-authorization.socket 2>&1 > /dev/ttyS0 || true
+  journalctl -b --no-pager -n 160 -u dbus.service -u systemd-logind.service -u NetworkManager.service -u swir-peer-authorization.socket 2>&1 > /dev/ttyS0 || true
+  { printf 'machine-id='; cat /etc/machine-id 2>/dev/null || true; } > /dev/ttyS0
+  ls -ld /run/dbus /run/swir /run/swir/peer-authorization.sock 2>&1 > /dev/ttyS0 || true
+  getent passwd messagebus 2>&1 > /dev/ttyS0 || true
+  serial "SWIR_VM_DIAGNOSTICS_END"
+}
+fail() { printf 'FAIL:%s\n' "$1" > "$STATUS"; diag "$1"; serial "SWIR_VM_E2E_FAIL $1"; sync; systemctl --no-block poweroff; exit 1; }
 node /opt/swir/system/image/system-image-readiness-probe.mjs --compact > "$OUT" || fail readiness-probe
 node -e "const r=require(process.argv[1]); if(!r.summary?.systemImageReadyForE2E) process.exit(2)" "$OUT" || fail readiness-gates
 systemctl is-active --quiet dbus.service || fail dbus
@@ -123,7 +139,7 @@ systemctl is-active --quiet swir-peer-authorization.socket || fail peer-authoriz
 [ -x /usr/bin/flatpak ] || fail flatpak-binary
 ([ -x /usr/bin/wine ] || [ -x /usr/bin/wine64 ]) || fail wine-binary
 printf 'PASS\n' > "$STATUS"
-printf 'SWIR_VM_E2E_PASS debian=13 direct-kernel=true network=disabled\n' > /dev/ttyS0
+serial 'SWIR_VM_E2E_PASS debian=13 direct-kernel=true network=disabled'
 sync
 systemctl --no-block poweroff
 EOF
@@ -189,7 +205,7 @@ if [[ $qemu_status -ne 0 && $qemu_status -ne 124 ]]; then
 fi
 grep -F 'SWIR_VM_E2E_PASS debian=13 direct-kernel=true network=disabled' "$SERIAL_LOG" >/dev/null || {
   echo "guest did not emit SWIR_VM_E2E_PASS" >&2
-  tail -n 200 "$SERIAL_LOG" >&2 || true
+  tail -n 240 "$SERIAL_LOG" >&2 || true
   exit 9
 }
 
@@ -199,7 +215,7 @@ cp "$MOUNT_DIR/var/lib/swir/vm-e2e/readiness.json" "$READINESS_OUT"
 cp "$MOUNT_DIR/var/lib/swir/vm-e2e/status.txt" "$ARTIFACT_DIR/status.txt"
 umount "$MOUNT_DIR"
 mounted=0
-node -e "const r=require(process.argv[1]); if(r.distribution?.id!=='debian'||r.distribution?.versionId!=='13'||!r.summary?.systemImageReadyForE2E) process.exit(2); console.log(JSON.stringify({distribution:r.distribution,architecture:r.architecture,kernelRelease:r.kernelRelease,summary:r.summary},null,2))" "$READINESS_OUT"
+node -e "const r=require(process.argv[1]); if(r.distribution?.id!=='debian'||r.distribution?.versionId!=='13'||!r.summary?.systemImageReadyForE2E||!r.summary?.sessionReady) process.exit(2); console.log(JSON.stringify({distribution:r.distribution,architecture:r.architecture,kernelRelease:r.kernelRelease,summary:r.summary},null,2))" "$READINESS_OUT"
 grep -Fx 'PASS' "$ARTIFACT_DIR/status.txt" >/dev/null
 
 echo "[SWIR] Debian 13 direct-kernel VM E2E: PASS"
