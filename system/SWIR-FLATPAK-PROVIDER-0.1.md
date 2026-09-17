@@ -11,7 +11,8 @@ This provider supplies the reviewed Flatpak path behind the common System Packag
 - `linux-native` manifests using `swir.package.flatpak`;
 - user-scoped Flatpak installs (`--user`);
 - preconfigured, explicitly allowlisted Flatpak remote IDs;
-- runtime confirmation that the selected remote is configured and GPG verification is enabled;
+- runtime confirmation that the selected remote is configured and has not disabled GPG verification;
+- OSTree-style GPG-verified remotes only in this provider version; OCI remotes are rejected rather than silently treating different trust semantics as equivalent;
 - `install`, `update` and `remove` operations;
 - fixed `/usr/bin/flatpak` execution with `shell=false`, bounded execution/output and a minimal environment.
 
@@ -41,16 +42,20 @@ The manifest allowlist is policy input, not proof that the current user actually
 2. It must be a regular non-symlink file owned by root.
 3. It must be executable and not group/world writable.
 4. Its resolved path must still be exactly `/usr/bin/flatpak`.
-5. The executor runs the read-only fixed probe:
+5. The executor runs the read-only, documented Flatpak columns probe:
 
 ```text
-/usr/bin/flatpak --user remotes --columns=name,gpg-verify
+/usr/bin/flatpak --user remotes --columns=name,options
 ```
 
 6. The requested remote must be present in that output.
-7. Its `gpg-verify` state must be enabled.
+7. The remote must not contain the `disabled` option.
+8. The remote must not contain the `no-gpg-verify` option.
+9. OCI remotes are rejected by this 0.1 path because its trust contract explicitly requires the OSTree/GPG verification model.
 
-A missing Flatpak executable, unsafe ownership/mode, symlinked executable, missing remote, failed probe or remote without GPG verification blocks the mutation before the operation command is spawned.
+Flatpak exposes disabled GPG verification through the `no-gpg-verify` remote option. SWIR therefore checks the supported `options` column instead of inventing a non-existent `gpg-verify` column. An empty options field is valid and is handled without trimming away the trailing tab separator.
+
+A missing Flatpak executable, unsafe ownership/mode, symlinked executable, missing or disabled remote, failed probe, `no-gpg-verify`, or OCI trust mode blocks the mutation before the operation command is spawned.
 
 ## Execution boundary
 
@@ -81,7 +86,8 @@ The older `createExperimentalSystemPackageProviderLayer()` name remains only as 
 - root-owned fixed-binary checks;
 - rejection of unsafe binary owner/mode;
 - configured-remote presence;
-- mandatory runtime GPG-verification state;
+- empty-options parsing without false negatives;
+- rejection of `no-gpg-verify`, disabled and OCI remotes;
 - fixed environment and `shell=false`;
 - failed trust-probe and failed mutation handling.
 
