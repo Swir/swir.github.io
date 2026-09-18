@@ -1,8 +1,8 @@
 {
   "schema": "swir.public-status/1.0",
-  "generatedAt": "2026-09-18T21:34:00Z",
+  "generatedAt": "2026-09-18T23:39:00Z",
   "canonicalRepository": "https://github.com/Swir/SWIR_OS",
-  "canonicalCommit": "69ea7fae53485104ba950b390ecf27c61d633403",
+  "canonicalCommit": "706c018c938a37053e081991abf17f5394177f09",
   "roadmap": {
     "completed": 55,
     "remaining": 10,
@@ -35,6 +35,7 @@
     "packageUiBroker": "verified-image-provisioned-native-ui-wired-peer-auth-journaled-transaction-path",
     "hardwareCenter": "verified-read-only-native-gtk4-driver-center-report-integration",
     "driverMutationBoundary": "existing-journaled-coordinator-only-no-direct-kernel-module-mutation",
+    "vendorOfficialRepositories": "verified-qualification-only-nvidia-debian13-x86_64-pinned-origin-key-id-inrelease-gpgv-package-index-no-enable-no-mutation-roadmap-open",
     "liveUsbVm": "verified-uefi-usb-mass-storage",
     "graphicalInstallerVm": "verified-full-gtk4-path",
     "detachedInstalledBootVm": "verified-graphical-with-persistence",
@@ -42,6 +43,6 @@
     "secureBootQualification": "not-claimed",
     "legacyBiosQualification": "not-claimed"
   },
-  "latestMilestone": "Canonical SWIR_OS main now includes SWIR Photo Studio 0.2 advanced everyday editing. PR #39 adds bounded center crop, exposure, brightness, contrast and saturation adjustments plus grayscale and sepia filters while preserving local-only input, source immutability, the 64 MiB/40 MP/24-history safety bounds, owner-only atomic exports and no privilege escalation or external image-processing commands. The exact PR head passed Photo Studio Wayland runtime, Debian 13 target runtime, System Edition Contracts, Core Apps and Daily Suite gates, and the merge commit passed its triggered main workflows. The authoritative roadmap remains 55/65 (84.6%) because this expands an already-complete Photo Studio milestone rather than closing a new roadmap checkbox or the umbrella native daily-use suite. Physical Live USB qualification remains pending; Secure Boot and legacy BIOS are not claimed.",
+  "latestMilestone": "Canonical SWIR_OS main now includes PR #41, a fail-closed qualification-only trust-evidence probe for the pinned NVIDIA Debian 13 x86_64 official repository path. The verified gate refuses redirects and arbitrary URLs, derives the full primary signing-key fingerprint from the reviewed NVIDIA public key, validates the repository InRelease signature with gpgv, and confirms cuda-keyring plus nvidia-open are present in the signed package index. It does not enable a repository, install a package, write APT configuration or authorize mutation; future activation still requires reviewed root-owned policy with the complete fingerprint and the existing journaled package/Driver Center broker. All four workflows triggered on merge commit 706c018c passed. The authoritative roadmap remains 55/65 (84.6%) because the official-vendor-repository item stays open until activation and transaction/recovery are verified end-to-end. Physical Live USB qualification remains pending; Secure Boot and legacy BIOS are not claimed.",
   "repositoryRole": "presentation-status-only"
 }
