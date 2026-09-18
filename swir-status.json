@@ -1,13 +1,13 @@
 {
   "schema": "swir.public-status/1.0",
-  "generatedAt": "2026-09-18T10:34:00Z",
+  "generatedAt": "2026-09-18T15:25:46Z",
   "canonicalRepository": "https://github.com/Swir/SWIR_OS",
-  "canonicalCommit": "f9cf7ccc94c6d15699889af2da3a7f567b162cb2",
+  "canonicalCommit": "3cc1f9a11ddc122b7325453554162d1540eb3fbd",
   "roadmap": {
-    "completed": 54,
-    "remaining": 11,
+    "completed": 55,
+    "remaining": 10,
     "total": 65,
-    "percent": 83.1
+    "percent": 84.6
   },
   "editions": {
     "web": "1.7.13",
@@ -16,7 +16,10 @@
   },
   "systemEdition": {
     "nativeShell": "verified-gtk4-wayland",
-    "nativeCoreApps": "files-settings-notes-system-monitor-terminal-network-center-software-center-update-center-hardware-driver-center-browser-player-photo-studio-pdf-viewer-calculator-verified-or-foundation-as-documented",
+    "nativeCoreApps": "files-settings-notes-system-monitor-task-manager-terminal-network-center-software-center-update-center-hardware-driver-center-browser-player-photo-studio-pdf-viewer-calculator-verified-or-foundation-as-documented",
+    "shellThemes": "verified-data-only-swirtheme-accessibility-contrast-settings-import-select-reset-failsafe-builtin-default",
+    "taskManager": "verified-native-gtk4-bounded-filter-same-user-sigterm-confirmation-pid-uid-name-starttime-revalidation-ancestor-protection-no-elevation",
+    "diagnostics": "verified-native-gtk4-read-only-fixed-command-bounded-async-no-elevation",
     "browser": "verified-native-gtk4-webkitgtk-tabs-history-bookmarks-downloads-private-tabs-permission-prompts-default-apps-integration",
     "player": "verified-native-gtk4-gstreamer-local-media-library-playlists-mpris2-notifications-mime-integration",
     "photoStudio": "verified-native-gtk4-gdkpixbuf-local-image-rotate-flip-resize-undo-redo-atomic-png-jpeg-webp-export-basic-roadmap-scope",
@@ -34,6 +37,6 @@
     "secureBootQualification": "not-claimed",
     "legacyBiosQualification": "not-claimed"
   },
-  "latestMilestone": "Canonical SWIR_OS main now includes the verified native SWIR Calculator on top of the existing native PDF Viewer and Photo Studio foundations while the measurable roadmap remains 54/65 (83.1%). Calculator is a first-party unprivileged GTK4 application with a strict AST allowlist instead of Python eval/exec, bounded expression complexity, bounded exponent/result magnitude, fixed shell/image integration and dedicated Wayland plus Debian 13 runtime verification. It closes a real Product Baseline utility gap but does not complete the broader essential native daily-use application suite roadmap deliverable, so roadmap progress is intentionally unchanged. Physical Live USB qualification remains pending; Secure Boot and legacy BIOS are not claimed.",
+  "latestMilestone": "Canonical SWIR_OS main now includes verified safe same-user controls in the native GTK4 Task Manager/System Monitor. The process list supports bounded PID/name filtering and explicit selection; End Process requires confirmation and sends SIGTERM only to a process owned by the signed-in user after PID, UID, process name and /proc start-time identity are revalidated to reject PID reuse. PID 1, the monitor itself and the ancestor/session chain are protected; pidfd signaling is preferred where available, with no SIGKILL, sudo, pkexec, process-group kill or privilege elevation. Dedicated policy/self-test, real disposable-child SIGTERM, Wayland and Debian 13 gates plus the post-merge System Edition, Diagnostics and Core Apps gates are green. The authoritative roadmap intentionally remains 55/65 (84.6%) because the broader essential native daily-use application suite is still incomplete. Physical Live USB qualification remains pending; Secure Boot and legacy BIOS are not claimed.",
   "repositoryRole": "presentation-status-only"
 }
