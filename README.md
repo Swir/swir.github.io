@@ -5,10 +5,10 @@
 **Presentation repository only**
 
 [![Canonical Repository](https://img.shields.io/badge/CANONICAL-Swir%2FSWIR__OS-1f6feb?style=for-the-badge&logo=github)](https://github.com/Swir/SWIR_OS)
-![Roadmap](https://img.shields.io/badge/ROADMAP-81.5%25-2ea043?style=for-the-badge)
-![Completed](https://img.shields.io/badge/DONE-53%2F65-1f6feb?style=for-the-badge)
+![Roadmap](https://img.shields.io/badge/ROADMAP-83.1%25-2ea043?style=for-the-badge)
+![Completed](https://img.shields.io/badge/DONE-54%2F65-1f6feb?style=for-the-badge)
 
-<img width="100%" src="assets/readme/swir-os-progress-card.svg" alt="SWIR OS roadmap progress — 81.5%, 53 of 65 verified deliverables" />
+<img width="100%" src="assets/readme/swir-os-progress-card.svg" alt="SWIR OS roadmap progress — 83.1%, 54 of 65 verified deliverables" />
 
 </div>
 
@@ -27,16 +27,16 @@ The authoritative roadmap is [SWIR_OS/SWIR-OS-ARCHITECTURE.md](https://github.co
 | Web Edition | `1.7.13` |
 | Desktop Edition | `0.5.7-preview` |
 | System Edition | In development |
-| Overall roadmap | **53 / 65 — 81.5%** |
+| Overall roadmap | **54 / 65 — 83.1%** |
 | Release readiness | **Not ready** |
 
-The current canonical System Edition milestone set now includes two additional verified native daily-use applications: **SWIR Browser** and **SWIR Player**. SWIR Browser runs on GTK4/WebKitGTK 6.0 with tabs, bounded owner-only history/bookmarks, downloads, ephemeral private tabs, explicit permission prompts, Default Apps integration and approved alternative-browser handoff through Software Center. SWIR Player runs on GTK4/GStreamer for local audio/video with bounded owner-only library/playlists, MPRIS2 media-key integration, Gio notifications and desktop MIME integration. Both remain unprivileged and do not bypass the package/update security boundary. The complete native daily-use application suite is still an open release gate.
+The current canonical System Edition milestone set now includes verified **SWIR Browser**, **SWIR Player** and the dedicated basic-editing milestone for **SWIR Photo Studio**. Photo Studio runs natively on GTK4/GdkPixbuf for bounded local regular image files with rotate/flip/resize editing, bounded 24-state undo/redo and explicit atomic owner-only PNG/JPEG/WebP export while preserving the source file. Its dedicated Wayland and Debian 13 gates are verified. This closes only the basic Photo Studio roadmap item: the complete native daily-use application suite and advanced Product Baseline editing capabilities remain open release/product gates.
 
 The existing boot/install path remains verified in disposable UEFI VMs: the final image boots as QEMU USB mass storage, the native GTK4 installer requires exact target review and destructive confirmation, installs to a separate blank disk, and the installed system boots graphically with persistence after the source USB is removed. This is meaningful VM evidence, **not** a claim of broad physical-PC support. Physical Live USB boot/install qualification is still open, and Secure Boot plus legacy BIOS remain unclaimed until separately tested.
 
 The canonical repo uses deterministic **SWIR Progress SVG PRO** assets generated from the authoritative roadmap. The card shown here is a presentation snapshot using the same visual language; its source of truth remains `Swir/SWIR_OS`. The canonical roadmap/README presentation is SVG-only for progress meters; text values remain as accessible data, not duplicate character-based bars.
 
-Public progress here is updated only after the corresponding implementation is merged and verified in `Swir/SWIR_OS`. Current canonical snapshot commit: [`195de51`](https://github.com/Swir/SWIR_OS/commit/195de5199b9ba33e6a03b4367bc03701bcb5db1e).
+Public progress here is updated only after the corresponding implementation is merged and verified in `Swir/SWIR_OS`. Current canonical snapshot commit: [`5f841d8`](https://github.com/Swir/SWIR_OS/commit/5f841d8a0c456f2de256aad9c7eeb1c5987ed132).
 
 ## Repository role
 
