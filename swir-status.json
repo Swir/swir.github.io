@@ -1,8 +1,8 @@
 {
   "schema": "swir.public-status/1.0",
-  "generatedAt": "2026-09-18T20:07:00Z",
+  "generatedAt": "2026-09-18T20:30:00Z",
   "canonicalRepository": "https://github.com/Swir/SWIR_OS",
-  "canonicalCommit": "396679c3d02c8de11b4a79a4454829d4258ba2bf",
+  "canonicalCommit": "493df48a8f299a2d058f1b013fa8c77ecbd590e9",
   "roadmap": {
     "completed": 55,
     "remaining": 10,
@@ -17,6 +17,7 @@
   "systemEdition": {
     "nativeShell": "verified-gtk4-wayland",
     "nativeCoreApps": "files-settings-notes-system-monitor-task-manager-terminal-network-center-software-center-update-center-hardware-driver-center-browser-player-photo-studio-pdf-viewer-archive-manager-calculator-screenshot-backup-restore-notification-center-verified-or-foundation-as-documented",
+    "nativeDailySuiteGate": "verified-19-product-baseline-capabilities-native-source-image-staging-shell-reachability-archive-hostile-input-recovery-selftest-roadmap-completion-not-claimed",
     "shellThemes": "verified-data-only-swirtheme-accessibility-contrast-settings-import-select-reset-failsafe-builtin-default",
     "taskManager": "verified-native-gtk4-bounded-filter-same-user-sigterm-confirmation-pid-uid-name-starttime-revalidation-ancestor-protection-no-elevation",
     "diagnostics": "verified-native-gtk4-read-only-fixed-command-bounded-async-no-elevation",
@@ -41,6 +42,6 @@
     "secureBootQualification": "not-claimed",
     "legacyBiosQualification": "not-claimed"
   },
-  "latestMilestone": "Canonical SWIR_OS main now ships the verified native GTK4 Screenshot Tool in the graphical System Edition image and exposes it through the fixed native SWIR shell launcher. Production capture remains behind org.freedesktop.portal.Screenshot with interactive portal consent, accepts only validated local file results, writes owner-only atomic output, and adds no sudo, pkexec, compositor-specific capture binary or direct framebuffer/DRM path. The exact PR head passed all 19 triggered workflows, including the dedicated Screenshot Tool gate, graphical-session UEFI E2E, Live USB install UEFI E2E and full graphical-installer E2E, before merge. The authoritative roadmap intentionally remains 55/65 (84.6%) because the broader essential native daily-use application suite is still incomplete. Physical Live USB qualification remains pending; Secure Boot and legacy BIOS are not claimed.",
+  "latestMilestone": "Canonical SWIR_OS main now includes a fail-closed native daily-use suite integration gate for all 19 Product Baseline essential System Edition capabilities. The gate verifies native GTK4 application source, graphical-image staging and fixed SWIR Shell reachability, executes the real Archive Manager hostile-input extraction self-test and Recovery Mode provisioning self-test, and checks security markers for Screenshot portal mediation, Task Manager identity binding and read-only diagnostics. PR #38 was merged only after all three triggered head workflows passed, and post-merge main CI is green. This is an integration milestone, not a completion claim: the authoritative roadmap intentionally remains 55/65 (84.6%) because per-application product-depth gaps remain, including advanced Photo Studio editing. Physical Live USB qualification remains pending; Secure Boot and legacy BIOS are not claimed.",
   "repositoryRole": "presentation-status-only"
 }
