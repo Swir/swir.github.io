@@ -1,8 +1,8 @@
 {
   "schema": "swir.public-status/1.0",
-  "generatedAt": "2026-09-18T00:42:00Z",
+  "generatedAt": "2026-09-18T01:41:00Z",
   "canonicalRepository": "https://github.com/Swir/SWIR_OS",
-  "canonicalCommit": "6aa50f3b537d347787fcab22859a6c15b2c84b79",
+  "canonicalCommit": "56bb48c46dc2baf53aefe71af9ac75c832d962b1",
   "roadmap": {
     "completed": 51,
     "remaining": 14,
@@ -17,8 +17,9 @@
   "systemEdition": {
     "nativeShell": "verified-gtk4-wayland",
     "nativeCoreApps": "files-settings-notes-system-monitor-terminal-network-center-software-center-update-center-foundations-verified",
-    "softwareCenter": "verified-read-only-local-package-discovery-foundation",
-    "updateCenter": "verified-local-apt-simulation-foundation-no-apply",
+    "softwareCenter": "verified-read-only-local-package-discovery-foundation-package-ui-broker-source-merged-image-wiring-pending",
+    "updateCenter": "verified-local-apt-simulation-foundation-no-apply-package-ui-broker-source-merged-image-wiring-pending",
+    "packageUiBroker": "verified-source-and-contract-foundation-image-provisioning-and-native-ui-mutation-wiring-pending",
     "liveUsbVm": "verified-uefi-usb-mass-storage",
     "graphicalInstallerVm": "verified-full-gtk4-path",
     "detachedInstalledBootVm": "verified-graphical-with-persistence",
@@ -26,6 +27,6 @@
     "secureBootQualification": "not-claimed",
     "legacyBiosQualification": "not-claimed"
   },
-  "latestMilestone": "System Edition now ships verified native GTK4 foundations for SWIR Software Center and SWIR Update Center. Software Center provides bounded installed-package inventory and literal local APT-cache search. Update Center provides a bounded, non-destructive apt-get simulation using locally available metadata. Both remain unprivileged and expose no install/remove/apply/repository-refresh controls; privileged mutation stays behind the existing journaled SWIR package transaction and Polkit boundaries. The exact integration head passed all six triggered workflows, including native Wayland runtime, graphical-session UEFI, Live USB install and full graphical-installer E2E. Roadmap remains 51/65 (78.5%) because the full native daily-use application suite and physical Live USB qualification are still open.",
+  "latestMilestone": "System Edition now includes a verified authenticated package-transaction broker/client source foundation for the future Software Center and Update Center mutation path. The broker reuses the existing distribution provider, dependency resolver, repository trust checks, peer-derived Polkit authorization, durable transaction journal, guarded package executor and post-mutation health verification. Commit requests require a short-lived peer-authorization envelope bound to the recomputed exact plan digest, package identity and operation; caller-supplied Unix identity, repository URLs and command vectors are rejected. PR #15 and all three triggered exact-main contract workflows passed. This does not yet make install/remove/apply controls available in the booted System Edition: image provisioning, runtime dependency staging, native UI confirmation wiring and disposable-image mutation E2E remain pending. Roadmap therefore remains 51/65 (78.5%), and physical Live USB qualification is still open.",
   "repositoryRole": "presentation-status-only"
 }
