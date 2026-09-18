@@ -1,8 +1,8 @@
 {
   "schema": "swir.public-status/1.0",
-  "generatedAt": "2026-09-18T18:03:53Z",
+  "generatedAt": "2026-09-18T19:43:00Z",
   "canonicalRepository": "https://github.com/Swir/SWIR_OS",
-  "canonicalCommit": "b81ddde3685a6f6fc78b0015faf24dc053a5941c",
+  "canonicalCommit": "9b748e033389e294f1a362d969a33434c35dbb6e",
   "roadmap": {
     "completed": 55,
     "remaining": 10,
@@ -22,6 +22,7 @@
     "diagnostics": "verified-native-gtk4-read-only-fixed-command-bounded-async-no-elevation",
     "backupRestore": "verified-native-gtk4-user-swir-state-only-bounded-manifest-sha256-symlink-traversal-special-file-rejection-staged-restore-explicit-confirmation-previous-state-preserved-no-elevation-no-disk-imaging",
     "notifications": "verified-native-freedesktop-notifications-gtk4-center-bounded-owner-only-atomic-history-plain-text-wayland-session-dbus-debian13",
+    "screenshotTool": "verified-native-gtk4-xdg-desktop-portal-local-file-validation-owner-only-atomic-copy-wayland-session-dbus-debian13-source-contract-image-shell-integration-pending",
     "browser": "verified-native-gtk4-webkitgtk-tabs-history-bookmarks-downloads-private-tabs-permission-prompts-default-apps-integration",
     "player": "verified-native-gtk4-gstreamer-local-media-library-playlists-mpris2-notifications-mime-integration",
     "photoStudio": "verified-native-gtk4-gdkpixbuf-local-image-rotate-flip-resize-undo-redo-atomic-png-jpeg-webp-export-basic-roadmap-scope",
@@ -39,6 +40,6 @@
     "secureBootQualification": "not-claimed",
     "legacyBiosQualification": "not-claimed"
   },
-  "latestMilestone": "Canonical SWIR_OS main now includes the verified native freedesktop Notification Service and GTK4 Notification Center. The service owns org.freedesktop.Notifications inside the authenticated user session, renders notification text without trusting markup or arbitrary image paths, keeps bounded owner-only history with atomic writes and symlink rejection, and supports standard notification actions and close signals without privileged helpers. Its dedicated session-D-Bus and real Weston/Wayland gate plus Debian 13 target verification passed, and the post-merge canonical main commit passed all 17 triggered workflows including System Edition Contracts, graphical-session UEFI, Live USB install UEFI and full graphical-installer E2E. The authoritative roadmap intentionally remains 55/65 (84.6%) because the broader essential native daily-use application suite is still incomplete. Physical Live USB qualification remains pending; Secure Boot and legacy BIOS are not claimed.",
+  "latestMilestone": "Canonical SWIR_OS main now includes the verified native GTK4 Screenshot Tool source and security contract. Production capture requests org.freedesktop.portal.Screenshot on the authenticated user session bus with interactive consent/selection, accepts only bounded canonical local file results, rejects remote and symlink-traversing inputs, and writes an owner-only atomic local copy without shell capture, compositor-specific capture binaries, sudo or pkexec. Its dedicated policy, controlled session-D-Bus portal, real Weston/Wayland and Debian 13 target gates passed on the PR and again on canonical main. Graphical-image staging and SWIR shell launcher integration are explicitly still pending, so the authoritative roadmap intentionally remains 55/65 (84.6%). Physical Live USB qualification remains pending; Secure Boot and legacy BIOS are not claimed.",
   "repositoryRole": "presentation-status-only"
 }
