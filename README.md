@@ -30,15 +30,17 @@ The authoritative roadmap is [SWIR_OS/SWIR-OS-ARCHITECTURE.md](https://github.co
 | Overall roadmap | **55 / 65 — 84.6%** |
 | Release readiness | **Not ready** |
 
-The latest canonical milestone closes the installable **SWIR Shell Theme/Skin framework** after its implementation and post-merge validation completed successfully. Bounded data-only `.swirtheme` packages use an exact visual-token allowlist, accessibility contrast validation, owner-only atomic storage, Settings import/select/reset controls and fail-safe recovery to immutable `builtin.swir-dark`. Theme packages cannot inject CSS selectors, scripts, commands, URLs or privileged code. This verified implementation advances the authoritative roadmap to **55 / 65 — 84.6%**; the visual presentation itself does not add progress.
+The latest canonical milestone adds safe same-user process controls to the native **SWIR Task Manager / System Monitor**. Users can filter by PID/name, select a process and explicitly confirm **End Process**; SWIR sends only `SIGTERM` to a process owned by the signed-in user after revalidating PID, UID, process name and `/proc` start time to reject PID reuse. PID 1, the monitor itself and the discovered ancestor/session chain are protected, `pidfd` signaling is preferred where available, and there is no `SIGKILL`, `sudo`, `pkexec`, process-group kill or privilege elevation. Dedicated policy/self-tests, a real disposable-child SIGTERM gate, Wayland runtime, Debian 13 target runtime, and the post-merge System Edition / Diagnostics / Core Apps gates all passed.
 
-The native daily-use application suite remains incomplete, so release readiness is still **not ready**. Existing verified native foundations include SWIR Browser, SWIR Player, Photo Studio, PDF Viewer, Calculator and other System Edition applications documented in the canonical repository.
+The verified **SWIR Shell Theme/Skin framework** remains part of the current System Edition foundation: bounded data-only `.swirtheme` packages use an exact visual-token allowlist, accessibility contrast validation, owner-only atomic storage, Settings import/select/reset controls and fail-safe recovery to immutable `builtin.swir-dark`. The authoritative roadmap remains **55 / 65 — 84.6%** because Task Manager improvements strengthen the still-open essential daily-use suite rather than closing another dedicated roadmap checkbox.
+
+The native daily-use application suite remains incomplete, so release readiness is still **not ready**. Existing verified native foundations include SWIR Browser, SWIR Player, Photo Studio, PDF Viewer, Calculator, Task Manager/Diagnostics and other System Edition applications documented in the canonical repository.
 
 The existing boot/install path remains verified in disposable UEFI VMs: the final image boots as QEMU USB mass storage, the native GTK4 installer requires exact target review and destructive confirmation, installs to a separate blank disk, and the installed system boots graphically with persistence after the source USB is removed. This is meaningful VM evidence, **not** a claim of broad physical-PC support. Physical Live USB boot/install qualification is still open, and Secure Boot plus legacy BIOS remain unclaimed until separately tested.
 
 The canonical repo uses deterministic **SWIR Progress SVG PRO** assets generated from the authoritative roadmap. The card shown here is a presentation snapshot using the same visual language; its source of truth remains `Swir/SWIR_OS`. The canonical roadmap/README presentation is SVG-only for progress meters; text values remain as accessible data, not duplicate character-based bars.
 
-Public progress here is updated only after the corresponding implementation is merged and verified in `Swir/SWIR_OS`. Current canonical snapshot commit: [`031b6ef`](https://github.com/Swir/SWIR_OS/commit/031b6ef4d375813ea05a066fd321ccb1d86e93a9).
+Public progress here is updated only after the corresponding implementation is merged and verified in `Swir/SWIR_OS`. Current canonical snapshot commit: [`3cc1f9a`](https://github.com/Swir/SWIR_OS/commit/3cc1f9a11ddc122b7325453554162d1540eb3fbd).
 
 ## Repository role
 
