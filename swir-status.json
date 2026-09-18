@@ -1,8 +1,8 @@
 {
   "schema": "swir.public-status/1.0",
-  "generatedAt": "2026-09-18T20:30:00Z",
+  "generatedAt": "2026-09-18T21:34:00Z",
   "canonicalRepository": "https://github.com/Swir/SWIR_OS",
-  "canonicalCommit": "493df48a8f299a2d058f1b013fa8c77ecbd590e9",
+  "canonicalCommit": "69ea7fae53485104ba950b390ecf27c61d633403",
   "roadmap": {
     "completed": 55,
     "remaining": 10,
@@ -25,7 +25,7 @@
     "notifications": "verified-native-freedesktop-notifications-gtk4-center-bounded-owner-only-atomic-history-plain-text-wayland-session-dbus-debian13",
     "browser": "verified-native-gtk4-webkitgtk-tabs-history-bookmarks-downloads-private-tabs-permission-prompts-default-apps-integration",
     "player": "verified-native-gtk4-gstreamer-local-media-library-playlists-mpris2-notifications-mime-integration",
-    "photoStudio": "verified-native-gtk4-gdkpixbuf-local-image-rotate-flip-resize-undo-redo-atomic-png-jpeg-webp-export-basic-roadmap-scope",
+    "photoStudio": "verified-native-gtk4-gdkpixbuf-local-image-rotate-flip-resize-center-crop-exposure-brightness-contrast-saturation-grayscale-sepia-bounded-undo-redo-atomic-png-jpeg-webp-export-wayland-debian13-no-external-image-tools",
     "pdfViewer": "verified-native-gtk4-poppler-local-pdf-open-navigation-zoom-document-info-wayland-debian13-integration",
     "archiveManager": "verified-native-gtk4-safe-archive-browse-extract-path-traversal-symlink-escape-protection-wayland-debian13-integration",
     "screenshotTool": "verified-native-gtk4-xdg-desktop-portal-interactive-local-file-only-owner-only-atomic-save-shell-image-and-uefi-vm-integration",
@@ -42,6 +42,6 @@
     "secureBootQualification": "not-claimed",
     "legacyBiosQualification": "not-claimed"
   },
-  "latestMilestone": "Canonical SWIR_OS main now includes a fail-closed native daily-use suite integration gate for all 19 Product Baseline essential System Edition capabilities. The gate verifies native GTK4 application source, graphical-image staging and fixed SWIR Shell reachability, executes the real Archive Manager hostile-input extraction self-test and Recovery Mode provisioning self-test, and checks security markers for Screenshot portal mediation, Task Manager identity binding and read-only diagnostics. PR #38 was merged only after all three triggered head workflows passed, and post-merge main CI is green. This is an integration milestone, not a completion claim: the authoritative roadmap intentionally remains 55/65 (84.6%) because per-application product-depth gaps remain, including advanced Photo Studio editing. Physical Live USB qualification remains pending; Secure Boot and legacy BIOS are not claimed.",
+  "latestMilestone": "Canonical SWIR_OS main now includes SWIR Photo Studio 0.2 advanced everyday editing. PR #39 adds bounded center crop, exposure, brightness, contrast and saturation adjustments plus grayscale and sepia filters while preserving local-only input, source immutability, the 64 MiB/40 MP/24-history safety bounds, owner-only atomic exports and no privilege escalation or external image-processing commands. The exact PR head passed Photo Studio Wayland runtime, Debian 13 target runtime, System Edition Contracts, Core Apps and Daily Suite gates, and the merge commit passed its triggered main workflows. The authoritative roadmap remains 55/65 (84.6%) because this expands an already-complete Photo Studio milestone rather than closing a new roadmap checkbox or the umbrella native daily-use suite. Physical Live USB qualification remains pending; Secure Boot and legacy BIOS are not claimed.",
   "repositoryRole": "presentation-status-only"
 }
