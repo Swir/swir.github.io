@@ -1,8 +1,8 @@
 {
   "schema": "swir.public-status/1.0",
-  "generatedAt": "2026-09-18T01:41:00Z",
+  "generatedAt": "2026-09-18T02:36:00Z",
   "canonicalRepository": "https://github.com/Swir/SWIR_OS",
-  "canonicalCommit": "56bb48c46dc2baf53aefe71af9ac75c832d962b1",
+  "canonicalCommit": "369a1e55f5b275074d53ce4883625b46fff425aa",
   "roadmap": {
     "completed": 51,
     "remaining": 14,
@@ -17,9 +17,9 @@
   "systemEdition": {
     "nativeShell": "verified-gtk4-wayland",
     "nativeCoreApps": "files-settings-notes-system-monitor-terminal-network-center-software-center-update-center-foundations-verified",
-    "softwareCenter": "verified-read-only-local-package-discovery-foundation-package-ui-broker-source-merged-image-wiring-pending",
-    "updateCenter": "verified-local-apt-simulation-foundation-no-apply-package-ui-broker-source-merged-image-wiring-pending",
-    "packageUiBroker": "verified-source-and-contract-foundation-image-provisioning-and-native-ui-mutation-wiring-pending",
+    "softwareCenter": "verified-local-package-discovery-brokered-install-preview-confirmation-image-wiring",
+    "updateCenter": "verified-local-apt-simulation-brokered-per-package-update-preview-confirmation-bulk-disabled",
+    "packageUiBroker": "verified-image-provisioned-native-ui-wired-peer-auth-journaled-transaction-path",
     "liveUsbVm": "verified-uefi-usb-mass-storage",
     "graphicalInstallerVm": "verified-full-gtk4-path",
     "detachedInstalledBootVm": "verified-graphical-with-persistence",
@@ -27,6 +27,6 @@
     "secureBootQualification": "not-claimed",
     "legacyBiosQualification": "not-claimed"
   },
-  "latestMilestone": "System Edition now includes a verified authenticated package-transaction broker/client source foundation for the future Software Center and Update Center mutation path. The broker reuses the existing distribution provider, dependency resolver, repository trust checks, peer-derived Polkit authorization, durable transaction journal, guarded package executor and post-mutation health verification. Commit requests require a short-lived peer-authorization envelope bound to the recomputed exact plan digest, package identity and operation; caller-supplied Unix identity, repository URLs and command vectors are rejected. PR #15 and all three triggered exact-main contract workflows passed. This does not yet make install/remove/apply controls available in the booted System Edition: image provisioning, runtime dependency staging, native UI confirmation wiring and disposable-image mutation E2E remain pending. Roadmap therefore remains 51/65 (78.5%), and physical Live USB qualification is still open.",
+  "latestMilestone": "PR #16 is merged into the canonical SWIR_OS main at 369a1e55f5b275074d53ce4883625b46fff425aa. Native GTK4 Software Center and Update Center are now wired in the graphical System Edition image to the authenticated package-transaction broker. Mutations require an exact broker preview bound to a plan digest, explicit user confirmation, peer-derived Polkit authorization and the existing journaled package transaction path; native GTK surfaces still do not invoke apt, sudo or pkexec directly. Software Center exposes the verified brokered install path, while Update Center exposes verified per-package brokered updates and intentionally keeps bulk update mutation disabled. The exact final PR head passed all eight triggered workflows, including graphical session, Live USB install and full graphical installer UEFI E2E. Roadmap remains 51/65 (78.5%) because this wiring does not by itself complete the essential daily-use native app suite or release readiness. Physical Live USB qualification remains pending; Secure Boot and legacy BIOS are not claimed.",
   "repositoryRole": "presentation-status-only"
 }
