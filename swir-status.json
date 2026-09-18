@@ -1,13 +1,13 @@
 {
   "schema": "swir.public-status/1.0",
-  "generatedAt": "2026-09-18T10:34:00Z",
+  "generatedAt": "2026-09-18T13:38:00Z",
   "canonicalRepository": "https://github.com/Swir/SWIR_OS",
-  "canonicalCommit": "f9cf7ccc94c6d15699889af2da3a7f567b162cb2",
+  "canonicalCommit": "031b6ef4d375813ea05a066fd321ccb1d86e93a9",
   "roadmap": {
-    "completed": 54,
-    "remaining": 11,
+    "completed": 55,
+    "remaining": 10,
     "total": 65,
-    "percent": 83.1
+    "percent": 84.6
   },
   "editions": {
     "web": "1.7.13",
@@ -17,6 +17,7 @@
   "systemEdition": {
     "nativeShell": "verified-gtk4-wayland",
     "nativeCoreApps": "files-settings-notes-system-monitor-terminal-network-center-software-center-update-center-hardware-driver-center-browser-player-photo-studio-pdf-viewer-calculator-verified-or-foundation-as-documented",
+    "shellThemes": "verified-data-only-swirtheme-accessibility-contrast-settings-import-select-reset-failsafe-builtin-default",
     "browser": "verified-native-gtk4-webkitgtk-tabs-history-bookmarks-downloads-private-tabs-permission-prompts-default-apps-integration",
     "player": "verified-native-gtk4-gstreamer-local-media-library-playlists-mpris2-notifications-mime-integration",
     "photoStudio": "verified-native-gtk4-gdkpixbuf-local-image-rotate-flip-resize-undo-redo-atomic-png-jpeg-webp-export-basic-roadmap-scope",
@@ -34,6 +35,6 @@
     "secureBootQualification": "not-claimed",
     "legacyBiosQualification": "not-claimed"
   },
-  "latestMilestone": "Canonical SWIR_OS main now includes the verified native SWIR Calculator on top of the existing native PDF Viewer and Photo Studio foundations while the measurable roadmap remains 54/65 (83.1%). Calculator is a first-party unprivileged GTK4 application with a strict AST allowlist instead of Python eval/exec, bounded expression complexity, bounded exponent/result magnitude, fixed shell/image integration and dedicated Wayland plus Debian 13 runtime verification. It closes a real Product Baseline utility gap but does not complete the broader essential native daily-use application suite roadmap deliverable, so roadmap progress is intentionally unchanged. Physical Live USB qualification remains pending; Secure Boot and legacy BIOS are not claimed.",
+  "latestMilestone": "Canonical SWIR_OS main now closes the verified installable Shell Theme/Skin framework milestone. Bounded data-only .swirtheme packages use an exact visual-token allowlist, accessibility contrast validation, owner-only atomic storage, Settings import/select/reset controls and fail-safe recovery to immutable builtin.swir-dark; theme packages cannot inject CSS selectors, scripts, commands, URLs or privileged code. After the implementation and its post-merge gates completed successfully, the authoritative roadmap advanced to 55/65 (84.6%). Release readiness remains separate: the complete native daily-use application suite and physical Live USB qualification are still open, while Secure Boot and legacy BIOS are not claimed.",
   "repositoryRole": "presentation-status-only"
 }
