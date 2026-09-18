@@ -1,13 +1,13 @@
 {
   "schema": "swir.public-status/1.0",
-  "generatedAt": "2026-09-18T03:55:00Z",
+  "generatedAt": "2026-09-18T07:35:00Z",
   "canonicalRepository": "https://github.com/Swir/SWIR_OS",
-  "canonicalCommit": "eeaef96bca854fe3e4ca54f7c8f88a880774976e",
+  "canonicalCommit": "195de5199b9ba33e6a03b4367bc03701bcb5db1e",
   "roadmap": {
-    "completed": 51,
-    "remaining": 14,
+    "completed": 53,
+    "remaining": 12,
     "total": 65,
-    "percent": 78.5
+    "percent": 81.5
   },
   "editions": {
     "web": "1.7.13",
@@ -16,7 +16,9 @@
   },
   "systemEdition": {
     "nativeShell": "verified-gtk4-wayland",
-    "nativeCoreApps": "files-settings-notes-system-monitor-terminal-network-center-software-center-update-center-hardware-driver-center-foundations-verified",
+    "nativeCoreApps": "files-settings-notes-system-monitor-terminal-network-center-software-center-update-center-hardware-driver-center-browser-player-verified-or-foundation-as-documented",
+    "browser": "verified-native-gtk4-webkitgtk-tabs-history-bookmarks-downloads-private-tabs-permission-prompts-default-apps-integration",
+    "player": "verified-native-gtk4-gstreamer-local-media-library-playlists-mpris2-notifications-mime-integration",
     "softwareCenter": "verified-local-package-discovery-brokered-install-preview-confirmation-image-wiring",
     "updateCenter": "verified-local-apt-simulation-brokered-per-package-update-preview-confirmation-bulk-disabled",
     "packageUiBroker": "verified-image-provisioned-native-ui-wired-peer-auth-journaled-transaction-path",
@@ -29,6 +31,6 @@
     "secureBootQualification": "not-claimed",
     "legacyBiosQualification": "not-claimed"
   },
-  "latestMilestone": "PR #17 is merged into the canonical SWIR_OS main at eeaef96bca854fe3e4ca54f7c8f88a880774976e. System Edition now includes a native GTK4 SWIR Hardware & Driver Center foundation backed by the existing read-only Driver Center report. The image stages the trusted report runtime, hardware catalog and trusted-source policy; report parsing fails closed unless diagnostics remain read-only, non-auto-mutating and free of policy violations. The UI exposes no install/apply/module-load/firmware-flash controls and introduces no arbitrary driver-download path; the existing journaled Driver Center mutation coordinator remains the privileged apply boundary. The exact final PR head passed all eight triggered workflows, including native Hardware Center, graphical session, Live USB install and full graphical installer UEFI E2E. Roadmap remains 51/65 (78.5%) because this foundation does not complete the full dependable daily-use native application suite or release readiness. Physical Live USB qualification remains pending; Secure Boot and legacy BIOS are not claimed.",
+  "latestMilestone": "Canonical SWIR_OS main now records the verified native SWIR Browser and SWIR Player milestones and reports 53/65 (81.5%) measurable roadmap deliverables complete. Browser is GTK4/WebKitGTK 6.0 with bounded owner-only user data, private tabs, permission prompts, downloads and Default Apps/Software Center integration. Player is GTK4/GStreamer with local media playback, bounded owner-only library/playlists, MPRIS2, Gio notifications and desktop MIME integration. PR #24 additionally hardened the SVG-only progress presentation contract without changing product progress. Physical Live USB qualification remains pending; Secure Boot and legacy BIOS are not claimed.",
   "repositoryRole": "presentation-status-only"
 }
