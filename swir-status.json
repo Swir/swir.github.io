@@ -1,8 +1,8 @@
 {
   "schema": "swir.public-status/1.0",
-  "generatedAt": "2026-09-18T16:39:19Z",
+  "generatedAt": "2026-09-18T18:03:53Z",
   "canonicalRepository": "https://github.com/Swir/SWIR_OS",
-  "canonicalCommit": "0589e8b60fd3e2debd76ab7435747e43e99e206d",
+  "canonicalCommit": "b81ddde3685a6f6fc78b0015faf24dc053a5941c",
   "roadmap": {
     "completed": 55,
     "remaining": 10,
@@ -16,11 +16,12 @@
   },
   "systemEdition": {
     "nativeShell": "verified-gtk4-wayland",
-    "nativeCoreApps": "files-settings-notes-system-monitor-task-manager-terminal-network-center-software-center-update-center-hardware-driver-center-browser-player-photo-studio-pdf-viewer-calculator-backup-restore-verified-or-foundation-as-documented",
+    "nativeCoreApps": "files-settings-notes-system-monitor-task-manager-terminal-network-center-software-center-update-center-hardware-driver-center-browser-player-photo-studio-pdf-viewer-calculator-backup-restore-notification-center-verified-or-foundation-as-documented",
     "shellThemes": "verified-data-only-swirtheme-accessibility-contrast-settings-import-select-reset-failsafe-builtin-default",
     "taskManager": "verified-native-gtk4-bounded-filter-same-user-sigterm-confirmation-pid-uid-name-starttime-revalidation-ancestor-protection-no-elevation",
     "diagnostics": "verified-native-gtk4-read-only-fixed-command-bounded-async-no-elevation",
     "backupRestore": "verified-native-gtk4-user-swir-state-only-bounded-manifest-sha256-symlink-traversal-special-file-rejection-staged-restore-explicit-confirmation-previous-state-preserved-no-elevation-no-disk-imaging",
+    "notifications": "verified-native-freedesktop-notifications-gtk4-center-bounded-owner-only-atomic-history-plain-text-wayland-session-dbus-debian13",
     "browser": "verified-native-gtk4-webkitgtk-tabs-history-bookmarks-downloads-private-tabs-permission-prompts-default-apps-integration",
     "player": "verified-native-gtk4-gstreamer-local-media-library-playlists-mpris2-notifications-mime-integration",
     "photoStudio": "verified-native-gtk4-gdkpixbuf-local-image-rotate-flip-resize-undo-redo-atomic-png-jpeg-webp-export-basic-roadmap-scope",
@@ -38,6 +39,6 @@
     "secureBootQualification": "not-claimed",
     "legacyBiosQualification": "not-claimed"
   },
-  "latestMilestone": "Canonical SWIR_OS main now includes the verified native GTK4 SWIR Backup & Restore foundation for signed-in-user SWIR state. It backs up only the allowlisted SWIR config and app-data roots into bounded owner-only archives with a manifest and per-file SHA-256 integrity checks; symlinks, special files, traversal, duplicate or unmanifested members, encrypted members, oversize payloads and digest mismatches fail closed. Restore performs full verification and disposable staging before live-root replacement, requires separate explicit confirmation in the UI, preserves the previous roots as recovery directories and exercises rollback on an injected partial-commit failure. Dedicated hostile-input/rollback tests, a real Wayland GTK4 create-mutate-restore E2E cycle and the exact Debian 13 target runtime all passed on the PR head, together with the System Edition, Live USB, graphical-session and full-installer gates. The authoritative roadmap intentionally remains 55/65 (84.6%) because the broader essential native daily-use application suite is still incomplete. Physical Live USB qualification remains pending; Secure Boot and legacy BIOS are not claimed.",
+  "latestMilestone": "Canonical SWIR_OS main now includes the verified native freedesktop Notification Service and GTK4 Notification Center. The service owns org.freedesktop.Notifications inside the authenticated user session, renders notification text without trusting markup or arbitrary image paths, keeps bounded owner-only history with atomic writes and symlink rejection, and supports standard notification actions and close signals without privileged helpers. Its dedicated session-D-Bus and real Weston/Wayland gate plus Debian 13 target verification passed, and the post-merge canonical main commit passed all 17 triggered workflows including System Edition Contracts, graphical-session UEFI, Live USB install UEFI and full graphical-installer E2E. The authoritative roadmap intentionally remains 55/65 (84.6%) because the broader essential native daily-use application suite is still incomplete. Physical Live USB qualification remains pending; Secure Boot and legacy BIOS are not claimed.",
   "repositoryRole": "presentation-status-only"
 }
