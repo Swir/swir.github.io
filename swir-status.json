@@ -1,8 +1,8 @@
 {
   "schema": "swir.public-status/1.0",
-  "generatedAt": "2026-09-19T02:36:30Z",
+  "generatedAt": "2026-09-19T03:38:00Z",
   "canonicalRepository": "https://github.com/Swir/SWIR_OS",
-  "canonicalCommit": "f54218d7a4c452adbf4078b2e9346ed4094a363c",
+  "canonicalCommit": "4f6f487de863426cdc724634f9973f265acc706c",
   "roadmap": {
     "completed": 55,
     "remaining": 10,
@@ -17,7 +17,7 @@
   "systemEdition": {
     "nativeShell": "verified-gtk4-wayland",
     "nativeCoreApps": "files-settings-notes-system-monitor-task-manager-terminal-network-center-software-center-update-center-hardware-driver-center-browser-player-photo-studio-pdf-viewer-archive-manager-calculator-screenshot-backup-restore-notification-center-verified-or-foundation-as-documented",
-    "nativeDailySuiteGate": "verified-19-product-baseline-capabilities-native-source-image-staging-shell-reachability-archive-hostile-input-recovery-selftest-roadmap-completion-not-claimed",
+    "nativeDailySuiteGate": "verified-19-product-baseline-capabilities-native-source-image-staging-shell-reachability-archive-hostile-input-recovery-selftest-photo-studio-baseline-depth-markers-roadmap-completion-not-claimed",
     "shellThemes": "verified-data-only-swirtheme-accessibility-contrast-settings-import-select-reset-failsafe-builtin-default",
     "taskManager": "verified-native-gtk4-bounded-filter-same-user-sigterm-confirmation-pid-uid-name-starttime-revalidation-ancestor-protection-no-elevation",
     "diagnostics": "verified-native-gtk4-read-only-fixed-command-bounded-async-no-elevation",
@@ -25,7 +25,7 @@
     "notifications": "verified-native-freedesktop-notifications-gtk4-center-bounded-owner-only-atomic-history-plain-text-wayland-session-dbus-debian13",
     "browser": "verified-native-gtk4-webkitgtk-tabs-history-bookmarks-downloads-private-tabs-permission-prompts-default-apps-integration",
     "player": "verified-native-gtk4-gstreamer-local-media-library-playlists-mpris2-notifications-mime-integration",
-    "photoStudio": "verified-native-gtk4-gdkpixbuf-local-image-rotate-flip-resize-center-crop-exposure-brightness-contrast-saturation-grayscale-sepia-bounded-undo-redo-atomic-png-jpeg-webp-export-wayland-debian13-no-external-image-tools",
+    "photoStudio": "verified-native-gtk4-gdkpixbuf-local-image-rectangular-crop-rotate-flip-resize-exposure-brightness-contrast-saturation-grayscale-sepia-bounded-bitmap-text-bounded-line-drawing-annotation-bounded-undo-redo-atomic-png-jpeg-webp-export-source-immutable-wayland-debian13-no-external-image-tools",
     "pdfViewer": "verified-native-gtk4-poppler-local-pdf-open-navigation-zoom-document-info-wayland-debian13-integration",
     "archiveManager": "verified-native-gtk4-safe-archive-browse-extract-path-traversal-symlink-escape-protection-wayland-debian13-integration",
     "screenshotTool": "verified-native-gtk4-xdg-desktop-portal-interactive-local-file-only-owner-only-atomic-save-shell-image-and-uefi-vm-integration",
@@ -45,6 +45,6 @@
     "secureBootQualification": "not-claimed",
     "legacyBiosQualification": "not-claimed"
   },
-  "latestMilestone": "Canonical SWIR_OS main now includes PR #45 at commit f54218d7a4c452adbf4078b2e9346ed4094a363c. The exact vendor-repository binding digest is now preserved when the binder manifest is translated by swir.package.system into a System package plan, and that complete plan is hashed, explicitly authorized, written to the owner-only durable package transaction journal before mutation, and handed to the guarded executor under the same plan digest. A new integration self-test verifies the binder-to-provider-to-SystemPackageTransactionService path and proves post-write tampering with vendorRepositoryBindingDigest is rejected by journal digest validation. Exact post-merge main checks for Vendor Official Repositories, System Edition Contracts, Hardware Live E2E, Driver Center Runtime, Package Provider Image E2E and Package Manager Image E2E all passed. The authoritative roadmap remains 55/65 (84.6%) because repository activation through the privileged broker plus interruption/recovery E2E and physical USB qualification remain open. Live USB, graphical installer and detached installed boot remain VM-verified; physical USB qualification is pending, with Secure Boot and legacy BIOS not claimed.",
+  "latestMilestone": "Canonical SWIR_OS main now includes PR #46 at commit 4f6f487de863426cdc724634f9973f265acc706c. Native SWIR Photo Studio 0.3 completes its documented Product Baseline editing depth with user-selectable rectangular crop, exposure/brightness/contrast, color controls, grayscale/sepia filters, bounded embedded bitmap text, bounded line drawing/annotation, undo/redo, and explicit atomic PNG/JPEG/WebP export while preserving source bytes and alpha. Dedicated policy, Debian 13 and real GTK4/Wayland runtime gates passed, and the 19-capability native daily-suite integration gate now fails closed if Photo Studio baseline-depth markers disappear. The umbrella daily-use-suite roadmap item remains open pending the broader per-application runtime-evidence audit, so authoritative roadmap progress remains 55/65 (84.6%). Live USB, graphical installer and detached installed boot remain VM-verified; physical USB qualification is pending, with Secure Boot and legacy BIOS not claimed.",
   "repositoryRole": "presentation-status-only"
 }
