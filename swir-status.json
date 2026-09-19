@@ -1,8 +1,8 @@
 {
   "schema": "swir.public-status/1.0",
-  "generatedAt": "2026-09-19T09:20:57Z",
+  "generatedAt": "2026-09-19T14:45:45Z",
   "canonicalRepository": "https://github.com/Swir/SWIR_OS",
-  "canonicalCommit": "3458bb94e8f39ec6ecd52e3d7eb44e82fac82a7e",
+  "canonicalCommit": "077d92cf55c5005c4d35d438976360ce7b280169",
   "roadmap": {
     "completed": 55,
     "remaining": 10,
@@ -18,7 +18,7 @@
     "nativeShell": "verified-gtk4-wayland",
     "nativeCoreApps": "files-settings-notes-system-monitor-task-manager-terminal-network-center-software-center-update-center-hardware-driver-center-browser-player-photo-studio-pdf-viewer-archive-manager-calculator-screenshot-backup-restore-notification-center-verified-or-foundation-as-documented",
     "nativeDailySuiteGate": "verified-19-product-baseline-capabilities-native-source-image-staging-shell-reachability-15-runtime-security-workflow-authorities-read-only-permissions-runtime-or-selftest-evidence-roadmap-completion-not-claimed",
-    "defaultApps": "verified-native-gtk4-settings-browser-media-image-pdf-gio-default-handler-mutations-text-code-and-archive-still-open",
+    "defaultApps": "verified-native-gtk4-settings-browser-media-image-pdf-gio-default-handler-mutations-plus-safe-text-code-and-archive-source-handlers-with-wayland-runtime-final-image-staging-and-six-category-settings-verification-pending",
     "shellThemes": "verified-data-only-swirtheme-accessibility-contrast-settings-import-select-reset-failsafe-builtin-default",
     "taskManager": "verified-native-gtk4-bounded-filter-same-user-sigterm-confirmation-pid-uid-name-starttime-revalidation-ancestor-protection-no-elevation",
     "diagnostics": "verified-native-gtk4-read-only-fixed-command-bounded-async-no-elevation",
@@ -48,6 +48,6 @@
     "secureBootQualification": "not-claimed",
     "legacyBiosQualification": "not-claimed"
   },
-  "latestMilestone": "Canonical SWIR_OS main now includes PR #50 at commit 3458bb94e8f39ec6ecd52e3d7eb44e82fac82a7e. System Edition gained a fail-closed fwupd/LVFS firmware transaction boundary with exact LVFS candidate binding, SHA-256 plan-digest confirmation, live metadata revalidation immediately before mutation, a private durable journal, explicit staged-reboot/recovery states and post-update fwupd history verification. Native Hardware Center can show bounded trusted LVFS candidates but exposes no mutation control. Automatic reboot/rollback, arbitrary firmware files/URLs and physical-hardware qualification remain disabled or unclaimed. PR #49 also expanded native Default Apps to browser, media, image and PDF handlers with real per-user Gio mutations. Authoritative roadmap progress remains 55/65 (84.6%); physical Live USB qualification and real-device firmware E2E remain pending.",
+  "latestMilestone": "Canonical SWIR_OS main now includes PR #52 at commit 077d92cf55c5005c4d35d438976360ce7b280169. System Edition gained a first-party GTK4 Text Editor for bounded local UTF-8 text/code files with fail-closed URI, symlink, hardlink, binary and size checks plus atomic revalidated saves, and source-controlled desktop registrations for text/code and the existing safe Archive Manager. Dedicated policy and headless Wayland E2E verify a real text edit/save and safe archive extraction. Default Apps remains open until these handlers are staged into the final System image, Settings expands from four to all six categories and staged-image Gio association verification passes. Authoritative roadmap progress remains 55/65 (84.6%); physical Live USB qualification and real-device firmware E2E remain pending.",
   "repositoryRole": "presentation-status-only"
 }
