@@ -1,8 +1,8 @@
 {
   "schema": "swir.public-status/1.0",
-  "generatedAt": "2026-09-19T14:45:45Z",
+  "generatedAt": "2026-09-19T20:04:03Z",
   "canonicalRepository": "https://github.com/Swir/SWIR_OS",
-  "canonicalCommit": "077d92cf55c5005c4d35d438976360ce7b280169",
+  "canonicalCommit": "7b9eafad6346b919beca46463b48b0fad928b8a3",
   "roadmap": {
     "completed": 55,
     "remaining": 10,
@@ -17,8 +17,8 @@
   "systemEdition": {
     "nativeShell": "verified-gtk4-wayland",
     "nativeCoreApps": "files-settings-notes-system-monitor-task-manager-terminal-network-center-software-center-update-center-hardware-driver-center-browser-player-photo-studio-pdf-viewer-archive-manager-calculator-screenshot-backup-restore-notification-center-verified-or-foundation-as-documented",
-    "nativeDailySuiteGate": "verified-19-product-baseline-capabilities-native-source-image-staging-shell-reachability-15-runtime-security-workflow-authorities-read-only-permissions-runtime-or-selftest-evidence-roadmap-completion-not-claimed",
-    "defaultApps": "verified-native-gtk4-settings-browser-media-image-pdf-gio-default-handler-mutations-plus-safe-text-code-and-archive-source-handlers-with-wayland-runtime-final-image-staging-and-six-category-settings-verification-pending",
+    "nativeDailySuiteGate": "verified-19-product-baseline-capabilities-native-source-image-staging-shell-reachability-runtime-security-workflow-authorities-read-only-permissions-runtime-or-selftest-evidence-roadmap-completion-not-claimed",
+    "defaultApps": "verified-six-category-native-gtk4-settings-browser-media-image-pdf-text-code-archive-final-image-staging-real-per-user-gio-handler-mutations-isolated-wayland-verification",
     "shellThemes": "verified-data-only-swirtheme-accessibility-contrast-settings-import-select-reset-failsafe-builtin-default",
     "taskManager": "verified-native-gtk4-bounded-filter-same-user-sigterm-confirmation-pid-uid-name-starttime-revalidation-ancestor-protection-no-elevation",
     "diagnostics": "verified-native-gtk4-read-only-fixed-command-bounded-async-no-elevation",
@@ -48,6 +48,6 @@
     "secureBootQualification": "not-claimed",
     "legacyBiosQualification": "not-claimed"
   },
-  "latestMilestone": "Canonical SWIR_OS main now includes PR #52 at commit 077d92cf55c5005c4d35d438976360ce7b280169. System Edition gained a first-party GTK4 Text Editor for bounded local UTF-8 text/code files with fail-closed URI, symlink, hardlink, binary and size checks plus atomic revalidated saves, and source-controlled desktop registrations for text/code and the existing safe Archive Manager. Dedicated policy and headless Wayland E2E verify a real text edit/save and safe archive extraction. Default Apps remains open until these handlers are staged into the final System image, Settings expands from four to all six categories and staged-image Gio association verification passes. Authoritative roadmap progress remains 55/65 (84.6%); physical Live USB qualification and real-device firmware E2E remain pending.",
+  "latestMilestone": "Canonical SWIR_OS main now includes PR #53 at commit 7b9eafad6346b919beca46463b48b0fad928b8a3. System Edition now stages the trusted Text Editor and Archive Manager handlers into the graphical image and SWIR Settings exposes all six Default Apps categories: browser, media, image, PDF, text/code and archive. The dedicated isolated Wayland gate verifies real per-user Gio association mutations against the staged handlers. Authoritative roadmap progress remains 55/65 (84.6%); this integration milestone does not by itself complete the broad native daily-use suite. Physical Live USB qualification and real-device firmware E2E remain pending.",
   "repositoryRole": "presentation-status-only"
 }
