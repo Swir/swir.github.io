@@ -1,8 +1,8 @@
 {
   "schema": "swir.public-status/1.0",
-  "generatedAt": "2026-09-19T23:19:05Z",
+  "generatedAt": "2026-09-19T23:20:25Z",
   "canonicalRepository": "https://github.com/Swir/SWIR_OS",
-  "canonicalCommit": "86513d32aeea7a8402f415336faf3acda73c8c11",
+  "canonicalCommit": "86513d02a68f109d1cb9f61a4e8b7954425c9d8e",
   "roadmap": {
     "completed": 55,
     "remaining": 10,
@@ -49,6 +49,6 @@
     "secureBootQualification": "not-claimed",
     "legacyBiosQualification": "not-claimed"
   },
-  "latestMilestone": "Canonical SWIR_OS main now includes PR #54 at commit 86513d32aeea7a8402f415336faf3acda73c8c11. SWIR Clock now persists bounded same-user alarm definitions safely across restarts and launches an unprivileged graphical-session alarm scheduler so due alarms can fire while the main Clock window is closed. Cross-process locking and atomic daily claiming prevent intentional duplicate firing between the open Clock UI and the session scheduler. This does not claim alarms before login, while the computer is powered off, or wake-from-suspend support. Authoritative roadmap progress remains 55/65 (84.6%); the broader native daily-use suite remains open. Physical Live USB qualification and real-device firmware E2E remain pending.",
+  "latestMilestone": "Canonical SWIR_OS main now includes PR #54 at commit 86513d02a68f109d1cb9f61a4e8b7954425c9d8e. SWIR Clock now persists bounded same-user alarm definitions safely across restarts and launches an unprivileged graphical-session alarm scheduler so due alarms can fire while the main Clock window is closed. Cross-process locking and atomic daily claiming prevent intentional duplicate firing between the open Clock UI and the session scheduler. This does not claim alarms before login, while the computer is powered off, or wake-from-suspend support. Authoritative roadmap progress remains 55/65 (84.6%); the broader native daily-use suite remains open. Physical Live USB qualification and real-device firmware E2E remain pending.",
   "repositoryRole": "presentation-status-only"
 }
