@@ -1,8 +1,8 @@
 {
   "schema": "swir.public-status/1.0",
-  "generatedAt": "2026-09-19T20:04:03Z",
+  "generatedAt": "2026-09-19T23:19:05Z",
   "canonicalRepository": "https://github.com/Swir/SWIR_OS",
-  "canonicalCommit": "7b9eafad6346b919beca46463b48b0fad928b8a3",
+  "canonicalCommit": "86513d32aeea7a8402f415336faf3acda73c8c11",
   "roadmap": {
     "completed": 55,
     "remaining": 10,
@@ -24,6 +24,7 @@
     "diagnostics": "verified-native-gtk4-read-only-fixed-command-bounded-async-no-elevation",
     "backupRestore": "verified-native-gtk4-user-swir-state-only-bounded-manifest-sha256-symlink-traversal-special-file-rejection-staged-restore-explicit-confirmation-previous-state-preserved-no-elevation-no-disk-imaging",
     "notifications": "verified-native-freedesktop-notifications-gtk4-center-bounded-owner-only-atomic-history-plain-text-wayland-session-dbus-debian13",
+    "clock": "verified-native-gtk4-versioned-owner-only-atomic-alarm-store-same-user-session-scheduler-cross-process-lock-atomic-daily-claim-window-independent-no-elevation-no-network-no-prelogin-no-powered-off-or-wake-from-suspend-claim",
     "browser": "verified-native-gtk4-webkitgtk-tabs-history-bookmarks-downloads-private-tabs-permission-prompts-default-apps-integration",
     "player": "verified-native-gtk4-gstreamer-local-media-library-playlists-mpris2-notifications-mime-integration",
     "photoStudio": "verified-native-gtk4-gdkpixbuf-local-image-rectangular-crop-rotate-flip-resize-exposure-brightness-contrast-saturation-grayscale-sepia-bounded-bitmap-text-bounded-line-drawing-annotation-bounded-undo-redo-atomic-png-jpeg-webp-export-source-immutable-wayland-debian13-no-external-image-tools",
@@ -48,6 +49,6 @@
     "secureBootQualification": "not-claimed",
     "legacyBiosQualification": "not-claimed"
   },
-  "latestMilestone": "Canonical SWIR_OS main now includes PR #53 at commit 7b9eafad6346b919beca46463b48b0fad928b8a3. System Edition now stages the trusted Text Editor and Archive Manager handlers into the graphical image and SWIR Settings exposes all six Default Apps categories: browser, media, image, PDF, text/code and archive. The dedicated isolated Wayland gate verifies real per-user Gio association mutations against the staged handlers. Authoritative roadmap progress remains 55/65 (84.6%); this integration milestone does not by itself complete the broad native daily-use suite. Physical Live USB qualification and real-device firmware E2E remain pending.",
+  "latestMilestone": "Canonical SWIR_OS main now includes PR #54 at commit 86513d32aeea7a8402f415336faf3acda73c8c11. SWIR Clock now persists bounded same-user alarm definitions safely across restarts and launches an unprivileged graphical-session alarm scheduler so due alarms can fire while the main Clock window is closed. Cross-process locking and atomic daily claiming prevent intentional duplicate firing between the open Clock UI and the session scheduler. This does not claim alarms before login, while the computer is powered off, or wake-from-suspend support. Authoritative roadmap progress remains 55/65 (84.6%); the broader native daily-use suite remains open. Physical Live USB qualification and real-device firmware E2E remain pending.",
   "repositoryRole": "presentation-status-only"
 }
