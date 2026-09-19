@@ -1,8 +1,8 @@
 {
   "schema": "swir.public-status/1.0",
-  "generatedAt": "2026-09-19T01:35:49Z",
+  "generatedAt": "2026-09-19T02:36:30Z",
   "canonicalRepository": "https://github.com/Swir/SWIR_OS",
-  "canonicalCommit": "4bf907f914ca1b2aa248f1d4cdc1925216f4c62c",
+  "canonicalCommit": "f54218d7a4c452adbf4078b2e9346ed4094a363c",
   "roadmap": {
     "completed": 55,
     "remaining": 10,
@@ -36,8 +36,8 @@
     "hardwareCenter": "verified-read-only-native-gtk4-driver-center-report-integration",
     "driverCenterRuntimeGate": "verified-deterministic-safety-contract-plus-host-pci-visibility-aware-production-sysfs-probe-no-synthetic-hardware-no-physical-qualification-claim",
     "driverMutationBoundary": "existing-journaled-coordinator-only-no-direct-kernel-module-mutation",
-    "vendorOfficialRepositories": "verified-qualification-and-transaction-binding-nvidia-debian13-x86_64-pinned-origin-full-fingerprint-02182e60104fcdc26eae1b8597a5d4cb8793f200-inrelease-gpgv-freshness-package-intersection-deterministic-binding-digest-existing-package-plan-compatible-no-enable-no-mutation-roadmap-open",
-    "vendorRepositoryTransactionBinding": "verified-side-effect-free-root-policy-review-plus-fresh-evidence-exact-repository-platform-fingerprint-signature-package-intersection-sha256-binding-digest-system-package-plan-preview-journal-required-direct-apt-pkexec-disabled-activation-not-implemented",
+    "vendorOfficialRepositories": "verified-qualification-transaction-binding-and-package-journal-integrity-nvidia-debian13-x86_64-pinned-origin-full-fingerprint-02182e60104fcdc26eae1b8597a5d4cb8793f200-inrelease-gpgv-freshness-package-intersection-deterministic-binding-digest-preserved-into-journaled-plan-tamper-fails-closed-no-enable-no-mutation-roadmap-open",
+    "vendorRepositoryTransactionBinding": "verified-side-effect-free-root-policy-review-plus-fresh-evidence-exact-repository-platform-fingerprint-signature-package-intersection-sha256-binding-digest-preserved-through-distribution-provider-into-system-package-plan-and-durable-transaction-journal-authorization-and-executor-bound-to-same-plan-digest-post-write-binding-tamper-rejected-direct-apt-pkexec-disabled-activation-not-implemented",
     "liveUsbVm": "verified-uefi-usb-mass-storage",
     "graphicalInstallerVm": "verified-full-gtk4-path",
     "detachedInstalledBootVm": "verified-graphical-with-persistence",
@@ -45,6 +45,6 @@
     "secureBootQualification": "not-claimed",
     "legacyBiosQualification": "not-claimed"
   },
-  "latestMilestone": "Canonical SWIR_OS main now includes PR #44 at commit 4bf907f914ca1b2aa248f1d4cdc1925216f4c62c. Official-vendor repository qualification can now be bound to the existing journaled System package and Driver Center architecture through a side-effect-free deterministic SHA-256 transaction-binding preview. The binder fails closed unless the root-owned policy review and fresh qualification evidence agree on repository ID, hardware vendor, Debian platform tuple, exact HTTPS repository path, pinned 40-hex primary signing-key fingerprint, InRelease signature identity and requested package intersection. Its package-provider inputs were verified against the existing swir.package.system plan path and still require the trusted repository boundary, privilege, durable journal and explicit downstream confirmation. The binding cannot enable a repository, authorize mutation, run APT directly or invoke a direct pkexec path. Post-merge policy, System Edition Contracts, Driver Center Runtime and Hardware Live E2E checks for canonical commit 4bf907f9 passed. The authoritative roadmap remains 55/65 (84.6%) because actual brokered repository activation plus interruption/recovery E2E and physical hardware qualification remain open. Live USB, graphical installer and detached installed boot remain VM-verified; physical USB qualification is pending, with Secure Boot and legacy BIOS not claimed.",
+  "latestMilestone": "Canonical SWIR_OS main now includes PR #45 at commit f54218d7a4c452adbf4078b2e9346ed4094a363c. The exact vendor-repository binding digest is now preserved when the binder manifest is translated by swir.package.system into a System package plan, and that complete plan is hashed, explicitly authorized, written to the owner-only durable package transaction journal before mutation, and handed to the guarded executor under the same plan digest. A new integration self-test verifies the binder-to-provider-to-SystemPackageTransactionService path and proves post-write tampering with vendorRepositoryBindingDigest is rejected by journal digest validation. Exact post-merge main checks for Vendor Official Repositories, System Edition Contracts, Hardware Live E2E, Driver Center Runtime, Package Provider Image E2E and Package Manager Image E2E all passed. The authoritative roadmap remains 55/65 (84.6%) because repository activation through the privileged broker plus interruption/recovery E2E and physical USB qualification remain open. Live USB, graphical installer and detached installed boot remain VM-verified; physical USB qualification is pending, with Secure Boot and legacy BIOS not claimed.",
   "repositoryRole": "presentation-status-only"
 }
