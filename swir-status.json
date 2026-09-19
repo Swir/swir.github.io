@@ -1,8 +1,8 @@
 {
   "schema": "swir.public-status/1.0",
-  "generatedAt": "2026-09-19T03:38:00Z",
+  "generatedAt": "2026-09-19T05:34:00Z",
   "canonicalRepository": "https://github.com/Swir/SWIR_OS",
-  "canonicalCommit": "4f6f487de863426cdc724634f9973f265acc706c",
+  "canonicalCommit": "4f35cc989b415de539627d158052fdde80be1411",
   "roadmap": {
     "completed": 55,
     "remaining": 10,
@@ -17,7 +17,7 @@
   "systemEdition": {
     "nativeShell": "verified-gtk4-wayland",
     "nativeCoreApps": "files-settings-notes-system-monitor-task-manager-terminal-network-center-software-center-update-center-hardware-driver-center-browser-player-photo-studio-pdf-viewer-archive-manager-calculator-screenshot-backup-restore-notification-center-verified-or-foundation-as-documented",
-    "nativeDailySuiteGate": "verified-19-product-baseline-capabilities-native-source-image-staging-shell-reachability-archive-hostile-input-recovery-selftest-photo-studio-baseline-depth-markers-roadmap-completion-not-claimed",
+    "nativeDailySuiteGate": "verified-19-product-baseline-capabilities-native-source-image-staging-shell-reachability-14-runtime-security-workflow-authorities-read-only-permissions-runtime-or-selftest-evidence-roadmap-completion-not-claimed",
     "shellThemes": "verified-data-only-swirtheme-accessibility-contrast-settings-import-select-reset-failsafe-builtin-default",
     "taskManager": "verified-native-gtk4-bounded-filter-same-user-sigterm-confirmation-pid-uid-name-starttime-revalidation-ancestor-protection-no-elevation",
     "diagnostics": "verified-native-gtk4-read-only-fixed-command-bounded-async-no-elevation",
@@ -41,10 +41,11 @@
     "liveUsbVm": "verified-uefi-usb-mass-storage",
     "graphicalInstallerVm": "verified-full-gtk4-path",
     "detachedInstalledBootVm": "verified-graphical-with-persistence",
-    "physicalUsbQualification": "pending",
+    "physicalUsbQualification": "pending-read-only-evidence-collector-and-two-phase-verifier-verified-no-roadmap-completion-claim",
+    "physicalUsbEvidence": "verified-privacy-minimized-digest-bound-live-installed-pairing-virtualization-refusal-usb-detach-persistence-continuity-hosted-runner-smoke-only-no-destructive-actions",
     "secureBootQualification": "not-claimed",
     "legacyBiosQualification": "not-claimed"
   },
-  "latestMilestone": "Canonical SWIR_OS main now includes PR #46 at commit 4f6f487de863426cdc724634f9973f265acc706c. Native SWIR Photo Studio 0.3 completes its documented Product Baseline editing depth with user-selectable rectangular crop, exposure/brightness/contrast, color controls, grayscale/sepia filters, bounded embedded bitmap text, bounded line drawing/annotation, undo/redo, and explicit atomic PNG/JPEG/WebP export while preserving source bytes and alpha. Dedicated policy, Debian 13 and real GTK4/Wayland runtime gates passed, and the 19-capability native daily-suite integration gate now fails closed if Photo Studio baseline-depth markers disappear. The umbrella daily-use-suite roadmap item remains open pending the broader per-application runtime-evidence audit, so authoritative roadmap progress remains 55/65 (84.6%). Live USB, graphical installer and detached installed boot remain VM-verified; physical USB qualification is pending, with Secure Boot and legacy BIOS not claimed.",
+  "latestMilestone": "Canonical SWIR_OS main now includes PR #48 at commit 4f35cc989b415de539627d158052fdde80be1411. System Edition gained a read-only, privacy-minimized physical Live USB qualification evidence collector plus a fail-closed two-phase verifier for UEFI physical USB boot, detached installed-disk boot, persistence continuity, virtualization refusal and tamper detection. The dedicated CI gate and System Edition Contracts pass on the merged main snapshot. The tooling deliberately performs no installer invocation, disk formatting, mounting or privilege escalation and keeps physical-hardware, Secure Boot, legacy BIOS and all-PC claims false. The actual physical USB/PC qualification remains pending, so authoritative roadmap progress stays 55/65 (84.6%). PR #47 also binds all 19 Product Baseline native capabilities to 14 runtime/security workflow authorities without auto-completing the umbrella native-suite roadmap item.",
   "repositoryRole": "presentation-status-only"
 }
