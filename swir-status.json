@@ -1,8 +1,8 @@
 {
   "schema": "swir.public-status/1.0",
-  "generatedAt": "2026-09-19T05:34:00Z",
+  "generatedAt": "2026-09-19T09:20:57Z",
   "canonicalRepository": "https://github.com/Swir/SWIR_OS",
-  "canonicalCommit": "4f35cc989b415de539627d158052fdde80be1411",
+  "canonicalCommit": "3458bb94e8f39ec6ecd52e3d7eb44e82fac82a7e",
   "roadmap": {
     "completed": 55,
     "remaining": 10,
@@ -17,7 +17,8 @@
   "systemEdition": {
     "nativeShell": "verified-gtk4-wayland",
     "nativeCoreApps": "files-settings-notes-system-monitor-task-manager-terminal-network-center-software-center-update-center-hardware-driver-center-browser-player-photo-studio-pdf-viewer-archive-manager-calculator-screenshot-backup-restore-notification-center-verified-or-foundation-as-documented",
-    "nativeDailySuiteGate": "verified-19-product-baseline-capabilities-native-source-image-staging-shell-reachability-14-runtime-security-workflow-authorities-read-only-permissions-runtime-or-selftest-evidence-roadmap-completion-not-claimed",
+    "nativeDailySuiteGate": "verified-19-product-baseline-capabilities-native-source-image-staging-shell-reachability-15-runtime-security-workflow-authorities-read-only-permissions-runtime-or-selftest-evidence-roadmap-completion-not-claimed",
+    "defaultApps": "verified-native-gtk4-settings-browser-media-image-pdf-gio-default-handler-mutations-text-code-and-archive-still-open",
     "shellThemes": "verified-data-only-swirtheme-accessibility-contrast-settings-import-select-reset-failsafe-builtin-default",
     "taskManager": "verified-native-gtk4-bounded-filter-same-user-sigterm-confirmation-pid-uid-name-starttime-revalidation-ancestor-protection-no-elevation",
     "diagnostics": "verified-native-gtk4-read-only-fixed-command-bounded-async-no-elevation",
@@ -33,9 +34,10 @@
     "softwareCenter": "verified-local-package-discovery-brokered-install-preview-confirmation-image-wiring",
     "updateCenter": "verified-local-apt-simulation-brokered-per-package-update-preview-confirmation-bulk-disabled",
     "packageUiBroker": "verified-image-provisioned-native-ui-wired-peer-auth-journaled-transaction-path",
-    "hardwareCenter": "verified-read-only-native-gtk4-driver-center-report-integration",
+    "hardwareCenter": "verified-read-only-native-gtk4-driver-center-report-and-trusted-lvfs-firmware-candidate-integration-no-mutation-controls",
     "driverCenterRuntimeGate": "verified-deterministic-safety-contract-plus-host-pci-visibility-aware-production-sysfs-probe-no-synthetic-hardware-no-physical-qualification-claim",
     "driverMutationBoundary": "existing-journaled-coordinator-only-no-direct-kernel-module-mutation",
+    "firmwareUpdates": "verified-safe-fwupd-lvfs-transaction-planning-exact-device-and-release-binding-sha256-plan-confirmation-live-metadata-revalidation-root-owned-journal-post-update-history-verification-read-only-hardware-center-candidates-no-auto-reboot-no-auto-rollback-physical-hardware-pending",
     "vendorOfficialRepositories": "verified-qualification-transaction-binding-and-package-journal-integrity-nvidia-debian13-x86_64-pinned-origin-full-fingerprint-02182e60104fcdc26eae1b8597a5d4cb8793f200-inrelease-gpgv-freshness-package-intersection-deterministic-binding-digest-preserved-into-journaled-plan-tamper-fails-closed-no-enable-no-mutation-roadmap-open",
     "vendorRepositoryTransactionBinding": "verified-side-effect-free-root-policy-review-plus-fresh-evidence-exact-repository-platform-fingerprint-signature-package-intersection-sha256-binding-digest-preserved-through-distribution-provider-into-system-package-plan-and-durable-transaction-journal-authorization-and-executor-bound-to-same-plan-digest-post-write-binding-tamper-rejected-direct-apt-pkexec-disabled-activation-not-implemented",
     "liveUsbVm": "verified-uefi-usb-mass-storage",
@@ -46,6 +48,6 @@
     "secureBootQualification": "not-claimed",
     "legacyBiosQualification": "not-claimed"
   },
-  "latestMilestone": "Canonical SWIR_OS main now includes PR #48 at commit 4f35cc989b415de539627d158052fdde80be1411. System Edition gained a read-only, privacy-minimized physical Live USB qualification evidence collector plus a fail-closed two-phase verifier for UEFI physical USB boot, detached installed-disk boot, persistence continuity, virtualization refusal and tamper detection. The dedicated CI gate and System Edition Contracts pass on the merged main snapshot. The tooling deliberately performs no installer invocation, disk formatting, mounting or privilege escalation and keeps physical-hardware, Secure Boot, legacy BIOS and all-PC claims false. The actual physical USB/PC qualification remains pending, so authoritative roadmap progress stays 55/65 (84.6%). PR #47 also binds all 19 Product Baseline native capabilities to 14 runtime/security workflow authorities without auto-completing the umbrella native-suite roadmap item.",
+  "latestMilestone": "Canonical SWIR_OS main now includes PR #50 at commit 3458bb94e8f39ec6ecd52e3d7eb44e82fac82a7e. System Edition gained a fail-closed fwupd/LVFS firmware transaction boundary with exact LVFS candidate binding, SHA-256 plan-digest confirmation, live metadata revalidation immediately before mutation, a private durable journal, explicit staged-reboot/recovery states and post-update fwupd history verification. Native Hardware Center can show bounded trusted LVFS candidates but exposes no mutation control. Automatic reboot/rollback, arbitrary firmware files/URLs and physical-hardware qualification remain disabled or unclaimed. PR #49 also expanded native Default Apps to browser, media, image and PDF handlers with real per-user Gio mutations. Authoritative roadmap progress remains 55/65 (84.6%); physical Live USB qualification and real-device firmware E2E remain pending.",
   "repositoryRole": "presentation-status-only"
 }
