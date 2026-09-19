@@ -1,8 +1,8 @@
 {
   "schema": "swir.public-status/1.0",
-  "generatedAt": "2026-09-19T00:31:20Z",
+  "generatedAt": "2026-09-19T01:35:49Z",
   "canonicalRepository": "https://github.com/Swir/SWIR_OS",
-  "canonicalCommit": "be8873b0dc2e18a5152af70239188be65af6e46f",
+  "canonicalCommit": "4bf907f914ca1b2aa248f1d4cdc1925216f4c62c",
   "roadmap": {
     "completed": 55,
     "remaining": 10,
@@ -36,7 +36,8 @@
     "hardwareCenter": "verified-read-only-native-gtk4-driver-center-report-integration",
     "driverCenterRuntimeGate": "verified-deterministic-safety-contract-plus-host-pci-visibility-aware-production-sysfs-probe-no-synthetic-hardware-no-physical-qualification-claim",
     "driverMutationBoundary": "existing-journaled-coordinator-only-no-direct-kernel-module-mutation",
-    "vendorOfficialRepositories": "verified-qualification-only-nvidia-debian13-x86_64-pinned-origin-full-fingerprint-02182e60104fcdc26eae1b8597a5d4cb8793f200-inrelease-gpgv-date-freshness-valid-until-or-14day-cap-package-index-no-enable-no-mutation-roadmap-open",
+    "vendorOfficialRepositories": "verified-qualification-and-transaction-binding-nvidia-debian13-x86_64-pinned-origin-full-fingerprint-02182e60104fcdc26eae1b8597a5d4cb8793f200-inrelease-gpgv-freshness-package-intersection-deterministic-binding-digest-existing-package-plan-compatible-no-enable-no-mutation-roadmap-open",
+    "vendorRepositoryTransactionBinding": "verified-side-effect-free-root-policy-review-plus-fresh-evidence-exact-repository-platform-fingerprint-signature-package-intersection-sha256-binding-digest-system-package-plan-preview-journal-required-direct-apt-pkexec-disabled-activation-not-implemented",
     "liveUsbVm": "verified-uefi-usb-mass-storage",
     "graphicalInstallerVm": "verified-full-gtk4-path",
     "detachedInstalledBootVm": "verified-graphical-with-persistence",
@@ -44,6 +45,6 @@
     "secureBootQualification": "not-claimed",
     "legacyBiosQualification": "not-claimed"
   },
-  "latestMilestone": "Canonical SWIR_OS main now includes PR #42 and PR #43. The official NVIDIA Debian 13 x86_64 qualification probe now pins the exact reviewed 40-hex primary signing-key fingerprint 02182E60104FCDC26EAE1B8597A5D4CB8793F200, requires the InRelease signature to bind to that primary key, and fails closed on missing, invalid, stale, expired or excessively future-dated signed metadata using a 14-day maximum age and 24-hour future-skew bound while honoring Valid-Until when present. The probe remains qualification-only and cannot enable repositories or authorize mutation. Driver Center CI was also corrected so deterministic safety/runtime contracts stay mandatory while hosted-runner PCI visibility is treated as environment evidence: zero-PCI runners no longer fabricate hardware or create false product failures, and the separate Hardware Live E2E remains the stronger live-environment gate. Post-merge checks for canonical commit be8873b0 passed. The authoritative roadmap remains 55/65 (84.6%) because vendor repository activation and journaled transaction/recovery E2E remain open. Live USB, installer and detached installed boot are VM-verified; physical USB qualification remains pending, with Secure Boot and legacy BIOS not claimed.",
+  "latestMilestone": "Canonical SWIR_OS main now includes PR #44 at commit 4bf907f914ca1b2aa248f1d4cdc1925216f4c62c. Official-vendor repository qualification can now be bound to the existing journaled System package and Driver Center architecture through a side-effect-free deterministic SHA-256 transaction-binding preview. The binder fails closed unless the root-owned policy review and fresh qualification evidence agree on repository ID, hardware vendor, Debian platform tuple, exact HTTPS repository path, pinned 40-hex primary signing-key fingerprint, InRelease signature identity and requested package intersection. Its package-provider inputs were verified against the existing swir.package.system plan path and still require the trusted repository boundary, privilege, durable journal and explicit downstream confirmation. The binding cannot enable a repository, authorize mutation, run APT directly or invoke a direct pkexec path. Post-merge policy, System Edition Contracts, Driver Center Runtime and Hardware Live E2E checks for canonical commit 4bf907f9 passed. The authoritative roadmap remains 55/65 (84.6%) because actual brokered repository activation plus interruption/recovery E2E and physical hardware qualification remain open. Live USB, graphical installer and detached installed boot remain VM-verified; physical USB qualification is pending, with Secure Boot and legacy BIOS not claimed.",
   "repositoryRole": "presentation-status-only"
 }
