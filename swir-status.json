@@ -1,8 +1,8 @@
 {
   "schema": "swir.public-status/1.0",
-  "generatedAt": "2026-09-20T01:24:08Z",
+  "generatedAt": "2026-09-20T02:25:00Z",
   "canonicalRepository": "https://github.com/Swir/SWIR_OS",
-  "canonicalCommit": "fc69e3c7fe90712e4c72d35e4d058fed01fda23a",
+  "canonicalCommit": "fa47834536a1010c0a6bbd649dadb3288843bfcb",
   "roadmap": {
     "completed": 55,
     "remaining": 10,
@@ -37,12 +37,13 @@
     "packageUiBroker": "verified-image-provisioned-native-ui-wired-peer-auth-journaled-transaction-path",
     "hardwareCenter": "verified-read-only-native-gtk4-driver-center-report-and-trusted-lvfs-firmware-candidate-integration-no-mutation-controls",
     "driverCenterRuntimeGate": "verified-deterministic-safety-contract-plus-host-pci-visibility-aware-production-sysfs-probe-no-synthetic-hardware-no-physical-qualification-claim",
-    "driverCenterVendorTrust": "verified-fail-closed-vendor-official-repository-source-admission-requires-valid-transaction-binding-exact-repository-hardware-vendor-distro-version-architecture-package-intersection-and-fresh-evidence-expiry-preview-only-no-repository-activation",
+    "driverCenterVendorTrust": "verified-fail-closed-vendor-official-repository-source-admission-requires-valid-transaction-binding-exact-repository-hardware-vendor-distro-version-architecture-package-intersection-and-fresh-evidence-expiry-preview-only",
     "driverMutationBoundary": "existing-journaled-coordinator-only-no-direct-kernel-module-mutation",
     "firmwareUpdates": "verified-safe-fwupd-lvfs-transaction-planning-exact-device-and-release-binding-sha256-plan-confirmation-live-metadata-revalidation-root-owned-journal-post-update-history-verification-read-only-hardware-center-candidates-no-auto-reboot-no-auto-rollback-physical-hardware-pending",
     "firmwarePhysicalQualificationHarness": "verified-dedicated-hardware-only-preflight-interactive-apply-reboot-aware-verify-interactive-finalize-machine-hash-boot-id-owner-only-journal-no-ci-or-vm-qualification-no-auto-reboot-no-auto-rollback-real-device-session-still-required",
-    "vendorOfficialRepositories": "verified-qualification-transaction-binding-and-package-journal-integrity-nvidia-debian13-x86_64-pinned-origin-full-fingerprint-02182e60104fcdc26eae1b8597a5d4cb8793f200-inrelease-gpgv-freshness-package-intersection-deterministic-binding-digest-preserved-into-journaled-plan-tamper-fails-closed-no-enable-no-mutation-roadmap-open",
-    "vendorRepositoryTransactionBinding": "verified-side-effect-free-root-policy-review-plus-fresh-evidence-exact-repository-platform-fingerprint-signature-package-intersection-sha256-binding-digest-preserved-through-distribution-provider-into-system-package-plan-and-durable-transaction-journal-authorization-and-executor-bound-to-same-plan-digest-post-write-binding-tamper-rejected-direct-apt-pkexec-disabled-activation-not-implemented",
+    "vendorOfficialRepositories": "verified-qualification-transaction-binding-and-package-journal-integrity-nvidia-debian13-x86_64-pinned-origin-full-fingerprint-02182e60104fcdc26eae1b8597a5d4cb8793f200-inrelease-gpgv-freshness-package-intersection-deterministic-binding-digest-preserved-into-journaled-plan-plus-guarded-journaled-recoverable-apt-source-activation-no-arbitrary-url-no-auto-enable-roadmap-still-open",
+    "vendorRepositoryTransactionBinding": "verified-side-effect-free-root-policy-review-plus-fresh-evidence-exact-repository-platform-fingerprint-signature-package-intersection-sha256-binding-digest-preserved-through-distribution-provider-into-system-package-plan-and-durable-transaction-journal-authorization-and-executor-bound-to-same-plan-digest-post-write-binding-tamper-rejected-direct-apt-pkexec-disabled",
+    "vendorRepositoryActivation": "verified-allowlisted-official-debian-ubuntu-style-apt-repository-journaled-transaction-backup-atomic-write-apt-update-interruption-recovery-explicit-plan-binding-no-arbitrary-url-no-automatic-source-enabling",
     "liveUsbVm": "verified-uefi-usb-mass-storage",
     "graphicalInstallerVm": "verified-full-gtk4-path",
     "detachedInstalledBootVm": "verified-graphical-with-persistence",
@@ -51,6 +52,6 @@
     "secureBootQualification": "not-claimed",
     "legacyBiosQualification": "not-claimed"
   },
-  "latestMilestone": "Canonical SWIR_OS main now includes PR #56 at commit fc69e3c7fe90712e4c72d35e4d058fed01fda23a. The firmware path now includes an operator-controlled physical qualification harness that binds preflight, interactive apply, reboot-aware verification and interactive finalization to the exact firmware plan, machine hash and boot identity while refusing CI/VM evidence as physical qualification. No automatic reboot, rollback or arbitrary firmware URL path was added. Authoritative roadmap progress remains 55/65 (84.6%); an accepted real-device firmware session and physical Live USB qualification are still pending.",
+  "latestMilestone": "Canonical SWIR_OS main now includes PR #57 at commit fa47834536a1010c0a6bbd649dadb3288843bfcb. The vendor repository path now has a guarded, journaled and recoverable activation transaction for allowlisted official Debian/Ubuntu-style APT repositories with exact plan binding, backups, atomic source writes, apt metadata refresh and interruption recovery. Arbitrary repository URLs and automatic source enabling remain prohibited. Authoritative roadmap progress remains 55/65 (84.6%); full vendor-repository roadmap completion, accepted real-device firmware evidence and physical Live USB qualification are still pending.",
   "repositoryRole": "presentation-status-only"
 }
