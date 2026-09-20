@@ -1,8 +1,8 @@
 {
   "schema": "swir.public-status/1.0",
-  "generatedAt": "2026-09-20T06:22:00Z",
+  "generatedAt": "2026-09-20T06:39:00Z",
   "canonicalRepository": "https://github.com/Swir/SWIR_OS",
-  "canonicalCommit": "88013700ae00166c2e125dbbc43d509826ee0819",
+  "canonicalCommit": "235b88f894e1cf170459aff0c17dfb80528d246f",
   "roadmap": {
     "completed": 56,
     "remaining": 9,
@@ -40,6 +40,7 @@
     "driverCenterVendorTrust": "verified-fail-closed-vendor-official-repository-source-admission-requires-valid-transaction-binding-exact-repository-hardware-vendor-distro-version-architecture-package-intersection-fresh-evidence-expiry-and-safe-deb822-token-scope-preview-only",
     "driverMutationBoundary": "existing-journaled-coordinator-only-no-direct-kernel-module-mutation",
     "firmwareUpdates": "verified-safe-fwupd-lvfs-transaction-planning-exact-device-and-release-binding-sha256-plan-confirmation-live-metadata-revalidation-root-owned-journal-post-update-history-verification-read-only-hardware-center-candidates-no-auto-reboot-no-auto-rollback-physical-hardware-pending",
+    "fwupdDebian13RuntimeQualification": "verified-real-debian13-fwupd-package-state-root-owned-non-writable-trusted-fwupdmgr-daemon-lvfs-config-sha256-evidence-canonical-os-release-only-non-mutating-fwupdmgr-help-runtime-no-remote-refresh-no-firmware-flash-no-physical-hardware-claim",
     "firmwarePhysicalQualificationHarness": "verified-dedicated-hardware-only-preflight-interactive-apply-reboot-aware-verify-interactive-finalize-machine-hash-boot-id-owner-only-journal-no-ci-or-vm-qualification-no-auto-reboot-no-auto-rollback-real-device-session-still-required",
     "vendorOfficialRepositories": "verified-qualification-transaction-binding-package-journal-integrity-nvidia-debian13-x86_64-pinned-origin-full-fingerprint-gpgv-freshness-package-intersection-deterministic-binding-digest-guarded-journaled-recoverable-activation-final-image-trust-staging-disposable-vm-install-interruption-recovery-roadmap-completed",
     "vendorRepositoryTransactionBinding": "verified-side-effect-free-root-policy-review-plus-fresh-evidence-exact-repository-platform-fingerprint-signature-package-intersection-safe-bounded-deb822-suites-components-exact-source-ref-pinned-keyring-path-sha256-binding-digest-preserved-through-distribution-provider-into-system-package-plan-and-durable-transaction-journal-direct-apt-pkexec-disabled",
@@ -52,6 +53,6 @@
     "secureBootQualification": "not-claimed",
     "legacyBiosQualification": "not-claimed"
   },
-  "latestMilestone": "Canonical SWIR_OS main now includes merged PR #59 at commit 88013700ae00166c2e125dbbc43d509826ee0819. The allowlisted official vendor repositories milestone is verified and complete: Driver Center trust binding, pinned official repository evidence, guarded journaled activation, final-image trust staging, disposable Debian VM install and interruption/recovery coverage, plus full UEFI Live/installer exact-head gates. Authoritative roadmap progress is 56/65 (86.2%). Physical Live USB qualification and accepted real-device firmware evidence remain separate pending gates.",
+  "latestMilestone": "Canonical SWIR_OS main now includes merged PR #60 at commit 235b88f894e1cf170459aff0c17dfb80528d246f. The Debian 13 fwupd runtime is now independently qualified with the real distro package, trusted root-owned userspace paths, SHA-256 evidence and a non-mutating fwupdmgr runtime invocation. This strengthens the still-open fwupd/LVFS firmware milestone without claiming a physical firmware flash. Authoritative roadmap progress remains 56/65 (86.2%); physical Live USB qualification and accepted real-device firmware evidence remain separate pending gates.",
   "repositoryRole": "presentation-status-only"
 }
