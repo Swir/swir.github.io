@@ -1,8 +1,8 @@
 {
   "schema": "swir.public-status/1.0",
-  "generatedAt": "2026-09-21T10:34:00Z",
+  "generatedAt": "2026-09-21T13:25:48Z",
   "canonicalRepository": "https://github.com/Swir/SWIR_OS",
-  "canonicalCommit": "b39e7a3ee15b743fdfb22b76636cff5c50c05ba6",
+  "canonicalCommit": "8335d447aae0fca8eadf691d944b15657127a458",
   "roadmap": {
     "completed": 57,
     "remaining": 8,
@@ -17,7 +17,8 @@
   "systemEdition": {
     "nativeShell": "verified-gtk4-wayland",
     "nativeCoreApps": "files-settings-notes-system-monitor-task-manager-terminal-network-center-software-center-update-center-hardware-driver-center-browser-player-photo-studio-pdf-viewer-archive-manager-calculator-screenshot-backup-restore-notification-center-verified-or-foundation-as-documented",
-    "nativeDailySuiteGate": "verified-19-product-baseline-capabilities-native-source-image-staging-shell-reachability-runtime-security-workflow-authorities-read-only-permissions-runtime-or-selftest-evidence-roadmap-completion-not-claimed",
+    "nativeDailySuiteGate": "verified-20-explicit-implementation-capabilities-native-source-image-staging-native-reachability-runtime-security-workflow-authorities-read-only-permissions-runtime-or-selftest-evidence-roadmap-completion-not-claimed",
+    "nativeLocaleFoundation": "verified-bounded-shared-native-i18n-en-pl-nb-posix-locale-detection-real-gtk4-settings-wayland-rootfs-staging-safe-english-fallback",
     "defaultApps": "verified-six-category-native-gtk4-settings-browser-media-image-pdf-text-code-archive-final-image-staging-real-per-user-gio-handler-mutations-isolated-wayland-verification",
     "shellThemes": "verified-data-only-swirtheme-accessibility-contrast-settings-import-select-reset-failsafe-builtin-default",
     "taskManager": "verified-native-gtk4-bounded-filter-same-user-sigterm-confirmation-pid-uid-name-starttime-revalidation-ancestor-protection-no-elevation",
@@ -53,6 +54,6 @@
     "secureBootQualification": "not-claimed",
     "legacyBiosQualification": "not-claimed"
   },
-  "latestMilestone": "Canonical SWIR_OS main is at commit b39e7a3ee15b743fdfb22b76636cff5c50c05ba6 after merged PR #69. Desktop Update Center now enforces persisted Manual / Notify only / Automatic policy in the production preparation host: Manual suppresses background network work, Notify only permits signed discovery without automatic staging, Automatic permits signed discovery plus staging without silent restart, and policy downgrades revoke automatic work and are re-checked after discovery and before execution. Authoritative roadmap progress remains 57/65 (87.7%); trusted-shell policy-selection UI wiring, periodic scheduler activation, final release/install E2E, physical Live USB qualification and accepted real-device firmware evidence remain pending.",
+  "latestMilestone": "Canonical SWIR_OS main is at commit 8335d447aae0fca8eadf691d944b15657127a458 after merged PR #70. System Edition now includes a bounded shared native i18n runtime with reviewed English, Polish and Norwegian Bokmål catalogs, first-profile POSIX locale detection, real localized GTK4 Settings surfaces, safe English fallback, installed-rootfs staging and headless Wayland locale verification. Authoritative roadmap progress remains 57/65 (87.7%): the essential native daily-use suite is still open pending suite-wide locale/accessibility depth and final integration; physical Live USB qualification and accepted real-device fwupd/LVFS evidence also remain pending.",
   "repositoryRole": "presentation-status-only"
 }
