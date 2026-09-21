@@ -1,8 +1,8 @@
 {
   "schema": "swir.public-status/1.0",
-  "generatedAt": "2026-09-20T13:57:59Z",
+  "generatedAt": "2026-09-21T04:40:04Z",
   "canonicalRepository": "https://github.com/Swir/SWIR_OS",
-  "canonicalCommit": "cf542b435647f95ea928843e2acb687726efe04a",
+  "canonicalCommit": "57bf77403d52e7ac2c8a290fe77d30ad90688a52",
   "roadmap": {
     "completed": 57,
     "remaining": 8,
@@ -53,6 +53,6 @@
     "secureBootQualification": "not-claimed",
     "legacyBiosQualification": "not-claimed"
   },
-  "latestMilestone": "Canonical SWIR_OS main now includes merged PR #63 at commit cf542b435647f95ea928843e2acb687726efe04a, recording the verified native-ready notification actions and persistence milestone delivered by PR #62. The notification path now includes bounded declarative actions, native action invocation and versioned validated persistence with safe fallback. Authoritative roadmap progress is 57/65 (87.7%); release readiness remains separate, with physical Live USB qualification and accepted real-device firmware evidence still pending.",
+  "latestMilestone": "Canonical SWIR_OS main is at commit 57bf77403d52e7ac2c8a290fe77d30ad90688a52 after merged PR #67, hardening the Desktop signed-update path with immutable Swir/SWIR_OS GitHub Release URL enforcement and RSA-PSS/SHA-256 feed and artifact regression gates. Authoritative roadmap progress remains 57/65 (87.7%); release readiness remains separate, with the full production signed-feed policy path, physical Live USB qualification and accepted real-device firmware evidence still pending.",
   "repositoryRole": "presentation-status-only"
 }
