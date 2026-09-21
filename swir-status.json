@@ -1,8 +1,8 @@
 {
   "schema": "swir.public-status/1.0",
-  "generatedAt": "2026-09-21T13:25:48Z",
+  "generatedAt": "2026-09-21T15:23:36Z",
   "canonicalRepository": "https://github.com/Swir/SWIR_OS",
-  "canonicalCommit": "8335d447aae0fca8eadf691d944b15657127a458",
+  "canonicalCommit": "689a0eb3601593fd6c5da9fbb3fe447f448a5c6c",
   "roadmap": {
     "completed": 57,
     "remaining": 8,
@@ -54,6 +54,6 @@
     "secureBootQualification": "not-claimed",
     "legacyBiosQualification": "not-claimed"
   },
-  "latestMilestone": "Canonical SWIR_OS main is at commit 8335d447aae0fca8eadf691d944b15657127a458 after merged PR #70. System Edition now includes a bounded shared native i18n runtime with reviewed English, Polish and Norwegian Bokmål catalogs, first-profile POSIX locale detection, real localized GTK4 Settings surfaces, safe English fallback, installed-rootfs staging and headless Wayland locale verification. Authoritative roadmap progress remains 57/65 (87.7%): the essential native daily-use suite is still open pending suite-wide locale/accessibility depth and final integration; physical Live USB qualification and accepted real-device fwupd/LVFS evidence also remain pending.",
+  "latestMilestone": "Canonical SWIR_OS main is at commit 689a0eb3601593fd6c5da9fbb3fe447f448a5c6c after merged PR #71. Desktop reviewed .swirapp packages now have fail-closed Ed25519 signing and verification integrated across Store artifact build, signed catalog binding, install/update/restart/rollback lifecycle checks and release trust-chain gates. Authoritative roadmap progress remains 57/65 (87.7%): the package-signatures item stays open until official production trust-root and protected release-key provisioning are deployed and verified; System physical Live USB and real-device fwupd/LVFS qualification remain pending.",
   "repositoryRole": "presentation-status-only"
 }
