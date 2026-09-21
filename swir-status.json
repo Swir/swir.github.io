@@ -1,8 +1,8 @@
 {
   "schema": "swir.public-status/1.0",
-  "generatedAt": "2026-09-21T15:23:36Z",
+  "generatedAt": "2026-09-21T18:28:00Z",
   "canonicalRepository": "https://github.com/Swir/SWIR_OS",
-  "canonicalCommit": "689a0eb3601593fd6c5da9fbb3fe447f448a5c6c",
+  "canonicalCommit": "c14dc6d1ee1b450c5654b1864734bdc827d476cb",
   "roadmap": {
     "completed": 57,
     "remaining": 8,
@@ -54,6 +54,6 @@
     "secureBootQualification": "not-claimed",
     "legacyBiosQualification": "not-claimed"
   },
-  "latestMilestone": "Canonical SWIR_OS main is at commit 689a0eb3601593fd6c5da9fbb3fe447f448a5c6c after merged PR #71. Desktop reviewed .swirapp packages now have fail-closed Ed25519 signing and verification integrated across Store artifact build, signed catalog binding, install/update/restart/rollback lifecycle checks and release trust-chain gates. Authoritative roadmap progress remains 57/65 (87.7%): the package-signatures item stays open until official production trust-root and protected release-key provisioning are deployed and verified; System physical Live USB and real-device fwupd/LVFS qualification remain pending.",
+  "latestMilestone": "Canonical SWIR_OS main is at commit c14dc6d1ee1b450c5654b1864734bdc827d476cb after merged PR #72. Desktop package signing now includes a fail-closed protected production evidence gate that binds the exact source commit, Ed25519 public trust-root, signing-policy/key fingerprint, package SHA-256 and identity, plus an independent verifier result while keeping private key material out of evidence artifacts. Authoritative roadmap progress remains 57/65 (87.7%): the package-signatures item stays open until a real protected production-signing run on main proves the official trust-root and release-key provisioning; System physical Live USB and real-device fwupd/LVFS qualification remain pending.",
   "repositoryRole": "presentation-status-only"
 }
