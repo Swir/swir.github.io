@@ -1,8 +1,8 @@
 {
   "schema": "swir.public-status/1.0",
-  "generatedAt": "2026-09-21T07:29:00Z",
+  "generatedAt": "2026-09-21T10:34:00Z",
   "canonicalRepository": "https://github.com/Swir/SWIR_OS",
-  "canonicalCommit": "35abb71cb0e1278947bbe17196438a22220f19ab",
+  "canonicalCommit": "b39e7a3ee15b743fdfb22b76636cff5c50c05ba6",
   "roadmap": {
     "completed": 57,
     "remaining": 8,
@@ -53,6 +53,6 @@
     "secureBootQualification": "not-claimed",
     "legacyBiosQualification": "not-claimed"
   },
-  "latestMilestone": "Canonical SWIR_OS main is at commit 35abb71cb0e1278947bbe17196438a22220f19ab after merged PR #68. Desktop signed update-feed promotion now cryptographically verifies RSA-PSS/SHA-256 against pinned public trust, exact immutable Swir/SWIR_OS GitHub Release package identity, size and SHA-256, and re-verifies the existing published feed before anti-downgrade decisions. Authoritative roadmap progress remains 57/65 (87.7%); release readiness remains separate and the full Automatic / Notify only / Manual host path, physical Live USB qualification and accepted real-device firmware evidence are still pending.",
+  "latestMilestone": "Canonical SWIR_OS main is at commit b39e7a3ee15b743fdfb22b76636cff5c50c05ba6 after merged PR #69. Desktop Update Center now enforces persisted Manual / Notify only / Automatic policy in the production preparation host: Manual suppresses background network work, Notify only permits signed discovery without automatic staging, Automatic permits signed discovery plus staging without silent restart, and policy downgrades revoke automatic work and are re-checked after discovery and before execution. Authoritative roadmap progress remains 57/65 (87.7%); trusted-shell policy-selection UI wiring, periodic scheduler activation, final release/install E2E, physical Live USB qualification and accepted real-device firmware evidence remain pending.",
   "repositoryRole": "presentation-status-only"
 }
