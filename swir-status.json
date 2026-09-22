@@ -1,8 +1,8 @@
 {
   "schema": "swir.public-status/1.0",
-  "generatedAt": "2026-09-22T18:42:00Z",
+  "generatedAt": "2026-09-22T22:24:00Z",
   "canonicalRepository": "https://github.com/Swir/SWIR_OS",
-  "canonicalCommit": "ac606b0d770714b5b85693af181e14a5c479aa3d",
+  "canonicalCommit": "31c4f2625201f17cd90398ce22480083a56a0a19",
   "roadmap": {
     "completed": 57,
     "remaining": 8,
@@ -54,6 +54,6 @@
     "secureBootQualification": "not-claimed",
     "legacyBiosQualification": "not-claimed"
   },
-  "latestMilestone": "Canonical SWIR_OS main is at commit ac606b0d770714b5b85693af181e14a5c479aa3d after merged PR #78. The policy-aware Desktop background update controller is now bound to the real WinForms host lifetime, reuses the signed update preparation host, requires configured signed-feed/runtime eligibility before scheduling, and drains on application exit; automatic restart remains disabled. Exact-head PR checks were green. Authoritative roadmap progress remains 57/65 (87.7%): the signed stable/preview feed item still requires the real release/protected signing path, while physical Live USB and real-device fwupd/LVFS qualification remain pending.",
+  "latestMilestone": "Canonical SWIR_OS main is at commit 31c4f2625201f17cd90398ce22480083a56a0a19 after merged PR #79. Native Calculator, Notes, Network Center and Text Editor now consume the bounded per-user SWIR locale preference with reviewed English, Polish and Norwegian Bokmål surfaces, safe English fallback and accessibility/runtime verification while preserving each application's existing security boundary. Exact-head PR checks and all seven post-merge main workflows are green. Authoritative roadmap progress remains 57/65 (87.7%): the umbrella essential native daily-use suite is not complete yet, and physical Live USB plus real-device fwupd/LVFS qualification remain pending.",
   "repositoryRole": "presentation-status-only"
 }
