@@ -1,8 +1,8 @@
 {
   "schema": "swir.public-status/1.0",
-  "generatedAt": "2026-09-23T01:40:00Z",
+  "generatedAt": "2026-09-23T02:03:00Z",
   "canonicalRepository": "https://github.com/Swir/SWIR_OS",
-  "canonicalCommit": "e7c0cda2bb596f5344da6cda574540ceeb35fa98",
+  "canonicalCommit": "b15a89e09335e6b74ba2f16e4ef90f62c5cbf8c1",
   "roadmap": {
     "completed": 57,
     "remaining": 8,
@@ -34,8 +34,8 @@
     "archiveManager": "verified-native-gtk4-safe-archive-browse-extract-path-traversal-symlink-escape-protection-wayland-debian13-integration",
     "screenshotTool": "verified-native-gtk4-xdg-desktop-portal-interactive-local-file-only-owner-only-atomic-save-en-pl-nb-safe-english-fallback-localized-surface-keyboard-focus-tooltips-owner-only-runtime-evidence-shell-image-and-uefi-vm-integration",
     "calculator": "verified-native-gtk4-safe-ast-arithmetic-wayland-debian13-image-shell-integration",
-    "softwareCenter": "verified-local-package-discovery-brokered-install-preview-confirmation-image-wiring",
-    "updateCenter": "verified-local-apt-simulation-brokered-per-package-update-preview-confirmation-bulk-disabled",
+    "softwareCenter": "verified-local-package-discovery-brokered-install-preview-confirmation-en-pl-nb-safe-english-fallback-localized-surface-tooltips-wayland-evidence-image-wiring",
+    "updateCenter": "verified-local-apt-simulation-brokered-per-package-update-preview-confirmation-en-pl-nb-safe-english-fallback-localized-surface-tooltips-wayland-evidence-bulk-disabled",
     "packageUiBroker": "verified-image-provisioned-native-ui-wired-peer-auth-journaled-transaction-path",
     "hardwareCenter": "verified-read-only-native-gtk4-driver-center-report-and-trusted-lvfs-firmware-candidate-integration-no-mutation-controls",
     "driverCenterRuntimeGate": "verified-deterministic-safety-contract-plus-host-pci-visibility-aware-production-sysfs-probe-no-synthetic-hardware-no-physical-qualification-claim",
@@ -55,6 +55,6 @@
     "secureBootQualification": "not-claimed",
     "legacyBiosQualification": "not-claimed"
   },
-  "latestMilestone": "Canonical SWIR_OS main is at commit e7c0cda2bb596f5344da6cda574540ceeb35fa98 after merged PR #82. Native SWIR PDF Viewer now consumes the bounded per-user locale preference with reviewed English, Polish and Norwegian Bokmål surfaces plus safe English fallback. Keyboard navigation covers open, previous/next page, first/last page, zoom and close, while localized tooltips improve accessibility. The existing local-file-only, symlink rejection, 512 MiB and 4000-page limits, no-elevation and no-self-update boundaries remain intact. Exact-head PR workflows are green. Authoritative roadmap progress remains 57/65 (87.7%): the umbrella essential native daily-use suite is not complete yet, and physical Live USB plus real-device fwupd/LVFS qualification remain pending.",
+  "latestMilestone": "Canonical SWIR_OS main is at commit b15a89e09335e6b74ba2f16e4ef90f62c5cbf8c1 after merged PR #83. Native SWIR Software Center and Update Center now consume the bounded per-user locale preference with reviewed English, Polish and Norwegian Bokmål surfaces plus safe English fallback, including localized search/update states, confirmation dialogs and accessibility tooltips. Existing package safety boundaries remain intact: no direct privileged package commands in the GTK apps, broker preview and explicit confirmation remain mandatory, Polkit authorizes the peer and the journaled transaction path remains authoritative. Exact-head PR workflows are green. Authoritative roadmap progress remains 57/65 (87.7%): the umbrella essential native daily-use suite is not complete yet, and physical Live USB plus real-device fwupd/LVFS qualification remain pending.",
   "repositoryRole": "presentation-status-only"
 }
