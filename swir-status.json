@@ -1,8 +1,8 @@
 {
   "schema": "swir.public-status/1.0",
-  "generatedAt": "2026-09-23T00:36:00Z",
+  "generatedAt": "2026-09-23T01:40:00Z",
   "canonicalRepository": "https://github.com/Swir/SWIR_OS",
-  "canonicalCommit": "bf935e721d6535af77f1de392f9ab408e7c9cba0",
+  "canonicalCommit": "e7c0cda2bb596f5344da6cda574540ceeb35fa98",
   "roadmap": {
     "completed": 57,
     "remaining": 8,
@@ -30,7 +30,7 @@
     "browser": "verified-native-gtk4-webkitgtk-tabs-history-bookmarks-downloads-private-tabs-permission-prompts-default-apps-integration",
     "player": "verified-native-gtk4-gstreamer-local-media-library-playlists-mpris2-notifications-mime-integration",
     "photoStudio": "verified-native-gtk4-gdkpixbuf-local-image-rectangular-crop-rotate-flip-resize-exposure-brightness-contrast-saturation-grayscale-sepia-bounded-bitmap-text-bounded-line-drawing-annotation-bounded-undo-redo-atomic-png-jpeg-webp-export-source-immutable-wayland-debian13-no-external-image-tools",
-    "pdfViewer": "verified-native-gtk4-poppler-local-pdf-open-navigation-zoom-document-info-wayland-debian13-integration",
+    "pdfViewer": "verified-native-gtk4-poppler-local-pdf-open-navigation-zoom-en-pl-nb-safe-english-fallback-localized-surface-keyboard-navigation-localized-tooltips-wayland-debian13-no-elevation-no-self-update",
     "archiveManager": "verified-native-gtk4-safe-archive-browse-extract-path-traversal-symlink-escape-protection-wayland-debian13-integration",
     "screenshotTool": "verified-native-gtk4-xdg-desktop-portal-interactive-local-file-only-owner-only-atomic-save-en-pl-nb-safe-english-fallback-localized-surface-keyboard-focus-tooltips-owner-only-runtime-evidence-shell-image-and-uefi-vm-integration",
     "calculator": "verified-native-gtk4-safe-ast-arithmetic-wayland-debian13-image-shell-integration",
@@ -55,6 +55,6 @@
     "secureBootQualification": "not-claimed",
     "legacyBiosQualification": "not-claimed"
   },
-  "latestMilestone": "Canonical SWIR_OS main is at commit bf935e721d6535af77f1de392f9ab408e7c9cba0 after merged PR #81. Native SWIR Terminal and Screenshot Tool now consume the bounded per-user locale preference with reviewed English, Polish and Norwegian Bokmål surfaces, safe English fallback and keyboard-focus/tool-tip accessibility evidence. Terminal preserves the user-login-shell, PTY/VTE, no-elevation and no-command-interpolation boundaries. Screenshot capture remains interactive XDG Desktop Portal-only, bounded, local-file-only and owner-only; runtime evidence is additionally constrained to XDG_RUNTIME_DIR and mode 0600. Exact-head PR workflows are green. Authoritative roadmap progress remains 57/65 (87.7%): the umbrella essential native daily-use suite is not complete yet, and physical Live USB plus real-device fwupd/LVFS qualification remain pending.",
+  "latestMilestone": "Canonical SWIR_OS main is at commit e7c0cda2bb596f5344da6cda574540ceeb35fa98 after merged PR #82. Native SWIR PDF Viewer now consumes the bounded per-user locale preference with reviewed English, Polish and Norwegian Bokmål surfaces plus safe English fallback. Keyboard navigation covers open, previous/next page, first/last page, zoom and close, while localized tooltips improve accessibility. The existing local-file-only, symlink rejection, 512 MiB and 4000-page limits, no-elevation and no-self-update boundaries remain intact. Exact-head PR workflows are green. Authoritative roadmap progress remains 57/65 (87.7%): the umbrella essential native daily-use suite is not complete yet, and physical Live USB plus real-device fwupd/LVFS qualification remain pending.",
   "repositoryRole": "presentation-status-only"
 }
