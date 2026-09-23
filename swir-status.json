@@ -1,8 +1,8 @@
 {
   "schema": "swir.public-status/1.0",
-  "generatedAt": "2026-09-22T23:39:00Z",
+  "generatedAt": "2026-09-23T00:36:00Z",
   "canonicalRepository": "https://github.com/Swir/SWIR_OS",
-  "canonicalCommit": "0e813e5938f8d76263033530c930a02105479bc5",
+  "canonicalCommit": "bf935e721d6535af77f1de392f9ab408e7c9cba0",
   "roadmap": {
     "completed": 57,
     "remaining": 8,
@@ -26,12 +26,13 @@
     "backupRestore": "verified-native-gtk4-user-swir-state-only-bounded-manifest-sha256-symlink-traversal-special-file-rejection-staged-restore-explicit-confirmation-previous-state-preserved-no-elevation-no-disk-imaging",
     "notifications": "verified-native-freedesktop-notifications-gtk4-center-bounded-owner-only-atomic-history-plain-text-wayland-session-dbus-debian13",
     "clock": "verified-native-gtk4-owner-only-atomic-alarm-store-active-session-scheduler-en-pl-nb-localized-surface-safe-english-fallback-user-clock24h-localized-date-keyboard-focus-tooltips-wayland-debian13-no-elevation-no-network-no-prelogin-no-powered-off-or-wake-from-suspend-claim",
+    "terminal": "verified-native-gtk4-vte-user-login-shell-en-pl-nb-safe-english-fallback-localized-surface-keyboard-focus-tooltips-wayland-pty-no-elevation-no-command-interpolation",
     "browser": "verified-native-gtk4-webkitgtk-tabs-history-bookmarks-downloads-private-tabs-permission-prompts-default-apps-integration",
     "player": "verified-native-gtk4-gstreamer-local-media-library-playlists-mpris2-notifications-mime-integration",
     "photoStudio": "verified-native-gtk4-gdkpixbuf-local-image-rectangular-crop-rotate-flip-resize-exposure-brightness-contrast-saturation-grayscale-sepia-bounded-bitmap-text-bounded-line-drawing-annotation-bounded-undo-redo-atomic-png-jpeg-webp-export-source-immutable-wayland-debian13-no-external-image-tools",
     "pdfViewer": "verified-native-gtk4-poppler-local-pdf-open-navigation-zoom-document-info-wayland-debian13-integration",
     "archiveManager": "verified-native-gtk4-safe-archive-browse-extract-path-traversal-symlink-escape-protection-wayland-debian13-integration",
-    "screenshotTool": "verified-native-gtk4-xdg-desktop-portal-interactive-local-file-only-owner-only-atomic-save-shell-image-and-uefi-vm-integration",
+    "screenshotTool": "verified-native-gtk4-xdg-desktop-portal-interactive-local-file-only-owner-only-atomic-save-en-pl-nb-safe-english-fallback-localized-surface-keyboard-focus-tooltips-owner-only-runtime-evidence-shell-image-and-uefi-vm-integration",
     "calculator": "verified-native-gtk4-safe-ast-arithmetic-wayland-debian13-image-shell-integration",
     "softwareCenter": "verified-local-package-discovery-brokered-install-preview-confirmation-image-wiring",
     "updateCenter": "verified-local-apt-simulation-brokered-per-package-update-preview-confirmation-bulk-disabled",
@@ -54,6 +55,6 @@
     "secureBootQualification": "not-claimed",
     "legacyBiosQualification": "not-claimed"
   },
-  "latestMilestone": "Canonical SWIR_OS main is at commit 0e813e5938f8d76263033530c930a02105479bc5 after merged PR #80. Native Clock and its active-session alarm popup now consume the bounded per-user SWIR locale preference with reviewed English, Polish and Norwegian Bokmål surfaces, safe English fallback, deterministic localized dates, validated 12/24-hour preference and keyboard-focus/tool-tip accessibility while preserving the existing owner-only atomic alarm-store and no-elevation/no-network boundary. Exact-head PR workflows and all post-merge main checks are green. Authoritative roadmap progress remains 57/65 (87.7%): the umbrella essential native daily-use suite is not complete yet, and physical Live USB plus real-device fwupd/LVFS qualification remain pending.",
+  "latestMilestone": "Canonical SWIR_OS main is at commit bf935e721d6535af77f1de392f9ab408e7c9cba0 after merged PR #81. Native SWIR Terminal and Screenshot Tool now consume the bounded per-user locale preference with reviewed English, Polish and Norwegian Bokmål surfaces, safe English fallback and keyboard-focus/tool-tip accessibility evidence. Terminal preserves the user-login-shell, PTY/VTE, no-elevation and no-command-interpolation boundaries. Screenshot capture remains interactive XDG Desktop Portal-only, bounded, local-file-only and owner-only; runtime evidence is additionally constrained to XDG_RUNTIME_DIR and mode 0600. Exact-head PR workflows are green. Authoritative roadmap progress remains 57/65 (87.7%): the umbrella essential native daily-use suite is not complete yet, and physical Live USB plus real-device fwupd/LVFS qualification remain pending.",
   "repositoryRole": "presentation-status-only"
 }
