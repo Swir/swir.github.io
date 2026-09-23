@@ -1,8 +1,8 @@
 {
   "schema": "swir.public-status/1.0",
-  "generatedAt": "2026-09-23T02:03:00Z",
+  "generatedAt": "2026-09-23T02:48:00Z",
   "canonicalRepository": "https://github.com/Swir/SWIR_OS",
-  "canonicalCommit": "b15a89e09335e6b74ba2f16e4ef90f62c5cbf8c1",
+  "canonicalCommit": "dc7e426443eee0e2552c7d0dca552f8e4abb0882",
   "roadmap": {
     "completed": 57,
     "remaining": 8,
@@ -31,7 +31,8 @@
     "player": "verified-native-gtk4-gstreamer-local-media-library-playlists-mpris2-notifications-mime-integration",
     "photoStudio": "verified-native-gtk4-gdkpixbuf-local-image-rectangular-crop-rotate-flip-resize-exposure-brightness-contrast-saturation-grayscale-sepia-bounded-bitmap-text-bounded-line-drawing-annotation-bounded-undo-redo-atomic-png-jpeg-webp-export-source-immutable-wayland-debian13-no-external-image-tools",
     "pdfViewer": "verified-native-gtk4-poppler-local-pdf-open-navigation-zoom-en-pl-nb-safe-english-fallback-localized-surface-keyboard-navigation-localized-tooltips-wayland-debian13-no-elevation-no-self-update",
-    "archiveManager": "verified-native-gtk4-safe-archive-browse-extract-path-traversal-symlink-escape-protection-wayland-debian13-integration",
+    "archiveManager": "verified-native-gtk4-safe-archive-browse-extract-path-traversal-symlink-special-member-escape-protection-en-pl-nb-safe-english-fallback-localized-surface-keyboard-focus-tooltips-wayland-debian13-no-elevation-no-network-input",
+    "files": "verified-native-gtk4-read-only-browsing-en-pl-nb-safe-english-fallback-localized-surface-keyboard-focus-tooltips-archive-manager-integration-wayland-debian13-no-elevation",
     "screenshotTool": "verified-native-gtk4-xdg-desktop-portal-interactive-local-file-only-owner-only-atomic-save-en-pl-nb-safe-english-fallback-localized-surface-keyboard-focus-tooltips-owner-only-runtime-evidence-shell-image-and-uefi-vm-integration",
     "calculator": "verified-native-gtk4-safe-ast-arithmetic-wayland-debian13-image-shell-integration",
     "softwareCenter": "verified-local-package-discovery-brokered-install-preview-confirmation-en-pl-nb-safe-english-fallback-localized-surface-tooltips-wayland-evidence-image-wiring",
@@ -55,6 +56,6 @@
     "secureBootQualification": "not-claimed",
     "legacyBiosQualification": "not-claimed"
   },
-  "latestMilestone": "Canonical SWIR_OS main is at commit b15a89e09335e6b74ba2f16e4ef90f62c5cbf8c1 after merged PR #83. Native SWIR Software Center and Update Center now consume the bounded per-user locale preference with reviewed English, Polish and Norwegian Bokmål surfaces plus safe English fallback, including localized search/update states, confirmation dialogs and accessibility tooltips. Existing package safety boundaries remain intact: no direct privileged package commands in the GTK apps, broker preview and explicit confirmation remain mandatory, Polkit authorizes the peer and the journaled transaction path remains authoritative. Exact-head PR workflows are green. Authoritative roadmap progress remains 57/65 (87.7%): the umbrella essential native daily-use suite is not complete yet, and physical Live USB plus real-device fwupd/LVFS qualification remain pending.",
+  "latestMilestone": "Canonical SWIR_OS main is at commit dc7e426443eee0e2552c7d0dca552f8e4abb0882 after merged PR #84. Native SWIR Files and Archive Manager now consume the bounded per-user locale preference with reviewed English, Polish and Norwegian Bokmål surfaces plus safe English fallback, including localized navigation, archive dialogs, status text, file-kind labels, keyboard-focusable lists and localized accessibility tooltips. Archive safety boundaries remain intact: remote URI input is rejected, traversal, symlink and special members fail closed, extraction keeps O_NOFOLLOW/O_EXCL with bounded sizes and owner-only outputs, and no privileged operations or self-update path were added. Exact-head PR CI and post-merge main CI are green. Authoritative roadmap progress remains 57/65 (87.7%): the umbrella essential native daily-use suite is not complete yet, and physical Live USB plus real-device fwupd/LVFS qualification remain pending.",
   "repositoryRole": "presentation-status-only"
 }
