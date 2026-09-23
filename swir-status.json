@@ -1,8 +1,8 @@
 {
   "schema": "swir.public-status/1.0",
-  "generatedAt": "2026-09-23T02:48:00Z",
+  "generatedAt": "2026-09-23T03:37:00Z",
   "canonicalRepository": "https://github.com/Swir/SWIR_OS",
-  "canonicalCommit": "dc7e426443eee0e2552c7d0dca552f8e4abb0882",
+  "canonicalCommit": "b4dde764942440a588d5b310ce9f68843348c407",
   "roadmap": {
     "completed": 57,
     "remaining": 8,
@@ -23,7 +23,7 @@
     "shellThemes": "verified-data-only-swirtheme-accessibility-contrast-settings-import-select-reset-failsafe-builtin-default",
     "taskManager": "verified-native-gtk4-bounded-filter-same-user-sigterm-confirmation-pid-uid-name-starttime-revalidation-ancestor-protection-no-elevation",
     "diagnostics": "verified-native-gtk4-read-only-fixed-command-bounded-async-no-elevation",
-    "backupRestore": "verified-native-gtk4-user-swir-state-only-bounded-manifest-sha256-symlink-traversal-special-file-rejection-staged-restore-explicit-confirmation-previous-state-preserved-no-elevation-no-disk-imaging",
+    "backupRestore": "verified-native-gtk4-user-swir-state-only-bounded-manifest-sha256-symlink-traversal-special-file-rejection-staged-restore-explicit-confirmation-previous-state-preserved-no-elevation-no-disk-imaging-en-pl-nb-safe-english-fallback-localized-wayland-surface-keyboard-focus-tooltips",
     "notifications": "verified-native-freedesktop-notifications-gtk4-center-bounded-owner-only-atomic-history-plain-text-wayland-session-dbus-debian13",
     "clock": "verified-native-gtk4-owner-only-atomic-alarm-store-active-session-scheduler-en-pl-nb-localized-surface-safe-english-fallback-user-clock24h-localized-date-keyboard-focus-tooltips-wayland-debian13-no-elevation-no-network-no-prelogin-no-powered-off-or-wake-from-suspend-claim",
     "terminal": "verified-native-gtk4-vte-user-login-shell-en-pl-nb-safe-english-fallback-localized-surface-keyboard-focus-tooltips-wayland-pty-no-elevation-no-command-interpolation",
@@ -38,7 +38,7 @@
     "softwareCenter": "verified-local-package-discovery-brokered-install-preview-confirmation-en-pl-nb-safe-english-fallback-localized-surface-tooltips-wayland-evidence-image-wiring",
     "updateCenter": "verified-local-apt-simulation-brokered-per-package-update-preview-confirmation-en-pl-nb-safe-english-fallback-localized-surface-tooltips-wayland-evidence-bulk-disabled",
     "packageUiBroker": "verified-image-provisioned-native-ui-wired-peer-auth-journaled-transaction-path",
-    "hardwareCenter": "verified-read-only-native-gtk4-driver-center-report-and-trusted-lvfs-firmware-candidate-integration-no-mutation-controls",
+    "hardwareCenter": "verified-read-only-native-gtk4-driver-center-report-and-trusted-lvfs-firmware-candidate-integration-no-mutation-controls-en-pl-nb-safe-english-fallback-localized-wayland-surface-keyboard-focus-tooltips",
     "driverCenterRuntimeGate": "verified-deterministic-safety-contract-plus-host-pci-visibility-aware-production-sysfs-probe-no-synthetic-hardware-no-physical-qualification-claim",
     "driverCenterVendorTrust": "verified-fail-closed-vendor-official-repository-source-admission-requires-valid-transaction-binding-exact-repository-hardware-vendor-distro-version-architecture-package-intersection-fresh-evidence-expiry-and-safe-deb822-token-scope-preview-only",
     "driverMutationBoundary": "existing-journaled-coordinator-only-no-direct-kernel-module-mutation",
@@ -56,6 +56,6 @@
     "secureBootQualification": "not-claimed",
     "legacyBiosQualification": "not-claimed"
   },
-  "latestMilestone": "Canonical SWIR_OS main is at commit dc7e426443eee0e2552c7d0dca552f8e4abb0882 after merged PR #84. Native SWIR Files and Archive Manager now consume the bounded per-user locale preference with reviewed English, Polish and Norwegian Bokmål surfaces plus safe English fallback, including localized navigation, archive dialogs, status text, file-kind labels, keyboard-focusable lists and localized accessibility tooltips. Archive safety boundaries remain intact: remote URI input is rejected, traversal, symlink and special members fail closed, extraction keeps O_NOFOLLOW/O_EXCL with bounded sizes and owner-only outputs, and no privileged operations or self-update path were added. Exact-head PR CI and post-merge main CI are green. Authoritative roadmap progress remains 57/65 (87.7%): the umbrella essential native daily-use suite is not complete yet, and physical Live USB plus real-device fwupd/LVFS qualification remain pending.",
+  "latestMilestone": "Canonical SWIR_OS main is at commit b4dde764942440a588d5b310ce9f68843348c407 after merged PR #85. Native Hardware & Driver Center and Backup & Restore now consume the bounded per-user locale preference with reviewed English, Polish and Norwegian Bokmål surfaces, safe English fallback, keyboard-focusable controls and localized accessibility tooltips. Hardware Center remains read-only with no mutation controls, arbitrary driver downloads, Windows kernel-driver fallback or privilege elevation; Backup/Restore remains bounded to per-user SWIR state with integrity checks, explicit restore confirmation and preserved previous state. The run also fixed a real Hardware Center localized-template key collision plus stable module naming for locale probes. Exact-head PR CI and all six post-merge main workflows are green. Authoritative roadmap progress remains 57/65 (87.7%): the umbrella essential native daily-use suite is not complete yet, and physical Live USB plus real-device fwupd/LVFS qualification remain pending.",
   "repositoryRole": "presentation-status-only"
 }
