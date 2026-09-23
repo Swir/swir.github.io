@@ -1,8 +1,8 @@
 {
   "schema": "swir.public-status/1.0",
-  "generatedAt": "2026-09-23T12:10:00Z",
+  "generatedAt": "2026-09-23T12:37:00Z",
   "canonicalRepository": "https://github.com/Swir/SWIR_OS",
-  "canonicalCommit": "31f4d3f815faea0a5ea51508c0ba2c7e441460ef",
+  "canonicalCommit": "776f1eb534cb821b910c9cb48d0297dd2decabd9",
   "roadmap": {
     "completed": 59,
     "remaining": 6,
@@ -56,6 +56,6 @@
     "secureBootQualification": "not-claimed",
     "legacyBiosQualification": "not-claimed"
   },
-  "latestMilestone": "Canonical SWIR_OS main is at commit 31f4d3f815faea0a5ea51508c0ba2c7e441460ef after merged PR #87. Web Edition now includes a reviewed least-privilege swir.app/1.0 developer starter, developer guide and deterministic SDK/App Bridge contract gate. The template uses only its declared storage permission, local assets, locale formatting and private App Data through the shipping bridge, closing the application developer template / SDK examples roadmap deliverable. Exact-head PR CI passed all 20 workflows. Authoritative roadmap progress is 59/65 (90.8%). Full release readiness remains separate: physical Live USB boot/install qualification, supported-device fwupd/LVFS validation and Desktop production signing/update-feed work are still open.",
+  "latestMilestone": "Canonical SWIR_OS main is at commit 776f1eb534cb821b910c9cb48d0297dd2decabd9 after merged PR #88. Desktop Edition now has a dedicated production-package contract gate tying the trusted SwirRuntime package surface, signed catalog identity binding, embedded package signature verification, final signed bundle verification and protected production signing-evidence workflow into one fail-closed regression boundary. Exact-head PR and post-merge main contract CI passed. Authoritative roadmap progress remains 59/65 (90.8%): production package-signature completion is intentionally still open because no protected production signing-evidence workflow_dispatch run has been recorded. Physical Live USB boot/install qualification and supported-device fwupd/LVFS validation also remain open.",
   "repositoryRole": "presentation-status-only"
 }
