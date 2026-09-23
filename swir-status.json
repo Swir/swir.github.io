@@ -1,13 +1,13 @@
 {
   "schema": "swir.public-status/1.0",
-  "generatedAt": "2026-09-23T09:32:36Z",
+  "generatedAt": "2026-09-23T12:10:00Z",
   "canonicalRepository": "https://github.com/Swir/SWIR_OS",
-  "canonicalCommit": "ad1c6f0ab3f026350501bb86dc88c7d88b6101e2",
+  "canonicalCommit": "31f4d3f815faea0a5ea51508c0ba2c7e441460ef",
   "roadmap": {
-    "completed": 58,
-    "remaining": 7,
+    "completed": 59,
+    "remaining": 6,
     "total": 65,
-    "percent": 89.2
+    "percent": 90.8
   },
   "editions": {
     "web": "1.7.13",
@@ -56,6 +56,6 @@
     "secureBootQualification": "not-claimed",
     "legacyBiosQualification": "not-claimed"
   },
-  "latestMilestone": "Canonical SWIR_OS main is at commit ad1c6f0ab3f026350501bb86dc88c7d88b6101e2 after merged PR #86. The essential native Linux application suite for dependable daily use is now a verified completed roadmap deliverable: Browser, Player, Photo Studio, Task Manager/Diagnostics and Default Apps close their remaining EN/PL/NO runtime locale, deterministic English fallback and accessibility gaps while preserving existing security boundaries. Exact-head PR CI passed all 28 workflows, and the post-merge main snapshot completed with no in-progress, failed, cancelled or timed-out workflows. Authoritative roadmap progress is 58/65 (89.2%). Full release readiness remains separate: physical Live USB boot/install qualification, supported-device fwupd/LVFS validation and remaining Desktop signing/update-feed work are still open.",
+  "latestMilestone": "Canonical SWIR_OS main is at commit 31f4d3f815faea0a5ea51508c0ba2c7e441460ef after merged PR #87. Web Edition now includes a reviewed least-privilege swir.app/1.0 developer starter, developer guide and deterministic SDK/App Bridge contract gate. The template uses only its declared storage permission, local assets, locale formatting and private App Data through the shipping bridge, closing the application developer template / SDK examples roadmap deliverable. Exact-head PR CI passed all 20 workflows. Authoritative roadmap progress is 59/65 (90.8%). Full release readiness remains separate: physical Live USB boot/install qualification, supported-device fwupd/LVFS validation and Desktop production signing/update-feed work are still open.",
   "repositoryRole": "presentation-status-only"
 }
