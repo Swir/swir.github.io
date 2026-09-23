@@ -1,6 +1,6 @@
-<!-- Presentation snapshot only. Authoritative data: Swir/SWIR_OS/SWIR-OS-ARCHITECTURE.md @ e7c0cda2bb596f5344da6cda574540ceeb35fa98 -->
+<!-- Presentation snapshot only. Authoritative data: Swir/SWIR_OS/SWIR-OS-ARCHITECTURE.md @ ad1c6f0ab3f026350501bb86dc88c7d88b6101e2 -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 180" role="img" aria-labelledby="progressCardTitle progressCardDesc">
-  <title id="progressCardTitle">SWIR OS roadmap progress — 87.7%, 57 / 65 verified deliverables</title>
+  <title id="progressCardTitle">SWIR OS roadmap progress — 89.2%, 58 / 65 verified deliverables</title>
   <desc id="progressCardDesc">Presentation snapshot synchronized from the canonical Swir/SWIR_OS roadmap. Release readiness remains separate and physical Live USB qualification is pending.</desc>
   <defs>
     <linearGradient id="progressGradient" x1="0" y1="0" x2="1" y2="0">
@@ -22,10 +22,10 @@
   <text x="50" y="42" fill="#62E5FF" font-family="system-ui,Segoe UI,Arial,sans-serif" font-size="18" font-weight="700" letter-spacing="2">SWIR OS STATUS</text>
   <text x="50" y="75" fill="#F4FAFF" font-family="system-ui,Segoe UI,Arial,sans-serif" font-size="28" font-weight="700">Canonical roadmap snapshot</text>
   <text x="50" y="104" fill="#8DA8B8" font-family="system-ui,Segoe UI,Arial,sans-serif" font-size="17">Web → Desktop → System • presentation only</text>
-  <text x="1150" y="59" text-anchor="end" fill="#F4FAFF" font-family="system-ui,Segoe UI,Arial,sans-serif" font-size="34" font-weight="800">87.7%</text>
+  <text x="1150" y="59" text-anchor="end" fill="#F4FAFF" font-family="system-ui,Segoe UI,Arial,sans-serif" font-size="34" font-weight="800">89.2%</text>
   <text x="1150" y="88" text-anchor="end" fill="#62E5FF" font-family="system-ui,Segoe UI,Arial,sans-serif" font-size="16" font-weight="700">IN PROGRESS</text>
-  <text x="1150" y="109" text-anchor="end" fill="#8DA8B8" font-family="system-ui,Segoe UI,Arial,sans-serif" font-size="15">57 / 65 verified deliverables</text>
+  <text x="1150" y="109" text-anchor="end" fill="#8DA8B8" font-family="system-ui,Segoe UI,Arial,sans-serif" font-size="15">58 / 65 verified deliverables</text>
   <rect x="50" y="124" width="1100" height="18" rx="9" fill="#07111C" stroke="#62E5FF" stroke-opacity="0.28"/>
-  <rect x="50" y="124" width="964.615" height="18" rx="9" fill="url(#progressGradient)" clip-path="url(#cardTrackClip)" filter="url(#softGlow)"/>
+  <rect x="50" y="124" width="981.538" height="18" rx="9" fill="url(#progressGradient)" clip-path="url(#cardTrackClip)" filter="url(#softGlow)"/>
   <text x="50" y="165" fill="#8DA8B8" font-family="system-ui,Segoe UI,Arial,sans-serif" font-size="13">Source of truth: github.com/Swir/SWIR_OS • release readiness tracked separately</text>
 </svg>
