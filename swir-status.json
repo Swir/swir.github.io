@@ -1,8 +1,8 @@
 {
   "schema": "swir.public-status/1.0",
-  "generatedAt": "2026-09-23T12:37:00Z",
+  "generatedAt": "2026-09-23T14:38:00Z",
   "canonicalRepository": "https://github.com/Swir/SWIR_OS",
-  "canonicalCommit": "776f1eb534cb821b910c9cb48d0297dd2decabd9",
+  "canonicalCommit": "7bbeb22cc4c0b78a1cb9a56145098dc6c68e310f",
   "roadmap": {
     "completed": 59,
     "remaining": 6,
@@ -56,6 +56,6 @@
     "secureBootQualification": "not-claimed",
     "legacyBiosQualification": "not-claimed"
   },
-  "latestMilestone": "Canonical SWIR_OS main is at commit 776f1eb534cb821b910c9cb48d0297dd2decabd9 after merged PR #88. Desktop Edition now has a dedicated production-package contract gate tying the trusted SwirRuntime package surface, signed catalog identity binding, embedded package signature verification, final signed bundle verification and protected production signing-evidence workflow into one fail-closed regression boundary. Exact-head PR and post-merge main contract CI passed. Authoritative roadmap progress remains 59/65 (90.8%): production package-signature completion is intentionally still open because no protected production signing-evidence workflow_dispatch run has been recorded. Physical Live USB boot/install qualification and supported-device fwupd/LVFS validation also remain open.",
+  "latestMilestone": "Canonical SWIR_OS main is at commit 7bbeb22cc4c0b78a1cb9a56145098dc6c68e310f after merged PR #89. Desktop Edition now has a dedicated production update-contract gate tying protected release signing, stable/preview GitHub Release feed promotion, immutable Swir/SWIR_OS package URLs, RSA-PSS manifest verification, SHA-256/size package verification, trusted redirect policy, anti-downgrade checks and Automatic / Notify only / Manual user policy into one fail-closed regression boundary. Exact-head PR and post-merge main CI passed. Authoritative roadmap remains 59/65 (90.8%): the signed update-feed deliverable is intentionally still open until real stable/preview feed assets are published from protected production signing material; production package-signature evidence, physical Live USB qualification and supported-device fwupd/LVFS validation are also still open.",
   "repositoryRole": "presentation-status-only"
 }
