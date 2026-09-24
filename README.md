@@ -6,10 +6,10 @@
 **Presentation repository only**
 
 [![Canonical Repository](https://img.shields.io/badge/CANONICAL-Swir%2FSWIR__OS-1f6feb?style=for-the-badge&logo=github)](https://github.com/Swir/SWIR_OS)
-![Roadmap](https://img.shields.io/badge/ROADMAP-89.2%25-02050A?style=for-the-badge&logoColor=62E5FF)
-![Completed](https://img.shields.io/badge/DONE-58%2F65-02050A?style=for-the-badge&logoColor=62E5FF)
+![Roadmap](https://img.shields.io/badge/ROADMAP-93.8%25-02050A?style=for-the-badge&logoColor=62E5FF)
+![Completed](https://img.shields.io/badge/DONE-61%2F65-02050A?style=for-the-badge&logoColor=62E5FF)
 
-<img width="100%" src="assets/readme/swir-os-progress-card.svg" alt="SWIR OS roadmap progress — 89.2%, 58 of 65 verified deliverables" />
+<img width="100%" src="assets/readme/swir-os-progress-card.svg" alt="SWIR OS roadmap progress — 93.8%, 61 of 65 verified deliverables" />
 
 </div>
 
@@ -28,18 +28,18 @@ The authoritative roadmap is [SWIR_OS/SWIR-OS-ARCHITECTURE.md](https://github.co
 | Web Edition | `1.7.13` |
 | Desktop Edition | `0.5.7-preview` |
 | System Edition | In development |
-| Overall roadmap | **58 / 65 — 89.2%** |
+| Overall roadmap | **61 / 65 — 93.8%** |
 | Release readiness | **Not ready** |
 
-The latest canonical milestone is merged **PR #86**, which closes the roadmap item **essential native Linux application suite for dependable daily use**. Browser, Player, Photo Studio, Task Manager/Diagnostics and Default Apps now carry verified English, Polish and Norwegian Bokmål runtime surfaces, deterministic English fallback and accessibility evidence alongside the already verified native daily-use applications. Existing privilege, package, local-file and process-safety boundaries remain in force.
+The latest canonical milestone is merged **PR #95**. It adds a fail-closed physical Live USB review gate that binds the operator review to the exact Live and installed evidence pair, image SHA-256/source commit, privacy-minimized hardware scope, installer safety observations and post-install usability evidence. This improves the real-hardware qualification path without treating a CI harness, VM run or review schema as proof that physical Live USB qualification is complete.
 
-The native daily-use suite milestone is complete in the authoritative roadmap, but this does **not** mean the full System Edition is release-ready. Physical Live USB boot/install qualification and supported-device fwupd/LVFS validation remain separate open hardware gates; Desktop package signing/integrity and the signed GitHub stable/preview update feed also remain open roadmap work.
+The remaining authoritative roadmap gates are still separate and open: **Desktop production package signatures/integrity evidence**, **a signed GitHub-backed stable/preview update feed**, **supported-device fwupd/LVFS real-device qualification**, and **production physical Live USB boot/install qualification**. SWIR_OS currently has no published GitHub Release and no production `workflow_dispatch` evidence run, so Desktop release/signing readiness is not being overstated.
 
 The existing boot/install path remains verified in disposable UEFI VMs: the final image boots as QEMU USB mass storage, the native GTK4 installer requires exact target review and destructive confirmation, installs to a separate blank disk, and the installed system boots graphically with persistence after the source USB is removed. This is meaningful VM evidence, **not** a claim of broad physical-PC support. Secure Boot plus legacy BIOS remain unclaimed until separately tested.
 
 The canonical repo uses deterministic **SWIR Progress SVG PRO** assets generated from the authoritative roadmap. The card shown here is a presentation snapshot using the same visual language; its source of truth remains `Swir/SWIR_OS`. The canonical roadmap/README presentation is SVG-only for progress meters; text values remain as accessible data, not duplicate character-based bars.
 
-Public progress here is updated only after the corresponding implementation is merged and verified in `Swir/SWIR_OS`. Current canonical snapshot commit: [`ad1c6f0a`](https://github.com/Swir/SWIR_OS/commit/ad1c6f0ab3f026350501bb86dc88c7d88b6101e2).
+Public progress here is updated only after the corresponding implementation is merged and verified in `Swir/SWIR_OS`. Current canonical snapshot commit: [`bf13e8a8`](https://github.com/Swir/SWIR_OS/commit/bf13e8a89ae2b6fe2487a39cb1298ba14483b550).
 
 ## Repository role
 
