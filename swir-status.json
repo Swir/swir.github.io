@@ -1,13 +1,13 @@
 {
   "schema": "swir.public-status/1.0",
-  "generatedAt": "2026-09-23T18:25:30Z",
+  "generatedAt": "2026-09-24T00:22:17Z",
   "canonicalRepository": "https://github.com/Swir/SWIR_OS",
-  "canonicalCommit": "7196bebfe7dbceeb7e8901747be960d258d6de32",
+  "canonicalCommit": "bf13e8a89ae2b6fe2487a39cb1298ba14483b550",
   "roadmap": {
-    "completed": 60,
-    "remaining": 5,
+    "completed": 61,
+    "remaining": 4,
     "total": 65,
-    "percent": 92.3
+    "percent": 93.8
   },
   "editions": {
     "web": "1.7.13",
@@ -51,11 +51,12 @@
     "liveUsbVm": "verified-uefi-usb-mass-storage",
     "graphicalInstallerVm": "verified-full-gtk4-path",
     "detachedInstalledBootVm": "verified-graphical-with-persistence",
-    "physicalUsbQualification": "pending-read-only-evidence-collector-and-two-phase-verifier-verified-no-roadmap-completion-claim",
+    "physicalUsbQualification": "pending-real-hardware-live-install-detached-boot-session; review-and-evidence-gates-verified-no-roadmap-completion-claim",
     "physicalUsbEvidence": "verified-privacy-minimized-digest-bound-live-installed-pairing-virtualization-refusal-usb-detach-persistence-continuity-hosted-runner-smoke-only-no-destructive-actions",
+    "physicalUsbReviewGate": "verified-exact-live-installed-evidence-pair-image-sha256-source-commit-hardware-scope-installer-safety-usability-binding-fail-closed-real-physical-session-still-required",
     "secureBootQualification": "not-claimed",
     "legacyBiosQualification": "not-claimed"
   },
-  "latestMilestone": "Canonical SWIR_OS main is at commit 7196bebfe7dbceeb7e8901747be960d258d6de32 after merged PR #91. Web File Explorer large binary/file persistence now uses the verified IndexedDB v2 split metadata/payload design from PR #90, including atomic writes, v1 migration and multi-megabyte reload persistence. The canonical roadmap is now 60/65 (92.3%). Remaining open gates are widgets as installable packages, Desktop production package-signature evidence, signed stable/preview update-feed publication, supported-device fwupd/LVFS validation and physical Live USB boot/install qualification.",
+  "latestMilestone": "Canonical SWIR_OS main is at commit bf13e8a89ae2b6fe2487a39cb1298ba14483b550 after merged PR #95. The physical Live USB review path now fail-closes unless the operator review is bound to the exact Live and installed evidence pair, image SHA-256/source commit, privacy-minimized hardware scope, installer safety observations and usability evidence. This does not complete physical qualification. The canonical roadmap remains 61/65 (93.8%). Remaining open gates are Desktop production package signatures/integrity evidence, signed GitHub-backed stable/preview update-feed publication, supported-device fwupd/LVFS real-device qualification and production physical Live USB boot/install qualification.",
   "repositoryRole": "presentation-status-only"
 }
