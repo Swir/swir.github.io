@@ -13,6 +13,12 @@
 
 </div>
 
+## 📸 Screenshot
+
+![swir.github.io application screenshot](docs/screenshots/application.jpg)
+
+Browser view of the public SWIR OS preview and project-status website.
+
 `Swir/swir.github.io` hosts the public SWIR OS preview and synchronized development status. It is **not** a source repository for the operating system and does not own roadmap truth.
 
 ## Canonical project
