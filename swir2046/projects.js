@@ -110,7 +110,7 @@ export const snapshot = {
         "published_at": "2026-10-10T14:37:18Z",
         "prerelease": true
       },
-      "platform": "Rust"
+      "platform": "WINDOWS TESTER"
     },
     {
       "name": "SWIR_OS",
@@ -125,7 +125,7 @@ export const snapshot = {
       "icon": "S",
       "description_en": "A desktop platform being developed across Web, Windows Desktop and a native Linux-based System edition.",
       "release": null,
-      "platform": "JavaScript"
+      "platform": "WEB · WINDOWS · LINUX"
     },
     {
       "name": "SwirPhotoClean",

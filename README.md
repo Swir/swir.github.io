@@ -17,9 +17,13 @@ Polish / English · Responsive static website · Native WebGL artwork
 
 ## The project showcase
 
-This repository hosts the SWIR project portfolio on GitHub Pages. The homepage introduces Konofix, SwirUI and SwirEngine, followed by a searchable, categorized collection of 22 projects, release links, and a connection to the Swir GitHub profile.
+This repository hosts the SWIR project portfolio on GitHub Pages. KonoNexus and SWIR OS lead the homepage with dedicated presentations, followed by Konofix, SwirUI and SwirEngine. A further spotlight features OCRYON, BrokeDJ and Dragon DiskForge. Visitors can also explore a searchable, categorized collection of 22 projects, release links, and the Swir GitHub profile.
 
-The visual identity combines a custom SWIR mark, electric cyan, oversized typography, a procedural chromium orbital sculpture and project-specific artwork. The Konofix and SwirUI screenshots are actual images from their public repositories; the SwirUI feature illustration and SwirEngine voxel scene are explicitly labeled concept visualizations.
+The visual identity combines a custom SWIR mark, electric cyan, oversized typography, a procedural chromium orbital sculpture and project-specific artwork. Screenshots come from the projects' public repositories; the SwirUI feature illustration and SwirEngine voxel scene are explicitly labeled concept visualizations. The SWIR OS screenshot shows Web Edition, while KonoNexus shows the alpha connection tester. Development and pre-alpha projects retain visible maturity labels.
+
+Featured screenshots are stored locally and sourced from each repository's `docs/screenshots/application.jpg`, with `application.png` used for OCRYON. KonoNexus links to its alpha tester release. SWIR OS links to its canonical repository and the preserved local OS presentation; it does not advertise a public system release.
+
+![KonoNexus and SWIR OS featured on the homepage](swir2046/preview-projects.jpg)
 
 ### What visitors can do
 
@@ -83,7 +87,7 @@ The initial portfolio was checked in a real browser for desktop rendering, phone
 
 ## 🔎 Search Keywords
 
-`SWIR projects` • `Konofix P2P chat` • `SwirUI Python interface` • `SwirEngine Python game engine` • `OCRYON OCR` • `Maxkompilator` • `independent software` • `GitHub project portfolio`
+`SWIR projects` • `KonoNexus mesh network` • `SWIR OS` • `Konofix P2P chat` • `SwirUI Python interface` • `SwirEngine Python game engine` • `OCRYON OCR` • `BrokeDJ` • `Dragon DiskForge` • `independent software` • `GitHub project portfolio`
 
 <div align="center">
 
