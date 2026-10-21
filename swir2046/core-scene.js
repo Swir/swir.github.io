@@ -225,6 +225,10 @@ export function initCoreScene(canvas) {
     gl = canvas.getContext('webgl', {
       alpha: true, antialias: false, depth: false, stencil: false,
       premultipliedAlpha: false, powerPreference: 'low-power',
+      // Paused/reduced-motion artwork is an actual retained still, including
+      // when an iframe is first laid out or its compositor surface is recreated.
+      // The existing 960px/DPR cap also bounds this retained color buffer.
+      preserveDrawingBuffer: true,
     });
   } catch { /* Use the static illustration below. */ }
   if (!gl) {
@@ -273,20 +277,40 @@ export function initCoreScene(canvas) {
   const target = { x: 0, y: 0 };
   const position = { x: 0, y: 0 };
   let paused = false, intersecting = true, destroyed = false, contextLost = false;
-  let frame = 0, lastFrame = 0, elapsed = 0;
+  let frame = 0, stillFrame = 0, lastFrame = 0, elapsed = 0;
   let lastTick = performance.now();
   const mobile = window.matchMedia('(max-width: 700px)').matches;
   const fps = mobile ? 24 : 30;
 
-  function resize() {
+  function sizeSurface() {
+    if (destroyed || contextLost) return;
     const box = canvas.getBoundingClientRect();
     const width = box.width || 640, height = box.height || 640;
     // Cap both pixel density and the long edge: predictable mobile GPU use.
     const ratio = Math.min(window.devicePixelRatio || 1, mobile ? 1.05 : 1.25, 960 / Math.max(width, height));
-    canvas.width = Math.max(1, Math.round(width * ratio));
-    canvas.height = Math.max(1, Math.round(height * ratio));
+    const pixelWidth = Math.max(1, Math.round(width * ratio));
+    const pixelHeight = Math.max(1, Math.round(height * ratio));
+    // Assigning even an unchanged canvas dimension clears its backing store.
+    if (canvas.width !== pixelWidth) canvas.width = pixelWidth;
+    if (canvas.height !== pixelHeight) canvas.height = pixelHeight;
     gl.viewport(0, 0, canvas.width, canvas.height);
-    render();
+  }
+
+  function requestStillFrame() {
+    if (destroyed || contextLost || stillFrame) return;
+    // This request is independent of the animation loop. An immediate pause
+    // must not cancel the first visible frame or a resize's replacement frame.
+    stillFrame = requestAnimationFrame(() => {
+      stillFrame = 0;
+      if (destroyed || contextLost || document.hidden) return;
+      sizeSurface();
+      render();
+    });
+  }
+
+  function resize() {
+    sizeSurface();
+    requestStillFrame();
   }
 
   function render() {
@@ -320,7 +344,7 @@ export function initCoreScene(canvas) {
     } else {
       if (frame) cancelAnimationFrame(frame);
       frame = 0;
-      if (!document.hidden && intersecting) render();
+      if (!document.hidden && intersecting) requestStillFrame();
     }
   }
 
@@ -358,6 +382,7 @@ export function initCoreScene(canvas) {
     destroy() {
       destroyed = true;
       if (frame) cancelAnimationFrame(frame);
+      if (stillFrame) cancelAnimationFrame(stillFrame);
       resizeObserver?.disconnect(); intersectionObserver?.disconnect();
       canvas.removeEventListener('pointermove', move);
       canvas.removeEventListener('pointerleave', leave);

@@ -11,6 +11,7 @@ on:
       - 'swir-app-bridge-host.js'
       - 'swir-desktop.html'
       - 'index.html'
+      - 'swir-os.html'
       - 'manifest.webmanifest'
       - 'sw.js'
       - 'desktop/windows/stage-desktop-runtime.ps1'
@@ -26,6 +27,7 @@ on:
       - 'swir-app-bridge-host.js'
       - 'swir-desktop.html'
       - 'index.html'
+      - 'swir-os.html'
       - 'manifest.webmanifest'
       - 'sw.js'
       - 'desktop/windows/stage-desktop-runtime.ps1'
@@ -63,3 +65,4 @@ jobs:
 
       - name: Validate locale runtime integration contract
         run: node scripts/validate-i18n.mjs
+

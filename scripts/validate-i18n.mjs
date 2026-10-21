@@ -4,6 +4,7 @@ const read = path => fs.readFileSync(path, 'utf8');
 const i18n = read('swir-i18n.js');
 const desktopShell = read('swir-desktop.html');
 const publicIndex = read('index.html');
+const publicShowcase = read('swir-os.html');
 const manifest = JSON.parse(read('manifest.webmanifest'));
 const sw = read('sw.js');
 const stage = read('desktop/windows/stage-desktop-runtime.ps1');
@@ -28,7 +29,12 @@ const platformScript = desktopShell.indexOf('<script src="./swir-platform.js"></
 if (i18nScript < 0) fail('swir-desktop.html does not load swir-i18n.js');
 if (platformScript < 0 || i18nScript > platformScript) fail('locale runtime must load before platform runtime in the dedicated OS shell');
 if (!desktopShell.includes('id="os-shell"')) fail('dedicated OS shell marker is missing');
-if (!publicIndex.includes('SWIR OS') || !publicIndex.includes('swir-preview.css')) fail('public showcase entry is missing or no longer separated from the OS shell');
+// The portfolio owns the root; the preserved OS showcase has its own public entry.
+if (!publicShowcase.includes('SWIR OS') || !publicShowcase.includes('swir-preview.css')) fail('preserved OS showcase entry is missing');
+if (!publicIndex.includes('./swir2046/style.css') || !publicIndex.includes('./swir2046/app.js')) fail('public portfolio entry is missing');
+for (const [name, html] of [['index.html', publicIndex], ['swir-os.html', publicShowcase]]) {
+  if (/\bid\s*=\s*["']os-shell["']/i.test(html) || /<script\b[^>]*\bsrc\s*=\s*["'](?:\.\/)?swir-(?:i18n|platform|runtime|file-storage|os|app-bridge(?:-host)?)\.js["']/i.test(html)) fail(name + ' must remain separate from the OS runtime shell');
+}
 if (manifest.start_url !== './swir-desktop.html') fail('PWA start_url must target the dedicated Web Edition shell');
 if (!sw.includes("'./swir-desktop.html'") || !sw.includes("'./swir-i18n.js'")) fail('offline cache does not include the dedicated shell and locale runtime');
 if (!/const OPTIONAL_CORE\s*=\s*new Set\(\[[\s\S]*?'\.\/swir-desktop\.html'[\s\S]*?\]\);/.test(sw)) fail('service worker must tolerate the source-only shell alias being absent in native packages');
@@ -55,3 +61,4 @@ for (const method of ['locale.info','locale.translate','locale.formatDate','loca
 if (bridgeHost.includes("case 'locale.set'") || bridgeClient.includes("'locale.set'")) fail('isolated applications must not be able to mutate system locale through the read-only bridge');
 
 console.log('SWIR i18n contract OK: dedicated OS shell, BCP-47 core, RTL, native-safe PWA cache isolation, Settings, App SDK/Bridge and Desktop staging are wired.');
+

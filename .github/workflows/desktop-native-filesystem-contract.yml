@@ -15,6 +15,7 @@ on:
       - 'swir-platform-bridge.js'
       - 'swir-desktop.html'
       - 'index.html'
+      - 'swir-os.html'
       - 'manifest.webmanifest'
       - 'sw.js'
       - 'scripts/validate-desktop-filesystem.mjs'
@@ -34,6 +35,7 @@ on:
       - 'swir-platform-bridge.js'
       - 'swir-desktop.html'
       - 'index.html'
+      - 'swir-os.html'
       - 'manifest.webmanifest'
       - 'sw.js'
       - 'scripts/validate-desktop-filesystem.mjs'
@@ -87,3 +89,4 @@ jobs:
 
       - name: Run hardened native filesystem self-tests
         run: dotnet run --project SWIR.Desktop.NativeFileSystem.SelfTests.csproj --configuration Release
+
