@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 360" role="img" aria-labelledby="title desc">
+  <title id="title">SWIR OS</title>
+  <desc id="desc">Official SWIR OS neon blue wordmark and system mark.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#020617"/>
+      <stop offset="1" stop-color="#082743"/>
+    </linearGradient>
+    <linearGradient id="neon" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#00a6ff"/>
+      <stop offset="0.5" stop-color="#00e5ff"/>
+      <stop offset="1" stop-color="#4f8cff"/>
+    </linearGradient>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="9" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect x="2" y="2" width="1396" height="356" rx="62" fill="url(#bg)" stroke="#00a6ff" stroke-opacity=".30" stroke-width="4"/>
+  <g transform="translate(54 40)">
+    <rect width="280" height="280" rx="64" fill="#020617" stroke="#00a6ff" stroke-opacity=".55" stroke-width="5"/>
+    <g filter="url(#glow)" stroke="url(#neon)" stroke-width="20" stroke-linecap="round">
+      <path d="M70 88h142"/>
+      <path d="M70 140h105"/>
+      <path d="M70 192h142"/>
+    </g>
+    <g fill="#00a6ff">
+      <circle cx="55" cy="88" r="10"/>
+      <circle cx="55" cy="140" r="10"/>
+      <circle cx="55" cy="192" r="10"/>
+    </g>
+  </g>
+  <g transform="translate(390 72)">
+    <text x="0" y="126" fill="url(#neon)" filter="url(#glow)" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="128" font-weight="800" letter-spacing="8">SWIR OS</text>
+    <rect x="4" y="158" width="820" height="3" rx="1.5" fill="#00c8ff" opacity=".55"/>
+    <text x="4" y="218" fill="#9bdfff" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="34" font-weight="600" letter-spacing="8">HYBRID OPERATING SYSTEM</text>
+  </g>
+</svg>

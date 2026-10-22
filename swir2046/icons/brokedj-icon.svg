@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="BrokeDJ application icon">
+<rect x="8" y="8" width="496" height="496" rx="112" fill="#080e1a"/>
+<rect x="18" y="18" width="476" height="476" rx="104" fill="none" stroke="#245c96" stroke-width="6"/>
+<path d="M116 282v-45a140 140 0 0 1 280 0v45" fill="none" stroke="#399bff" stroke-width="28" stroke-linecap="round"/>
+<rect x="84" y="236" width="68" height="130" rx="26" fill="#399bff"/>
+<rect x="360" y="236" width="68" height="130" rx="26" fill="#399bff"/>
+<circle cx="256" cy="296" r="78" fill="#122943" stroke="#8dcbff" stroke-width="10"/>
+<circle cx="256" cy="296" r="46" fill="none" stroke="#245c96" stroke-width="8"/>
+<circle cx="256" cy="296" r="16" fill="#dbeeff"/>
+<path d="M202 413h108" stroke="#399bff" stroke-width="14" stroke-linecap="round"/>
+</svg>

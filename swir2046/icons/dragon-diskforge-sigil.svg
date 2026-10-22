@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 88" role="img" aria-labelledby="title desc">
+  <title id="title">Dragon DiskForge sigil</title>
+  <desc id="desc">Angular dragon head mark for Dragon DiskForge.</desc>
+  <defs>
+    <linearGradient id="ember" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFB02E"/>
+      <stop offset="0.52" stop-color="#F47A1F"/>
+      <stop offset="1" stop-color="#B92B35"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#ember)" d="M48 2C38 12 33 22 34 33c-7-6-14-8-23-6 10 7 13 14 9 23-4 9-1 19 8 25 6 4 12 4 18 1-6-4-10-9-10-15 6 4 13 6 21 5 10-1 19-7 25-16-8 3-15 2-20-2 8-4 14-11 17-20-9 4-17 5-24 3 3-9 1-19-7-29Zm2 34c7-1 13 1 17 6-6-1-11 0-16 3-3-2-4-5-1-9Z"/>
+</svg>

@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="64" y1="32" x2="448" y2="480" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#101828"/>
+      <stop offset="0.55" stop-color="#070B12"/>
+      <stop offset="1" stop-color="#03050A"/>
+    </linearGradient>
+    <linearGradient id="beam" x1="120" y1="140" x2="406" y2="370" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#35F2FF"/>
+      <stop offset="0.48" stop-color="#7C5CFF"/>
+      <stop offset="1" stop-color="#FF3DBA"/>
+    </linearGradient>
+    <radialGradient id="iris" cx="0" cy="0" r="1" gradientTransform="translate(256 256) rotate(90) scale(94)">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="0.14" stop-color="#A9FAFF"/>
+      <stop offset="0.5" stop-color="#36D7FF"/>
+      <stop offset="0.78" stop-color="#755CFF"/>
+      <stop offset="1" stop-color="#FF3DBA"/>
+    </radialGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="10" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <rect x="20" y="20" width="472" height="472" rx="112" fill="url(#bg)" stroke="#22324A" stroke-width="10"/>
+
+  <path d="M92 180V112c0-11 9-20 20-20h68" fill="none" stroke="#35F2FF" stroke-width="20" stroke-linecap="round"/>
+  <path d="M332 92h68c11 0 20 9 20 20v68" fill="none" stroke="#7C5CFF" stroke-width="20" stroke-linecap="round"/>
+  <path d="M420 332v68c0 11-9 20-20 20h-68" fill="none" stroke="#FF3DBA" stroke-width="20" stroke-linecap="round"/>
+  <path d="M180 420h-68c-11 0-20-9-20-20v-68" fill="none" stroke="#36D7FF" stroke-width="20" stroke-linecap="round"/>
+
+  <path d="M95 256c42-70 96-105 161-105s119 35 161 105c-42 70-96 105-161 105S137 326 95 256Z"
+        fill="#0B1220" stroke="url(#beam)" stroke-width="16" filter="url(#glow)"/>
+  <circle cx="256" cy="256" r="82" fill="url(#iris)" filter="url(#glow)"/>
+  <circle cx="256" cy="256" r="42" fill="#050810"/>
+  <circle cx="241" cy="238" r="13" fill="#FFFFFF" opacity=".92"/>
+
+  <path d="M126 388H386" stroke="url(#beam)" stroke-width="12" stroke-linecap="round" opacity=".9"/>
+  <path d="M156 388H215M238 388H281M305 388H356" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" opacity=".9"/>
+</svg>
