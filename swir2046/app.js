@@ -1,426 +1,227 @@
-import { snapshot } from './projects.js';
+import { projects, projectByName, snapshot, screenshotPath, logoPath, description, categoryLabel, statusLabel, imageCaption, imageAlt, formatDate, getReleases, normalize, escapeHTML as esc, storage, getMetadataState, refreshPublicMetadata } from './project-store.js';
+import { createOrbitSky } from './orbit-sky.js';
+import { artwork } from './project-art.js';
 
 const $ = (selector, scope = document) => scope?.querySelector(selector) ?? null;
 const $$ = (selector, scope = document) => [...(scope?.querySelectorAll(selector) ?? [])];
-const storage = {
-  get(key) { try { return localStorage.getItem(key); } catch { return null; } },
-  set(key, value) { try { localStorage.setItem(key, value); } catch { /* Session-only preferences still work. */ } },
-};
-const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]));
 const icon = name => `<svg aria-hidden="true"><use href="#i-${name}"/></svg>`;
-const normalize = value => String(value ?? '').toLocaleLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/ł/g, 'l');
-const projects = snapshot.projects.map(project => ({ ...project }));
-const projectByName = new Map(projects.map(project => [project.name, project]));
-const stageOrder = ['Dragon-DiskForge', 'Konofix', 'Swirui', 'KonoNexus', 'SWIR_OS'];
-const assets = {
-  'Dragon-DiskForge': { image: 'dragon-diskforge.jpg', logo: 'dragon-diskforge-sigil.svg' },
-  Konofix: { image: 'konofix.jpg', logo: 'konofix-icon.ico' },
-  Swirui: { image: 'swirui.jpg', logo: 'swirui-icon.svg' },
-  KonoNexus: { image: 'kononexus.jpg', logo: 'kononexus-icon.png' },
-  SWIR_OS: { image: 'swir-os.jpg', logo: 'swir-os-icon.svg' },
-  OCRYON: { image: 'ocryon.png', logo: 'ocryon-icon.svg' },
-  BrokeDJ: { image: 'brokedj.jpg', logo: 'brokedj-icon.svg' },
+const copy = {
+ pl: {
+  'skip':'Przejdź do projektów','desktop':'Pulpit','independent':'Independent software','search.placeholder':'Znajdź swój następny projekt…','intro.eyebrow':'TWÓJ KIERUNEK. TWOJA ORBITA.','intro.title':'Oprogramowanie <br><em>z innego świata.</em>','intro.copy':'Odkrywaj projekty. Otwieraj możliwości.','explorer':'Eksplorator projektów','workspace':'TWOJA PRZESTRZEŃ','discover':'Odkrywaj','library':'Biblioteka','releases':'Wydania','collections':'KOLEKCJE','selected.projects':'wybrane projekty','quick.search':'Szybkie wyszukiwanie','local.time':'TWÓJ CZAS LOKALNY','clock.quote':'Dobry moment, żeby stworzyć coś swojego.','in.orbit':'JUŻ NA ORBICIE','all.releases':'Wszystkie wydania','desktop.note':'Własny kod.<br>Własne zasady.','guide.title':'Przestrzeń jest Twoja.','guide.copy':'Otwórz projekt z pulpitu lub wróć do eksploratora.','explorer.open':'Otwórz eksplorator','portfolio':'INTERAKTYWNE PORTFOLIO','desktop.hint':'Otwórz projekt. Przesuń okno. Odkrywaj po swojemu.','search':'Szukaj','search.navigate':'wybierz','search.open':'otwórz','minimize':'Minimalizuj','maximize':'Maksymalizuj','restore':'Przywróć rozmiar','close':'Zamknij','home.eyebrow':'NIEZALEŻNE OPROGRAMOWANIE / BY SWIR','home.title':'Witaj na własnej orbicie.','home.count':'22 powody do odkrywania','featured':'PROJEKT W CENTRUM UWAGI','featured.copy':'Komunikacja poza utartym szlakiem. Eksperymentalna sieć mesh i tester połączeń napisany w Rust.','project.open':'Poznaj projekt','featured.caption':'RZECZYWISTY INTERFEJS · TESTER ALPHA','shortcuts':'Wybierz następny kierunek','all.projects':'Wszystkie projekty','creative.title':'Dla pomysłów, które nie mieszczą się w szablonie.','home.footer':'Oryginalne projekty. Rzeczywiste interfejsy. Kod, do którego możesz zajrzeć.','library.eyebrow':'WSZYSTKIE TWOJE KIERUNKI','library.title':'Biblioteka projektów','library.search':'Szukaj nazwy, technologii lub pomysłu…','library.count':'projektów w katalogu','library.visible':'wyników','library.reset':'Wyczyść filtry','empty.title':'Tu jeszcze nic nie ma.','empty.copy':'Spróbuj innej nazwy albo zmień kategorię.','release.eyebrow':'OD KODU DO WYDANIA','release.title':'Gotowe do bliższego poznania.','snapshot.before':'Informacje o wydaniach sprawdzone','snapshot.after':'Aktualny stan i pliki znajdziesz w repozytoriach.','repository':'Kod na GitHubie','release':'Zobacz wydanie','os.preview':'Prezentacja SWIR OS','enlarge':'Powiększ','unreleased':'Projekt jest rozwijany. Aktualny zakres i postępy znajdziesz w repozytorium.','image.close':'Zamknij podgląd','image.illustration':'Ilustracja projektu','project.source':'POZNAJ KOD PROJEKTU','metadata.snapshot':'GitHub / zapis katalogu','metadata.cached':'GitHub / zapisane metadane','metadata.live':'GitHub / metadane odświeżone','metadata.scope':'Odświeżane są liczba repozytoriów, gwiazdki i języki. Katalog i wydania:','motion.pause':'Wstrzymaj efekty','motion.play':'Wznów efekty','search.title':'Wyszukiwanie projektów','search.input':'Nazwa projektu lub dokąd chcesz przejść…','search.commands':'PRZEJDŹ DO','search.projects':'PROJEKTY','terminal.title':'Małe polecenie. Nowe możliwości.','terminal.hint':'Wpisz help, ls lub open KonoNexus.','terminal.greeting':'Witaj w terminalu projektów SWIR.','terminal.help':'help              pokaż dostępne polecenia\nls                pokaż wszystkie projekty\nopen <nazwa>      otwórz okno projektu\nabout             poznaj SWIR / ORBIT\nclear             wyczyść terminal','terminal.unknown':'Nieznane polecenie. Wpisz help.','terminal.notfound':'Nie znaleziono projektu. Wpisz ls, aby zobaczyć listę.','terminal.choose':'Pasuje kilka projektów — wybierz jeden:','terminal.opening':'Otwarto projekt:','terminal.about':'SWIR / ORBIT — interaktywne portfolio niezależnego oprogramowania. Własny kod. Własne zasady.','terminal.send':'Wykonaj','project.opened':'Otwarto okno projektu','project.closed':'Zamknięto okno projektu','project.minimized':'Okno zminimalizowane. Przywrócisz je z docka.','shortcut.label':'Skróty do projektów','widgets.label':'Czas lokalny i wydania','dock.label':'Dock aplikacji','filter.all':'Wszystko','windows.title':'Otwarte okna','windows.input':'Znajdź otwarte lub zminimalizowane okno…','windows.group':'OTWARTE OKNA','terminal.input':'Polecenie terminala','all.repositories':'Wszystkie repozytoria'
+ },
+ en: {
+  'skip':'Skip to projects','desktop':'Desktop','independent':'Independent software','search.placeholder':'Find your next project…','intro.eyebrow':'YOUR DIRECTION. YOUR ORBIT.','intro.title':'Software <br><em>from another world.</em>','intro.copy':'Explore projects. Open possibilities.','explorer':'Project explorer','workspace':'YOUR WORKSPACE','discover':'Discover','library':'Library','releases':'Releases','collections':'COLLECTIONS','selected.projects':'selected projects','quick.search':'Quick search','local.time':'YOUR LOCAL TIME','clock.quote':'A good moment to create something of your own.','in.orbit':'ALREADY IN ORBIT','all.releases':'All releases','desktop.note':'Your code.<br>Your rules.','guide.title':'Make this space yours.','guide.copy':'Open a project from the desktop or return to the explorer.','explorer.open':'Open explorer','portfolio':'INTERACTIVE PORTFOLIO','desktop.hint':'Open a project. Move a window. Explore your way.','search':'Search','search.navigate':'navigate','search.open':'open','minimize':'Minimize','maximize':'Maximize','restore':'Restore size','close':'Close','home.eyebrow':'INDEPENDENT SOFTWARE / BY SWIR','home.title':'Welcome to your own orbit.','home.count':'22 reasons to explore','featured':'IN THE SPOTLIGHT','featured.copy':'Communication beyond the usual paths. An experimental mesh network and connection tester, written in Rust.','project.open':'Explore project','featured.caption':'ACTUAL INTERFACE · ALPHA TESTER','shortcuts':'Choose your next direction','all.projects':'All projects','creative.title':'For ideas that do not fit the template.','home.footer':'Original projects. Actual interfaces. Code you can explore.','library.eyebrow':'EVERY DIRECTION, ONE PLACE','library.title':'Project library','library.search':'Search names, technologies or ideas…','library.count':'projects in the catalog','library.visible':'results','library.reset':'Reset filters','empty.title':'Nothing here yet.','empty.copy':'Try another name or choose a different category.','release.eyebrow':'FROM CODE TO RELEASE','release.title':'Ready for a closer look.','snapshot.before':'Release information checked on','snapshot.after':'See the repositories for the latest status and files.','repository':'Code on GitHub','release':'View release','os.preview':'SWIR OS presentation','enlarge':'Enlarge','unreleased':'This project is in development. Explore its repository for the current scope and progress.','image.close':'Close preview','image.illustration':'Project illustration','project.source':'EXPLORE THE PROJECT CODE','metadata.snapshot':'GitHub / catalog snapshot','metadata.cached':'GitHub / cached metadata','metadata.live':'GitHub / metadata updated','metadata.scope':'Repository count, stars and languages are refreshed. Catalog and releases:','motion.pause':'Pause visual effects','motion.play':'Resume visual effects','search.title':'Project search','search.input':'A project name or somewhere to go…','search.commands':'GO TO','search.projects':'PROJECTS','terminal.title':'Small commands. New possibilities.','terminal.hint':'Type help, ls or open KonoNexus.','terminal.greeting':'Welcome to the SWIR project terminal.','terminal.help':'help              show available commands\nls                list all projects\nopen <name>       open a project window\nabout             learn about SWIR / ORBIT\nclear             clear the terminal','terminal.unknown':'Unknown command. Type help.','terminal.notfound':'Project not found. Type ls to see the list.','terminal.choose':'Several projects match — choose one:','terminal.opening':'Project opened:','terminal.about':'SWIR / ORBIT — an interactive portfolio of independent software. Your code. Your rules.','terminal.send':'Run','project.opened':'Project window opened','project.closed':'Project window closed','project.minimized':'Window minimized. Restore it from the dock.','shortcut.label':'Project shortcuts','widgets.label':'Local time and releases','dock.label':'Application dock','filter.all':'Everything','windows.title':'Open windows','windows.input':'Find an open or minimized window…','windows.group':'OPEN WINDOWS','terminal.input':'Terminal command','all.repositories':'Every repository'
+ }
 };
-const text = {
-  pl: {
-    'category.all': 'Wszystko', 'category.tools': 'Narzędzia', 'category.creators': 'Dla twórców',
-    'category.communication': 'Komunikacja', 'category.system': 'System', 'category.games': 'Gry i media', 'category.other': 'Pozostałe projekty',
-    'status.release': 'WYDANIE', 'status.beta': 'BETA', 'status.alpha': 'ALPHA', 'status.pre-alpha': 'PRE-ALPHA', 'status.development': 'W ROZWOJU', 'status.source': 'ŹRÓDŁA',
-    'empty.title': 'Nie znaleziono projektu.', 'empty.description': 'Spróbuj innej nazwy lub wybierz inną kategorię.',
-    'generic.description': 'Poznaj dokumentację, kod i historię projektu na GitHubie.',
-    'repository': 'Repozytorium', 'release': 'Zobacz wydanie', 'os.preview': 'Prezentacja SWIR OS',
-    'unreleased': 'Projekt jest rozwijany. Aktualny zakres i postępy znajdziesz w repozytorium.',
-    'snapshot.before': 'Informacje o wydaniach sprawdzone', 'snapshot.after': 'Aktualny stan znajdziesz na GitHubie.',
-    'image.open': 'Powiększ zrzut ekranu', 'image.caption': 'Zrzut ekranu z publicznego repozytorium',
-    'image.nexus.caption': 'Zrzut z repozytorium · tester połączeń alpha', 'image.os.caption': 'Zrzut z repozytorium · SWIR OS Web Edition',
-    'image.alt': 'Interfejs aplikacji', 'image.nexus.alt': 'Interfejs testera połączeń KonoNexus', 'image.os.alt': 'Pulpit SWIR OS Web Edition',
-    'motion.on': 'Efekty wł.', 'motion.off': 'Efekty wył.', 'motion.pause': 'Wstrzymaj efekty', 'motion.play': 'Wznów efekty',
-    'menu.open': 'Otwórz nawigację', 'menu.close': 'Zamknij nawigację',
-    'data.live': 'GitHub · metadane odświeżone', 'data.cached': 'GitHub · zapisane metadane',
-    'data.scope': 'Odświeżane są tylko liczba publicznych repozytoriów, gwiazdki i języki. Opisy i wydania pochodzą z',
-  },
-  en: {
-    'category.all': 'Everything', 'category.tools': 'Tools', 'category.creators': 'For creators',
-    'category.communication': 'Communication', 'category.system': 'System', 'category.games': 'Games & media', 'category.other': 'More projects',
-    'status.release': 'RELEASE', 'status.beta': 'BETA', 'status.alpha': 'ALPHA', 'status.pre-alpha': 'PRE-ALPHA', 'status.development': 'IN DEVELOPMENT', 'status.source': 'SOURCE',
-    'empty.title': 'No project found.', 'empty.description': 'Try another name or choose a different category.',
-    'generic.description': 'Explore the documentation, code and project history on GitHub.',
-    'repository': 'View repository', 'release': 'View release', 'os.preview': 'SWIR OS presentation',
-    'unreleased': 'This project is in development. Explore the repository for its current scope and progress.',
-    'snapshot.before': 'Release information checked on', 'snapshot.after': 'See GitHub for the current status.',
-    'image.open': 'Enlarge screenshot', 'image.caption': 'Screenshot from the public repository',
-    'image.nexus.caption': 'Repository screenshot · alpha connection tester', 'image.os.caption': 'Repository screenshot · SWIR OS Web Edition',
-    'image.alt': 'Application interface', 'image.nexus.alt': 'KonoNexus connection tester interface', 'image.os.alt': 'SWIR OS Web Edition desktop',
-    'motion.on': 'Effects on', 'motion.off': 'Effects off', 'motion.pause': 'Pause visual effects', 'motion.play': 'Resume visual effects',
-    'menu.open': 'Open navigation', 'menu.close': 'Close navigation',
-    'data.live': 'GitHub · metadata updated', 'data.cached': 'GitHub · cached metadata',
-    'data.scope': 'Only the public repository count, stars and languages are refreshed. Descriptions and releases were checked on',
-  },
-};
+let lang=storage.get('swir.language')==='en'?'en':'pl';
+const t=key=>copy[lang][key]??copy.pl[key]??key;
+const mediaMotion=matchMedia('(prefers-reduced-motion: reduce)');
+const mobile=()=>matchMedia('(max-width:760px)').matches;
+let paused=mediaMotion.matches||storage.get('swir.motion')==='paused';
+let sky=null, view='home', category='all', query='', zIndex=10, focused='explorer';
+let activeImage=null, commandTrigger=null, imageTrigger=null, restoreCommandFocus=true, commandScope='all';
+const windows=new Map();
+const explorer=$('#explorer-window');
+const pinned=['KonoNexus','SWIR_OS','Konofix','Dragon-DiskForge','BrokeDJ'];
+const categories=['tools','creators','communication','system','games'];
+const colors={tools:'#71e7ff',creators:'#ae9aff',communication:'#7ce2c8',system:'#86aaff',games:'#edba7c'};
+const terminalHistory=[];
+const projectLabel=name=>name==='Dragon-DiskForge'?'DiskForge':projectByName.get(name)?.displayName||name;
+const mark=project=>{const path=logoPath(project.name);return `<span class="app-mark ${path?'has-image':''}" style="--project-color:${esc(project.color||'#71e7ff')}" aria-hidden="true">${path?`<img src="${path}" alt="" width="42" height="42">`:project.icon==='code'?icon('code'):esc(project.icon||'</>')}</span>`;};
+const tag=project=>`<span class="stage-tag stage-${esc(project.stage)}">${esc(statusLabel(project.stage,lang))}</span>`;
+const note=()=>`${t('snapshot.before')} ${formatDate(new Date(snapshot.verified_date+'T12:00:00Z'),lang,true)}. ${t('snapshot.after')}`;
+const announce=value=>{$('#announcer').textContent=value;};
+const matchProject=(project,value)=>normalize(`${project.name} ${project.displayName} ${description(project,lang)} ${project.language||''} ${categoryLabel(project.category,lang)}`).includes(normalize(value));
+function art(name){return (artwork[name]||'').replace(/Ilustracja projektu/g,t('image.illustration'));}
+function applyCopy(scope=document){for(const el of $$('[data-i18n]',scope)) el.innerHTML=t(el.dataset.i18n);for(const el of $$('[data-label]',scope))el.setAttribute('aria-label',t(el.dataset.label));}
 
-// Only author-provided static markup is translated through innerHTML.
-// Remote metadata and project content are always escaped or assigned as text.
-const staticCopy = $$('[data-en]').map(element => ({ element, pl: element.innerHTML, en: element.dataset.en }));
-const attributeCopy = [['data-en-alt', 'alt'], ['data-en-label', 'aria-label'], ['data-en-placeholder', 'placeholder']]
-  .flatMap(([source, target]) => $$(`[${source}]`).map(element => ({ element, target, pl: element.getAttribute(target) ?? '', en: element.getAttribute(source) ?? '' })));
-const originalTitle = document.title;
-const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
-let lang = storage.get('swir.language') === 'en' ? 'en' : 'pl';
-let motionPaused = reducedMotion.matches || storage.get('swir.motion') === 'paused';
-let currentStage = stageOrder[0];
-let filter = 'all';
-let limit = 9;
-let dataMode = 'snapshot';
-let activeProject = null;
-let activeImage = null;
-let switchTimer = 0;
-let revealObserver = null;
-const t = key => text[lang][key] ?? text.pl[key] ?? key;
-const description = project => (lang === 'en' ? project.description_en || project.description_pl : project.description_pl || project.description_en) || t('generic.description');
-const category = project => t(`category.${project.category}`);
-const screenshotPath = name => assets[name]?.image ? `./swir2046/screenshots/${assets[name].image}` : null;
-const logoPath = name => assets[name]?.logo ? `./swir2046/icons/${assets[name].logo}` : null;
-const imageCaption = name => t(name === 'KonoNexus' ? 'image.nexus.caption' : name === 'SWIR_OS' ? 'image.os.caption' : 'image.caption');
-const imageAlt = project => project.name === 'KonoNexus' ? t('image.nexus.alt') : project.name === 'SWIR_OS' ? t('image.os.alt') : `${project.displayName} — ${t('image.alt')}`;
-const stageClass = project => project.stage === 'release' ? 'release-tag' : ['beta', 'alpha', 'pre-alpha'].includes(project.stage) ? 'beta-tag' : 'development-tag';
-const tag = project => `<span class="stage-tag ${stageClass(project)}">${escapeHTML(t(`status.${project.stage}`))}</span>`;
-const verifiedDate = new Date(`${snapshot.verified_date}T12:00:00Z`);
-const formatDate = (date, long = false) => new Intl.DateTimeFormat(lang === 'pl' ? 'pl-PL' : 'en-GB', { day: '2-digit', month: long ? 'long' : 'short', year: 'numeric', timeZone: 'Europe/Oslo' }).format(date);
-const snapshotNote = () => `${t('snapshot.before')} ${formatDate(verifiedDate, true)}. ${t('snapshot.after')}`;
-const polishForm = (number, one, few, many) => number === 1 ? one : number % 10 >= 2 && number % 10 <= 4 && (number % 100 < 12 || number % 100 > 14) ? few : many;
+function renderShortcuts(){
+ $('#desktop-shortcuts').innerHTML=pinned.map(name=>{const p=projectByName.get(name);return `<button class="desktop-shortcut" data-open-project="${esc(name)}" aria-haspopup="dialog" title="${esc(t('project.open')+': '+p.displayName)}">${mark(p)}<span>${esc(projectLabel(name))}</span></button>`;}).join('');
+ $('#sidebar-collections').innerHTML=categories.map(key=>`<button class="collection-item ${category===key&&view==='library'?'active':''}" data-category="${key}"><i style="--collection-color:${colors[key]}"></i><span>${esc(categoryLabel(key,lang))}</span></button>`).join('');
+ renderDock();
+}
+function dockProject(name){const p=projectByName.get(name);const state=windows.get(name);return `<button class="dock-button ${state?'running':''} ${focused===name&&!state?.el.hidden?'focused':''}" data-dock-project="${esc(name)}" aria-label="${esc(p.displayName)}" aria-haspopup="dialog">${mark(p)}<span class="dock-label">${esc(p.displayName)}</span><i class="running-dot"></i></button>`;}
+function renderDock(){
+ const active=document.activeElement?.dataset?.dockProject;
+ $('#pinned-dock').innerHTML=pinned.map(dockProject).join('');
+ const extras=[...windows.keys()].filter(name=>!pinned.includes(name));
+ $('#running-dock').innerHTML=extras.length?`<button class="dock-button dock-tasks" data-action="windows" aria-label="${esc(t('windows.title'))}">${icon('restore')}<span class="dock-label">${esc(t('windows.title'))} (${windows.size})</span><small>${windows.size}</small></button>`:'';
+ $('.dock').classList.toggle('has-tasks',extras.length>0);
+ const launcher=$('[data-dock="explorer"]');launcher.classList.toggle('running',!explorer.hidden);launcher.classList.toggle('focused',focused==='explorer'&&!explorer.hidden);launcher.setAttribute('aria-label',t('explorer.open'));
+ if(active)$$('[data-dock-project]').find(el=>el.dataset.dockProject===active)?.focus({preventScroll:true});
+}
+function viewHeading(eyebrow,title,aside=''){return `<div class="view-heading"><div><p class="micro-label">${esc(eyebrow)}</p><h2>${esc(title)}</h2></div>${aside?`<span>${esc(aside)}</span>`:''}</div>`;}
+function renderHome(){
+ const nexus=projectByName.get('KonoNexus');
+ return viewHeading(t('home.eyebrow'),t('home.title'),t('home.count'))+`<article class="featured-project"><div class="featured-copy"><span class="featured-eyebrow"><i></i>${esc(t('featured'))}</span><div class="featured-brand">${mark(nexus)}<h3>KonoNexus</h3></div><p>${esc(t('featured.copy'))}</p><div class="featured-bottom"><button class="primary-button" data-open-project="KonoNexus" aria-haspopup="dialog">${esc(t('project.open'))}${icon('up')}</button>${tag(nexus)}</div></div><div class="featured-media"><button class="featured-preview" data-preview-image="KonoNexus" aria-label="${esc(t('enlarge')+' — '+imageAlt(nexus,lang))}" aria-haspopup="dialog"><img src="${screenshotPath(nexus.name)}" alt="${esc(imageAlt(nexus,lang))}" width="982" height="792" fetchpriority="high"></button><span class="featured-media-caption">${esc(t('featured.caption'))}</span></div></article><div class="section-line"><h3>${esc(t('shortcuts'))}</h3><button data-view="library">${esc(t('all.projects'))}${icon('arrow')}</button></div><div class="quick-grid">${['SWIR_OS','Konofix','Dragon-DiskForge'].map(name=>{const p=projectByName.get(name);return `<button class="quick-card" data-open-project="${name}" aria-haspopup="dialog">${mark(p)}<span><strong>${esc(projectLabel(name))}</strong><small>${esc(categoryLabel(p.category,lang))}</small></span>${icon('up')}</button>`;}).join('')}</div><div class="section-line"><h3>${esc(t('creative.title'))}</h3></div><div class="creative-grid">${['BrokeDJ','OCRYON','SwirEngine'].map(name=>`<button class="creative-card pick-${name==='BrokeDJ'?'music':name==='OCRYON'?'ocr':'engine'}" data-open-project="${name}" aria-haspopup="dialog">${art(name)}<span class="creative-caption">${esc(projectByName.get(name).displayName)}${icon('up')}</span></button>`).join('')}</div><div class="home-footer">${icon('code')}<span>${esc(t('home.footer'))}</span></div>`;
+}
+function renderLibrary(){return viewHeading(t('library.eyebrow'),t('library.title'))+`<div class="library-toolbar"><label class="library-search">${icon('search')}<input type="search" id="catalog-search" placeholder="${esc(t('library.search'))}" aria-label="${esc(t('search.title'))}" value="${esc(query)}" autocomplete="off"></label></div><div class="filter-row">${['all',...categories].map(key=>`<button class="filter-chip ${category===key?'active':''}" data-category="${key}" aria-pressed="${category===key}">${esc(key==='all'?t('filter.all'):categoryLabel(key,lang))}</button>`).join('')}</div><div class="results-meta"><span id="result-count"></span><span>${projects.length} ${esc(t('library.count'))}</span></div><div id="project-grid" class="catalog-grid"></div>`;}
+function renderLibraryResults(){
+ const grid=$('#project-grid');if(!grid)return;
+ const matches=projects.filter(p=>(category==='all'||p.category===category||p.categories?.includes(category))&&matchProject(p,query));
+ const n=matches.length;const word=lang==='en'?(n===1?'result':'results'):n===1?'wynik':n%10>=2&&n%10<=4&&(n%100<12||n%100>14)?'wyniki':'wyników';
+ $('#result-count').textContent=`${n} ${word}`;
+ grid.innerHTML=matches.length?matches.map(p=>`<button class="project-tile" data-open-project="${esc(p.name)}" aria-haspopup="dialog"><span class="tile-top">${mark(p)}${icon('up')}</span><h3>${esc(p.displayName)}</h3><p>${esc(description(p,lang))}</p><span class="tile-bottom">${tag(p)}<span class="tile-language">${esc(p.language||'')}</span></span></button>`).join(''):`<div class="empty-state">${icon('search')}<h3>${esc(t('empty.title'))}</h3><p>${esc(t('empty.copy'))}</p><button class="secondary-button" data-action="reset-filters" style="margin-top:18px">${esc(t('library.reset'))}</button></div>`;
+}
+function renderReleases(){return viewHeading(t('release.eyebrow'),t('release.title'))+`<div class="release-list">${getReleases(20).map(p=>`<a class="release-item" href="${esc(p.release.url)}" target="_blank" rel="noopener noreferrer">${mark(p)}<span><strong>${esc(p.displayName)}</strong><small>${esc(p.release.tag)} / ${esc(p.platform||p.language||'')}</small></span><time datetime="${esc(p.release.published_at)}">${esc(formatDate(new Date(p.release.published_at),lang))}</time>${icon('release')}</a>`).join('')}</div><p class="snapshot-note">${esc(note())}</p>`;}
+function renderTerminal(){return viewHeading('SWIR / TERMINAL',t('terminal.title'))+`<div class="terminal-view"><div class="terminal-logo">&lt;ORBIT /&gt;</div><p class="terminal-sub">${esc(t('terminal.hint'))}</p><div class="terminal-pills"><button data-command="help">help</button><button data-command="ls">ls</button><button data-command="open KonoNexus">open KonoNexus</button><button data-command="clear">clear</button></div><div id="terminal-output" role="log" aria-live="polite"></div><form id="terminal-form" class="terminal-form"><label for="terminal-input" class="terminal-prompt">swir@orbit:~$</label><input id="terminal-input" autocomplete="off" spellcheck="false" autocapitalize="off" aria-label="${esc(t('terminal.input'))}"><button class="terminal-submit" aria-label="${esc(t('terminal.send'))}">↵</button></form></div>`;}
+function updateTerminalOutput(){const output=$('#terminal-output');if(!output)return;output.innerHTML=`<p class="terminal-line">${esc(t('terminal.greeting'))}</p>`+terminalHistory.slice(-120).map(line=>`<div class="terminal-line ${line.type||''}">${line.html||esc(line.message)}</div>`).join('');}
+function renderView(){
+ const content=$('#main-content');const previousScroll=content.scrollTop;
+ content.innerHTML=view==='home'?renderHome():view==='library'?renderLibrary():view==='releases'?renderReleases():renderTerminal();
+ for(const button of $$('#explorer-navigation [data-view]')){button.classList.toggle('active',button.dataset.view===view);button.setAttribute('aria-current',button.dataset.view===view?'page':'false');}
+ for(const button of $$('.collection-item'))button.classList.toggle('active',view==='library'&&category===button.dataset.category);
+ if(view==='library')renderLibraryResults();if(view==='terminal')updateTerminalOutput();content.scrollTop=previousScroll;
+}
+function setView(next,options={}){
+ if(!['home','library','releases','terminal'].includes(next))return;
+ view=next;if(options.category!==undefined)category=options.category;
+ explorer.hidden=false;renderView();$('#main-content').scrollTop=0;focusWindow('explorer');updateGuide();
+ if(mobile())explorer.scrollIntoView({behavior:paused?'instant':'smooth',block:'start'});
+ if(options.focusSearch)$('#catalog-search')?.focus({preventScroll:true});
+}
+function getWindow(name){return name==='explorer'?explorer:windows.get(name)?.el;}
+function focusWindow(name,moveFocus=false){
+ const element=getWindow(name);if(!element||element.hidden)return;
+ if(zIndex>120){let index=10;for(const window of $$('.app-window').sort((a,b)=>(Number(a.style.zIndex)||0)-(Number(b.style.zIndex)||0)))window.style.zIndex=++index;zIndex=index;}
+ focused=name;element.style.zIndex=++zIndex;for(const win of $$('.app-window'))win.classList.toggle('is-focused',win===element);
+ if(moveFocus)element.focus({preventScroll:true});renderDock();
+}
+function updateGuide(){$('#desktop-guide').hidden=!explorer.hidden||[...windows.values()].some(state=>!state.el.hidden);}
+function closeWindow(name,minimize=false){
+ const element=getWindow(name);if(!element)return;
+ const state=windows.get(name);
+ if(name==='explorer'||minimize){element.hidden=true;announce(t('project.minimized'));}
+ else {element.remove();windows.delete(name);announce(`${t('project.closed')}: ${state?.project.displayName||name}`);}
+ const candidates=$$('.app-window').filter(win=>!win.hidden).sort((a,b)=>(Number(b.style.zIndex)||0)-(Number(a.style.zIndex)||0));
+ if(candidates[0])focusWindow(candidates[0].dataset.window);else focused=null;
+ updateGuide();renderDock();
+ const target=state?.trigger?.isConnected&&state.trigger.getClientRects().length?state.trigger:$$('[data-dock-project]').find(el=>el.dataset.dockProject===name)||$('[data-dock="explorer"]');target?.focus({preventScroll:true});
+}
+function toggleMaximize(name){
+ const element=getWindow(name);if(!element||mobile())return;
+ const isMax=element.classList.toggle('window-maximized');const btn=$('[data-window-action="maximize"]',element);
+ if(btn){btn.setAttribute('aria-label',t(isMax?'restore':'maximize'));btn.innerHTML=icon(isMax?'restore':'max');}
+ focusWindow(name);
+}
+function projectContents(p){
+ const screenshot=screenshotPath(p.name);
+ return `<div class="project-detail-top">${mark(p)}<div><p class="micro-label">${esc(categoryLabel(p.category,lang))}</p><h2>${esc(p.displayName)}</h2></div>${tag(p)}</div><p class="project-description">${esc(description(p,lang))}</p><div class="project-detail-meta">${p.language?`<span data-language="${esc(p.name)}">${esc(p.language)}</span>`:''}${p.platform&&p.platform!==p.language?`<span>${esc(p.platform)}</span>`:''}${p.release?`<span>${esc(p.release.tag)}</span>`:''}<span data-stars="${esc(p.name)}" ${p.stars>0?'':'hidden'}>☆ ${Number(p.stars)||0}</span></div><div class="project-detail-actions"><a class="primary-button" href="${esc(p.url)}" target="_blank" rel="noopener noreferrer">${icon('github')}${esc(t('repository'))}${icon('up')}</a>${p.release?`<a class="secondary-button" href="${esc(p.release.url)}" target="_blank" rel="noopener noreferrer">${icon('release')}${esc(t('release'))}</a>`:''}${p.name==='SWIR_OS'?`<a class="secondary-button" href="./swir-os.html">${esc(t('os.preview'))}${icon('up')}</a>`:''}</div>${screenshot?`<button class="project-screenshot" data-preview-image="${esc(p.name)}" aria-label="${esc(t('enlarge')+': '+p.displayName)}" aria-haspopup="dialog"><img src="${screenshot}" alt="${esc(imageAlt(p,lang))}"><span>${icon('max')}${esc(t('enlarge'))}</span></button><p class="project-image-caption">${esc(imageCaption(p.name,lang))}</p>`:`<div class="project-without-image">${mark(p)}<p><small>${esc(t('project.source'))}</small>${esc(p.displayName)}</p></div>`}<p class="snapshot-note">${esc(p.release?note():t('unreleased'))}</p>`;
+}
+function openProject(name,trigger=document.activeElement){
+ const p=projectByName.get(name);if(!p)return;
+ let state=windows.get(name);
+ if(state){state.el.hidden=false;focusWindow(name,true);updateGuide();return;}
+ const el=document.createElement('section');const id='project-title-'+name.replace(/[^a-z0-9-]/gi,'-');
+ el.className='app-window project-window is-new';el.dataset.window=name;el.setAttribute('role','dialog');el.setAttribute('aria-labelledby',id);el.tabIndex=-1;
+ const offset=(windows.size%4)*24;const width=Math.min(760,innerWidth-80);
+ if(!mobile()){el.style.left=Math.min(innerWidth-width-16,Math.max(16,(innerWidth-width)/2+offset))+'px';el.style.top=(47+offset)+'px';}
+ el.innerHTML=`<header class="window-titlebar" data-drag="${esc(name)}"><div class="window-caption">${mark(p)}<h2 id="${id}">${esc(p.displayName)}</h2><span class="window-path">/ projects / ${esc(p.name)}</span></div><div class="window-controls"><button data-window-action="minimize" data-window-target="${esc(name)}" data-label="minimize" aria-label="${esc(t('minimize'))}">${icon('minus')}</button><button data-window-action="maximize" data-window-target="${esc(name)}" data-label="maximize" aria-label="${esc(t('maximize'))}">${icon('max')}</button><button data-window-action="close" data-window-target="${esc(name)}" data-label="close" aria-label="${esc(t('close'))}">${icon('close')}</button></div></header><div class="project-window-content">${projectContents(p)}</div>`;
+ $('#project-windows').append(el);state={el,project:p,trigger};windows.set(name,state);setupDrag(el);focusWindow(name,true);updateGuide();announce(`${t('project.opened')}: ${p.displayName}`);setTimeout(()=>el.classList.remove('is-new'),350);
+}
+function toggleDockProject(name,trigger){const state=windows.get(name);if(state&&!state.el.hidden&&focused===name)closeWindow(name,true);else openProject(name,trigger);}
+function setupDrag(element){
+ const handle=$('.window-titlebar',element);let drag=null;
+ handle.addEventListener('pointerdown',event=>{
+  if(event.button!==0||mobile()||element.classList.contains('window-maximized')||event.target.closest('button,a'))return;
+  const rect=element.getBoundingClientRect(),stage=$('.desktop-stage').getBoundingClientRect();
+  drag={x:event.clientX,y:event.clientY,left:rect.left,top:rect.top-stage.top,width:rect.width,height:rect.height};
+  element.style.left=drag.left+'px';element.style.top=drag.top+'px';element.style.width=drag.width+'px';element.style.height=drag.height+'px';element.style.right='auto';element.style.bottom='auto';
+  element.classList.add('is-dragging');focusWindow(element.dataset.window);handle.setPointerCapture(event.pointerId);event.preventDefault();
+ });
+ handle.addEventListener('pointermove',event=>{if(!drag)return;const height=$('.desktop-stage').clientHeight;element.style.left=Math.max(8,Math.min(innerWidth-drag.width-8,drag.left+event.clientX-drag.x))+'px';element.style.top=Math.max(0,Math.min(height-90,drag.top+event.clientY-drag.y))+'px';});
+ const stop=()=>{drag=null;element.classList.remove('is-dragging');};handle.addEventListener('pointerup',stop);handle.addEventListener('pointercancel',stop);handle.addEventListener('lostpointercapture',stop);
+ handle.addEventListener('dblclick',event=>{if(!event.target.closest('button,a'))toggleMaximize(element.dataset.window);});
+ element.addEventListener('pointerdown',()=>{if(focused!==element.dataset.window)focusWindow(element.dataset.window);});
+ element.addEventListener('focusin',()=>{if(focused!==element.dataset.window)focusWindow(element.dataset.window);});
+}
+setupDrag(explorer);
 
-function setLanguage(next) {
-  lang = next === 'en' ? 'en' : 'pl';
-  storage.set('swir.language', lang);
-  document.documentElement.lang = lang;
-  document.title = lang === 'pl' ? originalTitle : document.documentElement.dataset.enTitle || 'SWIR — Your code. Your rules.';
-  for (const copy of staticCopy) if (copy.element.isConnected) copy.element.innerHTML = copy[lang];
-  for (const copy of attributeCopy) if (copy.element.isConnected) copy.element.setAttribute(copy.target, copy[lang]);
-  const toggle = $('#language-toggle');
-  if (toggle) {
-    toggle.innerHTML = lang === 'pl' ? 'PL <span>/ EN</span>' : 'EN <span>/ PL</span>';
-    toggle.setAttribute('aria-label', lang === 'pl' ? 'Switch to English' : 'Przełącz na polski');
-  }
-  renderStage(); renderProjects(); renderReleases(); updateDataLabel(); updateMotionButton(); updateMenuLabel();
-  if (activeProject) renderProjectDialog(activeProject);
-  if (activeImage) renderImageDialog(activeImage);
+function renderWidgets(){
+ $('#recent-releases').innerHTML=getReleases(3).map(p=>`<a class="mini-release" href="${esc(p.release.url)}" target="_blank" rel="noopener noreferrer">${mark(p)}<span><strong>${esc(p.displayName)}</strong><small>${esc(p.release.tag)} · ${esc(formatDate(new Date(p.release.published_at),lang))}</small></span>${icon('up')}</a>`).join('');
 }
-
-// Selected projects: explicit tabs, no automatic rotation or hidden timer state.
-const stageTabs = $$('.stage-tab[data-stage]');
-for (const [index, tab] of stageTabs.entries()) {
-  if (!tab.id) tab.id = `stage-tab-${index + 1}`;
-  tab.setAttribute('role', 'tab');
-  tab.setAttribute('aria-controls', $('#stage-panel')?.id || 'stage');
-  tab.addEventListener('click', () => selectStage(tab.dataset.stage));
-  tab.addEventListener('keydown', event => {
-    let nextIndex;
-    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') nextIndex = (index + 1) % stageTabs.length;
-    else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') nextIndex = (index - 1 + stageTabs.length) % stageTabs.length;
-    else if (event.key === 'Home') nextIndex = 0;
-    else if (event.key === 'End') nextIndex = stageTabs.length - 1;
-    else return;
-    event.preventDefault();
-    const nextTab = stageTabs[nextIndex];
-    selectStage(nextTab.dataset.stage);
-    nextTab.focus({ preventScroll: true });
-    nextTab.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'instant' });
-  });
-}
-function selectStage(name) {
-  if (!stageOrder.includes(name) || !projectByName.has(name)) return;
-  const changed = currentStage !== name;
-  currentStage = name;
-  clearTimeout(switchTimer);
-  const stage = $('#stage');
-  stage?.classList.remove('is-switching');
-  renderStage();
-  if (changed && !motionPaused && !reducedMotion.matches && stage) {
-    stage.classList.add('is-switching');
-    switchTimer = setTimeout(() => stage.classList.remove('is-switching'), 180);
-  }
-}
-function renderStage() {
-  const project = projectByName.get(currentStage);
-  const stage = $('#stage');
-  if (!project || !stage) return;
-  stage.dataset.project = project.name;
-  stage.style.setProperty('--stage-color', project.color);
-  const panel = $('#stage-panel') || stage;
-  panel.setAttribute('role', 'tabpanel');
-  for (const tab of stageTabs) {
-    const selected = tab.dataset.stage === currentStage;
-    tab.classList.toggle('active', selected);
-    tab.setAttribute('aria-selected', String(selected));
-    tab.tabIndex = selected ? 0 : -1;
-    if (selected) panel.setAttribute('aria-labelledby', tab.id);
-  }
-  const values = { '#stage-name': project.displayName, '#stage-description': description(project), '#stage-category': category(project), '#stage-index': `${String(stageOrder.indexOf(currentStage) + 1).padStart(2, '0')} / ${String(stageOrder.length).padStart(2, '0')}`, '#stage-caption': imageCaption(project.name) };
-  for (const [selector, value] of Object.entries(values)) { const element = $(selector); if (element) element.textContent = value; }
-  const image = $('#stage-image');
-  if (image) { image.src = screenshotPath(project.name); image.alt = imageAlt(project); }
-  const logoHost = $('#stage-logo');
-  const logo = logoHost?.matches('img') ? logoHost : $('img', logoHost);
-  if (logo) { logo.src = logoPath(project.name); logo.alt = ''; }
-  const status = $('#stage-status');
-  if (status) { status.textContent = t(`status.${project.stage}`); status.classList.remove('release-tag', 'beta-tag', 'development-tag'); status.classList.add('stage-tag', stageClass(project)); }
-  const link = $('#stage-link');
-  if (link) { link.href = project.url; link.target = '_blank'; link.rel = 'noopener noreferrer'; }
-  const detail = $('#stage-detail');
-  if (detail) { detail.dataset.openProject = project.name; detail.setAttribute('aria-haspopup', 'dialog'); }
-  const zoom = $('#stage-zoom');
-  if (zoom) { zoom.dataset.previewImage = project.name; zoom.setAttribute('aria-haspopup', 'dialog'); zoom.setAttribute('aria-label', `${t('image.open')}: ${project.displayName}`); }
+function updateClock(){const now=new Date();const locale=lang==='pl'?'pl-PL':'en-GB';const time=new Intl.DateTimeFormat(locale,{hour:'2-digit',minute:'2-digit',hour12:false}).format(now);$('#bar-clock').textContent=time;$('#large-clock').textContent=time;$('#large-clock').dateTime=now.toISOString();$('#clock-date').textContent=new Intl.DateTimeFormat(locale,{weekday:'long',day:'numeric',month:'long'}).format(now);}
+function updateMetadata(){const state=getMetadataState();const label=$('#metadata-label');label.textContent=t('metadata.'+state.mode);label.title=`${t('metadata.scope')} ${formatDate(state.verifiedDate,lang,true)}. ${state.count} ${lang==='pl'?'publicznych repozytoriów':'public repositories'}.`;label.closest('.source-indicator').classList.toggle('is-live',state.mode==='live');if(view==='library')renderLibraryResults();for(const el of $$('[data-language]'))el.textContent=projectByName.get(el.dataset.language)?.language||'';for(const el of $$('[data-stars]')){const stars=projectByName.get(el.dataset.stars)?.stars||0;el.textContent='☆ '+stars;el.hidden=stars<=0;}}
+function updateMotion(){document.documentElement.classList.toggle('motion-paused',paused);sky?.setPaused(paused);const button=$('#motion-toggle');button.setAttribute('aria-pressed',String(paused));button.setAttribute('aria-label',t(paused?'motion.play':'motion.pause'));button.title=t(paused?'motion.play':'motion.pause');button.innerHTML=icon(paused?'play':'pause');}
+function setLanguage(next){
+ lang=next==='en'?'en':'pl';storage.set('swir.language',lang);document.documentElement.lang=lang;document.title=lang==='pl'?'SWIR / ORBIT — Oprogramowanie z innej orbity.':'SWIR / ORBIT — Software from another world.';
+ applyCopy();$('#language-toggle').innerHTML=lang==='pl'?'PL <span>EN</span>':'EN <span>PL</span>';$('#language-toggle').setAttribute('aria-label',lang==='pl'?'Switch to English':'Przełącz na polski');
+ $('#desktop-shortcuts').setAttribute('aria-label',t('shortcut.label'));$('.desktop-widgets').setAttribute('aria-label',t('widgets.label'));$('.dock').setAttribute('aria-label',t('dock.label'));$('.dock-search').setAttribute('aria-label',t('search.title'));$('#command-title').textContent=t('search.title');$('#command-input').placeholder=t('search.input');$('.command-close').setAttribute('aria-label',t('close'));$('#image-close').setAttribute('aria-label',t('image.close'));
+ renderShortcuts();renderView();renderWidgets();updateClock();updateMetadata();updateMotion();
+ for(const state of windows.values()){const body=$('.project-window-content',state.el);const top=body.scrollTop;body.innerHTML=projectContents(state.project);body.scrollTop=top;const max=$('[data-window-action="maximize"]',state.el);max.setAttribute('aria-label',t(state.el.classList.contains('window-maximized')?'restore':'maximize'));}
+ if($('#command-dialog').open)renderCommands();if(activeImage)renderImage(activeImage);
 }
 
-function renderProjects() {
-  const grid = $('#project-grid');
-  if (!grid) return;
-  const focusedName = grid.contains(document.activeElement) ? document.activeElement.dataset.openProject : null;
-  const query = normalize($('#catalog-search')?.value.trim() ?? '');
-  const matches = projects.filter(project => (filter === 'all' || project.category === filter || project.categories?.includes(filter)) && (!query || normalize(`${project.name} ${project.displayName} ${description(project)} ${project.language ?? ''} ${category(project)}`).includes(query)));
-  const shown = matches.slice(0, limit);
-  const count = $('#result-count');
-  if (count) count.textContent = lang === 'pl' ? `${matches.length} ${polishForm(matches.length, 'projekt', 'projekty', 'projektów')} · ${shown.length} ${polishForm(shown.length, 'widoczny', 'widoczne', 'widocznych')}` : `${matches.length} ${matches.length === 1 ? 'project' : 'projects'} · ${shown.length} shown`;
-  grid.innerHTML = shown.length ? shown.map((project, index) => `<article class="catalog-row"><span class="catalog-number" aria-hidden="true">${String(index + 1).padStart(2, '0')}</span><div class="catalog-main"><h3><button type="button" data-open-project="${escapeHTML(project.name)}" aria-haspopup="dialog">${escapeHTML(project.displayName)}</button></h3><p class="catalog-description">${escapeHTML(description(project))}</p></div><div class="catalog-aside">${tag(project)}<span class="catalog-language">${escapeHTML(project.language || category(project))}</span></div><span class="catalog-arrow" aria-hidden="true">↗</span></article>`).join('') : `<div class="empty-results"><h3>${escapeHTML(t('empty.title'))}</h3><p>${escapeHTML(t('empty.description'))}</p></div>`;
-  const more = $('#show-more');
-  if (more) more.hidden = shown.length >= matches.length;
-  if (focusedName) $$('[data-open-project]', grid).find(button => button.dataset.openProject === focusedName)?.focus({ preventScroll: true });
+function renderCommands(){
+ const value=$('#command-input').value.trim();const commands=[{view:'home',name:t('discover'),icon:'home'},{view:'library',name:t('library'),icon:'grid'},{view:'releases',name:t('releases'),icon:'release'},{view:'terminal',name:'Terminal',icon:'terminal'}].filter(c=>commandScope!=='windows'&&(!value||normalize(c.name).includes(normalize(value))));
+ const pool=commandScope==='windows'?[...windows.values()].map(state=>state.project):projects;const found=value?pool.filter(p=>matchProject(p,value)):commandScope==='windows'?pool:pinned.map(name=>projectByName.get(name));
+ $('#command-results').innerHTML=(commands.length?`<p class="command-group">${esc(t('search.commands'))}</p>`+commands.map(c=>`<button class="command-result" data-command-view="${c.view}"><span class="command-symbol">${icon(c.icon)}</span><span><strong>${esc(c.name)}</strong><small>SWIR / ORBIT</small></span>${icon('arrow')}</button>`).join(''):'')+(found.length?`<p class="command-group">${esc(t(commandScope==='windows'?'windows.group':'search.projects'))}</p>`+found.slice(0,22).map(p=>`<button class="command-result" data-command-project="${esc(p.name)}"><span>${mark(p)}</span><span><strong>${esc(p.displayName)}</strong><small>${esc(categoryLabel(p.category,lang))} / ${esc(p.language||'')}</small></span>${icon('up')}</button>`).join(''):'')+(!commands.length&&!found.length?`<div class="empty-state"><h3>${esc(t('empty.title'))}</h3><p>${esc(t('empty.copy'))}</p></div>`:'');
 }
-function renderReleases() {
-  const list = $('#release-list');
-  if (!list) return;
-  const releases = projects.filter(project => project.stage === 'release' && project.release && project.release.prerelease !== true && Number.isFinite(Date.parse(project.release.published_at))).sort((left, right) => Date.parse(right.release.published_at) - Date.parse(left.release.published_at)).slice(0, 4);
-  list.innerHTML = releases.map(project => `<a class="release-row" href="${escapeHTML(project.release.url)}" target="_blank" rel="noopener noreferrer"><time class="release-date" datetime="${escapeHTML(project.release.published_at)}">${formatDate(new Date(project.release.published_at))}</time><span class="release-title">${escapeHTML(project.displayName)}<small>${escapeHTML(project.release.tag)}</small></span><span class="release-platform">${escapeHTML(project.platform || project.language || 'GITHUB RELEASE')}</span>${icon('up')}</a>`).join('');
-}
-
-// Native dialog stacking preserves the project's dialog when its image is enlarged.
-const projectDialog = $('#project-dialog');
-const imageDialog = $('#image-dialog');
-const dialogStack = [];
-const returnFocus = new Map();
-let previousOverflow = null;
-function captureFocus(element = document.activeElement) {
-  return { element, project: element?.dataset?.openProject, image: element?.dataset?.previewImage, catalog: Boolean(element?.closest?.('#project-grid')) };
-}
-function syncScrollLock() {
-  const hasOpenDialog = dialogStack.some(dialog => dialog.open);
-  if (hasOpenDialog && previousOverflow === null) { previousOverflow = document.body.style.overflow; document.body.style.overflow = 'hidden'; }
-  else if (!hasOpenDialog && previousOverflow !== null) { document.body.style.overflow = previousOverflow; previousOverflow = null; }
-}
-function showDialog(dialog, closeSelector, trigger) {
-  if (!dialog || dialog.open) return;
-  returnFocus.set(dialog, captureFocus(trigger));
-  dialog.showModal();
-  dialogStack.push(dialog);
-  syncScrollLock();
-  $(closeSelector, dialog)?.focus({ preventScroll: true });
-}
-function setupDialog(dialog, closeSelector, onClose) {
-  if (!dialog) return;
-  $(closeSelector, dialog)?.addEventListener('click', () => dialog.close());
-  dialog.addEventListener('click', event => {
-    if (event.target !== dialog) return;
-    const bounds = dialog.getBoundingClientRect();
-    if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) dialog.close();
-  });
-  dialog.addEventListener('close', () => {
-    const index = dialogStack.lastIndexOf(dialog);
-    if (index !== -1) dialogStack.splice(index, 1);
-    onClose(); syncScrollLock();
-    const saved = returnFocus.get(dialog);
-    returnFocus.delete(dialog);
-    const topDialog = [...dialogStack].reverse().find(item => item.open);
-    const focusScope = saved?.catalog ? $('#project-grid') : document;
-    let target = saved?.element?.isConnected ? saved.element : saved?.project ? $$('[data-open-project]', focusScope).find(element => element.dataset.openProject === saved.project) : saved?.image ? $$('[data-preview-image]').find(element => element.dataset.previewImage === saved.image) : null;
-    if (topDialog && (!target || !topDialog.contains(target))) target = $('button, a[href], input, [tabindex="0"]', topDialog);
-    if (target && !target.closest('dialog:not([open])')) target.focus({ preventScroll: true });
-  });
-}
-function renderProjectDialog(project) {
-  const content = $('#dialog-content');
-  if (!content) return;
-  const image = screenshotPath(project.name);
-  const logo = logoPath(project.name);
-  const mark = logo ? `<img src="${logo}" alt="" width="44" height="44">` : project.icon === 'code' ? icon('code') : escapeHTML(project.icon);
-  content.innerHTML = `<div class="dialog-header"><span class="card-icon" aria-hidden="true">${mark}</span><span class="dialog-category">${escapeHTML(category(project))}</span>${tag(project)}</div><h2 id="dialog-title">${escapeHTML(project.displayName)}</h2><p class="dialog-description">${escapeHTML(description(project))}</p>${image ? `<button class="dialog-image-button" type="button" data-preview-image="${escapeHTML(project.name)}" aria-haspopup="dialog" aria-label="${escapeHTML(t('image.open'))}: ${escapeHTML(project.displayName)}"><img class="dialog-image" src="${image}" alt="${escapeHTML(imageAlt(project))}"></button>` : ''}<div class="dialog-detail">${project.language ? `<span>${escapeHTML(project.language)}</span>` : ''}${project.release ? `<span>${escapeHTML(project.release.tag)}</span>` : ''}${project.platform && project.platform !== project.language ? `<span>${escapeHTML(project.platform)}</span>` : ''}${Number.isFinite(project.stars) && project.stars > 0 ? `<span>☆ ${project.stars}</span>` : ''}</div><p class="dialog-note">${escapeHTML(project.release ? snapshotNote() : t('unreleased'))}</p><div class="dialog-links"><a class="button button-primary" href="${escapeHTML(project.url)}" target="_blank" rel="noopener noreferrer">${escapeHTML(t('repository'))}${icon('up')}</a>${project.release ? `<a class="button button-outline" href="${escapeHTML(project.release.url)}" target="_blank" rel="noopener noreferrer">${escapeHTML(t('release'))}${icon('download')}</a>` : ''}${project.name === 'SWIR_OS' ? `<a class="button button-outline" href="./swir-os.html">${escapeHTML(t('os.preview'))}${icon('up')}</a>` : ''}</div>`;
-}
-function openProject(name, trigger) {
-  const project = projectByName.get(name);
-  if (!project || !projectDialog) return;
-  activeProject = project;
-  renderProjectDialog(project);
-  showDialog(projectDialog, '.dialog-close', trigger);
-}
-function renderImageDialog(project) {
-  const image = $('#image-dialog-image');
-  if (image) { image.src = screenshotPath(project.name); image.alt = imageAlt(project); }
-  const title = $('#image-dialog-title');
-  if (title) title.textContent = project.displayName;
-  const caption = $('#image-dialog-caption');
-  if (caption) caption.textContent = imageCaption(project.name);
-}
-function openImage(name, trigger) {
-  const project = projectByName.get(name);
-  if (!project || !screenshotPath(name) || !imageDialog) return;
-  activeImage = project;
-  renderImageDialog(project);
-  showDialog(imageDialog, '.image-close', trigger);
-}
-setupDialog(projectDialog, '.dialog-close', () => { activeProject = null; });
-setupDialog(imageDialog, '.image-close', () => { activeImage = null; });
-document.addEventListener('click', event => {
-  if (!(event.target instanceof Element)) return;
-  const details = event.target.closest('[data-open-project]');
-  if (details) { event.preventDefault(); openProject(details.dataset.openProject, details); return; }
-  const preview = event.target.closest('[data-preview-image]');
-  if (preview) { event.preventDefault(); openImage(preview.dataset.previewImage, preview); }
+function openSearch(trigger=document.activeElement,scope='all'){const dialog=$('#command-dialog');if(dialog.open)return;commandTrigger=trigger;restoreCommandFocus=true;commandScope=scope;$('#command-title').textContent=t(scope==='windows'?'windows.title':'search.title');$('#command-input').placeholder=t(scope==='windows'?'windows.input':'search.input');$('#command-input').value='';renderCommands();dialog.showModal();$('#command-input').focus();}
+function closeSearch(restore=true){restoreCommandFocus=restore;const dialog=$('#command-dialog');if(dialog.open)dialog.close();}
+$('#command-input').addEventListener('input',renderCommands);
+$('.command-close').addEventListener('click',()=>closeSearch());
+$('#command-dialog').addEventListener('close',()=>{if(restoreCommandFocus&&commandTrigger?.isConnected&&commandTrigger.getClientRects().length)commandTrigger.focus({preventScroll:true});});
+$('#command-dialog').addEventListener('keydown',event=>{
+ const buttons=$$('.command-result',$('#command-results'));const index=buttons.indexOf(document.activeElement);
+ if(event.key==='ArrowDown'||event.key==='ArrowUp'){event.preventDefault();const next=event.key==='ArrowDown'?(index+1)%buttons.length:(index<0?buttons.length-1:(index-1+buttons.length)%buttons.length);buttons[next]?.focus();}
+ else if(event.key==='Enter'&&document.activeElement===$('#command-input')){event.preventDefault();buttons[0]?.click();}
 });
+function renderImage(project){$('#image-title').textContent=project.displayName;$('#image-preview').src=screenshotPath(project.name);$('#image-preview').alt=imageAlt(project,lang);$('#image-caption').textContent=imageCaption(project.name,lang);}
+function openImage(name,trigger){const p=projectByName.get(name);if(!p||!screenshotPath(name))return;activeImage=p;imageTrigger=trigger;renderImage(p);$('#image-dialog').showModal();$('#image-close').focus();}
+$('#image-close').addEventListener('click',()=>$('#image-dialog').close());
+$('#image-dialog').addEventListener('close',()=>{activeImage=null;if(imageTrigger?.isConnected)imageTrigger.focus({preventScroll:true});});
+for(const dialog of [$('#command-dialog'),$('#image-dialog')])dialog.addEventListener('click',event=>{if(event.target!==dialog)return;const r=dialog.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)dialog.close();});
 
-$('#language-toggle')?.addEventListener('click', () => setLanguage(lang === 'pl' ? 'en' : 'pl'));
-for (const button of $$('[data-filter]')) button.addEventListener('click', () => {
-  filter = button.dataset.filter; limit = 9;
-  for (const item of $$('[data-filter]')) { const selected = item === button; item.classList.toggle('active', selected); item.setAttribute('aria-pressed', String(selected)); }
-  renderProjects();
-});
-$('#catalog-search')?.addEventListener('input', () => { limit = 9; renderProjects(); });
-$('#show-more')?.addEventListener('click', () => {
-  const previous = limit;
-  limit += 9; renderProjects();
-  $$('[data-open-project]', $('#project-grid'))[previous]?.focus({ preventScroll: true });
-});
-function focusSearch() {
-  closeMenu();
-  $('#projects')?.scrollIntoView({ behavior: motionPaused || reducedMotion.matches ? 'instant' : 'smooth' });
-  $('#catalog-search')?.focus({ preventScroll: true });
-}
-for (const button of $$('.search-open')) button.addEventListener('click', focusSearch);
-const menuButton = $('#menu-toggle');
-const mobileNav = $('#mobile-nav');
-function updateMenuLabel() {
-  if (menuButton) menuButton.setAttribute('aria-label', t(mobileNav && !mobileNav.hidden ? 'menu.close' : 'menu.open'));
-}
-function closeMenu(restoreFocus = false) {
-  if (!mobileNav || !menuButton) return;
-  mobileNav.hidden = true; menuButton.setAttribute('aria-expanded', 'false'); updateMenuLabel();
-  if (restoreFocus) menuButton.focus({ preventScroll: true });
-}
-menuButton?.addEventListener('click', () => {
-  if (!mobileNav) return;
-  mobileNav.hidden = !mobileNav.hidden;
-  menuButton.setAttribute('aria-expanded', String(!mobileNav.hidden)); updateMenuLabel();
-});
-for (const link of $$('a', mobileNav)) link.addEventListener('click', () => closeMenu());
-document.addEventListener('keydown', event => {
-  if (dialogStack.some(dialog => dialog.open)) return;
-  if (event.key === 'Escape' && mobileNav && !mobileNav.hidden) { event.preventDefault(); closeMenu(true); return; }
-  const target = event.target;
-  const typing = target instanceof Element && (target.matches('input, textarea, select') || target.isContentEditable);
-  if ((event.key === '/' && !typing && !event.ctrlKey && !event.metaKey && !event.altKey) || ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k')) { event.preventDefault(); focusSearch(); }
-});
-addEventListener('resize', () => { if (menuButton && mobileNav && !mobileNav.hidden && getComputedStyle(menuButton).display === 'none') closeMenu(); }, { passive: true });
-
-function updateMotionButton() {
-  const button = $('#motion-toggle');
-  if (!button) return;
-  const label = t(motionPaused ? 'motion.play' : 'motion.pause');
-  button.setAttribute('aria-pressed', String(motionPaused));
-  $('svg use', button)?.setAttribute('href', motionPaused ? '#i-play' : '#i-motion');
-  button.setAttribute('aria-label', label); button.title = label;
-  const visibleLabel = $('.motion-label', button);
-  if (visibleLabel) visibleLabel.textContent = t(motionPaused ? 'motion.off' : 'motion.on');
-}
-function revealAll() {
-  revealObserver?.disconnect(); revealObserver = null;
-  for (const element of $$('.reveal')) element.classList.add('revealed');
-  document.documentElement.classList.remove('js-reveal');
-}
-function applyMotion() {
-  document.documentElement.classList.toggle('motion-paused', motionPaused);
-  document.body.classList.toggle('motion-paused', motionPaused);
-  if (motionPaused || reducedMotion.matches) { clearTimeout(switchTimer); $('#stage')?.classList.remove('is-switching'); revealAll(); }
-  updateMotionButton();
-}
-$('#motion-toggle')?.addEventListener('click', () => {
-  motionPaused = !motionPaused;
-  storage.set('swir.motion', motionPaused ? 'paused' : 'playing'); applyMotion();
-});
-reducedMotion.addEventListener('change', event => {
-  motionPaused = event.matches || storage.get('swir.motion') === 'paused'; applyMotion();
-});
-function setupReveals() {
-  if (motionPaused || reducedMotion.matches || !('IntersectionObserver' in window)) { revealAll(); return; }
-  try {
-    revealObserver = new IntersectionObserver(entries => {
-      for (const entry of entries) if (entry.isIntersecting) { entry.target.classList.add('revealed'); revealObserver.unobserve(entry.target); }
-    }, { threshold: 0.03, rootMargin: '0px 0px 80px 0px' });
-    for (const element of $$('.reveal')) revealObserver.observe(element);
-    document.documentElement.classList.add('js-reveal');
-    // A fail-open fallback prevents CSS-hidden content if observation is interrupted.
-    setTimeout(revealAll, 5000);
-  } catch { revealAll(); }
-}
-const progress = $('.scroll-progress');
-if (progress) {
-  let queued = false;
-  const update = () => { const range = document.documentElement.scrollHeight - innerHeight; progress.style.transform = `scaleX(${range > 0 ? scrollY / range : 0})`; queued = false; };
-  addEventListener('scroll', () => { if (!queued) { queued = true; requestAnimationFrame(update); } }, { passive: true });
-  update();
-}
-if ($('#year')) $('#year').textContent = new Date().getFullYear();
-if ($('#repo-count')) $('#repo-count').textContent = snapshot.public_repository_count;
-
-// Only metadata for the existing catalog is refreshed. New repositories are not
-// automatically added; descriptions and releases keep their verified snapshot date.
-const CACHE_KEY = 'swir.public-repositories.v1';
-const CACHE_TTL = 6 * 60 * 60 * 1000;
-function updateDataLabel() {
-  const label = $('#data-source-text');
-  if (!label) return;
-  label.textContent = dataMode === 'snapshot' ? `GitHub / ${formatDate(verifiedDate)}` : t(`data.${dataMode}`);
-  label.title = `${t('data.scope')} ${formatDate(verifiedDate, true)}.`;
-  label.closest('.data-source')?.classList.toggle('live', dataMode === 'live');
-}
-function publicMetadata(repos) {
-  return Array.isArray(repos) ? repos.filter(repo => repo && repo.private === false && typeof repo.owner?.login === 'string' && repo.owner.login.toLowerCase() === 'swir' && typeof repo.name === 'string') : [];
-}
-function applyPublicMetadata(repos, mode) {
-  const visibleRepos = publicMetadata(repos);
-  if (!visibleRepos.length) return false;
-  const metadata = new Map(visibleRepos.map(repo => [repo.name, repo]));
-  for (const project of projects) {
-    const repo = metadata.get(project.name);
-    if (!repo) continue;
-    if (Number.isSafeInteger(repo.stargazers_count) && repo.stargazers_count >= 0) project.stars = repo.stargazers_count;
-    if (typeof repo.language === 'string' && repo.language.length < 80) project.language = repo.language;
-  }
-  if ($('#repo-count')) $('#repo-count').textContent = visibleRepos.length;
-  dataMode = mode; updateDataLabel(); renderProjects();
-  return true;
-}
-async function refreshPublicMetadata() {
-  try {
-    const cached = JSON.parse(storage.get(CACHE_KEY) || 'null');
-    if (Number.isFinite(cached?.expires) && cached.expires > Date.now() && applyPublicMetadata(cached.repos, 'cached')) return;
-  } catch { /* Invalid storage never prevents browsing the verified catalog. */ }
-  const abort = new AbortController();
-  const timeout = setTimeout(() => abort.abort(), 6500);
-  try {
-    const repos = [];
-    for (let page = 1; page <= 3; page++) {
-      const response = await fetch(`https://api.github.com/users/Swir/repos?type=owner&sort=full_name&per_page=100&page=${page}`, { signal: abort.signal, headers: { Accept: 'application/vnd.github+json' } });
-      if (!response.ok) throw new Error('Public metadata unavailable');
-      const batch = await response.json();
-      if (!Array.isArray(batch)) throw new Error('Invalid public metadata');
-      repos.push(...batch);
-      if (batch.length < 100) break;
-      if (page === 3) throw new Error('Repository list incomplete');
-    }
-    if (applyPublicMetadata(repos, 'live')) storage.set(CACHE_KEY, JSON.stringify({ expires: Date.now() + CACHE_TTL, repos: publicMetadata(repos).map(repo => ({ name: repo.name, private: false, owner: { login: 'Swir' }, stargazers_count: repo.stargazers_count, language: repo.language })) }));
-  } catch { /* GitHub rate limits and offline use keep the local snapshot available. */ }
-  finally { clearTimeout(timeout); }
+function terminalList(list){return list.map(p=>`<button class="terminal-project-link" data-open-project="${esc(p.name)}">${esc(p.displayName)}</button>`).join(' · ');}
+function runCommand(raw){
+ const command=raw.trim();if(!command)return;
+ terminalHistory.push({type:'command',message:'swir@orbit:~$ '+command});
+ const [verb,...args]=command.split(/\s+/);const rest=args.join(' ');let projectToOpen=null;
+ if(verb.toLowerCase()==='clear'){terminalHistory.length=0;}
+ else if(verb.toLowerCase()==='help')terminalHistory.push({message:t('terminal.help')});
+ else if(verb.toLowerCase()==='ls')terminalHistory.push({html:terminalList(projects)});
+ else if(verb.toLowerCase()==='about')terminalHistory.push({message:t('terminal.about')});
+ else if(verb.toLowerCase()==='open'&&rest){const exact=projects.find(p=>normalize(p.name)===normalize(rest)||normalize(p.displayName)===normalize(rest));const list=exact?[exact]:projects.filter(p=>normalize(p.name+' '+p.displayName).includes(normalize(rest)));if(list.length===1){projectToOpen=list[0];terminalHistory.push({message:t('terminal.opening')+' '+projectToOpen.displayName});}else if(list.length>1)terminalHistory.push({html:esc(t('terminal.choose'))+'<br>'+terminalList(list)});else terminalHistory.push({type:'error',message:t('terminal.notfound')});}
+ else terminalHistory.push({type:'error',message:t('terminal.unknown')});
+ if(terminalHistory.length>120)terminalHistory.splice(0,terminalHistory.length-120);
+ updateTerminalOutput();const input=$('#terminal-input');if(input){input.value='';input.focus({preventScroll:true});input.scrollIntoView({block:'nearest',behavior:'instant'});}if(projectToOpen)openProject(projectToOpen.name,input);
 }
 
-setLanguage(lang);
-applyMotion();
-setupReveals();
-refreshPublicMetadata();
+document.addEventListener('click',event=>{
+ if(!(event.target instanceof Element))return;const button=event.target.closest('button,a');if(!button)return;
+ const data=button.dataset;
+ if(data.windowAction){if(data.windowAction==='maximize')toggleMaximize(data.windowTarget);else closeWindow(data.windowTarget,data.windowAction==='minimize');return;}
+ if(data.commandProject){const name=data.commandProject;closeSearch(false);openProject(name,$('[data-action="search"]'));return;}
+ if(data.commandView){const next=data.commandView;closeSearch(false);setView(next,{focusSearch:next==='library'});return;}
+ if(data.openProject){event.preventDefault();openProject(data.openProject,button);return;}
+ if(data.previewImage){openImage(data.previewImage,button);return;}
+ if(data.dockProject){toggleDockProject(data.dockProject,button);return;}
+ if(data.category){category=data.category;setView('library',{category});$$('.filter-chip').find(el=>el.dataset.category===category)?.focus({preventScroll:true});return;}
+ if(data.view){setView(data.view);return;}
+ if(data.command){if(view!=='terminal')setView('terminal');runCommand(data.command);return;}
+ if(data.action==='search'){openSearch(button);return;}
+ if(data.action==='windows'){openSearch(button,'windows');return;}
+ if(data.action==='home'){setView('home');return;}
+ if(data.action==='reset-filters'){query='';category='all';setView('library');return;}
+});
+document.addEventListener('input',event=>{if(event.target.id==='catalog-search'){query=event.target.value;renderLibraryResults();}});
+document.addEventListener('submit',event=>{if(event.target.id==='terminal-form'){event.preventDefault();runCommand($('#terminal-input').value);}});
+document.addEventListener('keydown',event=>{
+ const typing=event.target instanceof Element&&(event.target.matches('input,textarea,select')||event.target.isContentEditable);
+ if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='k'){event.preventDefault();if(!$('#image-dialog').open)openSearch();return;}
+ if(event.key==='/'&&!typing&&!event.ctrlKey&&!event.metaKey&&!event.altKey&&!$('dialog[open]')){event.preventDefault();openSearch();return;}
+ if(event.key==='Escape'&&!$('dialog[open]')&&focused&&focused!=='explorer'){event.preventDefault();closeWindow(focused);}
+});
+$('#language-toggle').addEventListener('click',()=>setLanguage(lang==='pl'?'en':'pl'));
+$('#motion-toggle').addEventListener('click',()=>{paused=!paused;storage.set('swir.motion',paused?'paused':'playing');updateMotion();});
+mediaMotion.addEventListener('change',()=>{paused=mediaMotion.matches||storage.get('swir.motion')==='paused';updateMotion();});
+addEventListener('resize',()=>{
+ if(mobile())return;const height=$('.desktop-stage').clientHeight;
+ for(const el of $$('.app-window')){if(el.hidden||el.classList.contains('window-maximized')||!el.style.left)continue;const r=el.getBoundingClientRect();if(r.width>innerWidth-24)el.style.width=(innerWidth-24)+'px';el.style.left=Math.max(8,Math.min(parseFloat(el.style.left)||8,innerWidth-Math.min(r.width,innerWidth-24)-8))+'px';el.style.top=Math.max(0,Math.min(parseFloat(el.style.top)||0,height-90))+'px';}
+},{passive:true});
+$('#year').textContent=new Date().getFullYear();$('#catalog-size').textContent=projects.length;
+setLanguage(lang);focusWindow('explorer');
+try{sky=createOrbitSky($('#orbit-sky'));sky.setPaused(paused);}catch{ /* The CSS atmosphere preserves the desktop if canvas is unavailable. */ }
+setInterval(updateClock,30000);
+refreshPublicMetadata(updateMetadata);

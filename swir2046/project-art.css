@@ -1,0 +1,30 @@
+/* Original, labeled project illustrations retained from the portfolio. */
+.pick-visual{position:relative;aspect-ratio:1.18;overflow:hidden;border-radius:5px}
+.pick-art-note{position:absolute;bottom:13px;left:17px;font-size:9px;letter-spacing:.03em;opacity:.7}
+.music-visual{background:#f79461;color:#4e2714}
+.pick-product-icon{position:absolute;left:22px;top:22px;width:50px;height:50px;z-index:2}
+.record-art{position:absolute;width:81%;aspect-ratio:1;top:12%;left:23%;border:2px solid #2a2520;border-radius:50%;background:repeating-radial-gradient(circle,#25241e 0 1px,#171914 2px 4px);box-shadow:0 18px 20px #6e2f1e24;transform:rotate(-18deg);transition:transform .7s var(--ease)}
+.record-art:after{content:'';position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 25deg,transparent 0 18%,#f5ffde20 23%,transparent 28% 68%,#f5ffde15 73%,transparent 78%)}
+.record-label{position:absolute;inset:28%;display:flex;flex-direction:column;justify-content:center;padding:20px 20px 15px;background:#e8d7bd;border:8px solid #131610;border-radius:50%;color:#201b14;font-family:var(--display);font-size:37px;line-height:.8;font-weight:700;letter-spacing:-.08em}
+.record-label:after{content:'';position:absolute;top:50%;left:50%;width:9px;height:9px;border-radius:50%;background:#1d2018;transform:translate(-50%,-50%)}
+.record-label span{font-family:var(--body);font-size:4px;line-height:1;letter-spacing:.12em;margin-top:8px}
+.record-sticker{position:absolute;top:-3%;left:5%;display:grid;place-items:center;width:62px;height:62px;border-radius:50%;background:#e0fc69;color:#1b2012;font-family:var(--display);font-size:29px;font-weight:500;z-index:1;transform:rotate(18deg)}
+.pick-music:hover .record-art{transform:rotate(2deg)}
+.ocr-visual{background:#d6dfec;color:#304257}
+.document-art{position:absolute;left:16%;top:14%;width:62%;height:83%;padding:24px 21px;background:#fffdf4;box-shadow:7px 10px 0 #acbccf;transform:rotate(-9deg);border:1px solid #c1cbd6;transition:transform .5s var(--ease)}
+.document-art>span{display:block;font-family:var(--display);font-size:17px;font-weight:700;margin-bottom:29px;letter-spacing:-.03em}
+.document-art i{display:block;width:100%;height:5px;margin:12px 0;background:#cbd1cf}
+.document-art i:nth-of-type(2){width:72%}
+.document-art i:nth-of-type(3){width:84%}
+.document-art i:nth-of-type(4){width:64%}
+.document-line{position:absolute;top:56%;left:-12px;right:-12px;height:2px;background:#477ff2;box-shadow:0 0 17px #477ff280}
+.document-line:before,.document-line:after{content:'';position:absolute;width:5px;height:12px;top:-5px;background:#477ff2}
+.document-line:after{right:0}
+.ocr-icon{position:absolute;right:7%;bottom:14%;width:31%;height:auto;filter:drop-shadow(0 12px 12px #2a3b5e26);transform:rotate(8deg);transition:transform .5s var(--ease)}
+.pick-ocr:hover .document-art{transform:rotate(-5deg) translateY(-4px)}
+.pick-ocr:hover .ocr-icon{transform:rotate(0deg) translateY(-5px)}
+.engine-visual{background:#c8ee66;color:#253519}
+.engine-type{position:absolute;top:9%;left:8%;font-family:var(--display);font-size:clamp(46px,4.9vw,70px);font-weight:600;line-height:.94;letter-spacing:-.075em;z-index:1}
+.engine-type span{color:transparent;-webkit-text-stroke:1.4px #253519}
+.engine-spark{position:absolute;right:3%;top:10%;width:29%;height:auto;fill:#648d31;stroke:none;transform:rotate(-10deg);transition:transform .8s var(--ease)}
+.pick-engine:hover .engine-spark{transform:rotate(35deg)}

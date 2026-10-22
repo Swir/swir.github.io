@@ -3,40 +3,46 @@
 
 <img src="swir2046/mark.svg" width="88" height="88" alt="SWIR logo">
 
-# SWIR — Software Studio
+# SWIR / ORBIT
 
-**Your code. Your rules. Independent applications, tools and digital worlds by Swir.**
+**Independent software. A different orbit.**
+
+An interactive space desktop for exploring projects by Swir.
 
 Polish / English · Responsive static website · Real project screenshots
 
-[**Explore the website →**](https://swir.github.io/) · [**Browse projects**](https://github.com/Swir?tab=repositories) · [**SWIR OS presentation**](https://swir.github.io/swir-os.html)
+[**Enter the desktop →**](https://swir.github.io/) · [**Browse projects**](https://github.com/Swir?tab=repositories) · [**SWIR OS presentation**](https://swir.github.io/swir-os.html)
 
 </div>
 
-![SWIR Software Studio website preview](swir2046/preview-studio.jpg)
+![SWIR ORBIT desktop preview](swir2046/preview-studio.jpg)
 
-## A closer look at the projects
+## A workspace for discovering independent software
 
-The redesigned portfolio uses deep navy, electric cyan and blue, with large typography, original project identities and an editorial layout.
+SWIR / ORBIT presents the portfolio as a spatial desktop: a procedural blue planet, deep navy windows, cyan controls, original application icons and a translucent dock. It is a portfolio interface. The separate SWIR OS product and its existing presentation retain their own links and identity.
 
-The opening gallery has **five manually selected tabs**: Dragon DiskForge, Konofix, SwirUI, KonoNexus and SWIR OS. Each shows an actual application screenshot, its description, development stage and project links. Screenshots can be enlarged for a closer look.
-
-Dedicated stories introduce **KonoNexus** and **SWIR OS**. Three further features present **BrokeDJ, OCRYON and SwirEngine** using CSS illustrations explicitly labeled “Project illustration.” These illustrations describe the projects visually; they are not application screenshots. A searchable catalog brings together **22 selected projects**, followed by published releases.
+**KonoNexus** leads the explorer, with its actual alpha tester screenshot. **SWIR OS, Konofix and Dragon DiskForge** are one click away. The original labeled illustrations for **BrokeDJ, OCRYON and SwirEngine** are retained. A searchable library contains all **22 curated projects**.
 
 ### Explore and navigate
 
 | Feature | Behavior |
 | --- | --- |
-| Gallery | Select a project tab; use arrow keys, Home or End while focused on the tabs. |
-| Catalog | Search project names and descriptions, then filter by category. |
-| Project details | Open a dialog with the description, stage, available screenshot and verified repository/release links. |
-| Image viewer | Enlarge actual screenshots from the gallery, stories or project details. |
-| PL / EN | Switch interface text and project descriptions; the browser remembers the choice. |
-| Keyboard | Use `/` or `Ctrl/Cmd + K` for search, Tab to navigate and Escape to close dialogs. |
-| Motion | Pause decorative effects; the interface also respects reduced-motion preferences. |
-| Mobile | Responsive layouts, touch controls and a compact navigation menu. |
+| Desktop | Open a project from its shortcut, the explorer, search or dock. |
+| Project windows | Open multiple projects, drag their title bars, minimize, maximize and close. Double-click a title bar to maximize or restore it. |
+| Dock | Open pinned projects or restore their windows. The open-windows control lists other open or minimized projects. |
+| Explorer | Switch between Discover, Library, Releases and Terminal. Restore it from the launcher after closing or minimizing. |
+| Library | Search names, descriptions and technologies; filter by primary or additional category. |
+| Project details | Read the description and stage, inspect the actual screenshot, and follow repository or available release links. |
+| Image viewer | Enlarge a screenshot and return to its project window. |
+| Quick search | Use `/` or `Ctrl/Cmd + K`; navigate results with arrow keys and open with Enter. |
+| Terminal | Use `help`, `ls`, `open <project name>`, `about` and `clear` to explore this portfolio. |
+| PL / EN | Translate the interface, project descriptions and all open windows. The browser remembers the choice. |
+| Motion | Pause visual effects; reduced-motion preferences and hidden-tab suspension are respected. |
+| Mobile | A touch-oriented explorer and fixed project panels replace desktop dragging. The dock remains available. |
 
-KonoNexus is presented as an **alpha network tester**. The SWIR OS screenshot is labeled **Web Edition**. BrokeDJ remains pre-alpha, and Dragon DiskForge remains in development. Published releases have release links; projects without a release link to their repositories.
+The backdrop is rendered with Canvas2D and cached procedural textures; it needs no external image or graphics library. Animation is capped at 30 FPS on desktop and 24 FPS on mobile, with pixel-budget limits and a static fallback. The clock shows the visitor's local time.
+
+KonoNexus is labeled an **alpha connection tester**. The SWIR OS screenshot is labeled **Web Edition**. BrokeDJ remains pre-alpha and Dragon DiskForge remains in development. A project window previews the portfolio entry; repository and release actions follow the corresponding GitHub links.
 
 ## Catalog data
 
@@ -54,17 +60,21 @@ python -m http.server 8000 --directory dist
 
 Open [http://localhost:8000/](http://localhost:8000/). In an exported GitHub Pages checkout where `index.html` is already at the root, omit `--directory dist`.
 
-Use HTTP instead of opening the HTML directly so JavaScript modules load normally. Screenshots and project icons are local assets. Google Fonts supplies Manrope and Space Grotesk, with system font fallbacks; the GitHub metadata request is optional to the browsing experience.
+Use HTTP instead of opening the HTML directly so JavaScript modules load normally. Screenshots and project icons are local assets. Google Fonts supplies Manrope, Space Grotesk and IBM Plex Mono, with system font fallbacks; the GitHub metadata request is optional to the browsing experience.
 
 ### Main files
 
 Paths below are relative to the published site root, or to `dist/` in the source checkout.
 
 ```text
-index.html                     Portfolio homepage
-swir2046/style.css             Layout, project illustrations and motion
-swir2046/app.js                Gallery, catalog, dialogs, languages and metadata
-swir2046/projects.js           Reviewed project and release snapshot
+index.html                    ORBIT desktop shell
+swir2046/style.css            Spatial layout, windows, dock and responsive UI
+swir2046/app.js               Window manager, explorer, search, terminal and languages
+swir2046/project-store.js     Catalog helpers, assets and optional metadata refresh
+swir2046/orbit-sky.js         Procedural cosmic wallpaper
+swir2046/project-art.js       Original labeled project illustrations
+swir2046/project-art.css      Original illustration styles
+swir2046/projects.js          Reviewed project and release snapshot
 swir2046/mark.svg              Portfolio identity
 swir2046/icons/                Original project logos and icons
 swir2046/screenshots/          Actual application screenshots
