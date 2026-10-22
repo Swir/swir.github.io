@@ -324,6 +324,7 @@ function updateMotionButton() {
   if (!button) return;
   const label = t(motionPaused ? 'motion.play' : 'motion.pause');
   button.setAttribute('aria-pressed', String(motionPaused));
+  $('svg use', button)?.setAttribute('href', motionPaused ? '#i-play' : '#i-motion');
   button.setAttribute('aria-label', label); button.title = label;
   const visibleLabel = $('.motion-label', button);
   if (visibleLabel) visibleLabel.textContent = t(motionPaused ? 'motion.off' : 'motion.on');

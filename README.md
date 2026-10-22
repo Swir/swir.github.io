@@ -17,7 +17,7 @@ Polish / English · Responsive static website · Real project screenshots
 
 ## A closer look at the projects
 
-The redesigned portfolio uses graphite, off-white and lime, with large typography, original project identities and an editorial layout.
+The redesigned portfolio uses deep navy, electric cyan and blue, with large typography, original project identities and an editorial layout.
 
 The opening gallery has **five manually selected tabs**: Dragon DiskForge, Konofix, SwirUI, KonoNexus and SWIR OS. Each shows an actual application screenshot, its description, development stage and project links. Screenshots can be enlarged for a closer look.
 
