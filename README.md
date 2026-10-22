@@ -5,42 +5,45 @@
 
 # SWIR / ORBIT
 
-**Independent software. A different orbit.**
+**Your code. New dimension.**
 
-An interactive space desktop for exploring projects by Swir.
+A cinematic sci-fi command bridge for exploring projects by Swir.
 
 Polish / English · Responsive static website · Real project screenshots
 
-[**Enter the desktop →**](https://swir.github.io/) · [**Browse projects**](https://github.com/Swir?tab=repositories) · [**SWIR OS presentation**](https://swir.github.io/swir-os.html)
+[**Enter the bridge →**](https://swir.github.io/) · [**Browse projects**](https://github.com/Swir?tab=repositories) · [**SWIR OS presentation**](https://swir.github.io/swir-os.html)
 
 </div>
 
-![SWIR ORBIT desktop preview](swir2046/preview-studio.jpg)
+![SWIR ORBIT command bridge preview](swir2046/preview-studio.jpg)
 
-## A workspace for discovering independent software
+## A command bridge for independent software
 
-SWIR / ORBIT presents the portfolio as a spatial desktop: a procedural blue planet, deep navy windows, cyan controls, original application icons and a translucent dock. It is a portfolio interface. The separate SWIR OS product and its existing presentation retain their own links and identity.
+SWIR / ORBIT presents the portfolio through a cinematic command interface: deep navy panels, a cyan holographic core, angular controls, original application icons and a persistent project rail. It is a portfolio interface. The separate SWIR OS product and its existing presentation retain their own links and identity.
 
-**KonoNexus** leads the explorer, with its actual alpha tester screenshot. **SWIR OS, Konofix and Dragon DiskForge** are one click away. The original labeled illustrations for **BrokeDJ, OCRYON and SwirEngine** are retained. A searchable library contains all **22 curated projects**.
+The interactive map connects six featured modules: **KonoNexus, SWIR OS, Konofix, Dragon DiskForge, BrokeDJ and OCRYON**. KonoNexus is selected initially. Choosing a module updates the holographic focus, its description and stage on the left, and its actual application screenshot and source link on the right. The screenshot opens at a larger size; the project action opens a detailed window.
+
+The original labeled illustrations for **BrokeDJ, OCRYON and SwirEngine** are retained in a separate creative section. The searchable library contains all **22 curated projects**, with their existing descriptions, stages, links and artwork.
 
 ### Explore and navigate
 
 | Feature | Behavior |
 | --- | --- |
-| Desktop | Open a project from its shortcut, the explorer, search or dock. |
-| Project windows | Open multiple projects, drag their title bars, minimize, maximize and close. Double-click a title bar to maximize or restore it. |
-| Dock | Open pinned projects or restore their windows. The open-windows control lists other open or minimized projects. |
-| Explorer | Switch between Discover, Library, Releases and Terminal. Restore it from the launcher after closing or minimizing. |
+| Holographic map | Select one of six project nodes to update the core's focus, selected-project details and real screenshot. The controls work with pointer, touch and keyboard. |
+| Command readouts | Show catalog-derived counts: 22 projects, five primary categories and ten projects with a stable release record. |
+| Project windows | Open multiple projects. On desktop, drag their title bars, minimize, maximize and close; double-click a title bar to maximize or restore its size. |
+| Project rail | Open pinned projects or restore their windows. The open-windows control lists open or minimized projects, including those without a pinned control. |
+| Navigation | Switch between Bridge, Projects, Releases and Terminal. |
 | Library | Search names, descriptions and technologies; filter by primary or additional category. |
 | Project details | Read the description and stage, inspect the actual screenshot, and follow repository or available release links. |
-| Image viewer | Enlarge a screenshot and return to its project window. |
+| Image viewer | Enlarge an actual screenshot from the bridge or a project window, then return to its trigger. |
 | Quick search | Use `/` or `Ctrl/Cmd + K`; navigate results with arrow keys and open with Enter. |
 | Terminal | Use `help`, `ls`, `open <project name>`, `about` and `clear` to explore this portfolio. |
 | PL / EN | Translate the interface, project descriptions and all open windows. The browser remembers the choice. |
 | Motion | Pause visual effects; reduced-motion preferences and hidden-tab suspension are respected. |
-| Mobile | A touch-oriented explorer and fixed project panels replace desktop dragging. The dock remains available. |
+| Mobile | The map and information panels reflow for touch. Project details use fixed panels, and the project rail remains available. |
 
-The backdrop is rendered with Canvas2D and cached procedural textures; it needs no external image or graphics library. Animation is capped at 30 FPS on desktop and 24 FPS on mobile, with pixel-budget limits and a static fallback. The clock shows the visitor's local time.
+The holographic core draws its wireframe geometry, orbital rings and particles directly with Canvas2D, without an external image or graphics library. Animation is capped at **24 FPS**. Canvas resolution uses a **device-pixel-ratio cap of 1.5**, or **1.25 for a small canvas**, with an approximately **1.1-million-pixel budget**. Selecting a module still updates the focus while motion is paused. Reduced-motion preferences and hidden tabs suspend animation; the CSS reticle and project controls remain available without Canvas2D. The clock shows the visitor's local time.
 
 KonoNexus is labeled an **alpha connection tester**. The SWIR OS screenshot is labeled **Web Edition**. BrokeDJ remains pre-alpha and Dragon DiskForge remains in development. A project window previews the portfolio entry; repository and release actions follow the corresponding GitHub links.
 
@@ -60,27 +63,31 @@ python -m http.server 8000 --directory dist
 
 Open [http://localhost:8000/](http://localhost:8000/). In an exported GitHub Pages checkout where `index.html` is already at the root, omit `--directory dist`.
 
-Use HTTP instead of opening the HTML directly so JavaScript modules load normally. Screenshots and project icons are local assets. Google Fonts supplies Manrope, Space Grotesk and IBM Plex Mono, with system font fallbacks; the GitHub metadata request is optional to the browsing experience.
+Use HTTP instead of opening the HTML directly so JavaScript modules load normally. Screenshots and project icons are local assets. Google Fonts supplies **Rajdhani** for display text, **Manrope** for body text and **IBM Plex Mono** for interface readouts; **Space Grotesk** is retained as a display fallback, followed by system fonts. The GitHub metadata request is optional to the browsing experience.
 
 ### Main files
 
 Paths below are relative to the published site root, or to `dist/` in the source checkout.
 
 ```text
-index.html                    ORBIT desktop shell
-swir2046/style.css            Spatial layout, windows, dock and responsive UI
-swir2046/app.js               Window manager, explorer, search, terminal and languages
-swir2046/project-store.js     Catalog helpers, assets and optional metadata refresh
-swir2046/orbit-sky.js         Procedural cosmic wallpaper
-swir2046/project-art.js       Original labeled project illustrations
-swir2046/project-art.css      Original illustration styles
-swir2046/projects.js          Reviewed project and release snapshot
+index.html                    Command bridge shell, navigation and dialogs
+swir2046/style.css             Shared controls, windows and base responsive styles
+swir2046/command-deck.css      Cinematic layout, holographic map and project rail
+swir2046/app.js                Selection, windows, search, terminal and languages
+swir2046/bridge-ui.js          Six-module map, details, previews and bridge content
+swir2046/holo-core.js          Procedural Canvas2D core and selection focus
+swir2046/project-store.js      Catalog helpers, assets and optional metadata refresh
+swir2046/project-art.js        Original labeled project illustrations
+swir2046/project-art.css       Original illustration styles
+swir2046/projects.js           Reviewed project and release snapshot
 swir2046/mark.svg              Portfolio identity
 swir2046/icons/                Original project logos and icons
 swir2046/screenshots/          Actual application screenshots
-swir2046/preview-studio.jpg    Website preview
+swir2046/preview-studio.jpg     Website preview
 swir-os.html                  Preserved SWIR OS presentation
 ```
+
+`index.html` loads the base styles and `command-deck.css`; `app.js` imports the bridge renderer and holographic core. The earlier `swir2046/orbit-sky.js` module is retained but unused by the current homepage.
 
 The site is compatible with GitHub Pages and uses `.nojekyll` for static serving. The previous OS presentation and its dependencies remain available at `swir-os.html`.
 

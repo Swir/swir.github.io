@@ -1,5 +1,6 @@
 import { projects, projectByName, snapshot, screenshotPath, logoPath, description, categoryLabel, statusLabel, imageCaption, imageAlt, formatDate, getReleases, normalize, escapeHTML as esc, storage, getMetadataState, refreshPublicMetadata } from './project-store.js';
-import { createOrbitSky } from './orbit-sky.js';
+import { createHoloCore } from './holo-core.js';
+import { featuredModules, renderBridge, renderModuleSelection, renderModulePreview } from './bridge-ui.js';
 import { artwork } from './project-art.js';
 
 const $ = (selector, scope = document) => scope?.querySelector(selector) ?? null;
@@ -13,12 +14,14 @@ const copy = {
   'skip':'Skip to projects','desktop':'Desktop','independent':'Independent software','search.placeholder':'Find your next project…','intro.eyebrow':'YOUR DIRECTION. YOUR ORBIT.','intro.title':'Software <br><em>from another world.</em>','intro.copy':'Explore projects. Open possibilities.','explorer':'Project explorer','workspace':'YOUR WORKSPACE','discover':'Discover','library':'Library','releases':'Releases','collections':'COLLECTIONS','selected.projects':'selected projects','quick.search':'Quick search','local.time':'YOUR LOCAL TIME','clock.quote':'A good moment to create something of your own.','in.orbit':'ALREADY IN ORBIT','all.releases':'All releases','desktop.note':'Your code.<br>Your rules.','guide.title':'Make this space yours.','guide.copy':'Open a project from the desktop or return to the explorer.','explorer.open':'Open explorer','portfolio':'INTERACTIVE PORTFOLIO','desktop.hint':'Open a project. Move a window. Explore your way.','search':'Search','search.navigate':'navigate','search.open':'open','minimize':'Minimize','maximize':'Maximize','restore':'Restore size','close':'Close','home.eyebrow':'INDEPENDENT SOFTWARE / BY SWIR','home.title':'Welcome to your own orbit.','home.count':'22 reasons to explore','featured':'IN THE SPOTLIGHT','featured.copy':'Communication beyond the usual paths. An experimental mesh network and connection tester, written in Rust.','project.open':'Explore project','featured.caption':'ACTUAL INTERFACE · ALPHA TESTER','shortcuts':'Choose your next direction','all.projects':'All projects','creative.title':'For ideas that do not fit the template.','home.footer':'Original projects. Actual interfaces. Code you can explore.','library.eyebrow':'EVERY DIRECTION, ONE PLACE','library.title':'Project library','library.search':'Search names, technologies or ideas…','library.count':'projects in the catalog','library.visible':'results','library.reset':'Reset filters','empty.title':'Nothing here yet.','empty.copy':'Try another name or choose a different category.','release.eyebrow':'FROM CODE TO RELEASE','release.title':'Ready for a closer look.','snapshot.before':'Release information checked on','snapshot.after':'See the repositories for the latest status and files.','repository':'Code on GitHub','release':'View release','os.preview':'SWIR OS presentation','enlarge':'Enlarge','unreleased':'This project is in development. Explore its repository for the current scope and progress.','image.close':'Close preview','image.illustration':'Project illustration','project.source':'EXPLORE THE PROJECT CODE','metadata.snapshot':'GitHub / catalog snapshot','metadata.cached':'GitHub / cached metadata','metadata.live':'GitHub / metadata updated','metadata.scope':'Repository count, stars and languages are refreshed. Catalog and releases:','motion.pause':'Pause visual effects','motion.play':'Resume visual effects','search.title':'Project search','search.input':'A project name or somewhere to go…','search.commands':'GO TO','search.projects':'PROJECTS','terminal.title':'Small commands. New possibilities.','terminal.hint':'Type help, ls or open KonoNexus.','terminal.greeting':'Welcome to the SWIR project terminal.','terminal.help':'help              show available commands\nls                list all projects\nopen <name>       open a project window\nabout             learn about SWIR / ORBIT\nclear             clear the terminal','terminal.unknown':'Unknown command. Type help.','terminal.notfound':'Project not found. Type ls to see the list.','terminal.choose':'Several projects match — choose one:','terminal.opening':'Project opened:','terminal.about':'SWIR / ORBIT — an interactive portfolio of independent software. Your code. Your rules.','terminal.send':'Run','project.opened':'Project window opened','project.closed':'Project window closed','project.minimized':'Window minimized. Restore it from the dock.','shortcut.label':'Project shortcuts','widgets.label':'Local time and releases','dock.label':'Application dock','filter.all':'Everything','windows.title':'Open windows','windows.input':'Find an open or minimized window…','windows.group':'OPEN WINDOWS','terminal.input':'Terminal command','all.repositories':'Every repository'
  }
 };
+Object.assign(copy.pl, {'discover':'Mostek','library':'Projekty','explorer':'Centrum projektów','explorer.open':'Otwórz centrum','local.time':'CZAS LOKALNY','modules':'MODUŁY PROJEKTÓW','dock.label':'Moduły projektów','project.minimized':'Panel zminimalizowany. Przywrócisz go z paska modułów.','library.eyebrow':'ARCHIWUM / NIEZALEŻNE OPROGRAMOWANIE','library.title':'Wszystkie systemy. Jedna przestrzeń.','terminal.title':'Bezpośrednio do kodu.','guide.copy':'Otwórz projekt lub wróć do centrum.'});
+Object.assign(copy.en, {'discover':'Bridge','library':'Projects','explorer':'Project control','explorer.open':'Open project control','local.time':'LOCAL TIME','modules':'PROJECT MODULES','dock.label':'Project modules','project.minimized':'Panel minimized. Restore it from the module rail.','library.eyebrow':'ARCHIVE / INDEPENDENT SOFTWARE','library.title':'Every system. One space.','terminal.title':'Direct access to code.','guide.copy':'Open a project or return to project control.'});
 let lang=storage.get('swir.language')==='en'?'en':'pl';
 const t=key=>copy[lang][key]??copy.pl[key]??key;
 const mediaMotion=matchMedia('(prefers-reduced-motion: reduce)');
 const mobile=()=>matchMedia('(max-width:760px)').matches;
 let paused=mediaMotion.matches||storage.get('swir.motion')==='paused';
-let sky=null, view='home', category='all', query='', zIndex=10, focused='explorer';
+let holo=null, selectedModule='KonoNexus', view='home', category='all', query='', zIndex=10, focused='explorer';
 let activeImage=null, commandTrigger=null, imageTrigger=null, restoreCommandFocus=true, commandScope='all';
 const windows=new Map();
 const explorer=$('#explorer-window');
@@ -35,11 +38,8 @@ const matchProject=(project,value)=>normalize(`${project.name} ${project.display
 function art(name){return (artwork[name]||'').replace(/Ilustracja projektu/g,t('image.illustration'));}
 function applyCopy(scope=document){for(const el of $$('[data-i18n]',scope)) el.innerHTML=t(el.dataset.i18n);for(const el of $$('[data-label]',scope))el.setAttribute('aria-label',t(el.dataset.label));}
 
-function renderShortcuts(){
- $('#desktop-shortcuts').innerHTML=pinned.map(name=>{const p=projectByName.get(name);return `<button class="desktop-shortcut" data-open-project="${esc(name)}" aria-haspopup="dialog" title="${esc(t('project.open')+': '+p.displayName)}">${mark(p)}<span>${esc(projectLabel(name))}</span></button>`;}).join('');
- $('#sidebar-collections').innerHTML=categories.map(key=>`<button class="collection-item ${category===key&&view==='library'?'active':''}" data-category="${key}"><i style="--collection-color:${colors[key]}"></i><span>${esc(categoryLabel(key,lang))}</span></button>`).join('');
- renderDock();
-}
+function renderShortcuts(){renderDock();}
+for(const event of ['pointerdown','focusin'])explorer.addEventListener(event,()=>{if(focused!=='explorer')focusWindow('explorer');});
 function dockProject(name){const p=projectByName.get(name);const state=windows.get(name);return `<button class="dock-button ${state?'running':''} ${focused===name&&!state?.el.hidden?'focused':''}" data-dock-project="${esc(name)}" aria-label="${esc(p.displayName)}" aria-haspopup="dialog">${mark(p)}<span class="dock-label">${esc(p.displayName)}</span><i class="running-dot"></i></button>`;}
 function renderDock(){
  const active=document.activeElement?.dataset?.dockProject;
@@ -51,9 +51,13 @@ function renderDock(){
  if(active)$$('[data-dock-project]').find(el=>el.dataset.dockProject===active)?.focus({preventScroll:true});
 }
 function viewHeading(eyebrow,title,aside=''){return `<div class="view-heading"><div><p class="micro-label">${esc(eyebrow)}</p><h2>${esc(title)}</h2></div>${aside?`<span>${esc(aside)}</span>`:''}</div>`;}
-function renderHome(){
- const nexus=projectByName.get('KonoNexus');
- return viewHeading(t('home.eyebrow'),t('home.title'),t('home.count'))+`<article class="featured-project"><div class="featured-copy"><span class="featured-eyebrow"><i></i>${esc(t('featured'))}</span><div class="featured-brand">${mark(nexus)}<h3>KonoNexus</h3></div><p>${esc(t('featured.copy'))}</p><div class="featured-bottom"><button class="primary-button" data-open-project="KonoNexus" aria-haspopup="dialog">${esc(t('project.open'))}${icon('up')}</button>${tag(nexus)}</div></div><div class="featured-media"><button class="featured-preview" data-preview-image="KonoNexus" aria-label="${esc(t('enlarge')+' — '+imageAlt(nexus,lang))}" aria-haspopup="dialog"><img src="${screenshotPath(nexus.name)}" alt="${esc(imageAlt(nexus,lang))}" width="982" height="792" fetchpriority="high"></button><span class="featured-media-caption">${esc(t('featured.caption'))}</span></div></article><div class="section-line"><h3>${esc(t('shortcuts'))}</h3><button data-view="library">${esc(t('all.projects'))}${icon('arrow')}</button></div><div class="quick-grid">${['SWIR_OS','Konofix','Dragon-DiskForge'].map(name=>{const p=projectByName.get(name);return `<button class="quick-card" data-open-project="${name}" aria-haspopup="dialog">${mark(p)}<span><strong>${esc(projectLabel(name))}</strong><small>${esc(categoryLabel(p.category,lang))}</small></span>${icon('up')}</button>`;}).join('')}</div><div class="section-line"><h3>${esc(t('creative.title'))}</h3></div><div class="creative-grid">${['BrokeDJ','OCRYON','SwirEngine'].map(name=>`<button class="creative-card pick-${name==='BrokeDJ'?'music':name==='OCRYON'?'ocr':'engine'}" data-open-project="${name}" aria-haspopup="dialog">${art(name)}<span class="creative-caption">${esc(projectByName.get(name).displayName)}${icon('up')}</span></button>`).join('')}</div><div class="home-footer">${icon('code')}<span>${esc(t('home.footer'))}</span></div>`;
+function renderHome(){return renderBridge(lang,selectedModule);}
+function selectModule(name){
+ if(!featuredModules.includes(name))return;selectedModule=name;
+ if(view!=='home')return;
+ $('#active-module').innerHTML=renderModuleSelection(lang,name);$('#module-preview').innerHTML=renderModulePreview(lang,name);
+ for(const el of $$('[data-select-module]')){const active=el.dataset.selectModule===name;el.classList.toggle('is-selected',active);el.setAttribute('aria-pressed',String(active));}
+ holo?.setFocus(featuredModules.indexOf(name));announce((lang==='pl'?'Wybrany moduł: ':'Selected module: ')+projectByName.get(name).displayName);
 }
 function renderLibrary(){return viewHeading(t('library.eyebrow'),t('library.title'))+`<div class="library-toolbar"><label class="library-search">${icon('search')}<input type="search" id="catalog-search" placeholder="${esc(t('library.search'))}" aria-label="${esc(t('search.title'))}" value="${esc(query)}" autocomplete="off"></label></div><div class="filter-row">${['all',...categories].map(key=>`<button class="filter-chip ${category===key?'active':''}" data-category="${key}" aria-pressed="${category===key}">${esc(key==='all'?t('filter.all'):categoryLabel(key,lang))}</button>`).join('')}</div><div class="results-meta"><span id="result-count"></span><span>${projects.length} ${esc(t('library.count'))}</span></div><div id="project-grid" class="catalog-grid"></div>`;}
 function renderLibraryResults(){
@@ -67,11 +71,13 @@ function renderReleases(){return viewHeading(t('release.eyebrow'),t('release.tit
 function renderTerminal(){return viewHeading('SWIR / TERMINAL',t('terminal.title'))+`<div class="terminal-view"><div class="terminal-logo">&lt;ORBIT /&gt;</div><p class="terminal-sub">${esc(t('terminal.hint'))}</p><div class="terminal-pills"><button data-command="help">help</button><button data-command="ls">ls</button><button data-command="open KonoNexus">open KonoNexus</button><button data-command="clear">clear</button></div><div id="terminal-output" role="log" aria-live="polite"></div><form id="terminal-form" class="terminal-form"><label for="terminal-input" class="terminal-prompt">swir@orbit:~$</label><input id="terminal-input" autocomplete="off" spellcheck="false" autocapitalize="off" aria-label="${esc(t('terminal.input'))}"><button class="terminal-submit" aria-label="${esc(t('terminal.send'))}">↵</button></form></div>`;}
 function updateTerminalOutput(){const output=$('#terminal-output');if(!output)return;output.innerHTML=`<p class="terminal-line">${esc(t('terminal.greeting'))}</p>`+terminalHistory.slice(-120).map(line=>`<div class="terminal-line ${line.type||''}">${line.html||esc(line.message)}</div>`).join('');}
 function renderView(){
- const content=$('#main-content');const previousScroll=content.scrollTop;
+ holo?.destroy();holo=null;
+ const content=$('#main-content');const previousScroll=content.scrollTop;content.dataset.view=view;document.body.dataset.view=view;
  content.innerHTML=view==='home'?renderHome():view==='library'?renderLibrary():view==='releases'?renderReleases():renderTerminal();
  for(const button of $$('#explorer-navigation [data-view]')){button.classList.toggle('active',button.dataset.view===view);button.setAttribute('aria-current',button.dataset.view===view?'page':'false');}
  for(const button of $$('.collection-item'))button.classList.toggle('active',view==='library'&&category===button.dataset.category);
  if(view==='library')renderLibraryResults();if(view==='terminal')updateTerminalOutput();content.scrollTop=previousScroll;
+ if(view==='home'){try{holo=createHoloCore($('#holo-core'));holo.setFocus(featuredModules.indexOf(selectedModule));holo.setPaused(paused);}catch{/* The CSS reticle remains usable without Canvas2D. */}}
 }
 function setView(next,options={}){
  if(!['home','library','releases','terminal'].includes(next))return;
@@ -135,19 +141,16 @@ function setupDrag(element){
  element.addEventListener('pointerdown',()=>{if(focused!==element.dataset.window)focusWindow(element.dataset.window);});
  element.addEventListener('focusin',()=>{if(focused!==element.dataset.window)focusWindow(element.dataset.window);});
 }
-setupDrag(explorer);
 
-function renderWidgets(){
- $('#recent-releases').innerHTML=getReleases(3).map(p=>`<a class="mini-release" href="${esc(p.release.url)}" target="_blank" rel="noopener noreferrer">${mark(p)}<span><strong>${esc(p.displayName)}</strong><small>${esc(p.release.tag)} · ${esc(formatDate(new Date(p.release.published_at),lang))}</small></span>${icon('up')}</a>`).join('');
-}
-function updateClock(){const now=new Date();const locale=lang==='pl'?'pl-PL':'en-GB';const time=new Intl.DateTimeFormat(locale,{hour:'2-digit',minute:'2-digit',hour12:false}).format(now);$('#bar-clock').textContent=time;$('#large-clock').textContent=time;$('#large-clock').dateTime=now.toISOString();$('#clock-date').textContent=new Intl.DateTimeFormat(locale,{weekday:'long',day:'numeric',month:'long'}).format(now);}
+
+function updateClock(){const now=new Date();const time=new Intl.DateTimeFormat(lang==='pl'?'pl-PL':'en-GB',{hour:'2-digit',minute:'2-digit',hour12:false}).format(now);$('#bar-clock').textContent=time;$('#bar-clock').dateTime=now.toISOString();}
 function updateMetadata(){const state=getMetadataState();const label=$('#metadata-label');label.textContent=t('metadata.'+state.mode);label.title=`${t('metadata.scope')} ${formatDate(state.verifiedDate,lang,true)}. ${state.count} ${lang==='pl'?'publicznych repozytoriów':'public repositories'}.`;label.closest('.source-indicator').classList.toggle('is-live',state.mode==='live');if(view==='library')renderLibraryResults();for(const el of $$('[data-language]'))el.textContent=projectByName.get(el.dataset.language)?.language||'';for(const el of $$('[data-stars]')){const stars=projectByName.get(el.dataset.stars)?.stars||0;el.textContent='☆ '+stars;el.hidden=stars<=0;}}
-function updateMotion(){document.documentElement.classList.toggle('motion-paused',paused);sky?.setPaused(paused);const button=$('#motion-toggle');button.setAttribute('aria-pressed',String(paused));button.setAttribute('aria-label',t(paused?'motion.play':'motion.pause'));button.title=t(paused?'motion.play':'motion.pause');button.innerHTML=icon(paused?'play':'pause');}
+function updateMotion(){document.documentElement.classList.toggle('motion-paused',paused);holo?.setPaused(paused);const button=$('#motion-toggle');button.setAttribute('aria-pressed',String(paused));button.setAttribute('aria-label',t(paused?'motion.play':'motion.pause'));button.title=t(paused?'motion.play':'motion.pause');button.innerHTML=icon(paused?'play':'pause');}
 function setLanguage(next){
- lang=next==='en'?'en':'pl';storage.set('swir.language',lang);document.documentElement.lang=lang;document.title=lang==='pl'?'SWIR / ORBIT — Oprogramowanie z innej orbity.':'SWIR / ORBIT — Software from another world.';
+ lang=next==='en'?'en':'pl';storage.set('swir.language',lang);document.documentElement.lang=lang;document.title=lang==='pl'?'SWIR / ORBIT — Kod w nowym wymiarze.':'SWIR / ORBIT — Code in a new dimension.';
  applyCopy();$('#language-toggle').innerHTML=lang==='pl'?'PL <span>EN</span>':'EN <span>PL</span>';$('#language-toggle').setAttribute('aria-label',lang==='pl'?'Switch to English':'Przełącz na polski');
- $('#desktop-shortcuts').setAttribute('aria-label',t('shortcut.label'));$('.desktop-widgets').setAttribute('aria-label',t('widgets.label'));$('.dock').setAttribute('aria-label',t('dock.label'));$('.dock-search').setAttribute('aria-label',t('search.title'));$('#command-title').textContent=t('search.title');$('#command-input').placeholder=t('search.input');$('.command-close').setAttribute('aria-label',t('close'));$('#image-close').setAttribute('aria-label',t('image.close'));
- renderShortcuts();renderView();renderWidgets();updateClock();updateMetadata();updateMotion();
+ $('.system-search').setAttribute('aria-label',t('search.title'));$('#explorer-navigation').setAttribute('aria-label',lang==='pl'?'Nawigacja':'Navigation');$('.dock').setAttribute('aria-label',t('dock.label'));$('.dock-search').setAttribute('aria-label',t('search.title'));$('#command-title').textContent=t('search.title');$('#command-input').placeholder=t('search.input');$('.command-close').setAttribute('aria-label',t('close'));$('#image-close').setAttribute('aria-label',t('image.close'));
+ renderShortcuts();renderView();updateClock();updateMetadata();updateMotion();
  for(const state of windows.values()){const body=$('.project-window-content',state.el);const top=body.scrollTop;body.innerHTML=projectContents(state.project);body.scrollTop=top;const max=$('[data-window-action="maximize"]',state.el);max.setAttribute('aria-label',t(state.el.classList.contains('window-maximized')?'restore':'maximize'));}
  if($('#command-dialog').open)renderCommands();if(activeImage)renderImage(activeImage);
 }
@@ -191,6 +194,7 @@ function runCommand(raw){
 document.addEventListener('click',event=>{
  if(!(event.target instanceof Element))return;const button=event.target.closest('button,a');if(!button)return;
  const data=button.dataset;
+ if(data.selectModule){selectModule(data.selectModule);return;}
  if(data.windowAction){if(data.windowAction==='maximize')toggleMaximize(data.windowTarget);else closeWindow(data.windowTarget,data.windowAction==='minimize');return;}
  if(data.commandProject){const name=data.commandProject;closeSearch(false);openProject(name,$('[data-action="search"]'));return;}
  if(data.commandView){const next=data.commandView;closeSearch(false);setView(next,{focusSearch:next==='library'});return;}
@@ -222,6 +226,5 @@ addEventListener('resize',()=>{
 },{passive:true});
 $('#year').textContent=new Date().getFullYear();$('#catalog-size').textContent=projects.length;
 setLanguage(lang);focusWindow('explorer');
-try{sky=createOrbitSky($('#orbit-sky'));sky.setPaused(paused);}catch{ /* The CSS atmosphere preserves the desktop if canvas is unavailable. */ }
 setInterval(updateClock,30000);
 refreshPublicMetadata(updateMetadata);
